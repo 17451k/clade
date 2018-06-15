@@ -27,13 +27,18 @@ static void intercept_call(char const *const argv[]);
 static char *prepare_data(char const *const argv[]);
 static void store_data(char *msg);
 
+static bool intercepted;
+
 // This wrapper will be executed instead of original execve() by using LD_PRELOAD ability.
 int execve(const char *filename, char *const argv[], char *const envp[])
 {
     int (*execve_real)(const char *, char *const *, char *const *) = dlsym(RTLD_NEXT, "execve");
 
-    // Store information about intercepted call
-    intercept_call((char const *const *)argv);
+    if (! intercepted) {
+        // Store information about intercepted call
+        intercept_call((char const *const *)argv);
+        intercepted = true;
+    }
 
     // Execute original execve()
     return execve_real(filename, argv, envp);
@@ -42,14 +47,24 @@ int execve(const char *filename, char *const argv[], char *const envp[])
 int execvp(const char *filename, char *const argv[])
 {
     int (*execvp_real)(const char *, char *const *) = dlsym(RTLD_NEXT, "execvp");
-    intercept_call((char const *const *)argv);
+
+    if (! intercepted) {
+        intercept_call((char const *const *)argv);
+        intercepted = true;
+    }
+
     return execvp_real(filename, argv);
 }
 
 int execv(const char *filename, char *const argv[])
 {
     int (*execv_real)(const char *, char *const *) = dlsym(RTLD_NEXT, "execv");
-    intercept_call((char const *const *)argv);
+
+    if (! intercepted) {
+        intercept_call((char const *const *)argv);
+        intercepted = true;
+    }
+
     return execv_real(filename, argv);
 }
 
@@ -111,7 +126,7 @@ static void store_data(char *data) {
 
     FILE *f = fopen (data_file, "a");
     if (!f) {
-        fprintf(stderr, "Couldn't open CLADE_DATA_FILE\n");
+        fprintf(stderr, "Couldn't open %s file\n", data_file);
         exit(EXIT_FAILURE);
     }
 
