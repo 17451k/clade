@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,20 +24,19 @@
 #define __USE_GNU
 #include <dlfcn.h>
 
-static void intercept_call(char const *const argv[]);
-static char *prepare_data(char const *const argv[]);
+static void intercept_call(const char *filename, char const *const argv[]);
+static char *prepare_data(const char *filename, char const *const argv[]);
 static void store_data(char *msg);
 
 static bool intercepted;
 
 // This wrapper will be executed instead of original execve() by using LD_PRELOAD ability.
-int execve(const char *filename, char *const argv[], char *const envp[])
-{
+int execve(const char *filename, char *const argv[], char *const envp[]) {
     int (*execve_real)(const char *, char *const *, char *const *) = dlsym(RTLD_NEXT, "execve");
 
     if (! intercepted) {
         // Store information about intercepted call
-        intercept_call((char const *const *)argv);
+        intercept_call(filename, (char const *const *)argv);
         intercepted = true;
     }
 
@@ -44,39 +44,37 @@ int execve(const char *filename, char *const argv[], char *const envp[])
     return execve_real(filename, argv, envp);
 }
 
-int execvp(const char *filename, char *const argv[])
-{
+int execvp(const char *filename, char *const argv[]) {
     int (*execvp_real)(const char *, char *const *) = dlsym(RTLD_NEXT, "execvp");
 
     if (! intercepted) {
-        intercept_call((char const *const *)argv);
+        intercept_call(filename, (char const *const *)argv);
         intercepted = true;
     }
 
     return execvp_real(filename, argv);
 }
 
-int execv(const char *filename, char *const argv[])
-{
+int execv(const char *filename, char *const argv[]) {
     int (*execv_real)(const char *, char *const *) = dlsym(RTLD_NEXT, "execv");
 
     if (! intercepted) {
-        intercept_call((char const *const *)argv);
+        intercept_call(filename, (char const *const *)argv);
         intercepted = true;
     }
 
     return execv_real(filename, argv);
 }
 
-static void intercept_call(char const *const argv[]) {
+static void intercept_call(const char *filename, char const *const argv[]) {
     // TODO: Do we need to use mutex here?
     // Data with intercepted command which will be stored
-    char *data = prepare_data(argv);
+    char *data = prepare_data(filename, argv);
     store_data(data);
     free(data);
 }
 
-static char *prepare_data(char const *const argv[]) {
+static char *prepare_data(const char *filename, char const *const argv[]) {
     unsigned args_len = 1, written_len = 0;
 
     // Concatenate all command-line arguments together using "||" as separator.
@@ -95,7 +93,7 @@ static char *prepare_data(char const *const argv[]) {
     }
 
     // Allocate memory to store the data + cwd + separators
-    char *data = malloc(args_len + strlen(cwd) + strlen("||") + strlen("\n"));
+    char *data = malloc(args_len + strlen(cwd) + strlen("||") + strlen(filename) + strlen("||") + strlen("\n"));
 
     if (!data) {
         fprintf(stderr, "Couldn't allocate memory\n");
@@ -103,6 +101,9 @@ static char *prepare_data(char const *const argv[]) {
     }
 
     written_len += sprintf(data + written_len, "%s", cwd);
+    written_len += sprintf(data + written_len, "||");
+
+    written_len += sprintf(data + written_len, "%s", filename);
     written_len += sprintf(data + written_len, "||");
 
     for (const char *const *arg = argv; arg && *arg; arg++) {
@@ -117,10 +118,10 @@ static char *prepare_data(char const *const argv[]) {
 }
 
 static void store_data(char *data) {
-    char* data_file = getenv("CLADE_DATA_FILE");
+    char* data_file = getenv("CLADE_INTERCEPT");
 
     if (!data_file) {
-        fprintf(stderr, "Environment is not prepared: CLADE_DATA_FILE is not specified\n");
+        fprintf(stderr, "Environment is not prepared: CLADE_INTERCEPT is not specified\n");
         exit(EXIT_FAILURE);
     }
 
