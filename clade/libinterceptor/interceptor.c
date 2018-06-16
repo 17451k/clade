@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+#include <spawn.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,24 +25,24 @@
 #define __USE_GNU
 #include <dlfcn.h>
 
-static void intercept_call(const char *filename, char const *const argv[]);
-static char *prepare_data(const char *filename, char const *const argv[]);
+static void intercept_call(const char *path, char const *const argv[]);
+static char *prepare_data(const char *path, char const *const argv[]);
 static void store_data(char *msg);
 
 static bool intercepted;
 
 // This wrapper will be executed instead of original execve() by using LD_PRELOAD ability.
-int execve(const char *filename, char *const argv[], char *const envp[]) {
+int execve(const char *path, char *const argv[], char *const envp[]) {
     int (*execve_real)(const char *, char *const *, char *const *) = dlsym(RTLD_NEXT, "execve");
 
     if (! intercepted) {
         // Store information about intercepted call
-        intercept_call(filename, (char const *const *)argv);
+        intercept_call(path, (char const *const *)argv);
         intercepted = true;
     }
 
     // Execute original execve()
-    return execve_real(filename, argv, envp);
+    return execve_real(path, argv, envp);
 }
 
 int execvp(const char *filename, char *const argv[]) {
@@ -66,15 +67,29 @@ int execv(const char *filename, char *const argv[]) {
     return execv_real(filename, argv);
 }
 
-static void intercept_call(const char *filename, char const *const argv[]) {
+int posix_spawn(pid_t *restrict pid, const char *restrict path, const posix_spawn_file_actions_t *file_actions,
+                const posix_spawnattr_t *restrict attrp, char *const argv[restrict], char *const envp[restrict])
+{
+    int (*posix_spawn_real)(pid_t *restrict, const char *restrict, const posix_spawn_file_actions_t *,
+                const posix_spawnattr_t *restrict, char *const *, char *const *) = dlsym(RTLD_NEXT, "posix_spawn");
+
+    if (! intercepted) {
+        intercept_call(path, (char const *const *)argv);
+        intercepted = true;
+    }
+
+    return posix_spawn_real(pid, path, file_actions, attrp, argv, envp);
+}
+
+static void intercept_call(const char *path, char const *const argv[]) {
     // TODO: Do we need to use mutex here?
     // Data with intercepted command which will be stored
-    char *data = prepare_data(filename, argv);
+    char *data = prepare_data(path, argv);
     store_data(data);
     free(data);
 }
 
-static char *prepare_data(const char *filename, char const *const argv[]) {
+static char *prepare_data(const char *path, char const *const argv[]) {
     unsigned args_len = 1, written_len = 0;
 
     // Concatenate all command-line arguments together using "||" as separator.
@@ -93,7 +108,7 @@ static char *prepare_data(const char *filename, char const *const argv[]) {
     }
 
     // Allocate memory to store the data + cwd + separators
-    char *data = malloc(args_len + strlen(cwd) + strlen("||") + strlen(filename) + strlen("||") + strlen("\n"));
+    char *data = malloc(args_len + strlen(cwd) + strlen("||") + strlen(path) + strlen("||") + strlen("\n"));
 
     if (!data) {
         fprintf(stderr, "Couldn't allocate memory\n");
@@ -103,7 +118,7 @@ static char *prepare_data(const char *filename, char const *const argv[]) {
     written_len += sprintf(data + written_len, "%s", cwd);
     written_len += sprintf(data + written_len, "||");
 
-    written_len += sprintf(data + written_len, "%s", filename);
+    written_len += sprintf(data + written_len, "%s", path);
     written_len += sprintf(data + written_len, "||");
 
     for (const char *const *arg = argv; arg && *arg; arg++) {
