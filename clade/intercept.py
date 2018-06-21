@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import argparse
 import json
 import logging
 import os
@@ -24,13 +25,31 @@ import tempfile
 
 class Interceptor():
     def __init__(self, args):
-        if not args:
-            raise sys.exit("Build command is mising")
-        self.args = args
+        self.args = self.__parse_args(args)
 
-        self.libinterceptor = self.__find_libinterceptor()
+        if not self.args.fallback:
+            self.libinterceptor = self.__find_libinterceptor()
+        else:
+            self.wrapper = self.__find_wrapper()
+
         self.clade_raw = self.__setup_raw_file()
         self.env = self.__setup_env()
+
+    def __parse_args(self, args):
+        parser = argparse.ArgumentParser()
+
+        parser.add_argument("-d", "--debug", help="enable debug logging messages", action="store_true")
+        parser.add_argument("-f", "--fallback", help="enable fallback intercepting mode", action="store_true")
+        parser.add_argument(dest="command", nargs=argparse.REMAINDER, help="build command to run and intercept")
+
+        args = parser.parse_args(args)
+
+        if not args.command:
+            raise sys.exit("Build command is mising")
+
+        logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.DEBUG if args.debug else logging.INFO)
+
+        return args
 
     def __find_libinterceptor(self):
         if sys.platform == "linux":
@@ -38,12 +57,20 @@ class Interceptor():
         elif sys.platform == "darwin":
             libinterceptor = os.path.join(os.path.dirname(__file__), "libinterceptor", "libinterceptor.dylib")
         else:
-            raise NotImplementedError("clade is not yet supported on your platform ({})".format(sys.platform))
+            raise NotImplementedError("To use Clade on Windows please run it with fallback mode enabled ({})".format(sys.platform))
 
         if not os.path.exists(libinterceptor):
             raise RuntimeError("libinterceptor is not found")
 
         return libinterceptor
+
+    def __find_wrapper(self):
+        wrapper = os.path.join(os.path.dirname(__file__), "libinterceptor", "wrapper")
+
+        if not os.path.exists(wrapper):
+            raise RuntimeError("wrapper is not found")
+
+        return wrapper
 
     def __setup_raw_file(self):
         clade_intercept = os.path.join(tempfile.gettempdir(), "clade-intercept")
@@ -55,28 +82,53 @@ class Interceptor():
 
         return os.path.join(clade_intercept, "raw.txt")
 
+    def __crete_wrappers(self):
+        clade_bin = os.path.join(tempfile.gettempdir(), "clade-bin")
+
+        if os.path.exists(clade_bin):
+            shutil.rmtree(clade_bin)
+
+        os.makedirs(clade_bin)
+
+        paths = os.environ.get("PATH", "").split(os.pathsep)
+
+        for path in paths:
+            for file in os.listdir(path):
+                if os.access(os.path.join(path, file), os.X_OK):
+                    try:
+                        os.symlink(self.wrapper, os.path.join(clade_bin, file))
+                    except FileExistsError:
+                        continue
+
+        print(clade_bin)
+
+        return clade_bin
+
     def __setup_env(self):
         env = dict(os.environ)
 
-        if sys.platform == "darwin":
-            env["DYLD_INSERT_LIBRARIES"] = self.libinterceptor
-            env["DYLD_FORCE_FLAT_NAMESPACE"] = "1"
-        elif sys.platform == "linux":
-            env["LD_PRELOAD"] = self.libinterceptor
+        if not self.args.fallback:
+            if sys.platform == "darwin":
+                env["DYLD_INSERT_LIBRARIES"] = self.libinterceptor
+                env["DYLD_FORCE_FLAT_NAMESPACE"] = "1"
+            elif sys.platform == "linux":
+                env["LD_PRELOAD"] = self.libinterceptor
+        else:
+            env["PATH"] = self.__crete_wrappers() + ":" + os.environ.get("PATH", "")
 
-        env.update({"CLADE_INTERCEPT": self.clade_raw})
+        env["CLADE_INTERCEPT"] = self.clade_raw
 
         return env
 
     def __intercept_first_command(self):
         # "Intercept" the main command manually
-        which = shutil.which(self.args[0])
+        which = shutil.which(self.args.command[0])
 
         if not which:
             return
 
         with open(self.clade_raw, "a") as f:
-            f.write("||".join([os.getcwd(), which] + self.args) + "\n")
+            f.write("||".join([os.getcwd(), which] + self.args.command) + "\n")
 
     def __process_raw_file(self):
         if not os.path.exists(self.clade_raw):
@@ -102,8 +154,8 @@ class Interceptor():
     def execute(self):
         self.__intercept_first_command()
 
-        logging.info('Execute "{}" command'.format(self.args))
-        resut = subprocess.run(self.args, env=self.env)
+        logging.info('Execute "{}" command'.format(self.args.command))
+        resut = subprocess.run(self.args.command, env=self.env)
 
         if not resut.returncode:
             self.__process_raw_file()
@@ -112,8 +164,6 @@ class Interceptor():
 
 
 def main(args=sys.argv[1:]):
-    logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.INFO)
-
     i = Interceptor(args)
     i.execute()
 

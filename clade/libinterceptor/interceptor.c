@@ -17,17 +17,11 @@
 
 #include <spawn.h>
 #include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
 
 #define __USE_GNU
 #include <dlfcn.h>
 
-static void intercept_call(const char *path, char const *const argv[]);
-static char *prepare_data(const char *path, char const *const argv[]);
-static void store_data(char *msg);
+#include "data.h"
 
 static bool intercepted;
 
@@ -79,73 +73,4 @@ int posix_spawn(pid_t *restrict pid, const char *restrict path, const posix_spaw
     }
 
     return posix_spawn_real(pid, path, file_actions, attrp, argv, envp);
-}
-
-static void intercept_call(const char *path, char const *const argv[]) {
-    // TODO: Do we need to use mutex here?
-    // Data with intercepted command which will be stored
-    char *data = prepare_data(path, argv);
-    store_data(data);
-    free(data);
-}
-
-static char *prepare_data(const char *path, char const *const argv[]) {
-    unsigned args_len = 1, written_len = 0;
-
-    // Concatenate all command-line arguments together using "||" as separator.
-    for (const char *const *arg = argv; arg && *arg; arg++) {
-        args_len += strlen(*arg);
-        // Each separator will require 2 additional bytes
-        if ((arg + 1) && *(arg + 1))
-            args_len += 2;
-    }
-
-    // Get current working directory
-    const char *cwd = getcwd(NULL, 0);
-    if (!cwd) {
-        fprintf(stderr, "Couldn't get current working directory");
-        exit(EXIT_FAILURE);
-    }
-
-    // Allocate memory to store the data + cwd + separators
-    char *data = malloc(args_len + strlen(cwd) + strlen("||") + strlen(path) + strlen("||") + strlen("\n"));
-
-    if (!data) {
-        fprintf(stderr, "Couldn't allocate memory\n");
-        exit(EXIT_FAILURE);
-    }
-
-    written_len += sprintf(data + written_len, "%s", cwd);
-    written_len += sprintf(data + written_len, "||");
-
-    written_len += sprintf(data + written_len, "%s", path);
-    written_len += sprintf(data + written_len, "||");
-
-    for (const char *const *arg = argv; arg && *arg; arg++) {
-        written_len += sprintf(data + written_len, "%s", *arg);
-        if ((arg + 1) && *(arg + 1))
-            written_len += sprintf(data + written_len, "||");
-    }
-
-    written_len += sprintf(data + written_len, "\n");
-
-    return data;
-}
-
-static void store_data(char *data) {
-    char* data_file = getenv("CLADE_INTERCEPT");
-
-    if (!data_file) {
-        fprintf(stderr, "Environment is not prepared: CLADE_INTERCEPT is not specified\n");
-        exit(EXIT_FAILURE);
-    }
-
-    FILE *f = fopen (data_file, "a");
-    if (!f) {
-        fprintf(stderr, "Couldn't open %s file\n", data_file);
-        exit(EXIT_FAILURE);
-    }
-
-    fprintf (f, "%s", data);
-    fclose (f);
 }

@@ -3,6 +3,7 @@
 
 libinterceptor.so
 libinterceptor.dylib
+wrapper
 
 __pycache__
 *.egg-info
