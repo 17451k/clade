@@ -169,7 +169,9 @@ class Interceptor():
         return cmds_json
 
     def execute(self):
-        self.__intercept_first_command()
+        if not self.args.fallback:
+            # Fallback mode can intercept first command without our help
+            self.__intercept_first_command()
 
         logging.debug("Execute '{}' command with the following environment: {}".format(self.args.command, self.env))
         resut = subprocess.run(self.args.command, env=self.env)
