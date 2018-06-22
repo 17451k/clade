@@ -32,8 +32,9 @@ class Interceptor():
         else:
             self.wrapper = self.__find_wrapper()
 
-        self.clade_raw = self.__setup_raw_file()
+        self.clade_data = self.__create_data_file()
         self.env = self.__setup_env()
+        self.delimeter = "||"
 
     def __parse_args(self, args):
         parser = argparse.ArgumentParser()
@@ -49,6 +50,8 @@ class Interceptor():
 
         logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.DEBUG if args.debug else logging.INFO)
 
+        logging.debug("Parsed command line arguments: {}".format(args))
+
         return args
 
     def __find_libinterceptor(self):
@@ -62,6 +65,8 @@ class Interceptor():
         if not os.path.exists(libinterceptor):
             raise RuntimeError("libinterceptor is not found")
 
+        logging.debug("Path to libinterceptor library: {}".format(libinterceptor))
+
         return libinterceptor
 
     def __find_wrapper(self):
@@ -70,20 +75,23 @@ class Interceptor():
         if not os.path.exists(wrapper):
             raise RuntimeError("wrapper is not found")
 
+        logging.debug("Path to the wrapper: {}".format(wrapper))
+
         return wrapper
 
-    def __setup_raw_file(self):
-        clade_intercept = os.path.join(tempfile.gettempdir(), "clade-intercept")
+    def __create_data_file(self):
+        (_, clade_data) = tempfile.mkstemp()
+        logging.debug("Create temporary file where unprocessed intercepted commands will be stored: {}"
+                      .format(clade_data))
 
-        if os.path.exists(clade_intercept):
-            shutil.rmtree(clade_intercept)
+        if os.path.exists(clade_data):
+            os.remove(clade_data)
 
-        os.makedirs(clade_intercept)
-
-        return os.path.join(clade_intercept, "raw.txt")
+        return clade_data
 
     def __crete_wrappers(self):
         clade_bin = os.path.join(tempfile.gettempdir(), "clade-bin")
+        logging.debug("Create temporary directory for wrappers: {}".format(clade_bin))
 
         if os.path.exists(clade_bin):
             shutil.rmtree(clade_bin)
@@ -92,15 +100,18 @@ class Interceptor():
 
         paths = os.environ.get("PATH", "").split(os.pathsep)
 
+        counter = 0
+        logging.debug("Walk through every directory in PATH to create wrappers: {}".format(paths))
         for path in paths:
             for file in os.listdir(path):
                 if os.access(os.path.join(path, file), os.X_OK):
                     try:
                         os.symlink(self.wrapper, os.path.join(clade_bin, file))
+                        counter += 1
                     except FileExistsError:
                         continue
 
-        print(clade_bin)
+        logging.debug("{} wrappers were created".format(counter))
 
         return clade_bin
 
@@ -109,58 +120,65 @@ class Interceptor():
 
         if not self.args.fallback:
             if sys.platform == "darwin":
+                logging.debug("Set 'DYLD_INSERT_LIBRARIES' environment variable value")
                 env["DYLD_INSERT_LIBRARIES"] = self.libinterceptor
                 env["DYLD_FORCE_FLAT_NAMESPACE"] = "1"
             elif sys.platform == "linux":
+                logging.debug("Set 'LD_PRELOAD' environment variable value")
                 env["LD_PRELOAD"] = self.libinterceptor
         else:
             env["PATH"] = self.__crete_wrappers() + ":" + os.environ.get("PATH", "")
+            logging.debug("Add directory with wrappers to PATH")
 
-        env["CLADE_INTERCEPT"] = self.clade_raw
+        logging.debug("Set 'CLADE_INTERCEPT' environment variable value")
+        env["CLADE_INTERCEPT"] = self.clade_data
 
         return env
 
     def __intercept_first_command(self):
-        # "Intercept" the main command manually
+        logging.debug("'Intercept' the main command manually in order for it to appear in the output file")
         which = shutil.which(self.args.command[0])
 
         if not which:
             return
 
-        with open(self.clade_raw, "a") as f:
-            f.write("||".join([os.getcwd(), which] + self.args.command) + "\n")
+        with open(self.clade_data, "a") as f:
+            f.write(self.delimeter.join([os.getcwd(), which] + self.args.command) + "\n")
 
-    def __process_raw_file(self):
-        if not os.path.exists(self.clade_raw):
-            raise RuntimeError("clade row file '{}' is not found".format(self.clade_raw))
+    def __process_data_file(self):
+        if not os.path.exists(self.clade_data):
+            raise RuntimeError("clade row file '{}' is not found".format(self.clade_data))
 
         cmds = []
 
-        with open(self.clade_raw, "r") as f:
+        logging.debug("Process intercepted commands")
+        with open(self.clade_data, "r") as f:
             for cmd_id, line in enumerate(f):
                 cmd = dict()
-                cmd["cwd"], cmd["which"], *cmd["command"] = line.strip().split("||")
+                cmd["cwd"], cmd["which"], *cmd["command"] = line.strip().split(self.delimeter)
                 cmd["id"] = cmd_id
                 cmds.append(cmd)
+                logging.debug("Process: {}".format(cmd))
 
         cmds_json = os.path.abspath("cmds.json")
 
+        logging.debug("Store intercepted commads: {}".format(cmds_json))
         with open(cmds_json, "w") as f:
             json.dump(cmds, f, sort_keys=True, indent=4)
 
-        logging.info("Intercepted commads can be found here: {}".format(cmds_json))
         return cmds_json
 
     def execute(self):
         self.__intercept_first_command()
 
-        logging.info('Execute "{}" command'.format(self.args.command))
+        logging.debug("Execute '{}' command with the following environment: {}".format(self.args.command, self.env))
         resut = subprocess.run(self.args.command, env=self.env)
 
         if not resut.returncode:
-            self.__process_raw_file()
+            self.__process_data_file()
         else:
-            sys.exit("Something went wrong")
+            logging.error("Something went wrong")
+            sys.exit(-1)
 
 
 def main(args=sys.argv[1:]):
