@@ -79,7 +79,8 @@ setuptools.setup(
     packages=["clade"],
     package_data={
         "clade": ["libinterceptor/libinterceptor.so",
-                  "libinterceptor/libinterceptor.dylib"],
+                  "libinterceptor/libinterceptor.dylib",
+                  "libinterceptor/wrapper"],
     },
     entry_points={
         "console_scripts": [
