@@ -17,6 +17,7 @@
 
 #include <spawn.h>
 #include <stdbool.h>
+#include <unistd.h>
 
 #define __USE_GNU
 #include <dlfcn.h>
@@ -67,10 +68,9 @@ int posix_spawn(pid_t *restrict pid, const char *restrict path, const posix_spaw
     int (*posix_spawn_real)(pid_t *restrict, const char *restrict, const posix_spawn_file_actions_t *,
                 const posix_spawnattr_t *restrict, char *const *, char *const *) = dlsym(RTLD_NEXT, "posix_spawn");
 
-    if (! intercepted) {
+    // DO NOT check if (! intercepted) here: it will result in command loss
+    if (access(path, F_OK ) != -1)
         intercept_call(path, (char const *const *)argv);
-        intercepted = true;
-    }
 
     return posix_spawn_real(pid, path, file_actions, attrp, argv, envp);
 }
