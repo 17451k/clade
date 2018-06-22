@@ -20,10 +20,17 @@
 #include <string.h>
 #include <unistd.h>
 
+#define DELIMITER "||"
+
+static void remove_substring(char *str,const char *substr) {
+    while(str = strstr(str, substr))
+        memmove(str, str + strlen(substr), 1 + strlen(str + strlen(substr)));
+}
+
 static char *prepare_data(const char *path, char const *const argv[]) {
     unsigned args_len = 1, written_len = 0;
 
-    // Concatenate all command-line arguments together using "||" as separator.
+    // Concatenate all command-line arguments together using "||" as delimeter.
     for (const char *const *arg = argv; arg && *arg; arg++) {
         args_len += strlen(*arg);
         // Each separator will require 2 additional bytes
@@ -38,8 +45,9 @@ static char *prepare_data(const char *path, char const *const argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    // Allocate memory to store the data + cwd + separators
-    char *data = malloc(args_len + strlen(cwd) + strlen("||") + strlen(path) + strlen("||") + strlen("\n"));
+    // Allocate memory to store the data + cwd + delimeters
+    char *data = malloc(args_len + strlen(cwd) + strlen(DELIMITER)
+                        + strlen(path) + strlen(DELIMITER) + strlen("\n"));
 
     if (!data) {
         fprintf(stderr, "Couldn't allocate memory\n");
@@ -47,18 +55,20 @@ static char *prepare_data(const char *path, char const *const argv[]) {
     }
 
     written_len += sprintf(data + written_len, "%s", cwd);
-    written_len += sprintf(data + written_len, "||");
+    written_len += sprintf(data + written_len, DELIMITER);
 
     written_len += sprintf(data + written_len, "%s", path);
-    written_len += sprintf(data + written_len, "||");
+    written_len += sprintf(data + written_len, DELIMITER);
 
     for (const char *const *arg = argv; arg && *arg; arg++) {
         written_len += sprintf(data + written_len, "%s", *arg);
         if ((arg + 1) && *(arg + 1))
-            written_len += sprintf(data + written_len, "||");
+            written_len += sprintf(data + written_len, DELIMITER);
     }
 
     written_len += sprintf(data + written_len, "\n");
+
+    remove_substring(data, "\\\n");
 
     return data;
 }
