@@ -48,7 +48,8 @@ static char *prepare_data(const char *path, char const *const argv[]) {
 
     // Concatenate all command-line arguments together using "||" as delimeter.
     for (const char *const *arg = argv; arg && *arg; arg++) {
-        args_len += strlen(*arg);
+        // Argument might be replaced by a new large string with escaped newlines
+        args_len += 2 * strlen(*arg) + 1;
         // Each separator will require 2 additional bytes
         if ((arg + 1) && *(arg + 1))
             args_len += 2;
@@ -77,7 +78,10 @@ static char *prepare_data(const char *path, char const *const argv[]) {
     written_len += sprintf(data + written_len, DELIMITER);
 
     for (const char *const *arg = argv; arg && *arg; arg++) {
-        written_len += sprintf(data + written_len, "%s", expand_newlines_alloc(*arg));
+        char *exp_arg = expand_newlines_alloc(*arg);
+        written_len += sprintf(data + written_len, "%s", exp_arg);
+        free(exp_arg);
+
         if ((arg + 1) && *(arg + 1))
             written_len += sprintf(data + written_len, DELIMITER);
     }
@@ -101,8 +105,8 @@ static void store_data(char *data) {
         exit(EXIT_FAILURE);
     }
 
-    fprintf (f, "%s", data);
-    fclose (f);
+    fprintf(f, "%s", data);
+    fclose(f);
 }
 
 void intercept_call(const char *path, char const *const argv[]) {
