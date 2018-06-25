@@ -33,7 +33,6 @@ static void expand_newlines(char* dest, const char* src) {
         }
     }
 
-    // Ensure nul terminator
     *dest = '\0';
 }
 
