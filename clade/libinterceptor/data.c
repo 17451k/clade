@@ -22,9 +22,26 @@
 
 #define DELIMITER "||"
 
-static void remove_substring(char *str,const char *substr) {
-    while(str = strstr(str, substr))
-        memmove(str, str + strlen(substr), 1 + strlen(str + strlen(substr)));
+static void expand_newlines(char* dest, const char* src) {
+    for (int i = 0; i < strlen(src); i++) {
+        switch(src[i]) {
+            case '\n':
+                dest += sprintf(dest, "\\n");
+                break;
+            default:
+                *(dest++) = src[i];
+        }
+    }
+
+    // Ensure nul terminator
+    *dest = '\0';
+}
+
+// Returned buffer may be up to twice as large as necessary
+static char* expand_newlines_alloc(const char* src) {
+    char* dest = malloc(2 * strlen(src) + 1);
+    expand_newlines(dest, src);
+    return dest;
 }
 
 static char *prepare_data(const char *path, char const *const argv[]) {
@@ -61,14 +78,12 @@ static char *prepare_data(const char *path, char const *const argv[]) {
     written_len += sprintf(data + written_len, DELIMITER);
 
     for (const char *const *arg = argv; arg && *arg; arg++) {
-        written_len += sprintf(data + written_len, "%s", *arg);
+        written_len += sprintf(data + written_len, "%s", expand_newlines_alloc(*arg));
         if ((arg + 1) && *(arg + 1))
             written_len += sprintf(data + written_len, DELIMITER);
     }
 
     written_len += sprintf(data + written_len, "\n");
-
-    remove_substring(data, "\\\n");
 
     return data;
 }
