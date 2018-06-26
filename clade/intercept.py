@@ -131,8 +131,13 @@ class Interceptor():
             env["PATH"] = self.__crete_wrappers() + ":" + os.environ.get("PATH", "")
             logging.debug("Add directory with wrappers to PATH")
 
-        logging.debug("Set 'CLADE_INTERCEPT' environment variable value")
-        env["CLADE_INTERCEPT"] = self.clade_data
+        # 2 CLADE_INTERCEPT variables are needed purely for debugging purposes
+        if not self.args.fallback:
+            logging.debug("Set 'CLADE_INTERCEPT' environment variable value")
+            env["CLADE_INTERCEPT"] = self.clade_data
+        else:
+            logging.debug("Set 'CLADE_INTERCEPT_FALLBACK' environment variable value")
+            env["CLADE_INTERCEPT_FALLBACK"] = self.clade_data
 
         return env
 

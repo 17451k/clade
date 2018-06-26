@@ -92,15 +92,8 @@ static char *prepare_data(const char *path, char const *const argv[]) {
     return data;
 }
 
-static void store_data(char *data) {
-    char* data_file = getenv("CLADE_INTERCEPT");
-
-    if (!data_file) {
-        fprintf(stderr, "Environment is not prepared: CLADE_INTERCEPT is not specified\n");
-        exit(EXIT_FAILURE);
-    }
-
-    FILE *f = fopen (data_file, "a");
+static void store_data(char *data, char *data_file) {
+    FILE *f = fopen(data_file, "a");
     if (!f) {
         fprintf(stderr, "Couldn't open %s file\n", data_file);
         exit(EXIT_FAILURE);
@@ -114,8 +107,29 @@ static void store_data(char *data) {
 }
 
 void intercept_call(const char *path, char const *const argv[]) {
+    char *data_file = getenv("CLADE_INTERCEPT");
+
+    if (!data_file) {
+        fprintf(stderr, "Environment is not prepared: CLADE_INTERCEPT is not specified\n");
+        exit(EXIT_FAILURE);
+    }
+
     // Data with intercepted command which will be stored
     char *data = prepare_data(path, argv);
-    store_data(data);
+    store_data(data, data_file);
+    free(data);
+}
+
+void intercept_call_fallback(const char *path, char const *const argv[]) {
+    char *data_file = getenv("CLADE_INTERCEPT_FALLBACK");
+
+    if (!data_file) {
+        fprintf(stderr, "Environment is not prepared: CLADE_INTERCEPT_FALLBACK is not specified\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // Data with intercepted command which will be stored
+    char *data = prepare_data(path, argv);
+    store_data(data, data_file);
     free(data);
 }

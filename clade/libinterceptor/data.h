@@ -19,5 +19,6 @@
 #define DATA_H
 
 extern void intercept_call(const char *path, char const *const argv[]);
+extern void intercept_call_fallback(const char *path, char const *const argv[]);
 
 #endif /* DATA_H */

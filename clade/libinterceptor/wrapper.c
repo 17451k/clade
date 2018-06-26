@@ -30,7 +30,7 @@ int main(int argc, char **argv, char **envp) {
     if (!which)
         return -1;
 
-    intercept_call(which, (char const *const *)argv);
+    intercept_call_fallback(which, (char const *const *)argv);
 
     // First argument must be a valid path, not just a filename
     argv[0] = which;
