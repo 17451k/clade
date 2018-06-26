@@ -108,9 +108,9 @@ static void store_data(char *data) {
 
     flock(fileno(f), LOCK_EX);
     fprintf(f, "%s", data);
-    flock(fileno(f), LOCK_UN);
 
     fclose(f);
+    flock(fileno(f), LOCK_UN);
 }
 
 void intercept_call(const char *path, char const *const argv[]) {
