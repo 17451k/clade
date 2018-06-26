@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+#include <sys/file.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -105,12 +106,14 @@ static void store_data(char *data) {
         exit(EXIT_FAILURE);
     }
 
+    flock(fileno(f), LOCK_EX);
     fprintf(f, "%s", data);
+    flock(fileno(f), LOCK_UN);
+
     fclose(f);
 }
 
 void intercept_call(const char *path, char const *const argv[]) {
-    // TODO: Do we need to use mutex here?
     // Data with intercepted command which will be stored
     char *data = prepare_data(path, argv);
     store_data(data);
