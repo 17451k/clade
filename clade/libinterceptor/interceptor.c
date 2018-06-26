@@ -54,10 +54,9 @@ int execvp(const char *filename, char *const argv[]) {
 int execv(const char *filename, char *const argv[]) {
     int (*execv_real)(const char *, char *const *) = dlsym(RTLD_NEXT, "execv");
 
-    if (! intercepted) {
-        intercept_call(filename, (char const *const *)argv);
-        intercepted = true;
-    }
+    // DO NOT check if (! intercepted) here: it will result in command loss
+    intercept_call(filename, (char const *const *)argv);
+    intercepted = true;
 
     return execv_real(filename, argv);
 }
@@ -69,8 +68,10 @@ int posix_spawn(pid_t *restrict pid, const char *restrict path, const posix_spaw
                 const posix_spawnattr_t *restrict, char *const *, char *const *) = dlsym(RTLD_NEXT, "posix_spawn");
 
     // DO NOT check if (! intercepted) here: it will result in command loss
-    if (access(path, F_OK ) != -1)
+    if (access(path, F_OK ) != -1) {
         intercept_call(path, (char const *const *)argv);
+        intercepted = true;
+    }
 
     return posix_spawn_real(pid, path, file_actions, attrp, argv, envp);
 }
