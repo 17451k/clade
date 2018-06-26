@@ -174,13 +174,11 @@ class Interceptor():
             self.__intercept_first_command()
 
         logging.debug("Execute '{}' command with the following environment: {}".format(self.args.command, self.env))
-        resut = subprocess.run(self.args.command, env=self.env)
+        result = subprocess.run(self.args.command, env=self.env)
 
-        if not resut.returncode:
-            self.__process_data_file()
-        else:
-            logging.error("Something went wrong")
-            sys.exit(-1)
+        self.__process_data_file()
+
+        return result.returncode
 
 
 def main(args=sys.argv[1:]):
