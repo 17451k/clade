@@ -41,6 +41,7 @@ class Interceptor():
 
         parser.add_argument("-d", "--debug", help="enable debug logging messages", action="store_true")
         parser.add_argument("-f", "--fallback", help="enable fallback intercepting mode", action="store_true")
+        parser.add_argument("-o", "--output", help="store intercepted commands in FILE", metavar='FILE', default="cmds.json")
         parser.add_argument(dest="command", nargs=argparse.REMAINDER, help="build command to run and intercept")
 
         args = parser.parse_args(args)
@@ -160,7 +161,7 @@ class Interceptor():
                 cmds.append(cmd)
                 logging.debug("Process: {}".format(cmd))
 
-        cmds_json = os.path.abspath("cmds.json")
+        cmds_json = os.path.abspath(self.args.output)
 
         logging.debug("Store intercepted commads: {}".format(cmds_json))
         with open(cmds_json, "w") as f:
