@@ -189,7 +189,7 @@ class Interceptor():
 
 def main(args=sys.argv[1:]):
     i = Interceptor(args)
-    i.execute()
+    sys.exit(i.execute())
 
 
 if __name__ == "__main__":
