@@ -15,17 +15,18 @@
  * limitations under the License.
  */
 
-#include <unistd.h>
+#include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "data.h"
 #include "which.h"
 
 int main(int argc, char **argv, char **envp) {
     char *path = strstr(strdup(getenv("PATH")), WHICH_DELIMITER);
-    char *which = which_path(argv[0], path);
+    char *which = which_path(basename(argv[0]), path);
 
     if (!which)
         return -1;
@@ -35,5 +36,4 @@ int main(int argc, char **argv, char **envp) {
     // First argument must be a valid path, not just a filename
     argv[0] = which;
     return execve(which, argv, envp);
-
 }
