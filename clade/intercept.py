@@ -27,13 +27,21 @@ class Interceptor():
     def __init__(self, args):
         self.args = self.__parse_args(args)
 
-        if not self.args.fallback:
+        if not self.args.fallback and not self.args.reuse:
             self.libinterceptor = self.__find_libinterceptor()
-        else:
+        elif not self.args.reuse:
             self.wrapper = self.__find_wrapper()
 
-        self.clade_data = self.__create_data_file()
-        self.env = self.__setup_env()
+        if self.args.unprocessed:
+            self.clade_data = self.args.unprocessed
+        elif self.args.reuse:
+            self.clade_data = self.args.reuse
+        else:
+            self.clade_data = self.__create_data_file()
+
+        if not self.args.reuse:
+            self.env = self.__setup_env()
+
         self.delimeter = "||"
 
     def __parse_args(self, args):
@@ -41,15 +49,25 @@ class Interceptor():
 
         parser.add_argument("-d", "--debug", help="enable debug logging messages", action="store_true")
         parser.add_argument("-f", "--fallback", help="enable fallback intercepting mode", action="store_true")
-        parser.add_argument("-o", "--output", help="store intercepted commands in FILE", metavar='FILE', default="cmds.json")
+        parser.add_argument("-o", "--output", help="store intercepted commands", metavar='FILE', default="cmds.json")
+        parser.add_argument("-u", "--unprocessed", help="DEBUG ARGUMENT: store unprocessed intercepted commands")
+        parser.add_argument("-r", "--reuse", help="DEBUG ARGUMENT: reuse unprocessed intercepted commands", metavar='FILE')
         parser.add_argument(dest="command", nargs=argparse.REMAINDER, help="build command to run and intercept")
 
         args = parser.parse_args(args)
 
-        if not args.command:
-            raise sys.exit("Build command is mising")
+        if not args.command and not args.reuse:
+            sys.exit("Build command is mising")
 
-        logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.DEBUG if args.debug else logging.INFO)
+        if args.unprocessed and os.path.exists(args.unprocessed):
+            sys.exit("File specified in --unprocessed argument already exists")
+
+        if args.reuse and not os.path.exists(args.reuse):
+            sys.exit("File specified in --reuse argument does not exist")
+
+        logging.basicConfig(format="%(asctime)s {}: %(message)s".format(os.path.basename(sys.argv[0])),
+                            level=logging.DEBUG if args.debug else logging.INFO,
+                            datefmt="%H:%M:%S")
 
         logging.debug("Parsed command line arguments: {}".format(args))
 
@@ -153,7 +171,7 @@ class Interceptor():
 
     def __process_data_file(self):
         if not os.path.exists(self.clade_data):
-            raise RuntimeError("clade row file '{}' is not found".format(self.clade_data))
+            raise RuntimeError("Clade data file '{}' is not found".format(self.clade_data))
 
         cmds = []
 
@@ -164,7 +182,7 @@ class Interceptor():
                 cmd["cwd"], cmd["which"], *cmd["command"] = line.strip().split(self.delimeter)
                 cmd["id"] = cmd_id
                 cmds.append(cmd)
-                logging.debug("Process: {}".format(cmd))
+                # logging.debug("Process: {}".format(cmd))
 
         cmds_json = os.path.abspath(self.args.output)
 
@@ -172,9 +190,16 @@ class Interceptor():
         with open(cmds_json, "w") as f:
             json.dump(cmds, f, sort_keys=True, indent=4)
 
-        return cmds_json
+        if not self.args.unprocessed and not self.args.reuse:
+            logging.debug("Remove Clade data file")
+            os.remove(self.clade_data)
 
     def execute(self):
+        if self.args.reuse:
+            logging.debug("Reuse unprocessed intercepted commands")
+            self.__process_data_file()
+            return 0
+
         if not self.args.fallback:
             # Fallback mode can intercept first command without our help
             self.__intercept_first_command()
