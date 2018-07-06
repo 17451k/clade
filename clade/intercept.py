@@ -14,13 +14,13 @@
 # limitations under the License.
 
 import argparse
-import json
 import logging
 import os
 import shutil
 import subprocess
 import sys
 import tempfile
+import ujson
 
 
 class Interceptor():
@@ -188,11 +188,13 @@ class Interceptor():
 
         logging.debug("Store intercepted commads: {}".format(cmds_json))
         with open(cmds_json, "w") as f:
-            json.dump(cmds, f, sort_keys=True, indent=4)
+            ujson.dump(cmds, f, sort_keys=True, indent=4)
 
         if not self.args.unprocessed and not self.args.reuse:
             logging.debug("Remove Clade data file")
             os.remove(self.clade_data)
+
+        logging.debug("Processing complete")
 
     def execute(self):
         if self.args.reuse:

@@ -87,5 +87,6 @@ setuptools.setup(
             "clade-intercept=clade.intercept:main",
         ],
     },
-    cmdclass={"build": CustomBuild, "develop": CustomDevelop}
+    cmdclass={"build": CustomBuild, "develop": CustomDevelop},
+    install_requires=["ujson"]
 )
