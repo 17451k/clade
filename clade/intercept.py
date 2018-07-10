@@ -183,6 +183,11 @@ class Interceptor():
         logging.debug("Processing complete")
 
     def execute(self):
+        """Execute intercepting and parsing of build commands.
+
+        Returns:
+            0 if everything went successful and error code otherwise
+        """
         if self.reuse:
             logging.debug("Reuse unprocessed intercepted commands")
             self.__process_data_file()
