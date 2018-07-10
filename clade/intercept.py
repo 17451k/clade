@@ -24,54 +24,41 @@ import ujson
 
 
 class Interceptor():
-    def __init__(self, args):
-        self.args = self.__parse_args(args)
+    """Object for intercepting and parsing build commands.
 
-        if not self.args.fallback and not self.args.reuse:
+    Attributes:
+        command: A list of strings representing build command to run and intercept
+        output: A path to the file where intercepted commands will be saved
+        unprocessed: A path to the file where unprocessed intercepted commands will be saved
+        reuse: A path to the file with unprocessed intercepted commands you want to reuse
+        debug: A boolean enabling debug logging messages
+        fallback: A boolean enableing fallback intercepting mode
+    """
+
+    def __init__(self, command=[], output="cmds.json", unprocessed="", reuse="", debug=False, fallback=False):
+        self.command = command
+        self.output = output
+        self.unprocessed = unprocessed
+        self.reuse = reuse
+        self.debug = debug
+        self.fallback = fallback
+
+        if not self.fallback and not self.reuse:
             self.libinterceptor = self.__find_libinterceptor()
-        elif not self.args.reuse:
+        elif not self.reuse:
             self.wrapper = self.__find_wrapper()
 
-        if self.args.unprocessed:
-            self.clade_data = self.args.unprocessed
-        elif self.args.reuse:
-            self.clade_data = self.args.reuse
+        if self.unprocessed:
+            self.clade_data = self.unprocessed
+        elif self.reuse:
+            self.clade_data = self.reuse
         else:
             self.clade_data = self.__create_data_file()
 
-        if not self.args.reuse:
+        if not self.reuse:
             self.env = self.__setup_env()
 
         self.delimeter = "||"
-
-    def __parse_args(self, args):
-        parser = argparse.ArgumentParser()
-
-        parser.add_argument("-d", "--debug", help="enable debug logging messages", action="store_true")
-        parser.add_argument("-f", "--fallback", help="enable fallback intercepting mode", action="store_true")
-        parser.add_argument("-o", "--output", help="store intercepted commands", metavar='FILE', default="cmds.json")
-        parser.add_argument("-u", "--unprocessed", help="DEBUG ARGUMENT: store unprocessed intercepted commands")
-        parser.add_argument("-r", "--reuse", help="DEBUG ARGUMENT: reuse unprocessed intercepted commands", metavar='FILE')
-        parser.add_argument(dest="command", nargs=argparse.REMAINDER, help="build command to run and intercept")
-
-        args = parser.parse_args(args)
-
-        if not args.command and not args.reuse:
-            sys.exit("Build command is mising")
-
-        if args.unprocessed and os.path.exists(args.unprocessed):
-            sys.exit("File specified in --unprocessed argument already exists")
-
-        if args.reuse and not os.path.exists(args.reuse):
-            sys.exit("File specified in --reuse argument does not exist")
-
-        logging.basicConfig(format="%(asctime)s {}: %(message)s".format(os.path.basename(sys.argv[0])),
-                            level=logging.DEBUG if args.debug else logging.INFO,
-                            datefmt="%H:%M:%S")
-
-        logging.debug("Parsed command line arguments: {}".format(args))
-
-        return args
 
     def __find_libinterceptor(self):
         if sys.platform == "linux":
@@ -137,7 +124,7 @@ class Interceptor():
     def __setup_env(self):
         env = dict(os.environ)
 
-        if not self.args.fallback:
+        if not self.fallback:
             if sys.platform == "darwin":
                 logging.debug("Set 'DYLD_INSERT_LIBRARIES' environment variable value")
                 env["DYLD_INSERT_LIBRARIES"] = self.libinterceptor
@@ -150,7 +137,7 @@ class Interceptor():
             logging.debug("Add directory with wrappers to PATH")
 
         # 2 CLADE_INTERCEPT variables are needed purely for debugging purposes
-        if not self.args.fallback:
+        if not self.fallback:
             logging.debug("Set 'CLADE_INTERCEPT' environment variable value")
             env["CLADE_INTERCEPT"] = self.clade_data
         else:
@@ -161,13 +148,13 @@ class Interceptor():
 
     def __intercept_first_command(self):
         logging.debug("'Intercept' the main command manually in order for it to appear in the output file")
-        which = shutil.which(self.args.command[0])
+        which = shutil.which(self.command[0])
 
         if not which:
             return
 
         with open(self.clade_data, "a") as f:
-            f.write(self.delimeter.join([os.getcwd(), which] + self.args.command) + "\n")
+            f.write(self.delimeter.join([os.getcwd(), which] + self.command) + "\n")
 
     def __process_data_file(self):
         if not os.path.exists(self.clade_data):
@@ -182,40 +169,72 @@ class Interceptor():
                 cmd["cwd"], cmd["which"], *cmd["command"] = line.strip().split(self.delimeter)
                 cmd["id"] = cmd_id
                 cmds.append(cmd)
-                # logging.debug("Process: {}".format(cmd))
 
-        cmds_json = os.path.abspath(self.args.output)
+        cmds_json = os.path.abspath(self.output)
 
         logging.debug("Store intercepted commads: {}".format(cmds_json))
         with open(cmds_json, "w") as f:
             ujson.dump(cmds, f, sort_keys=True, indent=4)
 
-        if not self.args.unprocessed and not self.args.reuse:
+        if not self.unprocessed and not self.reuse:
             logging.debug("Remove Clade data file")
             os.remove(self.clade_data)
 
         logging.debug("Processing complete")
 
     def execute(self):
-        if self.args.reuse:
+        if self.reuse:
             logging.debug("Reuse unprocessed intercepted commands")
             self.__process_data_file()
             return 0
 
-        if not self.args.fallback:
+        if not self.fallback:
             # Fallback mode can intercept first command without our help
             self.__intercept_first_command()
 
-        logging.debug("Execute '{}' command with the following environment: {}".format(self.args.command, self.env))
-        result = subprocess.run(self.args.command, env=self.env)
+        logging.debug("Execute '{}' command with the following environment: {}".format(self.command, self.env))
+        result = subprocess.run(self.command, env=self.env)
 
         self.__process_data_file()
 
         return result.returncode
 
 
+def parse_args(args):
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("-o", "--output", help="a path to the FILE where intercepted commands will be saved", metavar='FILE', default="cmds.json")
+    parser.add_argument("-u", "--unprocessed", help="a path to the FILE where unprocessed intercepted commands will be saved", metavar='FILE')
+    parser.add_argument("-r", "--reuse", help="a path to the FILE with unprocessed intercepted commands you want to reuse", metavar='FILE')
+    parser.add_argument("-d", "--debug", help="enable debug logging messages", action="store_true")
+    parser.add_argument("-f", "--fallback", help="enable fallback intercepting mode", action="store_true")
+    parser.add_argument(dest="command", nargs=argparse.REMAINDER, help="build command to run and intercept")
+
+    args = parser.parse_args(args)
+
+    if not args.command and not args.reuse:
+        sys.exit("Build command is mising")
+
+    if args.unprocessed and os.path.exists(args.unprocessed):
+        sys.exit("File specified in --unprocessed argument already exists")
+
+    if args.reuse and not os.path.exists(args.reuse):
+        sys.exit("File specified in --reuse argument does not exist")
+
+    return args
+
+
 def main(args=sys.argv[1:]):
-    i = Interceptor(args)
+    args = parse_args(args)
+
+    logging.basicConfig(format="%(asctime)s {}: %(message)s".format(os.path.basename(sys.argv[0])),
+                        level=logging.DEBUG if args.debug else logging.INFO,
+                        datefmt="%H:%M:%S")
+
+    logging.debug("Parsed command line arguments: {}".format(args))
+
+    i = Interceptor(command=args.command, output=args.output, unprocessed=args.unprocessed,
+                    reuse=args.reuse, debug=args.debug, fallback=args.fallback)
     sys.exit(i.execute())
 
 
