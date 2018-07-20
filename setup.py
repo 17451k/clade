@@ -85,6 +85,7 @@ setuptools.setup(
     entry_points={
         "console_scripts": [
             "clade-intercept=clade.intercept:main",
+            "clade-cmds-stats=clade.cmds:print_cmds_stats",
         ],
     },
     cmdclass={"build": CustomBuild, "develop": CustomDevelop},
