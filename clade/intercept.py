@@ -41,7 +41,7 @@ class Interceptor():
 
     def __init__(self, command=[], output="cmds.json", unprocessed="", reuse="", debug=False, fallback=False):
         self.command = command
-        self.output = output
+        self.output = os.path.abspath(output)
         self.unprocessed = unprocessed
         self.reuse = reuse
         self.debug = debug
@@ -53,8 +53,10 @@ class Interceptor():
             self.wrapper = self.__find_wrapper()
 
         if self.unprocessed:
+            self.unprocessed = os.path.abspath(self.unprocessed)
             self.clade_data = self.unprocessed
         elif self.reuse:
+            self.reuse = os.path.abspath(self.reuse)
             self.clade_data = self.reuse
         else:
             self.clade_data = self.__create_data_file()
