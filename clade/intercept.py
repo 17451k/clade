@@ -33,6 +33,10 @@ class Interceptor():
         reuse: A path to the file with unprocessed intercepted commands you want to reuse
         debug: A boolean enabling debug logging messages
         fallback: A boolean enableing fallback intercepting mode
+
+    Raises:
+        NotImplementedError: Clade is launched on Windows
+        RuntimeError: Clade installation is corrupted, or intercepting process failed
     """
 
     def __init__(self, command=[], output="cmds.json", unprocessed="", reuse="", debug=False, fallback=False):
