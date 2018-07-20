@@ -171,6 +171,7 @@ class Interceptor():
             for cmd_id, line in enumerate(f):
                 cmd = dict()
                 cmd["cwd"], cmd["which"], *cmd["command"] = line.strip().split(self.delimeter)
+                cmd["which"] = os.path.normpath(cmd["which"])
                 cmd["id"] = cmd_id
                 cmds.append(cmd)
 
