@@ -76,6 +76,7 @@ setuptools.setup(
     url="https://github.com/17451k/clade",
     license="LICENSE.txt",
     long_description=open("README.rst").read(),
+    long_description_content_type="text/x-rst",
     packages=["clade"],
     package_data={
         "clade": ["libinterceptor/libinterceptor.so",
@@ -89,5 +90,10 @@ setuptools.setup(
         ],
     },
     cmdclass={"build": CustomBuild, "develop": CustomDevelop},
-    install_requires=["ujson"]
+    install_requires=["ujson"],
+    classifiers=(
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: Apache Software License",
+        "Operating System :: Unix",
+    )
 )
