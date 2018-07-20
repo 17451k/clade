@@ -21,6 +21,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "which.h"
+
 #define DELIMITER "||"
 
 static void expand_newlines(char* dest, const char* src) {
@@ -63,9 +65,19 @@ static char *prepare_data(const char *path, char const *const argv[]) {
         exit(EXIT_FAILURE);
     }
 
+    // Sometimes "path" contains incorrect values ("gcc" instead of "/usr/bin/gcc")
+    char *correct_path = NULL;
+    if (path == argv[0]) {
+        correct_path = which(path);
+    }
+
+    if (!correct_path) {
+        correct_path = (char *)path;
+    }
+
     // Allocate memory to store the data + cwd + delimeters
     char *data = malloc(args_len + strlen(cwd) + strlen(DELIMITER)
-                        + strlen(path) + strlen(DELIMITER) + strlen("\n"));
+                        + strlen(correct_path) + strlen(DELIMITER) + strlen("\n"));
 
     if (!data) {
         fprintf(stderr, "Couldn't allocate memory\n");
@@ -75,7 +87,7 @@ static char *prepare_data(const char *path, char const *const argv[]) {
     written_len += sprintf(data + written_len, "%s", cwd);
     written_len += sprintf(data + written_len, DELIMITER);
 
-    written_len += sprintf(data + written_len, "%s", path);
+    written_len += sprintf(data + written_len, "%s", correct_path);
     written_len += sprintf(data + written_len, DELIMITER);
 
     for (const char *const *arg = argv; arg && *arg; arg++) {
