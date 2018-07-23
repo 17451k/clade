@@ -68,6 +68,17 @@ class CustomDevelop(develop):
         super().run()
 
 
+try:
+    from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
+
+    class bdist_wheel(_bdist_wheel):
+        def finalize_options(self):
+            _bdist_wheel.finalize_options(self)
+            # Mark us as not a pure python package
+            self.root_is_pure = False
+except ImportError:
+    bdist_wheel = None
+
 setuptools.setup(
     name="clade",
     version="1.0",
@@ -79,9 +90,7 @@ setuptools.setup(
     long_description_content_type="text/x-rst",
     packages=["clade"],
     package_data={
-        "clade": ["libinterceptor/libinterceptor.so",
-                  "libinterceptor/libinterceptor.dylib",
-                  "libinterceptor/wrapper"],
+        "clade": ["libinterceptor/*"],
     },
     entry_points={
         "console_scripts": [
@@ -89,7 +98,7 @@ setuptools.setup(
             "clade-cmds-stats=clade.cmds:print_cmds_stats",
         ],
     },
-    cmdclass={"build": CustomBuild, "develop": CustomDevelop},
+    cmdclass={"build": CustomBuild, "develop": CustomDevelop, 'bdist_wheel': bdist_wheel},
     install_requires=["ujson"],
     classifiers=(
         "Programming Language :: Python :: 3",
