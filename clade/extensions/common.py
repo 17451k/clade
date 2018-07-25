@@ -169,6 +169,9 @@ class Common(Extension):
             parsed_cmd = self.load_json(cmd_json)
             merged_cmds.append(parsed_cmd)
 
+        if not merged_cmds:
+            raise RuntimeError("No parsed commands found")
+
         self.dump_data(merged_cmds, "all.json")
 
     def load_all_cmds(self):
