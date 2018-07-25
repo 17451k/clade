@@ -96,10 +96,16 @@ setuptools.setup(
         "console_scripts": [
             "clade-intercept=clade.intercept:main",
             "clade-cmds-stats=clade.cmds:print_cmds_stats",
+            "clade-cc=clade.extensions.cc:parse",
+            "clade-ld=clade.extensions.ld:parse",
+            "clade-objcopy=clade.extensions.objcopy:parse",
+            "clade-mv=clade.extensions.mv:parse",
+            "clade-cmd-graph=clade.extensions.cmd_graph:parse",
+            "clade-src-graph=clade.extensions.src_graph:parse",
         ],
     },
     cmdclass={"build": CustomBuild, "develop": CustomDevelop, 'bdist_wheel': bdist_wheel},
-    install_requires=["ujson"],
+    install_requires=["ujson", "graphviz"],
     classifiers=(
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: Apache Software License",

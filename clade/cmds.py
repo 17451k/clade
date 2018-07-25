@@ -18,59 +18,70 @@ import sys
 import ujson
 
 
-class Cmds():
-    """Interface object for working with intercepted commands.
+def load_cmds(cmds_json):
+    """Load json file with intercepted commands into memory.
 
-    In case of really large jsons object creation may take some time
-    and consume several gigabytes of RAM
-
-    Attributes:
-        cmds_json: A path to the json file where intercepted commands is stored
+    In case of really large jsons loading may take some time
+    and consume several gigabytes of RAM.
 
     Raises:
         RuntimeError: Specified json file does not exist or empty
     """
-
-    def __init__(self, cmds_json):
-        if not os.path.exists(cmds_json):
+    if not os.path.exists(cmds_json):
             raise RuntimeError("Specified {} json file does not exist".format(cmds_json))
 
-        with open(cmds_json, "r") as f:
-            self.cmds = ujson.load(f)
+    with open(cmds_json, "r") as f:
+        cmds = ujson.load(f)
 
-        if not self.cmds:
-            raise RuntimeError("Specified {} json file is empty".format(cmds_json))
+    if not cmds:
+        raise RuntimeError("Specified {} json file is empty".format(cmds_json))
 
-    def get_all_cmds(self):
-        """Get all intercepted commands."""
-        return self.cmds
+    return cmds
 
-    def get_cmds_by_which(self, which):
-        """Get intercepted commands filtered by 'which' field."""
-        return [x for x in self.cmds if x["which"] == which]
 
-    def get_build_cwd(self):
-        """Get the working directory in which build process occurred."""
-        return self.cmds[0]["cwd"]
+def filter_cmds_by_which(cmds, which):
+    """Filter intercepted commands by 'which' field."""
+    return [x for x in cmds if x["which"] == which]
 
-    def get_stats(self):
-        """Get statistics of intercepted commands number."""
-        stats = dict()
-        for cmd in self.cmds:
-            if cmd["which"] in stats:
-                stats[cmd["which"]] += 1
-            else:
-                stats[cmd["which"]] = 1
 
-        return stats
+def filter_cmds_by_which_list(cmds, which_list):
+    """Filter intercepted commands by 'which' field."""
+    filtered_cmds = []
+
+    for which in which_list:
+        filtered_cmds.extend(filter_cmds_by_which(cmds, which))
+
+    return filtered_cmds
+
+
+def get_build_cwd(cmds):
+    """Get the working directory in which build process occurred."""
+    return cmds[0]["cwd"]
+
+
+def get_last_id(cmds):
+    """Get last used id."""
+    return cmds[-1]["id"]
+
+
+def get_stats(cmds):
+    """Get statistics of intercepted commands number."""
+    stats = dict()
+    for cmd in cmds:
+        if cmd["which"] in stats:
+            stats[cmd["which"]] += 1
+        else:
+            stats[cmd["which"]] = 1
+
+    return stats
 
 
 def print_cmds_stats(args=sys.argv[1:]):
     if not args:
         sys.exit("Path to the json file with intercepted commands is missing")
 
-    c = Cmds(args[0])
-    stats = c.get_stats()
+    cmds = load_cmds(args[0])
+    stats = get_stats(cmds)
 
     total_count = sum(stats.values())
     for key in sorted(stats, key=stats.get):
