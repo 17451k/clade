@@ -41,7 +41,7 @@ class Extension(metaclass=abc.ABCMeta):
         self.name = self.__class__.__name__
         self.work_dir = os.path.join(os.path.abspath(work_dir), self.name)
         self.conf = conf if conf else dict()
-        self.temp_dir = tempfile.gettempdir()
+        self.temp_dir = tempfile.mkdtemp()
 
         if not hasattr(self, "requires"):
             self.requires = []
