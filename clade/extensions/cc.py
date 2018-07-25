@@ -43,7 +43,7 @@ class CC(Common):
             self.which_list = conf["CC.which_list"]
 
         if "CC.with_system_header_files" not in conf:
-            conf["with_system_header_files"] = False
+            conf["CC.with_system_header_files"] = True
 
         super().__init__(work_dir, conf)
 
@@ -73,7 +73,7 @@ class CC(Common):
     def __collect_deps(self, cmd_id, cmd):
         deps_file = os.path.join(self.temp_dir, "{}-deps.txt".format(cmd_id))
 
-        if self.conf["with_system_header_files"]:
+        if self.conf["CC.with_system_header_files"]:
             additional_opts = ["-Wp,-MD,{}".format(deps_file), "-M"]
         else:
             additional_opts = ["-Wp,-MMD,{}".format(deps_file), "-MM"]
