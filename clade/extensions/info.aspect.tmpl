@@ -82,25 +82,23 @@ info: call($ $({{ arg_patterns[i] }})) {
 // endfor
 
 info: callp($ $(..)) {
-  $fprintf<"$env<CWD>/callp.txt","%s %s %s %s\n",$func_context_path,$func_context_name,$func_ptr_name,$call_line>
+	$fprintf<"$env<CWD>/callp.txt","%s %s %s %s\n",$func_context_path,$func_context_name,$func_ptr_name,$call_line>
 }
 
 info: use_func($ $(..)) {
-  $fprintf<"$env<CWD>/use_func.txt","%s %s %s %s\n",$func_context_path,$func_context_name,$func_name,$use_line>
+	$fprintf<"$env<CWD>/use_func.txt","%s %s %s %s\n",$func_context_path,$func_context_name,$func_name,$use_line>
 }
 
 info: use_var($ $) {
-  $fprintf<"$env<CWD>/use_var.txt","%s %s %s %s\n",$func_context_path,$func_context_name,$var_name,$use_line>
+	$fprintf<"$env<CWD>/use_var.txt","%s %s %s %s\n",$func_context_path,$func_context_name,$var_name,$use_line>
 }
 
 info: init_global(static $ $){
-	$fprintf<"$env<CWD>/init_global.txt","declaration: %s path: %s; type: static\n",$signature,$env<CC_IN_FILE>>
-	$fprintf_var_init_list<"$env<CWD>/init_global.txt">
+	$fprintf<"$env<CWD>/init_global.txt","declaration: %s path: %s; type: static\n%s",$signature,$env<CC_IN_FILE>,$var_init_list>
 }
 
 info: init_global($ $){
-	$fprintf<"$env<CWD>/init_global.txt","declaration: %s path: %s; type: global\n",$signature,$env<CC_IN_FILE>>
-	$fprintf_var_init_list<"$env<CWD>/init_global.txt">
+	$fprintf<"$env<CWD>/init_global.txt","declaration: %s path: %s; type: global\n%s",$signature,$env<CC_IN_FILE>,$var_init_list>
 }
 
 info: introduce($ $) {
