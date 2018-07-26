@@ -102,10 +102,11 @@ setuptools.setup(
             "clade-mv=clade.extensions.mv:parse",
             "clade-cmd-graph=clade.extensions.cmd_graph:parse",
             "clade-src-graph=clade.extensions.src_graph:parse",
+            "clade-info=clade.extensions.info:parse",
         ],
     },
     cmdclass={"build": CustomBuild, "develop": CustomDevelop, 'bdist_wheel': bdist_wheel},
-    install_requires=["ujson", "graphviz"],
+    install_requires=["ujson", "graphviz", "jinja2", "ply"],
     classifiers=(
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: Apache Software License",
