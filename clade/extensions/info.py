@@ -105,9 +105,7 @@ class Info(Extension):
             self.log("Skip parsing")
             return
 
-        for ext_name in self.extensions:
-            if not self.extensions[ext_name].is_parsed():
-                self.extensions[ext_name].parse(cmds)
+        self.parse_prerequisites(cmds)
 
         self.log("Start CIF")
 

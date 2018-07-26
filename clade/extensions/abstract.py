@@ -80,7 +80,8 @@ class Extension(metaclass=abc.ABCMeta):
     def parse_prerequisites(self, cmds):
         """Run parse() method on all extensions required by this object."""
         for ext_name in self.extensions:
-            self.extensions[ext_name].parse(cmds)
+            if not self.extensions[ext_name].is_parsed():
+                self.extensions[ext_name].parse(cmds)
 
     def is_parsed(self):
         """Returns True if build commands are already parsed."""
@@ -171,3 +172,10 @@ class Extension(metaclass=abc.ABCMeta):
         WARNING: debug messages can have a great impact on the performance.
         """
         logging.debug("{}: {}".format(self.name, message))
+
+    def warning(self, message):
+        """Print warning message.
+
+        self.conf["log_level"] must be set to WARNING, INFO or DEBUG in order to see the message.
+        """
+        logging.warning("{}: {}".format(self.name, message))

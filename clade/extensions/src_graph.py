@@ -43,20 +43,13 @@ class SrcGraph(Extension):
             self.log("Skip parsing")
             return
 
-        for ext_name in self.extensions:
-            if not self.extensions[ext_name].is_parsed():
-                self.extensions[ext_name].parse(cmds)
-
-        self.log("Start source graph constructing")
+        self.parse_prerequisites(cmds)
 
         self.__generate_src_graph(cmds)
 
-        if self.src_graph:
-            self.dump_data(self.src_graph, self.src_graph_file)
-
-        self.log("Constructing finished")
-
     def __generate_src_graph(self, cmds):
+        self.log("Start source graph constructing")
+
         self.src_graph = nested_dict()
 
         build_cwd = get_build_cwd(cmds)
@@ -93,6 +86,11 @@ class SrcGraph(Extension):
                     # compiled_in is a list of commands that compile 'rel_in' source file
                     self.src_graph[rel_in]["compiled_in"].append(cmd_id)
                     self.src_graph[rel_in]["used_by"].extend(used_by)
+
+        if self.src_graph:
+            self.dump_data(self.src_graph, self.src_graph_file)
+
+        self.log("Constructing finished")
 
     def __find_used_by(self, cmd_graph, cmd_id):
         used_by = []
