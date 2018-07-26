@@ -108,13 +108,10 @@ class Extension(metaclass=abc.ABCMeta):
     def dump_data(self, data, file_name):
         """Dump data to a json file in the object working directory."""
 
-        try:
-            os.makedirs(self.work_dir)
-        except FileExistsError:
-            pass
-
         if not os.path.isabs(file_name):
             file_name = os.path.join(self.work_dir, file_name)
+
+        os.makedirs(os.path.dirname(file_name), exist_ok=True)
 
         self.debug("Dump {}".format(file_name))
         with open(file_name, "w") as fh:
