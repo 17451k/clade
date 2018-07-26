@@ -194,6 +194,9 @@ class Info(Extension):
             "-mcpu",
             "-m16",
             "-G0",
+            '-mindirect-branch-register',
+            '-mindirect-branch=thunk-extern',
+            '-mindirect-branch-register',
             "-DPAGER_ENV=\"LESS=FRX LV=-c\""
         ]
 
