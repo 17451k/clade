@@ -31,7 +31,7 @@ class Extension(metaclass=abc.ABCMeta):
         conf: A dictionary with optional arguments
 
     Raises:
-        NotImplementedError: Required sublcass is not found
+        NotImplementedError: Required subclass is not found
         FileNotFoundError: Cant find file with parsed build command
     """
 

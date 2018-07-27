@@ -28,7 +28,7 @@ def load_cmds(cmds_json):
         RuntimeError: Specified json file does not exist or empty
     """
     if not os.path.exists(cmds_json):
-            raise RuntimeError("Specified {} json file does not exist".format(cmds_json))
+        raise RuntimeError("Specified {} json file does not exist".format(cmds_json))
 
     with open(cmds_json, "r") as f:
         cmds = ujson.load(f)
