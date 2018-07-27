@@ -26,6 +26,10 @@ from clade.cmds import load_cmds
 
 
 class Callgraph(Extension):
+    # todo: We need an API to get global variable initializations for a particular file or set of files
+    # todo: Propose an API on base of Klever to use callgraph data
+
+
     def __init__(self, work_dir, conf=None):
         if not conf:
             conf = dict()
@@ -70,8 +74,10 @@ class Callgraph(Extension):
         self.__process_init_global()
         # TODO: 26668.3s on Linux. Need to reimplement collection to check used functions and variables. The code is a mess.
         # And in LKVOG further work with global variables is extremly inefficient.
+        # todo: We can use this data to track which variables are used but it is really implemented in an inefficient way
         self.__process_use_var()
         self.__process_use_func()
+        # todo: Do we really need this revered graph - it would be much better to collect all data properly during the first data processing step
         self.__reverse_callgraph()
         self.__clean_error_log()
         self.__process_macros()
@@ -277,7 +283,7 @@ class Callgraph(Extension):
         regex = re.compile(r'(\S*) (\S*)({0})'.format(all_args))
         args_extract = r"arg\d+='([^']*)'"
         regex2 = re.compile(args_extract)
-
+        # todo: Do we need to change format of saving arguments there? Actually we need to track only arguments related to functions and variables or I am not right?
         with open(expand_file, "r") as expand_fh:
             for line in expand_fh:
                 m = regex.match(line)
@@ -303,7 +309,7 @@ class Callgraph(Extension):
         self.log("Processing typedefs")
 
         regex = re.compile(r"^declaration: typedef ([^\n]+); path: ([^\n]+)")
-
+        # todo: This data should be also distributed to specific files becouse we do not need it all at a time
         with open(typedefs_file, "r") as fp:
             for line in fp:
                 m = regex.match(line)
@@ -411,6 +417,7 @@ class Callgraph(Extension):
                                 'args': [],
                                 'cc_in_file': cc_in_file
                             }
+                        # todo: We need to change it to reduce using space
                         self.callgraph[func][possible_file]['called_in'][context_func][context_file]['args'].append(args)
 
                         if possible_file == "unknown":
@@ -465,6 +472,8 @@ class Callgraph(Extension):
 
         self.log("Processing global variables initializations")
 
+        # todo: First, construct call graph in a simple form and provide it there to save which functions are referred in values
+        # todo: We need to properly save global variables data to get them according to specific CC in files - there is no need in a large graph there
         self.variables = parse_initialization_functions(init_global)
 
     def __match_var_and_value(self, variables, viewed, var_name, file, origvar_name, original_file):
