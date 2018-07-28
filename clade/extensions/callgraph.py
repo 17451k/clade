@@ -29,7 +29,6 @@ class Callgraph(Extension):
     # todo: We need an API to get global variable initializations for a particular file or set of files
     # todo: Propose an API on base of Klever to use callgraph data
 
-
     def __init__(self, work_dir, conf=None):
         if not conf:
             conf = dict()
@@ -42,8 +41,8 @@ class Callgraph(Extension):
         self.callgraph_file = os.path.join(self.work_dir, "callgraph.json")
         self.callgraph_dir = os.path.join(self.work_dir, "callgraph")
 
+        self.variables_function_usage = None
         self.variables = nested_dict()
-        self.variables_file = os.path.join(self.work_dir, "variables.json")
 
         self.macros = nested_dict()
         self.macros_file = os.path.join(self.work_dir, "macros.json")
@@ -73,9 +72,6 @@ class Callgraph(Extension):
         self.__process_callp()
         self.__process_init_global()
         # TODO: 26668.3s on Linux. Need to reimplement collection to check used functions and variables. The code is a mess.
-        # And in LKVOG further work with global variables is extremly inefficient.
-        # todo: We can use this data to track which variables are used but it is really implemented in an inefficient way
-        self.__process_use_var()
         self.__process_use_func()
         # todo: Do we really need this revered graph - it would be much better to collect all data properly during the first data processing step
         self.__reverse_callgraph()
@@ -83,13 +79,13 @@ class Callgraph(Extension):
         self.__process_macros()
 
         self.dump_callgraph()
-        self.dump_data(self.variables, self.variables_file)
+        self.dump_variables()
         self.dump_data(self.macros, self.macros_file)
         self.dump_data(self.typedefs, self.typedefs_file)
 
-    def __callgraph_file_name(self, file):
+    def __src_related_file_name(self, file, postfix):
         return os.path.join(os.path.normpath(self.callgraph_dir + os.path.sep + os.path.dirname(file)),
-                            os.path.basename(file) + '.callgraph.json')
+                            os.path.basename(file) + postfix)
 
     def dump_callgraph(self):
         self.log("Dump callgraph")
@@ -113,7 +109,7 @@ class Callgraph(Extension):
 
         for file in index_files:
             tmp_dict = {func: {file: callgraph[func][file]} for func in index_files[file]}
-            new_name = self.__callgraph_file_name(file)
+            new_name = self.__src_related_file_name(file, '.callgraph.json')
             os.makedirs(os.path.dirname(new_name), exist_ok=True)
 
             self.dump_data(tmp_dict, new_name)
@@ -141,11 +137,34 @@ class Callgraph(Extension):
 
         self.dump_data(callgraph, file_name)
 
+    def load_variables(self, files):
+        merged_data = {"functions use": dict(), "global variables": dict()}
+        for file in files:
+            file_name = self.__src_related_file_name(file, '.vars.json')
+            if not os.path.isfile(file_name):
+                self.warning("There is no data for the requested file: {!r}".format(file_name))
+            else:
+                data = self.load_json(file_name)
+                for category in merged_data:
+                    merged_data[category][file] = data[category]
+        return merged_data
+
+    def dump_variables(self):
+        for file, variables in self.variables.items():
+            data = {
+                "functions use": list(self.variables_function_usage.get(file, list())),
+                "global variables": variables
+            }
+
+            file_name = self.__src_related_file_name(file, '.vars.json')
+            os.makedirs(os.path.dirname(file_name), exist_ok=True)
+            self.dump_data(data, file_name)
+
     def load_detailed_callgraph(self, files=None):
         final = dict()
 
         for file in files:
-            filename = self.__callgraph_file_name(file)
+            filename = self.__src_related_file_name(file, '.callgraph.json')
 
             if not os.path.isfile(filename):
                 self.warning("There is no data for the requested file: {!r}".format(filename))
@@ -162,9 +181,6 @@ class Callgraph(Extension):
 
     def load_callgraph(self):
         return self.load_json(self.callgraph_file)
-
-    def load_variables(self):
-        return self.load_json(self.variables_file)
 
     def load_macros(self):
         return self.load_json(self.macros_file)
@@ -471,10 +487,7 @@ class Callgraph(Extension):
             return
 
         self.log("Processing global variables initializations")
-
-        # todo: First, construct call graph in a simple form and provide it there to save which functions are referred in values
-        # todo: We need to properly save global variables data to get them according to specific CC in files - there is no need in a large graph there
-        self.variables = parse_initialization_functions(init_global)
+        self.variables_function_usage, self.variables = parse_initialization_functions(init_global, self.callgraph)
 
     def __match_var_and_value(self, variables, viewed, var_name, file, origvar_name, original_file):
         if var_name in viewed and file in viewed[var_name]:
@@ -508,34 +521,6 @@ class Callgraph(Extension):
                     line = m.group(4)
 
                     self.__match_use_and_def(context_file, context_func, func, line)
-
-    def __process_use_var(self):
-        use_var = self.extensions["Info"].use_var
-
-        if not os.path.isfile(use_var):
-            return
-
-        self.log("Processing global variables use")
-
-        regex = re.compile(r'(\S*) (\S*) (\S*) (\S*)')
-
-        with open(use_var, "r") as use_var_fh:
-            for file_line in use_var_fh:
-                m = regex.match(file_line)
-                if m:
-                    context_file = m.group(1)
-                    context_func = m.group(2)
-                    var_name = m.group(3)
-                    line = m.group(4)
-
-                    # TODO: This is unreachable code that eats a lot of CPU time checking the condition below
-                    if var_name in self.variables:
-                        for possible_file in self.variables[var_name]:
-                            if (self.__files_are_the_same(possible_file, context_file) or
-                                    self.__t_unit_is_common(possible_file, context_file) or
-                                    self._files_are_linked(possible_file, context_file)):
-                                for func in self.variables[var_name][possible_file]["values"]:
-                                    self.__match_use_and_def(context_file, context_func, func, line)
 
     def __match_use_and_def(self, context_file, context_func, func, line):
         if re.match(r'(__builtin)|(__compiletime)', func):

@@ -12,6 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import re
 import ply.lex as lex
 import ply.yacc as yacc
 
@@ -28,6 +29,12 @@ tokens = (
 )
 t_ESC = r'\n+'
 t_ignore = ''
+
+
+tmp_value_cache = set()
+callgraph_cache = None
+function_name_re = re.compile("\(?\s*&?\s*(\w+)\s*\)?$")
+function_usage = dict()
 
 
 def t_DECLARATION(t):
@@ -94,11 +101,12 @@ def p_variables(p):
               | variable ESC
               | variable
     """
-    if len(p) == 3 and isinstance(p[1], list):
-        p[1].append(p[2])
+    if len(p) == 3 and isinstance(p[1], dict):
+        p[1].setdefault(p[2]["path"], list())
+        p[1][p[2]["path"]].append(p[2])
         p[0] = p[1]
     else:
-        p[0] = [p[1]]
+        p[0] = {p[1]["path"]: [p[1]]}
 
 
 def p_variable(p):
@@ -110,6 +118,8 @@ def p_variable(p):
             (p[3][0][0] == 1 and isinstance(p[3][0][1], list))):
         p[1]['value'] = p[3][0][1] if not isinstance(p[3][0][1], list) else list(reversed(p[3][0][1]))
         p[0] = p[1]
+
+        commit_functions(p[1]["path"])
     else:
         raise NotImplementedError
 
@@ -166,6 +176,8 @@ def p_simple_value(p):
                  | VALUE
     """
     p[0] = [p[1]]
+    if isinstance(p[1][1], str):
+        add_function(p[1][1])
 
 
 def setup_parser():
@@ -179,6 +191,21 @@ def setup_parser():
 
     __lexer = lex.lex()
     __parser = yacc.yacc(debug=True, write_tables=True)
+
+
+def add_function(value):
+    m = function_name_re.fullmatch(value)
+    if m:
+        function_name = m.group(1)
+        tmp_value_cache.add(function_name)
+
+
+def commit_functions(path):
+    global tmp_value_cache
+    global function_usage
+    function_usage.setdefault(path, set())
+    function_usage[path].update({f for f in tmp_value_cache if f in callgraph_cache})
+    tmp_value_cache = set()
 
 
 def parse_declaration(string):
@@ -197,8 +224,10 @@ def parse_declaration(string):
     return __parser.parse(string, lexer=__lexer)
 
 
-def parse_initialization_functions(filename):
+def parse_initialization_functions(filename, callgraph):
+    global callgraph_cache
+    callgraph_cache = callgraph
     with open(filename, 'r') as fp:
         data = fp.read() + '\n'
 
-    return parse_declaration(data)
+    return function_usage, parse_declaration(data)
