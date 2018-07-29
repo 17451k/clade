@@ -73,8 +73,6 @@ class Callgraph(Extension):
         self.__process_init_global()
         # TODO: 26668.3s on Linux. Need to reimplement collection to check used functions and variables. The code is a mess.
         self.__process_use_func()
-        # todo: Do we really need this revered graph - it would be much better to collect all data properly during the first data processing step
-        self.__reverse_callgraph()
         self.__clean_error_log()
         self.__process_macros()
 
@@ -118,6 +116,7 @@ class Callgraph(Extension):
 
         self.debug("Print reduced callgraph to {!r}".format(file_name))
 
+        # Todo: maybe we will need to fix this also
         for func in callgraph:
             for file in callgraph[func]:
                 for tag in ('defined_on_line', 'signature'):
@@ -307,8 +306,7 @@ class Callgraph(Extension):
                     file, func, args = m.groups()
 
                     args = regex2.findall(args)
-                    if func in self.allowed_macros \
-                            or set(args) & all_funcs:
+                    if func in self.allowed_macros or set(args) & all_funcs:
                         if file not in self.macros[func]:
                             self.macros[func][file] = {
                                 'args': []
@@ -331,9 +329,9 @@ class Callgraph(Extension):
                 m = regex.match(line)
                 if m:
                     declaration, scope_file = m.groups()
-                if scope_file not in self.typedefs:
-                    self.typedefs[scope_file] = []
-                self.typedefs[scope_file].append(declaration)
+                    if scope_file not in self.typedefs:
+                        self.typedefs[scope_file] = []
+                    self.typedefs[scope_file].append(declaration)
 
     def __process_call(self):
         call = self.extensions["Info"].call
@@ -369,6 +367,9 @@ class Callgraph(Extension):
             self.callgraph[func]["unknown"]["called_in"][context_func][context_file][call_line] = 0
             self.callgraph[func]["unknown"]["called_in"][context_func][context_file].setdefault("args", [])
             self.callgraph[func]["unknown"]["called_in"][context_func][context_file]["args"].append(args)
+            if not self.callgraph[context_func][context_file]["calls"][func]["unknown"]:
+                self.callgraph[context_func][context_file]["calls"][func]["unknown"] = \
+                    self.callgraph[func]["unknown"]["called_in"][context_func][context_file]
 
             self.__error("Without definition: {}".format(func))
             return
@@ -390,6 +391,9 @@ class Callgraph(Extension):
             self.callgraph[func]["unknown"]["called_in"][context_func][context_file][call_line] = 0
             self.callgraph[func]["unknown"]["called_in"][context_func][context_file].setdefault("args", [])
             self.callgraph[func]["unknown"]["called_in"][context_func][context_file]["args"].append(args)
+            if not self.callgraph[context_func][context_file]["calls"][func]["unknown"]:
+                self.callgraph[context_func][context_file]["calls"][func]["unknown"] = \
+                    self.callgraph[func]["unknown"]["called_in"][context_func][context_file]
 
             # It will be a clade's fault until it supports aliases
             if not re.match(r'__mem', func):
@@ -433,9 +437,14 @@ class Callgraph(Extension):
                                 'args': [],
                                 'cc_in_file': cc_in_file
                             }
+
+                        # Set the same object if it is not there already
+                        if not self.callgraph[context_func][context_file]["calls"][func][possible_file]:
+                            self.callgraph[context_func][context_file]["calls"][func][possible_file] = \
+                                self.callgraph[func][possible_file]["called_in"][context_func][context_file]
+
                         # todo: We need to change it to reduce using space
                         self.callgraph[func][possible_file]['called_in'][context_func][context_file]['args'].append(args)
-
                         if possible_file == "unknown":
                             self.callgraph[func][possible_file]["defined_on_line"] = "unknown"
                             self.callgraph[func][possible_file]["type"] = call_type
@@ -562,28 +571,13 @@ class Callgraph(Extension):
                             self.callgraph[func][possible_file]["used_in_file"][context_file][line] = x
                         else:
                             self.callgraph[func][possible_file]["used_in_func"][context_func][context_file][line] = x
-
+                        if not self.callgraph[context_func][context_file]["uses"][func][possible_file]:
+                            # This should connect objects to fulfill them automatically
+                            self.callgraph[context_func][context_file]["uses"][func][possible_file] = \
+                                self.callgraph[func][possible_file]["used_in_func"][context_func][context_file]
                         if possible_file == "unknown":
                             self.__error("Can't match definition for use: {} {}".format(func, context_file))
                     break
-
-    def __reverse_callgraph(self):
-        self.log("Creating reversed callgraph")
-
-        for func in self.callgraph:
-            for file in self.callgraph[func]:
-                if "called_in" in self.callgraph[func][file]:
-                    for context_func in self.callgraph[func][file]["called_in"]:
-                        for context_file in self.callgraph[func][file]["called_in"][context_func]:
-                            if context_func not in self.callgraph:
-                                self.debug("There is no context func {0} for 'called_in".format(context_func))
-                            self.callgraph[context_func][context_file]["calls"][func][file] = self.callgraph[func][file]["called_in"][context_func][context_file]
-                if "used_in_func" in self.callgraph[func][file]:
-                    for context_func in self.callgraph[func][file]["used_in_func"]:
-                        for context_file in self.callgraph[func][file]["used_in_func"][context_func]:
-                            if context_func not in self.callgraph:
-                                self.debug("There is no context func {0} for 'used_in_func'".format(context_func))
-                            self.callgraph[context_func][context_file]["uses"][func][file] = self.callgraph[func][file]["used_in_func"][context_func][context_file]
 
     def __error(self, str):
         """
