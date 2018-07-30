@@ -23,6 +23,8 @@ import tempfile
 
 
 class Interceptor():
+    DELIMITER = '||'
+
     """Object for intercepting and parsing build commands.
 
     Attributes:
@@ -48,7 +50,6 @@ class Interceptor():
             self.libinterceptor = self.__find_libinterceptor()
 
         self.env = self.__setup_env()
-        self.delimeter = "||"
 
     def __find_libinterceptor(self):
         if sys.platform == "linux":
@@ -134,7 +135,7 @@ class Interceptor():
             return
 
         with open(self.output, "a") as f:
-            f.write(self.delimeter.join([os.getcwd(), which] + self.command) + "\n")
+            f.write(self.DELIMITER.join([os.getcwd(), which] + self.command) + "\n")
 
     def execute(self):
         """Execute intercepting and parsing of build commands.

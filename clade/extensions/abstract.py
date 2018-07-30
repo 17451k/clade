@@ -16,11 +16,14 @@
 import abc
 import glob
 import logging
+import multiprocessing
 import os
 import sys
 import tempfile
 import ujson
 
+from clade.intercept import Interceptor
+from clade.cmds import filter_cmd_by_which_list
 
 class Extension(metaclass=abc.ABCMeta):
     """Parent interface class for parsing intercepted build commands.
@@ -77,11 +80,59 @@ class Extension(metaclass=abc.ABCMeta):
             ext_class = Extension.find_subclass(ext_name)
             self.extensions[ext_name] = ext_class(work_dir, self.conf)
 
-    def parse_prerequisites(self, cmds):
+    def parse_prerequisites(self, cmds_fp):
         """Run parse() method on all extensions required by this object."""
-        for ext_name in self.extensions:
-            if not self.extensions[ext_name].is_parsed():
-                self.extensions[ext_name].parse(cmds)
+        extensions_to_parse = []
+        for extension in self.extensions.values():
+            if not extension.is_parsed():
+                extensions_to_parse.append(extension)
+
+        # Organize commands queue and pool of workers (different processes) to handle commands in parallel.
+        cmds_queue = multiprocessing.Queue()
+        cmd_workers = []
+
+        class CmdWorker(multiprocessing.Process):
+            def __init__(self, cmds_queue, extensions_to_parse):
+                super().__init__()
+                self.cmds_queue = cmds_queue
+                self.extensions_to_parse = extensions_to_parse
+
+            def run(self):
+                for cmd in iter(self.cmds_queue.get, None):
+                    for extension_to_parse in self.extensions_to_parse:
+                        if extension_to_parse.parse(cmd):
+                            break
+
+        # TODO: why the number of workers equals to the number of CPUs?
+        cmd_workers_num = os.cpu_count()
+
+        for i in range(cmd_workers_num):
+            cmd_worker = CmdWorker(cmds_queue, extensions_to_parse)
+            cmd_workers.append(cmd_worker)
+            cmd_worker.start()
+
+        for cmd_id, line in enumerate(cmds_fp):
+            cmd = dict()
+            cmd["id"] = cmd_id
+            cmd["cwd"], cmd["which"], *cmd["command"] = line.strip().split(Interceptor.DELIMITER)
+            cmd["which"] = os.path.normpath(cmd["which"])
+
+            cmds_queue.put(cmd)
+
+        # All required commands were parsed above.
+        cmds_fp.close()
+
+        # Terminate all workers.
+        for i in range(cmd_workers_num):
+            cmds_queue.put(None)
+
+        # Wait for all workers do finish their operation
+        for i in range(cmd_workers_num):
+            cmd_workers[i].join()
+
+        # Merge all parsed commands after all.
+        for extension_to_parse in extensions_to_parse:
+            extension_to_parse.merge_all_cmds()
 
     def is_parsed(self):
         """Returns True if build commands are already parsed."""

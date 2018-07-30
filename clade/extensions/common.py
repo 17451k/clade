@@ -22,7 +22,7 @@ import shutil
 
 from clade.extensions.abstract import Extension
 from clade.extensions.utils import normalize_path
-from clade.cmds import filter_cmds_by_which_list
+from clade.cmds import filter_cmd_by_which_list
 
 opts_info = {
     "CC": {
@@ -69,25 +69,15 @@ class Common(Extension):
         RuntimeError: Command can't be parsed as its type is not supported.
     """
 
-    def parse(self, cmds, which_list, f):
+    def parse(self, cmd, which_list, f):
         """Multiprocess parsing of build commands filtered by 'which' field."""
-        if self.is_parsed():
-            self.log("Skip parsing")
-            return
-
-        self.log("Start parsing")
-
-        filtered_cmds = filter_cmds_by_which_list(cmds, which_list)
-
-        with multiprocessing.Pool(os.cpu_count()) as p:
-            p.map(f, zip([self] * len(filtered_cmds), filtered_cmds))
-
-        if os.path.exists(self.temp_dir):
-            shutil.rmtree(self.temp_dir)
-
-        self.merge_all_cmds()
-
-        self.log("Parsing finished")
+        if filter_cmd_by_which_list(cmd, which_list):
+            self.log("Start parsing of command {}".format(cmd["id"]))
+            f(cmd)
+            self.log("Finish parsing of command {}".format(cmd["id"]))
+            return True
+        else:
+            return False
 
     def parse_cmd(self, cmd, cmd_type):
         """Parse single bulid command."""
@@ -170,7 +160,7 @@ class Common(Extension):
             merged_cmds.append(parsed_cmd)
 
         if not merged_cmds:
-            raise RuntimeError("No parsed commands found")
+            raise RuntimeError("No parsed commands found in {}".format(self.work_dir))
 
         self.dump_data(merged_cmds, "all.json")
 
@@ -187,7 +177,7 @@ def parse_args(args):
 
     parser.add_argument("-w", "--work_dir", help="a path to the DIR where processed commands will be saved", metavar='DIR', default="clade")
     parser.add_argument("-l", "--log_level", help="set logging level (ERROR, INFO, or DEBUG)", default="ERROR")
-    parser.add_argument(dest="cmds_json", help="a path to the file with intercepted commands")
+    parser.add_argument(dest="cmds_file", help="a path to the file with intercepted commands")
 
     args = parser.parse_args(args)
 
