@@ -32,9 +32,9 @@ t_ignore = ''
 
 
 tmp_value_cache = set()
-callgraph_cache = None
+functions = None
+callgraph_update_method = None
 function_name_re = re.compile("\(?\s*&?\s*(\w+)\s*\)?$")
-function_usage = dict()
 
 
 def t_DECLARATION(t):
@@ -201,10 +201,10 @@ def add_function(value):
 
 
 def commit_functions(path):
+    global functions
     global tmp_value_cache
-    global function_usage
-    function_usage.setdefault(path, set())
-    function_usage[path].update({f for f in tmp_value_cache if f in callgraph_cache})
+    global callgraph_update_method
+    callgraph_update_method({f for f in tmp_value_cache if f in functions}, path)
     tmp_value_cache = set()
 
 
@@ -224,10 +224,12 @@ def parse_declaration(string):
     return __parser.parse(string, lexer=__lexer)
 
 
-def parse_initialization_functions(filename, callgraph):
-    global callgraph_cache
-    callgraph_cache = callgraph
+def parse_initialization_functions(filename, callgraph_functions, commit_method):
+    global functions
+    global callgraph_update_method
+    functions = callgraph_functions
+    callgraph_update_method = commit_method
     with open(filename, 'r') as fp:
         data = fp.read() + '\n'
 
-    return function_usage, parse_declaration(data)
+    return parse_declaration(data)
