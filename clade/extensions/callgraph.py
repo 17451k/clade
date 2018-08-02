@@ -18,6 +18,7 @@ import re
 import shutil
 import sys
 import time
+import pickle
 
 from clade.extensions.abstract import Extension
 from clade.extensions.common import parse_args
@@ -47,7 +48,7 @@ class Callgraph(Extension):
 
         self.err_log = os.path.join(self.work_dir, "err.log")
         self.callgraph_dir = os.path.join(self.work_dir, "callgraph")
-        self.callgraph_file = os.path.join(self.work_dir, "callgraph.json")
+        self.callgraph_file = os.path.join(self.work_dir, "callgraph.pickle")
 
     def parse(self, cmds):
         def evaluate(stage_method, name):
@@ -78,6 +79,15 @@ class Callgraph(Extension):
         for method, stage in stages:
             evaluate(method, stage)
 
+    def dump_data(self, data, file_name):
+        with open(file_name, 'wb') as fp:
+            pickle.dump(data, fp)
+
+    def load_data(self, file_name):
+        with open(file_name, "rb") as fp:
+            data = pickle.load(fp)
+        return data
+
     def dump_callgraph(self):
         self.log("Dump callgraph")
 
@@ -102,7 +112,7 @@ class Callgraph(Extension):
         # Save full data with arguments
         for file in index_files:
             tmp_dict = {func: {file: callgraph[func][file]} for func in index_files[file]}
-            new_name = self.__src_related_file_name(file, '.callgraph.json')
+            new_name = self.__src_related_file_name(file, '.callgraph.pickle')
             os.makedirs(os.path.dirname(new_name), exist_ok=True)
             self.dump_data(tmp_dict, new_name)
         file_name = self.callgraph_file
@@ -129,17 +139,17 @@ class Callgraph(Extension):
         self.dump_data(callgraph, file_name)
 
     def load_callgraph(self):
-        return self.load_json(self.callgraph_file)
+        return self.load_data(self.callgraph_file)
 
     def load_detailed_callgraph(self, files):
         final = dict()
 
         for file in files:
-            filename = self.__src_related_file_name(file, '.callgraph.json')
+            filename = self.__src_related_file_name(file, '.callgraph.pickle')
             if not os.path.isfile(filename):
                 self.warning("There is no data for the requested file: {!r}".format(filename))
             else:
-                data = self.load_json(filename)
+                data = self.load_data(filename)
                 for func, files_data in data.items():
                     if func not in final:
                         final[func] = files_data
@@ -148,22 +158,22 @@ class Callgraph(Extension):
         return final
 
     def load_variables(self, files):
-        return self.__load_collection('.vars.json', files)
+        return self.__load_collection('.vars.pickle', files)
 
     def dump_variables(self):
-        self.__dump_collection(self.variables, '.vars.json')
+        self.__dump_collection(self.variables, '.vars.pickle')
 
     def load_macros(self, files):
-        return self.__load_collection('.macros.json', files)
+        return self.__load_collection('.macros.pickle', files)
 
     def dump_macros(self):
-        self.__dump_collection(self.macros, '.macros.json')
+        self.__dump_collection(self.macros, '.macros.pickle')
 
     def load_typedefs(self, files):
-        return self.__load_collection('.typedefs.json', files)
+        return self.__load_collection('.typedefs.pickle', files)
 
     def dump_typedefs(self):
-        self.__dump_collection(self.typedefs, '.typedefs.json')
+        self.__dump_collection(self.typedefs, '.typedefs.pickle')
 
     def __process_execution(self):
         # TODO: implement proper getter methods
@@ -512,10 +522,14 @@ class Callgraph(Extension):
                             self.__error("Can't match definition for use: {} {}".format(func, context_file))
 
     def __process_callv(self, functions, context_file):
+        pass
         # This helps performance
         callgraph = self.callgraph
-        is_common = self.__t_unit_is_common
-        are_linked = self.__files_are_linked
+        options = (
+            lambda fs: tuple(f for f in fs if f == context_file),
+            lambda fs: tuple(f for f in fs if self.__t_unit_is_common(f, context_file)),
+            lambda fs: tuple(f for f in fs if self.__files_are_linked(f, context_file)),
+        )
         for func in functions:
             description = callgraph[func]
             # For each function call there can be many definitions with the same name, defined in different files.
@@ -524,22 +538,18 @@ class Callgraph(Extension):
             if len(possible_files) == 0:
                 self.__error("No possible definitions for use: {}".format(func))
                 continue
-            for matched_files in (
-                    tuple(f for f in possible_files if f == context_file),
-                    tuple(f for f in possible_files if is_common(f, context_file)),
-                    tuple(f for f in possible_files if are_linked(f, context_file)),
-                    ('unknown',)):
-                files = matched_files
-                break
+            for category in options:
+                files = category(possible_files)
+                if len(files) > 0:
+                    break
             else:
-                raise RuntimeError("We do not expect any other file class")
+                self.__error("Can't match definition for use: {} {}".format(func, context_file))
+                files = ('unknown',)
+                description['unknown'] = self.__cg_initial_value()
             if len(files) > 1:
                     self.__error("Multiple matches for use in vars: {} in {}".format(func, context_file))
 
             for possible_file in files:
-                if possible_file == "unknown":
-                    self.__error("Can't match definition for use: {} {}".format(func, context_file))
-                    description['unknown'] = self.__cg_initial_value()
                 if context_file not in description[possible_file]["used_in_vars"]:
                     description[possible_file]["used_in_vars"].append(context_file)
 
@@ -590,7 +600,7 @@ class Callgraph(Extension):
             if not os.path.isfile(file_name):
                 self.warning("There is no data for the requested file: {!r}".format(file_name))
             else:
-                data = self.load_json(file_name)
+                data = self.load_data(file_name)
                 merged_data[file] = data
         return merged_data
 
