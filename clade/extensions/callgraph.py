@@ -110,9 +110,22 @@ class Callgraph(Extension):
         self.debug("Print reduced callgraph to {!r}".format(file_name))
         for func in callgraph:
             for file in callgraph[func]:
-                for tag in ('defined_on_line', 'signature'):
+                for tag in ('defined_on_line', 'signature', 'uses', 'used_in_file', 'used_in_func', 'used_in_vars',
+                            'calls_by_pointer'):
                     if tag in callgraph[func][file]:
                         del callgraph[func][file][tag]
+
+                if 'called_in' in callgraph[func][file]:
+                    for called in callgraph[func][file]['called_in']:
+                        for scope in callgraph[func][file]['called_in'][called]:
+                            callgraph[func][file]['called_in'][called][scope] = \
+                                {'cc_in_file': callgraph[func][file]['called_in'][called][scope]['cc_in_file']}
+
+                if 'calls' in callgraph[func][file]:
+                    for called in callgraph[func][file]['calls']:
+                        for scope in callgraph[func][file]['calls'][called]:
+                            callgraph[func][file]['calls'][called][scope] = {}
+
         self.dump_data(callgraph, file_name)
 
     def load_callgraph(self):
@@ -261,9 +274,9 @@ class Callgraph(Extension):
                 if m:
                     declaration, scope_file = m.groups()
                     if scope_file not in self.typedefs:
-                        typedefs[scope_file] = {declaration}
-                    else:
-                        typedefs[scope_file].add(declaration)
+                        typedefs[scope_file] = [declaration]
+                    elif declaration not in typedefs[scope_file]:
+                        typedefs[scope_file].append(declaration)
 
     def __process_call(self):
         call = self.extensions["Info"].call
@@ -365,7 +378,7 @@ class Callgraph(Extension):
                             calls[func][possible_file] = description[possible_file]["called_in"][context_func][context_file]
 
                         if possible_file == "unknown":
-                            description[possible_file]["defined_on_line"] = 'unknown'
+                            description[possible_file]["defined_on_line"] = "unknown"
                             description[possible_file]["type"] = call_type
                             self.__error("Can't match definition: {} {}".format(func, context_file))
 

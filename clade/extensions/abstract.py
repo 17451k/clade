@@ -19,7 +19,7 @@ import logging
 import os
 import sys
 import tempfile
-import ujson
+import json
 
 
 class Extension(metaclass=abc.ABCMeta):
@@ -103,7 +103,7 @@ class Extension(metaclass=abc.ABCMeta):
 
         self.debug("Load {}".format(file_name))
         with open(file_name, "r") as fh:
-            return ujson.load(fh)
+            return json.load(fh)
 
     def dump_data(self, data, file_name):
         """Dump data to a json file in the object working directory."""
@@ -115,7 +115,7 @@ class Extension(metaclass=abc.ABCMeta):
 
         self.debug("Dump {}".format(file_name))
         with open(file_name, "w") as fh:
-            ujson.dump(data, fh, sort_keys=True, indent=4, ensure_ascii=False, escape_forward_slashes=False)
+            json.dump(data, fh, sort_keys=True, indent=4, ensure_ascii=False)
 
     @staticmethod
     def __get_all_subclasses(cls):
