@@ -142,19 +142,19 @@ class Common(Extension):
         return parsed_cmd
 
     def load_cmd_by_id(self, id):
-        return self.load_json("{}.json".format(id))
+        return self.load_data("{}.json".format(id))
 
     def dump_cmd_by_id(self, id, cmd):
         self.dump_data(cmd, "{}.json".format(id))
 
     def load_opts_by_id(self, id):
-        return self.load_json("{}-opts.json".format(id))
+        return self.load_data("{}-opts.json".format(id))
 
     def dump_opts_by_id(self, id, opts):
         self.dump_data(opts, "{}-opts.json".format(id))
 
     def load_deps_by_id(self, id):
-        return self.load_json("{}-deps.json".format(id))
+        return self.load_data("{}-deps.json".format(id))
 
     def dump_deps_by_id(self, id, deps):
         self.dump_data(deps, "{}-deps.json".format(id))
@@ -166,7 +166,7 @@ class Common(Extension):
         merged_cmds = []
 
         for cmd_json in cmd_jsons:
-            parsed_cmd = self.load_json(cmd_json)
+            parsed_cmd = self.load_data(cmd_json)
             merged_cmds.append(parsed_cmd)
 
         if not merged_cmds:
@@ -177,7 +177,7 @@ class Common(Extension):
     def load_all_cmds(self):
         """Load all parsed commands."""
         try:
-            return self.load_json("all.json")
+            return self.load_data("all.json")
         except FileNotFoundError:
             return self.merge_all_cmds()
 

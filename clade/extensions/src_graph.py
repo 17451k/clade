@@ -36,7 +36,7 @@ class SrcGraph(Extension):
 
     def load_src_graph(self):
         """Load source graph."""
-        return self.load_json(self.src_graph_file)
+        return self.load_data(self.src_graph_file)
 
     def parse(self, cmds):
         if self.is_parsed():

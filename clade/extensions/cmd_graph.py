@@ -42,7 +42,7 @@ class CmdGraph(Extension):
 
     def load_cmd_graph(self):
         """Load command graph."""
-        return self.load_json(self.graph_file)
+        return self.load_data(self.graph_file)
 
     def parse(self, cmds):
         if self.is_parsed():
