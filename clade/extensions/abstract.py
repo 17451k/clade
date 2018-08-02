@@ -92,7 +92,7 @@ class Extension(metaclass=abc.ABCMeta):
         """Parse intercepted commands."""
         pass
 
-    def load_json(self, file_name):
+    def load_data(self, file_name):
         """Load json file by name."""
 
         if not os.path.isabs(file_name):
