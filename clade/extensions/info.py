@@ -113,8 +113,7 @@ class Info(Extension):
 
         cmds = self.extensions["CC"].load_all_cmds()
 
-        # TODO: Replace 1 by os.cpu_count()
-        with multiprocessing.Pool(1) as p:
+        with multiprocessing.Pool(os.cpu_count()) as p:
             p.map(unwrap, zip([self] * len(cmds), cmds))
 
         self.log("CIF finished")
@@ -230,24 +229,26 @@ class Info(Extension):
             if file == self.init_global:
                 continue
 
-            if (not os.path.isfile(file)):
+            if not os.path.isfile(file):
                 self.debug("Couldn't find '{}'".format(file))
                 continue
 
             seen = set()
+            try:
+                with open(file, "r", encoding='utf8') as fh:
+                    with open(file + ".temp", "w") as temp_fh:
+                        for line in fh:
+                            if line not in seen:
+                                seen.add(line)
+                                m = re.match(r'(\S*) (.*)', line)
 
-            with open(file, "r") as fh:
-                with open(file + ".temp", "w") as temp_fh:
-                    for line in fh:
-                        if line not in seen:
-                            seen.add(line)
-                            m = re.match(r'(\S*) (.*)', line)
-
-                            if m:
-                                path, rest = m.groups()
-                                if 'ext-modules' not in path:
-                                    path = normalize_path(path, src)
-                                temp_fh.write("{} {}\n".format(path, rest))
+                                if m:
+                                    path, rest = m.groups()
+                                    if 'ext-modules' not in path:
+                                        path = normalize_path(path, src)
+                                    temp_fh.write("{} {}\n".format(path, rest))
+            except UnicodeDecodeError as err:
+                self.warning("Cannot open file {0} or {0}.temp: {1}".format(file, err))
 
             os.remove(file)
             os.rename(file + ".temp", file)
