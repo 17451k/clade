@@ -114,8 +114,12 @@ class Extension(metaclass=abc.ABCMeta):
         os.makedirs(os.path.dirname(file_name), exist_ok=True)
 
         self.debug("Dump {}".format(file_name))
-        with open(file_name, "w") as fh:
-            json.dump(data, fh, sort_keys=True, indent=4, ensure_ascii=False)
+        try:
+            with open(file_name, "w") as fh:
+                json.dump(data, fh, sort_keys=True, indent=4, ensure_ascii=False)
+        except RecursionError:
+            # todo: This is a workaround but it is required rarely
+            self.warning("Do not print data to file due to recursion limit {}".format(file_name))
 
     @staticmethod
     def __get_all_subclasses(cls):

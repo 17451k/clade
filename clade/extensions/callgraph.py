@@ -18,7 +18,6 @@ import re
 import shutil
 import sys
 import time
-import pickle
 
 from clade.extensions.abstract import Extension
 from clade.extensions.common import parse_args
@@ -48,7 +47,7 @@ class Callgraph(Extension):
 
         self.err_log = os.path.join(self.work_dir, "err.log")
         self.callgraph_dir = os.path.join(self.work_dir, "callgraph")
-        self.callgraph_file = os.path.join(self.work_dir, "callgraph.pickle")
+        self.callgraph_file = os.path.join(self.work_dir, "callgraph.json")
 
     def parse(self, cmds):
         def evaluate(stage_method, name):
@@ -59,34 +58,25 @@ class Callgraph(Extension):
 
         self.parse_prerequisites(cmds)
         self.src_graph = self.extensions["SrcGraph"].load_src_graph()
-
         stages = [
             (self.__process_execution, "processing functions definitions"),
             (self.__process_declarations, "processing functions declarations"),
             (self.__process_exported, "processing export funcitons"),
-            (self.__process_typedefs, "processing type definitions"),
             (self.__process_call, "processing explicit function calls"),
             (self.__process_callp, "processing function pointer calls"),
             (self.__process_use_func, "processing function pointers arithmetic"),
             (self.__process_init_global, "processing global variables initializations"),
+            (self.dump_variables, "dumping global variables initializations to disk"),
+            (self.dump_callgraph, "dumping callgraph to disk"),
             (self.__clean_error_log, "clean errors log"),
             (self.__process_macros, "processing macros"),
-            (self.dump_callgraph, "dumping callgraph to disk"),
-            (self.dump_variables, "dumping global variables initializations to disk"),
             (self.dump_macros, "dumping macros to disk"),
+            (self.__process_typedefs, "processing type definitions"),
             (self.dump_typedefs, "dumping type definitions to disk")
         ]
+
         for method, stage in stages:
             evaluate(method, stage)
-
-    def dump_data(self, data, file_name):
-        with open(file_name, 'wb') as fp:
-            pickle.dump(data, fp)
-
-    def load_data(self, file_name):
-        with open(file_name, "rb") as fp:
-            data = pickle.load(fp)
-        return data
 
     def dump_callgraph(self):
         self.log("Dump callgraph")
@@ -112,7 +102,7 @@ class Callgraph(Extension):
         # Save full data with arguments
         for file in index_files:
             tmp_dict = {func: {file: callgraph[func][file]} for func in index_files[file]}
-            new_name = self.__src_related_file_name(file, '.callgraph.pickle')
+            new_name = self.__src_related_file_name(file, '.callgraph.json')
             os.makedirs(os.path.dirname(new_name), exist_ok=True)
             self.dump_data(tmp_dict, new_name)
         file_name = self.callgraph_file
@@ -137,6 +127,7 @@ class Callgraph(Extension):
                             callgraph[func][file]['calls'][called][scope] = {}
 
         self.dump_data(callgraph, file_name)
+        del self.callgraph
 
     def load_callgraph(self):
         return self.load_data(self.callgraph_file)
@@ -145,7 +136,7 @@ class Callgraph(Extension):
         final = dict()
 
         for file in files:
-            filename = self.__src_related_file_name(file, '.callgraph.pickle')
+            filename = self.__src_related_file_name(file, '.callgraph.json')
             if not os.path.isfile(filename):
                 self.warning("There is no data for the requested file: {!r}".format(filename))
             else:
@@ -158,22 +149,22 @@ class Callgraph(Extension):
         return final
 
     def load_variables(self, files):
-        return self.__load_collection('.vars.pickle', files)
+        return self.__load_collection('.vars.json', files)
 
     def dump_variables(self):
-        self.__dump_collection(self.variables, '.vars.pickle')
+        self.__dump_collection(self.variables, '.vars.json')
 
     def load_macros(self, files):
-        return self.__load_collection('.macros.pickle', files)
+        return self.__load_collection('.macros.json', files)
 
     def dump_macros(self):
-        self.__dump_collection(self.macros, '.macros.pickle')
+        self.__dump_collection(self.macros, '.macros.json')
 
     def load_typedefs(self, files):
-        return self.__load_collection('.typedefs.pickle', files)
+        return self.__load_collection('.typedefs.json', files)
 
     def dump_typedefs(self):
-        self.__dump_collection(self.typedefs, '.typedefs.pickle')
+        self.__dump_collection(self.typedefs, '.typedefs.json')
 
     def __process_execution(self):
         # TODO: implement proper getter methods
@@ -588,7 +579,8 @@ class Callgraph(Extension):
                         self.macros[file] = {func: {'args': [args]}}
 
     def __dump_collection(self, collection, suffix):
-        for file, data in collection.items():
+        for file in list(collection.keys()):
+            data = collection.pop(file)
             file_name = self.__src_related_file_name(file, suffix)
             os.makedirs(os.path.dirname(file_name), exist_ok=True)
             self.dump_data(data, file_name)

@@ -101,7 +101,7 @@ def p_variables(p):
               | variable ESC
               | variable
     """
-    if len(p) == 3 and isinstance(p[1], dict):
+    if len(p) == 3 and isinstance(p[2], dict):
         p[1].setdefault(p[2]["path"], list())
         p[1][p[2]["path"]].append(p[2])
         p[0] = p[1]
