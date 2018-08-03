@@ -185,7 +185,7 @@ class Callgraph(Extension):
         self.log("Processing function definitions")
         regex = re.compile(r"(\S*) (\S*) signature='([^']*)' (\S*) (\S*)")
 
-        initial_data = self.__cg_initial_value()
+        initial_data = self.__cg_initial_value
         with open(execution, "r") as exe_fh:
             for line in exe_fh:
                 m = regex.match(line)
@@ -195,7 +195,7 @@ class Callgraph(Extension):
                     if func in self.callgraph and src_file in self.callgraph[func]:
                         self.__error("Function is defined more than once: '{}' '{}'".format(func, src_file))
                     else:
-                        val = dict(initial_data)
+                        val = initial_data()
                         val.update({"type": func_type, "defined_on_line": def_line, "signature": signature})
                         if func in self.callgraph:
                             self.callgraph[func][src_file] = val
@@ -212,7 +212,7 @@ class Callgraph(Extension):
         regex = re.compile(r"(\S*) (\S*) signature='([^']*)' (\S*) (\S*)")
 
         # This helps improve performance
-        init_value = self.__cg_initial_value()
+        init_value = self.__cg_initial_value
         src_graph = self.src_graph
         callgraph = self.callgraph
         is_common = self.__t_unit_is_common
@@ -228,7 +228,7 @@ class Callgraph(Extension):
                         "used_in_func": dict(),
                     }
                     if decl_name not in callgraph:
-                        val = dict(init_value)
+                        val = init_value()
                         val["declared_in"][decl_file] = dec_val
                         callgraph[decl_name] = {"unknown": val}
                         continue
@@ -246,7 +246,7 @@ class Callgraph(Extension):
                             if "unknown" in callgraph[decl_name]:
                                 callgraph[decl_name]["unknown"]["declared_in"][decl_file] = dec_val
                             else:
-                                val = dict(init_value)
+                                val = init_value()
                                 val["declared_in"][decl_file] = dec_val
                                 callgraph[decl_name]["unknown"] = val
 
@@ -301,7 +301,7 @@ class Callgraph(Extension):
         regex1 = re.compile(args_extract)
 
         callgraph = self.callgraph
-        init_val = self.__cg_initial_value()
+        init_val = self.__cg_initial_value
         is_common = self.__t_unit_is_common
         are_linked = self.__files_are_linked
         with open(call, "r") as call_fh:
@@ -315,7 +315,7 @@ class Callgraph(Extension):
                     args = regex1.findall(args)
                     args = args if any(map(lambda i: i != '0', args)) else None
                     if func not in callgraph:
-                        val = dict(init_val)
+                        val = init_val()
                         description = callgraph.setdefault(func, {'unknown': val})
                     else:
                         description = callgraph[func]
@@ -372,7 +372,7 @@ class Callgraph(Extension):
                                 'args': [] if args is None else [args]
                             }
                             if possible_file not in description:
-                                val = dict(init_val)
+                                val = init_val()
                                 val['called_in'] = {context_func: {context_file: call_val}}
                                 description[possible_file] = val
                             elif context_func not in description[possible_file]['called_in']:
@@ -399,20 +399,20 @@ class Callgraph(Extension):
 
         self.log("Processing calls by pointers")
         callgraph = self.callgraph
-        init_val = self.__cg_initial_value()
+        init_val = self.__cg_initial_value
         with open(callp, "r") as callp_fh:
             for line in callp_fh:
                 m = re.match(r'(\S*) (\S*) (\S*) (\S*)', line)
                 if m:
                     context_file, context_func, func_ptr, call_line = m.groups()
                     if context_func not in callgraph:
-                        val = dict(init_val)
+                        val = init_val()
                         description = callgraph.setdefault(context_func, {'unknown': val})
                     else:
                         description = callgraph[context_func]
 
                     if context_file not in description:
-                        val = dict(init_val)
+                        val = init_val()
                         description[context_file] = val
                         val["calls_by_pointer"] = {func_ptr: {call_line: 1}}
                     elif func_ptr not in description[context_file]["calls_by_pointer"]:
@@ -433,7 +433,7 @@ class Callgraph(Extension):
         callgraph = self.callgraph
         is_common = self.__t_unit_is_common
         are_linked = self.__files_are_linked
-        init_val = self.__cg_initial_value()
+        init_val = self.__cg_initial_value
         with open(use_func, "r") as use_func_fh:
             for file_line in use_func_fh:
                 m = re.match(r'(\S*) (\S*) (\S*) (\S*)', file_line)
@@ -487,7 +487,7 @@ class Callgraph(Extension):
 
                     for possible_file in files:
                         if possible_file not in description:
-                            val = dict(init_val)
+                            val = init_val()
                             if context_func == "NULL":
                                 val["used_in_file"] = {context_file: {line: index}}
                             else:
