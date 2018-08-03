@@ -415,7 +415,7 @@ class Callgraph(Extension):
                         val = dict(init_val)
                         description[context_file] = val
                         val["calls_by_pointer"] = {func_ptr: {call_line: 1}}
-                    elif func_ptr not in "calls_by_pointer":
+                    elif func_ptr not in description[context_file]["calls_by_pointer"]:
                         description[context_file]["calls_by_pointer"][func_ptr] = {call_line: 1}
                     else:
                         description[context_file]["calls_by_pointer"][func_ptr][call_line] = 1
