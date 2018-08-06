@@ -19,6 +19,10 @@ from clade.extensions.common import Common, parse_args
 from clade.cmds import load_cmds
 
 
+def unwrap(arg, **kwarg):
+    return Objcopy.parse_cmd(*arg, **kwarg)
+
+
 class Objcopy(Common):
     def __init__(self, work_dir, conf=None):
         if not conf:
@@ -32,7 +36,7 @@ class Objcopy(Common):
         super().__init__(work_dir, conf)
 
     def parse(self, cmds):
-        super().parse(cmds, self.which_list, self.parse_cmd)
+        super().parse(cmds, self.which_list, unwrap)
 
     def parse_cmd(self, cmd):
         parsed_cmd = super().parse_cmd(cmd, self.name)

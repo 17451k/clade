@@ -15,32 +15,43 @@
 
 import os
 import sys
+import ujson
 
 
-def load_cmds(cmds_file):
-    """Open file with intercepted commands.
+def load_cmds(cmds_json):
+    """Load json file with intercepted commands into memory.
+
+    In case of really large jsons loading may take some time
+    and consume several gigabytes of RAM.
 
     Raises:
-        RuntimeError: Specified file does not exist or empty
+        RuntimeError: Specified json file does not exist or empty
     """
-    if not os.path.exists(cmds_file):
-        raise RuntimeError("Specified {} file does not exist".format(cmds_file))
+    if not os.path.exists(cmds_json):
+        raise RuntimeError("Specified {} json file does not exist".format(cmds_json))
 
-    if not os.path.getsize(cmds_file):
-        raise RuntimeError("Specified {} file is empty".format(cmds_file))
+    with open(cmds_json, "r") as f:
+        cmds = ujson.load(f)
 
-    cmds_fp = open(cmds_file)
+    if not cmds:
+        raise RuntimeError("Specified {} json file is empty".format(cmds_json))
 
-    return cmds_fp
+    return cmds
 
 
-def filter_cmd_by_which_list(cmd, which_list):
-    """Filter intercepted command by 'which' field."""
+def filter_cmds_by_which(cmds, which):
+    """Filter intercepted commands by 'which' field."""
+    return [x for x in cmds if x["which"] == which]
+
+
+def filter_cmds_by_which_list(cmds, which_list):
+    """Filter intercepted commands by 'which' field."""
+    filtered_cmds = []
+
     for which in which_list:
-        if cmd["which"] == which:
-            return True
+        filtered_cmds.extend(filter_cmds_by_which(cmds, which))
 
-    return False
+    return filtered_cmds
 
 
 def get_build_cwd(cmds):

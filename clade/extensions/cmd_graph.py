@@ -44,12 +44,12 @@ class CmdGraph(Extension):
         """Load command graph."""
         return self.load_json(self.graph_file)
 
-    def parse(self, cmds_fp):
+    def parse(self, cmds):
         if self.is_parsed():
             self.log("Skip parsing")
             return
 
-        self.parse_prerequisites(cmds_fp)
+        self.parse_prerequisites(cmds)
 
         self.log("Start command graph constructing")
         parsed_cmds = []
@@ -120,4 +120,4 @@ def parse(args=sys.argv[1:]):
 
     c = CmdGraph(args.work_dir, conf={"log_level": args.log_level})
     if not c.is_parsed():
-        c.parse(load_cmds(args.cmds_file))
+        c.parse(load_cmds(args.cmds_json))

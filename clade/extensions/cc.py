@@ -22,6 +22,10 @@ from clade.extensions.common import Common, parse_args
 from clade.cmds import load_cmds
 
 
+def unwrap(arg, **kwarg):
+    return CC.parse_cmd(*arg, **kwarg)
+
+
 class CC(Common):
     """Class for parsing CC build commands."""
     def __init__(self, work_dir, conf=None):
@@ -43,8 +47,8 @@ class CC(Common):
 
         super().__init__(work_dir, conf)
 
-    def parse(self, cmd):
-        super().parse(cmd, self.which_list, self.parse_cmd)
+    def parse(self, cmds):
+        super().parse(cmds, self.which_list, unwrap)
 
     def parse_cmd(self, cmd):
         cmd_id = cmd["id"]
