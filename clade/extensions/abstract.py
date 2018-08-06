@@ -77,18 +77,18 @@ class Extension(metaclass=abc.ABCMeta):
             ext_class = Extension.find_subclass(ext_name)
             self.extensions[ext_name] = ext_class(work_dir, self.conf)
 
-    def parse_prerequisites(self, cmds):
+    def parse_prerequisites(self, cmds_file):
         """Run parse() method on all extensions required by this object."""
         for ext_name in self.extensions:
             if not self.extensions[ext_name].is_parsed():
-                self.extensions[ext_name].parse(cmds)
+                self.extensions[ext_name].parse(cmds_file)
 
     def is_parsed(self):
         """Returns True if build commands are already parsed."""
         return os.path.exists(self.work_dir)
 
     @abc.abstractmethod
-    def parse(self, cmds):
+    def parse(self, cmds_file):
         """Parse intercepted commands."""
         pass
 

@@ -21,6 +21,8 @@ import subprocess
 import sys
 import tempfile
 
+DELIMITER = "||"
+
 
 class Interceptor():
     """Object for intercepting and parsing build commands.
@@ -48,7 +50,6 @@ class Interceptor():
             self.libinterceptor = self.__find_libinterceptor()
 
         self.env = self.__setup_env()
-        self.delimeter = "||"
 
     def __find_libinterceptor(self):
         if sys.platform == "linux":
@@ -76,7 +77,7 @@ class Interceptor():
         return wrapper
 
     def __crete_wrappers(self):
-        clade_bin = os.path.join(tempfile.gettempdir(), "clade-bin")
+        clade_bin = tempfile.mkdtemp()
         logging.debug("Create temporary directory for wrappers: {}".format(clade_bin))
 
         if os.path.exists(clade_bin):
@@ -134,7 +135,7 @@ class Interceptor():
             return
 
         with open(self.output, "a") as f:
-            f.write(self.delimeter.join([os.getcwd(), which] + self.command) + "\n")
+            f.write(DELIMITER.join([os.getcwd(), which] + self.command) + "\n")
 
     def execute(self):
         """Execute intercepting and parsing of build commands.

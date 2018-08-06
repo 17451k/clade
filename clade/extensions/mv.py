@@ -18,11 +18,6 @@ import re
 import sys
 
 from clade.extensions.common import Common, parse_args
-from clade.cmds import load_cmds
-
-
-def unwrap(arg, **kwarg):
-    return MV.parse_cmd(*arg, **kwarg)
 
 
 class MV(Common):
@@ -37,8 +32,8 @@ class MV(Common):
 
         super().__init__(work_dir, conf)
 
-    def parse(self, cmds):
-        super().parse(cmds, self.which_list, unwrap)
+    def parse(self, cmds_file):
+        super().parse(cmds_file, self.which_list)
 
     def parse_cmd(self, cmd):
         parsed_cmd = {
@@ -68,5 +63,4 @@ def parse(args=sys.argv[1:]):
     args = parse_args(args)
 
     c = MV(args.work_dir, conf={"log_level": args.log_level})
-    if not c.is_parsed():
-        c.parse(load_cmds(args.cmds_json))
+    c.parse(args.cmds_file)

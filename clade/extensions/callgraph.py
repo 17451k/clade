@@ -22,7 +22,6 @@ from clade.extensions.abstract import Extension
 from clade.extensions.common import parse_args
 from clade.extensions.initializations import parse_initialization_functions
 from clade.extensions.utils import nested_dict
-from clade.cmds import load_cmds
 
 
 class Callgraph(Extension):
@@ -54,8 +53,8 @@ class Callgraph(Extension):
 
         self.err_log = os.path.join(self.work_dir, "err.log")
 
-    def parse(self, cmds):
-        self.parse_prerequisites(cmds)
+    def parse(self, cmds_file):
+        self.parse_prerequisites(cmds_file)
 
         self.src_graph = self.extensions["SrcGraph"].load_src_graph()
 
@@ -629,5 +628,4 @@ def parse(args=sys.argv[1:]):
     args = parse_args(args)
 
     c = Callgraph(args.work_dir, conf={"log_level": args.log_level})
-    if not c.is_parsed():
-        c.parse(load_cmds(args.cmds_json))
+    c.parse(args.cmds_file)
