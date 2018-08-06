@@ -19,7 +19,6 @@ from graphviz import Digraph
 
 from clade.extensions.abstract import Extension
 from clade.extensions.common import parse_args
-from clade.extensions.utils import nested_dict
 from clade.cmds import load_cmds
 
 
@@ -33,8 +32,8 @@ class CmdGraph(Extension):
         else:
             self.requires = conf["requires"]
 
-        self.out_list = []
-        self.graph = nested_dict()
+        self.graph = dict()
+        self.out_dict = dict()
         self.graph_file = "cmd_graph.json"
         self.graph_dot = "cmd_graph.dot"
 
@@ -52,7 +51,7 @@ class CmdGraph(Extension):
         self.parse_prerequisites(cmds)
 
         self.log("Start command graph constructing")
-        parsed_cmds = []
+        parsed_cmds = list()
         for ext_name in self.extensions:
             parsed_cmds.extend([(x, ext_name) for x in self.extensions[ext_name].load_all_cmds()])
 
@@ -68,35 +67,31 @@ class CmdGraph(Extension):
         self.log("Constructing finished")
 
     def __add_to_graph(self, cmd, ext_name):
-        # TODO: The following code is SUPER slow. Fix it.
+        graph = self.graph
+        new_val = self.__new_cmd
+        out_dict = self.out_dict
+
         out_id = str(cmd["id"])
+        if out_id not in graph:
+            graph[out_id] = new_val()
+            graph[out_id]["type"] = ext_name
 
-        if cmd["id"] not in self.graph:
-            self.graph[out_id]["used_by"] = []
-            self.graph[out_id]["using"] = []
-            self.graph[out_id]["type"] = ext_name
+        for cmd_in in (i for i in cmd["in"] if i in out_dict):
+            in_id = out_dict[cmd_in]
+            graph[in_id]["used_by"].append(out_id)
+            graph[out_id]["using"].append(in_id)
 
-        for cmd_in in cmd["in"]:
-            for out, in_id in reversed(self.out_list):
-                if cmd_in == out:
-                    if in_id not in self.graph:
-                        self.graph[in_id]["used_by"] = []
-                    if out_id not in self.graph:
-                        self.graph[out_id]["using"] = []
-
-                    self.graph[in_id]["used_by"].append(out_id)
-                    self.graph[out_id]["using"].append(in_id)
-                    break
-
-        self.out_list.append((cmd["out"], out_id))
+        # It rewrites values to keep the latest command
+        out_dict[cmd["out"]] = out_id
 
     def __print_source_graph(self):
         dot = Digraph(graph_attr={'rankdir': 'LR'}, node_attr={'shape': 'rectangle'})
 
         added_nodes = dict()
 
-        for cmd_id in self.graph:
-            cmd_type = self.graph[cmd_id]["type"]
+        graph = self.graph
+        for cmd_id in graph:
+            cmd_type = graph[cmd_id]["type"]
             cmd = self.extensions[cmd_type].load_json_by_id(cmd_id)
 
             if not cmd["out"]:
@@ -113,6 +108,14 @@ class CmdGraph(Extension):
                 dot.edge(cmd_in, cmd["out"], label="{}({})".format(cmd_type, cmd_id))
 
         dot.render(self.graph_dot)
+
+    @staticmethod
+    def __new_cmd():
+        return {
+            "used_by": list(),
+            "using": list(),
+            "type": None
+        }
 
 
 def parse(args=sys.argv[1:]):
