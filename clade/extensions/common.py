@@ -22,7 +22,7 @@ import shutil
 
 from clade.extensions.abstract import Extension
 from clade.extensions.utils import normalize_path
-from clade.cmds import filter_cmds_by_which_list
+from clade.cmds import iter_cmds_by_which, open_cmds_file
 
 opts_info = {
     "CC": {
@@ -69,7 +69,7 @@ class Common(Extension):
         RuntimeError: Command can't be parsed as its type is not supported.
     """
 
-    def parse(self, cmds, which_list, f):
+    def parse(self, cmds_file, which_list):
         """Multiprocess parsing of build commands filtered by 'which' field."""
         if self.is_parsed():
             self.log("Skip parsing")
@@ -77,15 +77,41 @@ class Common(Extension):
 
         self.log("Start parsing")
 
-        filtered_cmds = filter_cmds_by_which_list(cmds, which_list)
+        class CmdWorker(multiprocessing.Process):
+            def __init__(self, cmds_queue, ext):
+                super().__init__()
+                self.cmds_queue = cmds_queue
+                self.ext = ext
 
-        with multiprocessing.Pool(os.cpu_count()) as p:
-            p.map(f, zip([self] * len(filtered_cmds), filtered_cmds))
+            def run(self):
+                for cmd in iter(self.cmds_queue.get, None):
+                    self.ext.parse_cmd(cmd)
+
+        cmds_queue = multiprocessing.Queue()
+        cmd_workers = []
+        cmd_workers_num = os.cpu_count()
+
+        for i in range(cmd_workers_num):
+            cmd_worker = CmdWorker(cmds_queue, self)
+            cmd_workers.append(cmd_worker)
+            cmd_worker.start()
+
+        with open_cmds_file(cmds_file) as cmds_fp:
+            for cmd in iter_cmds_by_which(cmds_fp, which_list):
+                cmds_queue.put(cmd)
+
+        # Terminate all workers.
+        for i in range(cmd_workers_num):
+            cmds_queue.put(None)
+
+        # Wait for all workers do finish their operation
+        for i in range(cmd_workers_num):
+            cmd_workers[i].join()
+
+        self.merge_all_cmds()
 
         if os.path.exists(self.temp_dir):
             shutil.rmtree(self.temp_dir)
-
-        self.merge_all_cmds()
 
         self.log("Parsing finished")
 
@@ -187,7 +213,7 @@ def parse_args(args):
 
     parser.add_argument("-w", "--work_dir", help="a path to the DIR where processed commands will be saved", metavar='DIR', default="clade")
     parser.add_argument("-l", "--log_level", help="set logging level (ERROR, INFO, or DEBUG)", default="ERROR")
-    parser.add_argument(dest="cmds_json", help="a path to the file with intercepted commands")
+    parser.add_argument(dest="cmds_file", help="a path to the file with intercepted commands")
 
     args = parser.parse_args(args)
 

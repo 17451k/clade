@@ -19,7 +19,6 @@ from graphviz import Digraph
 
 from clade.extensions.abstract import Extension
 from clade.extensions.common import parse_args
-from clade.cmds import load_cmds
 
 
 class CmdGraph(Extension):
@@ -43,12 +42,12 @@ class CmdGraph(Extension):
         """Load command graph."""
         return self.load_data(self.graph_file)
 
-    def parse(self, cmds):
+    def parse(self, cmds_file):
         if self.is_parsed():
             self.log("Skip parsing")
             return
 
-        self.parse_prerequisites(cmds)
+        self.parse_prerequisites(cmds_file)
 
         self.log("Start command graph constructing")
         parsed_cmds = list()
@@ -122,5 +121,4 @@ def parse(args=sys.argv[1:]):
     args = parse_args(args)
 
     c = CmdGraph(args.work_dir, conf={"log_level": args.log_level})
-    if not c.is_parsed():
-        c.parse(load_cmds(args.cmds_json))
+    c.parse(args.cmds_file)

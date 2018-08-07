@@ -15,63 +15,89 @@
 
 import os
 import sys
-import ujson
+
+from clade.intercept import DELIMITER
 
 
-def load_cmds(cmds_json):
-    """Load json file with intercepted commands into memory.
-
-    In case of really large jsons loading may take some time
-    and consume several gigabytes of RAM.
+def open_cmds_file(cmds_file):
+    """Open txt file with intercepted commands and return file object.
 
     Raises:
-        RuntimeError: Specified json file does not exist or empty
+        RuntimeError: Specified file does not exist or empty.
     """
-    if not os.path.exists(cmds_json):
-        raise RuntimeError("Specified {} json file does not exist".format(cmds_json))
+    if not os.path.exists(cmds_file):
+        raise RuntimeError("Specified {} file does not exist".format(cmds_file))
+    if not os.path.getsize(cmds_file):
+        raise RuntimeError("Specified {} file is empty".format(cmds_file))
 
-    with open(cmds_json, "r") as f:
-        cmds = ujson.load(f)
-
-    if not cmds:
-        raise RuntimeError("Specified {} json file is empty".format(cmds_json))
-
-    return cmds
+    return open(cmds_file)
 
 
-def filter_cmds_by_which(cmds, which):
-    """Filter intercepted commands by 'which' field."""
-    return [x for x in cmds if x["which"] == which]
+def iter_cmds_by_which(cmds_fp, which_list):
+    """Get an iterator over all intercepted commands filtered by 'which' field.
+
+    Args:
+        cmds_fp: A file object.
+        which_list: A list of strings to filter command by 'which' field.
+    """
+    for cmd in iter_cmds(cmds_fp):
+        for which in which_list:
+            if cmd["which"] == which:
+                yield cmd
 
 
-def filter_cmds_by_which_list(cmds, which_list):
-    """Filter intercepted commands by 'which' field."""
-    filtered_cmds = []
+def iter_cmds(cmds_fp):
+    """Get an iterator over all intercepted commands.
 
-    for which in which_list:
-        filtered_cmds.extend(filter_cmds_by_which(cmds, which))
+    Args:
+        cmds_fp: A file object.
+    """
+    for cmd_id, line in enumerate(cmds_fp):
+        cmd = dict()
+        cmd["id"] = cmd_id
+        cmd["cwd"], cmd["which"], *cmd["command"] = line.strip().split(DELIMITER)
+        cmd["which"] = os.path.normpath(cmd["which"])
 
-    return filtered_cmds
+        yield cmd
 
 
-def get_build_cwd(cmds):
+def get_first_cmd(cmds_file):
+    """Get first intercepted command."""
+    return next(iter_cmds(open_cmds_file(cmds_file)))
+
+
+def get_build_cwd(cmds_file):
     """Get the working directory in which build process occurred."""
-    return cmds[0]["cwd"]
+    first_cmd = get_first_cmd(cmds_file)
+    return first_cmd["cwd"]
 
 
-def get_last_id(cmds):
+def get_last_cmd(cmds_file):
+    """Get last intercepted command."""
+    iterable = iter_cmds(open_cmds_file(cmds_file))
+
+    last_cmd = next(iterable)
+    for last_cmd in iterable:
+        pass
+
+    return last_cmd
+
+
+def get_last_id(cmds_file):
     """Get last used id."""
-    return cmds[-1]["id"]
+    last_cmd = get_last_cmd(cmds_file)
+    return last_cmd["id"]
 
 
-def get_stats(cmds):
+def get_stats(cmds_file):
     """Get statistics of intercepted commands number."""
     stats = dict()
-    for cmd in cmds:
-        if cmd["which"] in stats:
-            stats[cmd["which"]] += 1
-        else:
-            stats[cmd["which"]] = 1
+    with open_cmds_file(cmds_file) as cmds_fp:
+        for cmd in iter_cmds(cmds_fp):
+            if cmd["which"] in stats:
+                stats[cmd["which"]] += 1
+            else:
+                stats[cmd["which"]] = 1
 
     return stats
 
@@ -80,8 +106,7 @@ def print_cmds_stats(args=sys.argv[1:]):
     if not args:
         sys.exit("Path to the json file with intercepted commands is missing")
 
-    cmds = load_cmds(args[0])
-    stats = get_stats(cmds)
+    stats = get_stats(args[0])
 
     total_count = sum(stats.values())
     for key in sorted(stats, key=stats.get):

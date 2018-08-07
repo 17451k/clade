@@ -19,11 +19,6 @@ import subprocess
 import sys
 
 from clade.extensions.common import Common, parse_args
-from clade.cmds import load_cmds
-
-
-def unwrap(arg, **kwarg):
-    return CC.parse_cmd(*arg, **kwarg)
 
 
 class CC(Common):
@@ -47,8 +42,8 @@ class CC(Common):
 
         super().__init__(work_dir, conf)
 
-    def parse(self, cmds):
-        super().parse(cmds, self.which_list, unwrap)
+    def parse(self, cmds_file):
+        super().parse(cmds_file, self.which_list)
 
     def parse_cmd(self, cmd):
         cmd_id = cmd["id"]
@@ -116,5 +111,4 @@ def parse(args=sys.argv[1:]):
     args = parse_args(args)
 
     c = CC(args.work_dir, conf={"log_level": args.log_level})
-    if not c.is_parsed():
-        c.parse(load_cmds(args.cmds_json))
+    c.parse(args.cmds_file)

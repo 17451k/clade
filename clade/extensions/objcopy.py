@@ -16,11 +16,6 @@
 import sys
 
 from clade.extensions.common import Common, parse_args
-from clade.cmds import load_cmds
-
-
-def unwrap(arg, **kwarg):
-    return Objcopy.parse_cmd(*arg, **kwarg)
 
 
 class Objcopy(Common):
@@ -35,8 +30,8 @@ class Objcopy(Common):
 
         super().__init__(work_dir, conf)
 
-    def parse(self, cmds):
-        super().parse(cmds, self.which_list, unwrap)
+    def parse(self, cmds_file):
+        super().parse(cmds_file, self.which_list)
 
     def parse_cmd(self, cmd):
         parsed_cmd = super().parse_cmd(cmd, self.name)
@@ -57,5 +52,4 @@ def parse(args=sys.argv[1:]):
     args = parse_args(args)
 
     c = Objcopy(args.work_dir, conf={"log_level": args.log_level})
-    if not c.is_parsed():
-        c.parse(load_cmds(args.cmds_json))
+    c.parse(args.cmds_file)

@@ -27,11 +27,10 @@ from setuptools.command.develop import develop
 
 def build_libinterceptor():
     try:
-        build_dir = os.path.join(tempfile.gettempdir(), "clade-build")
+        build_dir = tempfile.mkdtemp()
         libint_src = os.path.abspath(os.path.join(os.path.dirname(__file__), "clade", "libinterceptor"))
 
-        if not os.path.exists(build_dir):
-            os.makedirs(build_dir)
+        os.makedirs(build_dir, exist_ok=True)
 
         try:
             ret = subprocess.call(["cmake", libint_src], cwd=build_dir)

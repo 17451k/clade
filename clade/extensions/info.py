@@ -23,7 +23,7 @@ import sys
 from clade.extensions.abstract import Extension
 from clade.extensions.common import parse_args
 from clade.extensions.utils import normalize_path
-from clade.cmds import load_cmds, get_build_cwd
+from clade.cmds import get_build_cwd
 
 
 def unwrap(arg, **kwarg):
@@ -260,5 +260,4 @@ def parse(args=sys.argv[1:]):
     args = parse_args(args)
 
     c = Info(args.work_dir, conf={"log_level": args.log_level})
-    if not c.is_parsed():
-        c.parse(load_cmds(args.cmds_json))
+    c.parse(args.cmds_file)

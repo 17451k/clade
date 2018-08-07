@@ -22,7 +22,6 @@ import time
 from clade.extensions.abstract import Extension
 from clade.extensions.common import parse_args
 from clade.extensions.initializations import parse_initialization_functions
-from clade.cmds import load_cmds
 
 
 is_buildin = re.compile(r'(__builtin)|(__compiletime)')
@@ -49,14 +48,14 @@ class Callgraph(Extension):
         self.callgraph_dir = os.path.join(self.work_dir, "callgraph")
         self.callgraph_file = os.path.join(self.work_dir, "callgraph.json")
 
-    def parse(self, cmds):
+    def parse(self, cmds_file):
         def evaluate(stage_method, name):
             begin_time = time.time()
             stage_method()
             work_time = round(time.time() - begin_time, 2)
             self.log("Stage of {} finished and lasted {}s".format(name, work_time))
 
-        self.parse_prerequisites(cmds)
+        self.parse_prerequisites(cmds_file)
         self.src_graph = self.extensions["SrcGraph"].load_src_graph()
         stages = [
             (self.__process_execution, "processing functions definitions"),
@@ -657,5 +656,4 @@ def parse(args=sys.argv[1:]):
     args = parse_args(args)
 
     c = Callgraph(args.work_dir, conf={"log_level": args.log_level})
-    if not c.is_parsed():
-        c.parse(load_cmds(args.cmds_json))
+    c.parse(args.cmds_file)
