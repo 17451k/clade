@@ -21,15 +21,12 @@ import time
 
 from clade.extensions.abstract import Extension
 from clade.extensions.common import parse_args
-from clade.extensions.initializations import parse_initialization_functions
-
 
 is_buildin = re.compile(r'(__builtin)|(__compiletime)')
 is_bad = re.compile(r'__bad')
 
 
 class Callgraph(Extension):
-
     def __init__(self, work_dir, conf=None):
         if not conf:
             conf = dict()
@@ -39,9 +36,6 @@ class Callgraph(Extension):
         super().__init__(work_dir, conf)
 
         self.callgraph = dict()
-        self.variables = dict()
-        self.macros = dict()
-        self.typedefs = dict()
         self.src_graph = dict()
 
         self.err_log = os.path.join(self.work_dir, "err.log")
@@ -49,6 +43,10 @@ class Callgraph(Extension):
         self.callgraph_file = os.path.join(self.work_dir, "callgraph.json")
 
     def parse(self, cmds_file):
+        if self.is_parsed():
+            self.log("Skip parsing")
+            return
+
         def evaluate(stage_method, name):
             begin_time = time.time()
             stage_method()
@@ -64,14 +62,8 @@ class Callgraph(Extension):
             (self.__process_call, "processing explicit function calls"),
             (self.__process_callp, "processing function pointer calls"),
             (self.__process_use_func, "processing function pointers arithmetic"),
-            (self.__process_init_global, "processing global variables initializations"),
-            (self.dump_variables, "dumping global variables initializations to disk"),
             (self.dump_callgraph, "dumping callgraph to disk"),
             (self.__clean_error_log, "clean errors log"),
-            (self.__process_macros, "processing macros"),
-            (self.dump_macros, "dumping macros to disk"),
-            (self.__process_typedefs, "processing type definitions"),
-            (self.dump_typedefs, "dumping type definitions to disk")
         ]
 
         for method, stage in stages:
@@ -147,24 +139,6 @@ class Callgraph(Extension):
                         final[func].update(files_data)
         return final
 
-    def load_variables(self, files):
-        return self.__load_collection('.vars.json', files)
-
-    def dump_variables(self):
-        self.__dump_collection(self.variables, '.vars.json')
-
-    def load_macros(self, files):
-        return self.__load_collection('.macros.json', files)
-
-    def dump_macros(self):
-        self.__dump_collection(self.macros, '.macros.json')
-
-    def load_typedefs(self, files):
-        return self.__load_collection('.typedefs.json', files)
-
-    def dump_typedefs(self):
-        self.__dump_collection(self.typedefs, '.typedefs.json')
-
     def __process_execution(self):
         # TODO: implement proper getter methods
         execution = self.extensions["Info"].execution
@@ -174,8 +148,8 @@ class Callgraph(Extension):
 
         self.log("Processing function definitions")
         regex = re.compile(r"(\S*) (\S*) signature='([^']*)' (\S*) (\S*)")
+        get_init_val = self._get_initial_value
 
-        initial_data = self.__cg_initial_value
         with open(execution, "r") as exe_fh:
             for line in exe_fh:
                 m = regex.match(line)
@@ -185,7 +159,7 @@ class Callgraph(Extension):
                     if func in self.callgraph and src_file in self.callgraph[func]:
                         self.__error("Function is defined more than once: '{}' '{}'".format(func, src_file))
                     else:
-                        val = initial_data()
+                        val = get_init_val()
                         val.update({"type": func_type, "defined_on_line": def_line, "signature": signature})
                         if func in self.callgraph:
                             self.callgraph[func][src_file] = val
@@ -202,10 +176,10 @@ class Callgraph(Extension):
         regex = re.compile(r"(\S*) (\S*) signature='([^']*)' (\S*) (\S*)")
 
         # This helps improve performance
-        init_value = self.__cg_initial_value
+        get_init_val = self._get_initial_value
         src_graph = self.src_graph
         callgraph = self.callgraph
-        is_common = self.__t_unit_is_common
+        is_common = self._t_unit_is_common
         with open(decl, "r") as decl_fh:
             for line in decl_fh:
                 m = regex.match(line)
@@ -218,7 +192,7 @@ class Callgraph(Extension):
                         "used_in_func": dict(),
                     }
                     if decl_name not in callgraph:
-                        val = init_value()
+                        val = get_init_val()
                         val["declared_in"][decl_file] = dec_val
                         callgraph[decl_name] = {"unknown": val}
                         continue
@@ -236,7 +210,7 @@ class Callgraph(Extension):
                             if "unknown" in callgraph[decl_name]:
                                 callgraph[decl_name]["unknown"]["declared_in"][decl_file] = dec_val
                             else:
-                                val = init_value()
+                                val = get_init_val()
                                 val["declared_in"][decl_file] = dec_val
                                 callgraph[decl_name]["unknown"] = val
 
@@ -260,24 +234,6 @@ class Callgraph(Extension):
                         continue
                     self.callgraph[func][src_file]["type"] = "exported"
 
-    def __process_typedefs(self):
-        typedefs_file = self.extensions["Info"].typedefs
-        if not os.path.isfile(typedefs_file):
-            return
-
-        self.log("Processing typedefs")
-        regex = re.compile(r"^declaration: typedef ([^\n]+); path: ([^\n]+)")
-        typedefs = self.typedefs
-        with open(typedefs_file, "r") as fp:
-            for line in fp:
-                m = regex.match(line)
-                if m:
-                    declaration, scope_file = m.groups()
-                    if scope_file not in self.typedefs:
-                        typedefs[scope_file] = [declaration]
-                    elif declaration not in typedefs[scope_file]:
-                        typedefs[scope_file].append(declaration)
-
     def __process_call(self):
         call = self.extensions["Info"].call
 
@@ -291,9 +247,9 @@ class Callgraph(Extension):
         regex1 = re.compile(args_extract)
 
         callgraph = self.callgraph
-        init_val = self.__cg_initial_value
-        is_common = self.__t_unit_is_common
-        are_linked = self.__files_are_linked
+        get_init_val = self._get_initial_value
+        is_common = self._t_unit_is_common
+        are_linked = self._files_are_linked
         with open(call, "r") as call_fh:
             cached = dict()
             for line in call_fh:
@@ -305,7 +261,7 @@ class Callgraph(Extension):
                     args = regex1.findall(args)
                     args = args if any(map(lambda i: i != '0', args)) else None
                     if func not in callgraph:
-                        val = init_val()
+                        val = get_init_val()
                         description = callgraph.setdefault(func, {'unknown': val})
                     else:
                         description = callgraph[func]
@@ -362,7 +318,7 @@ class Callgraph(Extension):
                                 'args': [] if args is None else [args]
                             }
                             if possible_file not in description:
-                                val = init_val()
+                                val = get_init_val()
                                 val['called_in'] = {context_func: {context_file: call_val}}
                                 description[possible_file] = val
                             elif context_func not in description[possible_file]['called_in']:
@@ -389,20 +345,20 @@ class Callgraph(Extension):
 
         self.log("Processing calls by pointers")
         callgraph = self.callgraph
-        init_val = self.__cg_initial_value
+        get_init_val = self._get_initial_value
         with open(callp, "r") as callp_fh:
             for line in callp_fh:
                 m = re.match(r'(\S*) (\S*) (\S*) (\S*)', line)
                 if m:
                     context_file, context_func, func_ptr, call_line = m.groups()
                     if context_func not in callgraph:
-                        val = init_val()
+                        val = get_init_val()
                         description = callgraph.setdefault(context_func, {'unknown': val})
                     else:
                         description = callgraph[context_func]
 
                     if context_file not in description:
-                        val = init_val()
+                        val = get_init_val()
                         description[context_file] = val
                         val["calls_by_pointer"] = {func_ptr: {call_line: 1}}
                     elif func_ptr not in description[context_file]["calls_by_pointer"]:
@@ -421,9 +377,9 @@ class Callgraph(Extension):
         cached = dict()
         # This helps performance
         callgraph = self.callgraph
-        is_common = self.__t_unit_is_common
-        are_linked = self.__files_are_linked
-        init_val = self.__cg_initial_value
+        is_common = self._t_unit_is_common
+        are_linked = self._files_are_linked
+        get_init_val = self._get_initial_value
         with open(use_func, "r") as use_func_fh:
             for file_line in use_func_fh:
                 m = re.match(r'(\S*) (\S*) (\S*) (\S*)', file_line)
@@ -477,7 +433,7 @@ class Callgraph(Extension):
 
                     for possible_file in files:
                         if possible_file not in description:
-                            val = init_val()
+                            val = get_init_val()
                             if context_func == "NULL":
                                 val["used_in_file"] = {context_file: {line: index}}
                             else:
@@ -511,80 +467,14 @@ class Callgraph(Extension):
                         if possible_file == "unknown":
                             self.__error("Can't match definition for use: {} {}".format(func, context_file))
 
-    def __process_callv(self, functions, context_file):
-        pass
-        # This helps performance
-        callgraph = self.callgraph
-        options = (
-            lambda fs: tuple(f for f in fs if f == context_file),
-            lambda fs: tuple(f for f in fs if self.__t_unit_is_common(f, context_file)),
-            lambda fs: tuple(f for f in fs if self.__files_are_linked(f, context_file)),
-        )
-        for func in functions:
-            description = callgraph[func]
-            # For each function call there can be many definitions with the same name, defined in different files.
-            # possible_files is a list of them.
-            possible_files = tuple(f for f in description if f != "unknown")
-            if len(possible_files) == 0:
-                self.__error("No possible definitions for use: {}".format(func))
-                continue
-            for category in options:
-                files = category(possible_files)
-                if len(files) > 0:
-                    break
-            else:
-                self.__error("Can't match definition for use: {} {}".format(func, context_file))
-                files = ('unknown',)
-                description['unknown'] = self.__cg_initial_value()
-            if len(files) > 1:
-                    self.__error("Multiple matches for use in vars: {} in {}".format(func, context_file))
-
-            for possible_file in files:
-                if context_file not in description[possible_file]["used_in_vars"]:
-                    description[possible_file]["used_in_vars"].append(context_file)
-
-    def __process_init_global(self):
-        init_global = self.extensions["Info"].init_global
-
-        if not os.path.isfile(init_global):
-            return
-
-        self.log("Processing global variables initializations")
-        self.variables = parse_initialization_functions(init_global, self.callgraph, self.__process_callv)
-
-    def __process_macros(self):
-        expand_file = self.extensions["Info"].expand
-
-        if not os.path.isfile(expand_file):
-            return
-
-        self.log("Processing macros")
-
-        all_args = "(?:\sarg\d+='[^']*')*"
-        regex = re.compile(r'(\S*) (\S*)({0})'.format(all_args))
-        args_extract = r"arg\d+='([^']*)'"
-        regex2 = re.compile(args_extract)
-        with open(expand_file, "r") as expand_fh:
-            for line in expand_fh:
-                m = regex.match(line)
-                if m:
-                    file, func, args = m.groups()
-                    args = regex2.findall(args)
-                    if file in self.macros and func in self.macros[file]:
-                        self.macros[file][func]["args"].append(args)
-                    elif file in self.macros:
-                        self.macros[file][func] = {'args': [args]}
-                    else:
-                        self.macros[file] = {func: {'args': [args]}}
-
-    def __dump_collection(self, collection, suffix):
+    def _dump_collection(self, collection, suffix):
         for file in list(collection.keys()):
             data = collection.pop(file)
             file_name = self.__src_related_file_name(file, suffix)
             os.makedirs(os.path.dirname(file_name), exist_ok=True)
             self.dump_data(data, file_name)
 
-    def __load_collection(self, suffix, files):
+    def _load_collection(self, suffix, files):
         merged_data = dict()
         for file in files:
             file_name = self.__src_related_file_name(file, suffix)
@@ -599,11 +489,11 @@ class Callgraph(Extension):
         return os.path.join(os.path.normpath(self.callgraph_dir + os.path.sep + os.path.dirname(file)),
                             os.path.basename(file) + postfix)
 
-    def __t_unit_is_common(self, file1, file2):
+    def _t_unit_is_common(self, file1, file2):
         graph = self.src_graph
         return file1 in graph and file2 in graph and len(set(graph[file1]["compiled_in"]) & set(graph[file2]["compiled_in"])) > 0
 
-    def __files_are_linked(self, file1, file2):
+    def _files_are_linked(self, file1, file2):
         graph = self.src_graph
         return file1 in graph and file2 in graph and len(set(graph[file1]["used_by"]) & set(graph[file2]["used_by"])) > 0
 
@@ -618,13 +508,12 @@ class Callgraph(Extension):
             err_fh.write("{}\n".format(msg))
 
     @staticmethod
-    def __cg_initial_value():
+    def _get_initial_value():
         return {
             "calls": dict(),
             "uses": dict(),
             "used_in_file": dict(),
             "used_in_func": dict(),
-            "used_in_vars": list(),
             "called_in": dict(),
             "calls_by_pointer": dict(),
             "declared_in": dict()

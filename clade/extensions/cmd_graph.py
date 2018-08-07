@@ -67,12 +67,12 @@ class CmdGraph(Extension):
 
     def __add_to_graph(self, cmd, ext_name):
         graph = self.graph
-        new_val = self.__new_cmd
+        get_new_val = self.__get_new_value
         out_dict = self.out_dict
 
         out_id = str(cmd["id"])
         if out_id not in graph:
-            graph[out_id] = new_val()
+            graph[out_id] = get_new_val()
             graph[out_id]["type"] = ext_name
 
         for cmd_in in (i for i in cmd["in"] if i in out_dict):
@@ -109,7 +109,7 @@ class CmdGraph(Extension):
         dot.render(self.graph_dot)
 
     @staticmethod
-    def __new_cmd():
+    def __get_new_value():
         return {
             "used_by": list(),
             "using": list(),
