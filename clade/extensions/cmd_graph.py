@@ -66,22 +66,17 @@ class CmdGraph(Extension):
         self.log("Constructing finished")
 
     def __add_to_graph(self, cmd, ext_name):
-        graph = self.graph
-        get_new_val = self.__get_new_value
-        out_dict = self.out_dict
-
         out_id = str(cmd["id"])
-        if out_id not in graph:
-            graph[out_id] = get_new_val()
-            graph[out_id]["type"] = ext_name
+        if out_id not in self.graph:
+            self.graph[out_id] = self.__get_new_value(ext_name)
 
-        for cmd_in in (i for i in cmd["in"] if i in out_dict):
-            in_id = out_dict[cmd_in]
-            graph[in_id]["used_by"].append(out_id)
-            graph[out_id]["using"].append(in_id)
+        for cmd_in in (i for i in cmd["in"] if i in self.out_dict):
+            in_id = self.out_dict[cmd_in]
+            self.graph[in_id]["used_by"].append(out_id)
+            self.graph[out_id]["using"].append(in_id)
 
-        # It rewrites values to keep the latest command
-        out_dict[cmd["out"]] = out_id
+        # Rewrite cmd["out"] value to keep the latest used command id
+        self.out_dict[cmd["out"]] = out_id
 
     def __print_source_graph(self):
         dot = Digraph(graph_attr={'rankdir': 'LR'}, node_attr={'shape': 'rectangle'})
@@ -109,11 +104,11 @@ class CmdGraph(Extension):
         dot.render(self.graph_dot)
 
     @staticmethod
-    def __get_new_value():
+    def __get_new_value(cmd_type):
         return {
             "used_by": list(),
             "using": list(),
-            "type": None
+            "type": cmd_type
         }
 
 
