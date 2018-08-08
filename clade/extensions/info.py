@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import concurrent.futures
+import hashlib
 import jinja2
 import os
 import re
@@ -226,6 +227,8 @@ class Info(Extension):
 
         src = get_build_cwd(cmd_file)
 
+        regexp = re.compile(r'(\S*) (.*)')
+
         for file in self.files:
             if file == self.init_global:
                 continue
@@ -239,14 +242,15 @@ class Info(Extension):
                 with open(file, "r", encoding='utf8') as fh:
                     with open(file + ".temp", "w") as temp_fh:
                         for line in fh:
-                            if line not in seen:
-                                seen.add(line)
-                                m = re.match(r'(\S*) (.*)', line)
+                            # Storing hash of string instead of string itself reduces memory usage by 30-40%
+                            h = hashlib.blake2s(line.encode('utf-8'), digest_size=16).hexdigest()
+                            if h not in seen:
+                                seen.add(h)
+                                m = regexp.match(line)
 
                                 if m:
                                     path, rest = m.groups()
-                                    if 'ext-modules' not in path:
-                                        path = normalize_path(path, src)
+                                    path = normalize_path(path, src)
                                     temp_fh.write("{} {}\n".format(path, rest))
             except UnicodeDecodeError as err:
                 self.warning("Cannot open file {0} or {0}.temp: {1}".format(file, err))

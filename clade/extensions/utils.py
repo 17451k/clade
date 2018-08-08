@@ -21,10 +21,21 @@ def nested_dict():
     return collections.defaultdict(nested_dict)
 
 
-def normalize_path(path, cwd):
+def normalize_path(path, cwd, cache=dict()):
+    # Cache variable considerably speeds up normalizing.
+    # Cache size is quite small even for extra large files.
+
+    if cwd not in cache:
+        cache[cwd] = dict()
+
+    if path in cache[cwd]:
+        return cache[cwd][path]
+
     abs_path = os.path.abspath(path)
 
     if os.path.commonprefix([abs_path, cwd]) == cwd:
-        return os.path.relpath(abs_path, start=cwd)
+        cache[cwd][path] = os.path.relpath(abs_path, start=cwd)
     else:
-        return os.path.normpath(path)
+        cache[cwd][path] = os.path.normpath(path)
+
+    return cache[cwd][path]
