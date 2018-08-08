@@ -100,12 +100,12 @@ class Info(Extension):
             }))
         self.debug('Rendered template was stored into file {}'.format(self.aspect))
 
-    def parse(self, cmds):
+    def parse(self, cmd_file):
         if self.is_parsed():
             self.log("Skip parsing")
             return
 
-        self.parse_prerequisites(cmds)
+        self.parse_prerequisites(cmd_file)
 
         self.log("Start CIF")
 
@@ -118,7 +118,7 @@ class Info(Extension):
 
         self.log("CIF finished")
 
-        self.__normalize_cif_output(cmds)
+        self.__normalize_cif_output(cmd_file)
 
     def _run_cif(self, cmd):
         if self.__is_cmd_bad_for_cif(cmd):
@@ -220,10 +220,10 @@ class Info(Extension):
             log_fh.writelines(log_str)
             log_fh.write("\n\n")
 
-    def __normalize_cif_output(self, cmds):
+    def __normalize_cif_output(self, cmd_file):
         self.log("Normalizing CIF output")
 
-        src = get_build_cwd(cmds)
+        src = get_build_cwd(cmd_file)
 
         for file in self.files:
             if file == self.init_global:
