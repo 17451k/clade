@@ -40,7 +40,7 @@ class Extension(metaclass=abc.ABCMeta):
     def __init__(self, work_dir, conf=None):
         self.name = self.__class__.__name__
         self.work_dir = os.path.join(os.path.abspath(work_dir), self.name)
-        self.conf = conf if conf else {"log_level": "ERROR"}
+        self.conf = conf if conf else dict()
         self.temp_dir = tempfile.mkdtemp()
 
         if not hasattr(self, "requires"):
@@ -50,7 +50,7 @@ class Extension(metaclass=abc.ABCMeta):
 
         logging.basicConfig(
             format="%(asctime)s {}: %(message)s".format(os.path.basename(sys.argv[0])),
-            level=self.conf["log_level"],
+            level=self.conf.get("log_level", "ERROR"),
             datefmt="%H:%M:%S"
         )
 
