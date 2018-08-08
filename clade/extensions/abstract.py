@@ -19,7 +19,7 @@ import logging
 import os
 import sys
 import tempfile
-import json
+import ujson
 
 
 class Extension(metaclass=abc.ABCMeta):
@@ -103,7 +103,7 @@ class Extension(metaclass=abc.ABCMeta):
 
         self.debug("Load {}".format(file_name))
         with open(file_name, "r") as fh:
-            return json.load(fh)
+            return ujson.load(fh)
 
     def dump_data(self, data, file_name):
         """Dump data to a json file in the object working directory."""
@@ -116,7 +116,7 @@ class Extension(metaclass=abc.ABCMeta):
         self.debug("Dump {}".format(file_name))
         try:
             with open(file_name, "w") as fh:
-                json.dump(data, fh, sort_keys=True, indent=4, ensure_ascii=False)
+                ujson.dump(data, fh, sort_keys=True, indent=4, ensure_ascii=False, escape_forward_slashes=False)
         except RecursionError:
             # todo: This is a workaround but it is required rarely
             self.warning("Do not print data to file due to recursion limit {}".format(file_name))
