@@ -13,8 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import concurrent.futures
 import jinja2
-import multiprocessing
 import os
 import re
 import subprocess
@@ -26,8 +26,8 @@ from clade.extensions.utils import normalize_path
 from clade.cmds import get_build_cwd
 
 
-def unwrap(arg, **kwarg):
-    return Info._run_cif(*arg, **kwarg)
+def unwrap(*args, **kwargs):
+    return Info._run_cif(*args, **kwargs)
 
 
 class Info(Extension):
@@ -113,8 +113,9 @@ class Info(Extension):
 
         cmds = self.extensions["CC"].load_all_cmds()
 
-        with multiprocessing.Pool(os.cpu_count()) as p:
-            p.map(unwrap, zip([self] * len(cmds), cmds))
+        with concurrent.futures.ProcessPoolExecutor(max_workers=os.cpu_count()) as p:
+            for cmd in cmds:
+                p.submit(unwrap, self, cmd)
 
         self.log("CIF finished")
 
