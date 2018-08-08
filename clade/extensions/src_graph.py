@@ -92,6 +92,17 @@ class SrcGraph(Extension):
 
         return used_by
 
+    def __estimate_loc_size(self, src_file, build_cwd):
+        file = os.path.join(build_cwd, src_file)
+        try:
+            with open(file, 'rb') as stream:
+                result = subprocess.check_output(['wc', '-l'], stdin=stream)
+            number = int(result)
+            return number
+        except (subprocess.CalledProcessError, ValueError, FileNotFoundError):
+            self.warning("Cannot get size of file {}".format(file))
+            return None
+
     @staticmethod
     def __get_new_value():
         return {
