@@ -173,18 +173,6 @@ class Common(Extension):
     def dump_cmd_by_id(self, id, cmd):
         self.dump_data(cmd, "{}.json".format(id))
 
-    def load_opts_by_id(self, id):
-        return self.load_data("{}-opts.json".format(id))
-
-    def dump_opts_by_id(self, id, opts):
-        self.dump_data(opts, "{}-opts.json".format(id))
-
-    def load_deps_by_id(self, id):
-        return self.load_data("{}-deps.json".format(id))
-
-    def dump_deps_by_id(self, id, deps):
-        self.dump_data(deps, "{}-deps.json".format(id))
-
     def merge_all_cmds(self):
         """Merge all parsed commands into a single json file."""
         cmd_jsons = glob.glob(os.path.join(self.work_dir, '*[0-9].json'))

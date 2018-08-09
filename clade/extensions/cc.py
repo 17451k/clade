@@ -106,6 +106,18 @@ class CC(Common):
 
         return deps
 
+    def load_opts_by_id(self, id):
+        return self.load_data("{}-opts.json".format(id))
+
+    def dump_opts_by_id(self, id, opts):
+        self.dump_data(opts, "{}-opts.json".format(id))
+
+    def load_deps_by_id(self, id):
+        return self.load_data("{}-deps.json".format(id))
+
+    def dump_deps_by_id(self, id, deps):
+        self.dump_data(deps, "{}-deps.json".format(id))
+
 
 def parse(args=sys.argv[1:]):
     args = parse_args(args)
