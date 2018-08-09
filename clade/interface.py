@@ -19,6 +19,9 @@ from clade.extensions.ld import LD
 from clade.extensions.cmd_graph import CmdGraph
 from clade.extensions.src_graph import SrcGraph
 from clade.extensions.callgraph import Callgraph
+from clade.extensions.macros import Macros
+from clade.extensions.variables import Variables
+from clade.extensions.typedefs import Typedefs
 
 workdir = None
 configuration = None
@@ -33,9 +36,17 @@ def setup(work_dir, conf=None):
 
 def initialize_extensions(work_dir, cmd_file):
     setup(work_dir)
-    for cls in (CmdGraph, SrcGraph, Info, Callgraph):
+    for cls in (CmdGraph, SrcGraph, Info, Callgraph, Variables, Macros, Typedefs):
         inst = cls(workdir, configuration)
         inst.parse(cmd_file)
+
+
+def get_cc(identifier):
+    return CC(workdir).load_cmd_by_id(identifier)
+
+
+def get_ld(identifier):
+    return LD(workdir).load_cmd_by_id(identifier)
 
 
 class CommandGraph:
@@ -56,7 +67,7 @@ class CommandGraph:
             current_type = self.graph[current]['type']
 
             if current_type == 'CC':
-                desc = CC(workdir).load_cmd_by_id(current)
+                desc = get_cc(current)
                 if not any(f.endswith('.S') for f in desc['in']):
                     ccs[current] = desc
             todo_commands.extend(self.graph[current]['using'])
@@ -67,6 +78,12 @@ class SourceGraph:
 
     def __init__(self):
         self.graph = SrcGraph(workdir, configuration).load_src_graph()
+
+    def get_sizes(self, files):
+        return {f: self.graph[f]['loc'] for f in files}
+
+    def get_ccs_by_file(self, file):
+        return self.graph[file]['compiled in']
 
 
 class CallGraph:
