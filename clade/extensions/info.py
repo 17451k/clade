@@ -55,6 +55,7 @@ class Info(Extension):
         self.use_func = os.path.join(self.work_dir, "use_func.txt")  # Info about using function names in pointers (in function context only)
         self.use_var = os.path.join(self.work_dir, "use_var.txt")  # Info about using global variables in function context
         self.init_global = os.path.join(self.work_dir, "init_global.txt")  # Info about init values of global variables
+        # TODO: Add info: define to aspect file
         self.define = os.path.join(self.work_dir, "define.txt")  # Info about macro functions
         self.expand = os.path.join(self.work_dir, "expand.txt")  # Info about macros
         self.exported = os.path.join(self.work_dir, "exported.txt")  # Info about exported functions (Linux kernel only)
@@ -276,6 +277,12 @@ class Info(Extension):
 
     def iter_functions_usages(self):
         return self.__iter_file(self.use_func)
+
+    def iter_macros_expansions(self):
+        return self.__iter_file(self.expand)
+
+    def iter_typedefs(self):
+        return self.__iter_file(self.typedefs)
 
     def __iter_file(self, file):
         if not os.path.isfile(file):

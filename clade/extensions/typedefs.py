@@ -13,15 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import re
 import sys
 
-from clade.extensions.callgraph import Callgraph
+from clade.extensions.abstract import Extension
 from clade.extensions.utils import parse_args
 
 
-class Typedefs(Callgraph):
+class Typedefs(Extension):
     requires = ["Info"]
 
     def __init__(self, work_dir, conf=None):
@@ -31,6 +30,7 @@ class Typedefs(Callgraph):
         super().__init__(work_dir, conf)
 
         self.typedefs = dict()
+        self.typedefs_suffix = ".typedefs.json"
 
     def parse(self, cmds_file):
         if self.is_parsed():
@@ -40,35 +40,27 @@ class Typedefs(Callgraph):
         self.parse_prerequisites(cmds_file)
 
         self.__process_typedefs()
-        self.dump_typedefs()
+        self.dump_data_by_key(self.typedefs, self.typedefs_suffix)
+        self.log("Finish")
 
     def __process_typedefs(self):
-        typedefs_file = self.extensions["Info"].typedefs
-
-        if not os.path.isfile(typedefs_file):
-            return
-
         self.log("Processing typedefs")
 
         regex = re.compile(r"^declaration: typedef ([^\n]+); path: ([^\n]+)")
         typedefs = self.typedefs
 
-        with open(typedefs_file, "r") as fp:
-            for line in fp:
-                m = regex.match(line)
-                if m:
-                    declaration, scope_file = m.groups()
+        for line in self.extensions["Info"].iter_typedefs():
+            m = regex.match(line)
+            if m:
+                declaration, scope_file = m.groups()
 
-                    if scope_file not in self.typedefs:
-                        typedefs[scope_file] = [declaration]
-                    elif declaration not in typedefs[scope_file]:
-                        typedefs[scope_file].append(declaration)
+                if scope_file not in self.typedefs:
+                    typedefs[scope_file] = [declaration]
+                elif declaration not in typedefs[scope_file]:
+                    typedefs[scope_file].append(declaration)
 
-    def dump_typedefs(self):
-        self._dump_collection(self.typedefs, '.typedefs.json')
-
-    def load_typedefs(self, files):
-        return self._load_collection('.typedefs.json', files)
+    def load_typedefs(self, files=[]):
+        return self.load_data_by_key(self.typedefs_suffix, files)
 
 
 def parse(args=sys.argv[1:]):

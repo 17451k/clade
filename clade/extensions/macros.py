@@ -13,15 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import re
 import sys
 
-from clade.extensions.callgraph import Callgraph
+from clade.extensions.abstract import Extension
 from clade.extensions.utils import parse_args
 
 
-class Macros(Callgraph):
+class Macros(Extension):
     requires = ["Info"]
 
     def __init__(self, work_dir, conf=None):
@@ -30,7 +29,8 @@ class Macros(Callgraph):
 
         super().__init__(work_dir, conf)
 
-        self.macros = dict()
+        self.expand = dict()
+        self.expand_suffix = ".expand.json"
 
     def parse(self, cmds_file):
         if self.is_parsed():
@@ -39,16 +39,14 @@ class Macros(Callgraph):
 
         self.parse_prerequisites(cmds_file)
 
-        self.__process_macros()
-        self.dump_macros()
+        self.__process_macros_expansions()
 
-    def __process_macros(self):
-        expand_file = self.extensions["Info"].expand
+        self.log("Dump parsed data")
+        self.dump_data_by_key(self.expand, self.expand_suffix)
+        self.log("Finish")
 
-        if not os.path.isfile(expand_file):
-            return
-
-        self.log("Processing macros")
+    def __process_macros_expansions(self):
+        self.log("Processing macros expansion")
 
         all_args = "(?:\sarg\d+='[^']*')*"
         regex = re.compile(r'(\S*) (\S*)({0})'.format(all_args))
@@ -56,25 +54,21 @@ class Macros(Callgraph):
         args_extract = r"arg\d+='([^']*)'"
         regex2 = re.compile(args_extract)
 
-        with open(expand_file, "r") as expand_fh:
-            for line in expand_fh:
-                m = regex.match(line)
-                if m:
-                    file, func, args = m.groups()
-                    args = regex2.findall(args)
+        for line in self.extensions["Info"].iter_macros_expansions():
+            m = regex.match(line)
+            if m:
+                file, func, args = m.groups()
+                args = regex2.findall(args)
 
-                    if file in self.macros and func in self.macros[file]:
-                        self.macros[file][func]["args"].append(args)
-                    elif file in self.macros:
-                        self.macros[file][func] = {'args': [args]}
-                    else:
-                        self.macros[file] = {func: {'args': [args]}}
+                if file in self.expand and func in self.expand[file]:
+                    self.expand[file][func]["args"].append(args)
+                elif file in self.expand:
+                    self.expand[file][func] = {'args': [args]}
+                else:
+                    self.expand[file] = {func: {'args': [args]}}
 
-    def dump_macros(self):
-        self._dump_collection(self.macros, '.macros.json')
-
-    def load_macros(self, files):
-        return self._load_collection('.macros.json', files)
+    def load_macros_expansions(self, files=[]):
+        return self.load_data_by_key(self.expand_suffix, files)
 
 
 def parse(args=sys.argv[1:]):
