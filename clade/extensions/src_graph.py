@@ -92,6 +92,13 @@ class SrcGraph(Extension):
 
         return used_by
 
+    @staticmethod
+    def __get_new_value():
+        return {
+            "compiled_in": set(),
+            "used_by": set()
+        }
+
     def __estimate_loc_size(self, src_file, build_cwd):
         file = os.path.join(build_cwd, src_file)
         try:
