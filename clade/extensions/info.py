@@ -260,6 +260,26 @@ class Info(Extension):
 
         self.log("Normalizing finished")
 
+    def iter_execution(self):
+        return self.__iter_file(self.execution)
+
+    def iter_decl(self):
+        return self.__iter_file(self.decl)
+
+    def iter_exported(self):
+        return self.__iter_file(self.exported)
+
+    def iter_call(self):
+        return self.__iter_file(self.call)
+
+    def __iter_file(self, file):
+        if not os.path.isfile(file):
+            return []
+
+        with open(file, "r") as f:
+            for line in f:
+                yield line
+
 
 def parse(args=sys.argv[1:]):
     args = parse_args(args)
