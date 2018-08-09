@@ -15,16 +15,18 @@
 
 import os
 import re
+import sys
 
 from clade.extensions.callgraph import Callgraph
+from clade.extensions.utils import parse_args
 
 
 class Macros(Callgraph):
+    requires = ["Info"]
+
     def __init__(self, work_dir, conf=None):
         if not conf:
             conf = dict()
-
-        self.requires = ["Info"]
 
         super().__init__(work_dir, conf)
 
@@ -73,3 +75,10 @@ class Macros(Callgraph):
 
     def load_macros(self, files):
         return self._load_collection('.macros.json', files)
+
+
+def parse(args=sys.argv[1:]):
+    conf = parse_args(args)
+
+    c = Macros(conf["work_dir"], conf=conf)
+    c.parse(conf["cmds_file"])

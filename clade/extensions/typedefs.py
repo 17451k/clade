@@ -15,16 +15,18 @@
 
 import os
 import re
+import sys
 
 from clade.extensions.callgraph import Callgraph
+from clade.extensions.utils import parse_args
 
 
 class Typedefs(Callgraph):
+    requires = ["Info"]
+
     def __init__(self, work_dir, conf=None):
         if not conf:
             conf = dict()
-
-        self.requires = ["Info"]
 
         super().__init__(work_dir, conf)
 
@@ -67,3 +69,10 @@ class Typedefs(Callgraph):
 
     def load_typedefs(self, files):
         return self._load_collection('.typedefs.json', files)
+
+
+def parse(args=sys.argv[1:]):
+    conf = parse_args(args)
+
+    c = Typedefs(conf["work_dir"], conf=conf)
+    c.parse(conf["cmds_file"])

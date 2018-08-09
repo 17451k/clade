@@ -21,11 +21,11 @@ from clade.cmds import get_build_cwd
 
 
 class SrcGraph(Extension):
+    requires = ["CmdGraph", "CC"]
+
     def __init__(self, work_dir, conf=None):
         if not conf:
             conf = dict()
-
-        self.requires = ["CmdGraph", "CC"]
 
         self.out_list = []
         self.src_graph = dict()
