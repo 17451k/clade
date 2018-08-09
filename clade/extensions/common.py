@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import argparse
 import glob
 import multiprocessing
 import os
@@ -68,6 +67,19 @@ class Common(Extension):
     Raises:
         RuntimeError: Command can't be parsed as its type is not supported.
     """
+    def __init__(self, work_dir, conf=None):
+        if not conf:
+            conf = dict()
+
+        super().__init__(work_dir, conf)
+
+        cmd_filter = self.conf.get("Common.filter", [])
+        cmd_filter_in = self.conf.get("Common.filter_in", [])
+        cmd_filter_out = self.conf.get("Common.filter_out", [])
+
+        # Make a regex that matches if any of our regexes match.
+        self.regex_in = re.compile("(" + ")|(".join(cmd_filter + cmd_filter_in) + ")")
+        self.regex_out = re.compile("(" + ")|(".join(cmd_filter + cmd_filter_out) + ")")
 
     def parse(self, cmds_file, which_list):
         """Multiprocess parsing of build commands filtered by 'which' field."""
@@ -108,7 +120,7 @@ class Common(Extension):
         for i in range(cmd_workers_num):
             cmd_workers[i].join()
 
-        self.merge_all_cmds()
+        self.__merge_all_cmds()
 
         if os.path.exists(self.temp_dir):
             shutil.rmtree(self.temp_dir)
@@ -173,19 +185,7 @@ class Common(Extension):
     def dump_cmd_by_id(self, id, cmd):
         self.dump_data(cmd, "{}.json".format(id))
 
-    def load_opts_by_id(self, id):
-        return self.load_data("{}-opts.json".format(id))
-
-    def dump_opts_by_id(self, id, opts):
-        self.dump_data(opts, "{}-opts.json".format(id))
-
-    def load_deps_by_id(self, id):
-        return self.load_data("{}-deps.json".format(id))
-
-    def dump_deps_by_id(self, id, deps):
-        self.dump_data(deps, "{}-deps.json".format(id))
-
-    def merge_all_cmds(self):
+    def __merge_all_cmds(self):
         """Merge all parsed commands into a single json file."""
         cmd_jsons = glob.glob(os.path.join(self.work_dir, '*[0-9].json'))
 
@@ -205,16 +205,13 @@ class Common(Extension):
         try:
             return self.load_data("all.json")
         except FileNotFoundError:
-            return self.merge_all_cmds()
+            return self.__merge_all_cmds()
 
+    def is_bad(self, cmd):
+        for _ in (cmd_in for cmd_in in cmd["in"] if self.regex_in.match(cmd_in)):
+            return True
 
-def parse_args(args):
-    parser = argparse.ArgumentParser()
+        if cmd["out"] and self.regex_out.match(cmd["out"]):
+            return True
 
-    parser.add_argument("-w", "--work_dir", help="a path to the DIR where processed commands will be saved", metavar='DIR', default="clade")
-    parser.add_argument("-l", "--log_level", help="set logging level (ERROR, INFO, or DEBUG)", default="ERROR")
-    parser.add_argument(dest="cmds_file", help="a path to the file with intercepted commands")
-
-    args = parser.parse_args(args)
-
-    return args
+        return False

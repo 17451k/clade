@@ -15,7 +15,8 @@
 
 import sys
 
-from clade.extensions.common import Common, parse_args
+from clade.extensions.common import Common
+from clade.extensions.utils import parse_args
 
 
 class Objcopy(Common):
@@ -44,12 +45,15 @@ class Objcopy(Common):
         elif len(parsed_cmd["in"]) > 2:
             parsed_cmd["out"] = parsed_cmd["in"][-1]
 
+        if self.is_bad(parsed_cmd):
+            return
+
         self.debug("Parsed command: {}".format(parsed_cmd))
         self.dump_cmd_by_id(cmd["id"], parsed_cmd)
 
 
 def parse(args=sys.argv[1:]):
-    args = parse_args(args)
+    conf = parse_args(args)
 
-    c = Objcopy(args.work_dir, conf={"log_level": args.log_level})
-    c.parse(args.cmds_file)
+    c = Objcopy(conf["work_dir"], conf=conf)
+    c.parse(conf["cmds_file"])

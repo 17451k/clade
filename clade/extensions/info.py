@@ -13,21 +13,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import concurrent.futures
+import hashlib
 import jinja2
-import multiprocessing
 import os
 import re
 import subprocess
 import sys
 
 from clade.extensions.abstract import Extension
-from clade.extensions.common import parse_args
-from clade.extensions.utils import normalize_path
+from clade.extensions.utils import normalize_path, parse_args
 from clade.cmds import get_build_cwd
 
 
-def unwrap(arg, **kwarg):
-    return Info._run_cif(*arg, **kwarg)
+def unwrap(*args, **kwargs):
+    return Info._run_cif(*args, **kwargs)
 
 
 class Info(Extension):
@@ -113,8 +113,9 @@ class Info(Extension):
 
         cmds = self.extensions["CC"].load_all_cmds()
 
-        with multiprocessing.Pool(os.cpu_count()) as p:
-            p.map(unwrap, zip([self] * len(cmds), cmds))
+        with concurrent.futures.ProcessPoolExecutor(max_workers=os.cpu_count()) as p:
+            for cmd in cmds:
+                p.submit(unwrap, self, cmd)
 
         self.log("CIF finished")
 
@@ -225,6 +226,8 @@ class Info(Extension):
 
         src = get_build_cwd(cmd_file)
 
+        regexp = re.compile(r'(\S*) (.*)')
+
         for file in self.files:
             if file == self.init_global:
                 continue
@@ -238,14 +241,15 @@ class Info(Extension):
                 with open(file, "r", encoding='utf8') as fh:
                     with open(file + ".temp", "w") as temp_fh:
                         for line in fh:
-                            if line not in seen:
-                                seen.add(line)
-                                m = re.match(r'(\S*) (.*)', line)
+                            # Storing hash of string instead of string itself reduces memory usage by 30-40%
+                            h = hashlib.blake2s(line.encode('utf-8'), digest_size=16).hexdigest()
+                            if h not in seen:
+                                seen.add(h)
+                                m = regexp.match(line)
 
                                 if m:
                                     path, rest = m.groups()
-                                    if 'ext-modules' not in path:
-                                        path = normalize_path(path, src)
+                                    path = normalize_path(path, src)
                                     temp_fh.write("{} {}\n".format(path, rest))
             except UnicodeDecodeError as err:
                 self.warning("Cannot open file {0} or {0}.temp: {1}".format(file, err))
@@ -255,9 +259,29 @@ class Info(Extension):
 
         self.log("Normalizing finished")
 
+    def iter_execution(self):
+        return self.__iter_file(self.execution)
+
+    def iter_decl(self):
+        return self.__iter_file(self.decl)
+
+    def iter_exported(self):
+        return self.__iter_file(self.exported)
+
+    def iter_call(self):
+        return self.__iter_file(self.call)
+
+    def __iter_file(self, file):
+        if not os.path.isfile(file):
+            return []
+
+        with open(file, "r") as f:
+            for line in f:
+                yield line
+
 
 def parse(args=sys.argv[1:]):
-    args = parse_args(args)
+    conf = parse_args(args)
 
-    c = Info(args.work_dir, conf={"log_level": args.log_level})
-    c.parse(args.cmds_file)
+    c = Info(conf["work_dir"], conf=conf)
+    c.parse(conf["cmds_file"])

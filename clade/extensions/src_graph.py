@@ -18,8 +18,7 @@ import sys
 import subprocess
 
 from clade.extensions.abstract import Extension
-from clade.extensions.common import parse_args
-from clade.extensions.utils import nested_dict, normalize_path
+from clade.extensions.utils import normalize_path, parse_args
 from clade.cmds import get_build_cwd
 
 
@@ -31,7 +30,7 @@ class SrcGraph(Extension):
         self.requires = ["CmdGraph", "CC"]
 
         self.out_list = []
-        self.src_graph = nested_dict()
+        self.src_graph = dict()
         self.src_graph_file = "src_graph.json"
 
         super().__init__(work_dir, conf)
@@ -50,46 +49,34 @@ class SrcGraph(Extension):
         self.__generate_src_graph(cmds)
 
     def __generate_src_graph(self, cmds):
-        self.log("Start source graph constructing")
-
-        self.src_graph = nested_dict()
-
-        build_cwd = get_build_cwd(cmds)
-
         try:
             cmd_graph = self.extensions["CmdGraph"].load_cmd_graph()
         except FileNotFoundError:
             return
 
-        for cmd_id in cmd_graph:
-            if cmd_graph[cmd_id]["type"] == "CC":
-                cmd = self.extensions["CC"].load_cmd_by_id(cmd_id)
+        self.log("Start source graph constructing")
 
-                if not cmd["out"] or not cmd["in"]:
-                    continue
+        build_cwd = get_build_cwd(cmds)
 
-                if cmd["in"][0] == "/dev/null" or cmd["in"][0] == "-":
-                    continue
+        for cmd in self.extensions["CC"].load_all_cmds():
+            if not cmd["out"] or not cmd["in"] or cmd["in"][0] == "/dev/null" or cmd["in"][0] == "-":
+                continue
 
-                deps = self.extensions["CC"].load_deps_by_id(cmd_id)
+            cmd_id = str(cmd["id"])
 
-                # used_by is a list of commands that use (possibly indirectly) output of the command with ID=cmd_id
-                used_by = self.__find_used_by(cmd_graph, cmd_id)
+            # used_by is a list of commands that use (possibly indirectly) output of the command with ID=cmd_id
+            used_by = self.__find_used_by(cmd_graph, cmd_id)
 
-                for src_file in deps:
-                    rel_in = normalize_path(src_file, build_cwd)
-                    if rel_in not in self.src_graph:
-                        self.src_graph[rel_in]['loc'] = self.__estimate_loc_size(src_file, build_cwd)
+            for src_file in self.extensions["CC"].load_deps_by_id(cmd_id):
+                rel_in = normalize_path(src_file, build_cwd)
 
-                    if "compiled_in" not in self.src_graph[rel_in]:
-                        self.src_graph[rel_in]["compiled_in"] = []
+                if rel_in not in self.src_graph:
+                    self.src_graph[rel_in] = self.__get_new_value()
+                    self.src_graph[rel_in]['loc'] = self.__estimate_loc_size(src_file, build_cwd)
 
-                    if "used_by" not in self.src_graph[rel_in]:
-                        self.src_graph[rel_in]["used_by"] = []
-
-                    # compiled_in is a list of commands that compile 'rel_in' source file
-                    self.src_graph[rel_in]["compiled_in"].append(cmd_id)
-                    self.src_graph[rel_in]["used_by"].extend(used_by)
+                # compiled_in is a list of commands that compile 'rel_in' source file
+                self.src_graph[rel_in]["compiled_in"].add(cmd_id)
+                self.src_graph[rel_in]["used_by"].update(used_by)
 
         if self.src_graph:
             self.dump_data(self.src_graph, self.src_graph_file)
@@ -97,11 +84,11 @@ class SrcGraph(Extension):
         self.log("Constructing finished")
 
     def __find_used_by(self, cmd_graph, cmd_id):
-        used_by = []
+        used_by = set()
 
         for used_by_id in cmd_graph[cmd_id]["used_by"]:
-            used_by.append(used_by_id)
-            used_by.extend(self.__find_used_by(cmd_graph, used_by_id))
+            used_by.add(used_by_id)
+            used_by.update(self.__find_used_by(cmd_graph, used_by_id))
 
         return used_by
 
@@ -118,7 +105,7 @@ class SrcGraph(Extension):
 
 
 def parse(args=sys.argv[1:]):
-    args = parse_args(args)
+    conf = parse_args(args)
 
-    c = SrcGraph(args.work_dir, conf={"log_level": args.log_level})
-    c.parse(args.cmds_file)
+    c = SrcGraph(conf["work_dir"], conf=conf)
+    c.parse(conf["cmds_file"])
