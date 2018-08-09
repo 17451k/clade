@@ -73,13 +73,19 @@ class Common(Extension):
 
         super().__init__(work_dir, conf)
 
-        cmd_filter = self.conf.get("Common.filter", [])
-        cmd_filter_in = self.conf.get("Common.filter_in", [])
-        cmd_filter_out = self.conf.get("Common.filter_out", [])
+        cmd_filter = self.conf.get("Common.filter")
+        cmd_filter_in = self.conf.get("Common.filter_in")
+        cmd_filter_out = self.conf.get("Common.filter_out")
+
+        self.regex_in = None
+        self.regex_out = None
 
         # Make a regex that matches if any of our regexes match.
-        self.regex_in = re.compile("(" + ")|(".join(cmd_filter + cmd_filter_in) + ")")
-        self.regex_out = re.compile("(" + ")|(".join(cmd_filter + cmd_filter_out) + ")")
+        if cmd_filter and cmd_filter_in:
+            self.regex_in = re.compile("(" + ")|(".join(cmd_filter + cmd_filter_in) + ")")
+
+        if cmd_filter and cmd_filter_out:
+            self.regex_out = re.compile("(" + ")|(".join(cmd_filter + cmd_filter_out) + ")")
 
     def parse(self, cmds_file, which_list):
         """Multiprocess parsing of build commands filtered by 'which' field."""
@@ -195,9 +201,6 @@ class Common(Extension):
             parsed_cmd = self.load_data(cmd_json)
             merged_cmds.append(parsed_cmd)
 
-        if not merged_cmds:
-            raise RuntimeError("No parsed commands found")
-
         self.dump_data(merged_cmds, "all.json")
 
     def load_all_cmds(self):
@@ -208,10 +211,10 @@ class Common(Extension):
             return self.__merge_all_cmds()
 
     def is_bad(self, cmd):
-        for _ in (cmd_in for cmd_in in cmd["in"] if self.regex_in.match(cmd_in)):
+        for _ in (cmd_in for cmd_in in cmd["in"] if self.regex_in and self.regex_in.match(cmd_in)):
             return True
 
-        if cmd["out"] and self.regex_out.match(cmd["out"]):
+        if cmd["out"] and self.regex_out and self.regex_out.match(cmd["out"]):
             return True
 
         return False
