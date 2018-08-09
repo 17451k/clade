@@ -14,17 +14,19 @@
 # limitations under the License.
 
 import os
+import sys
 
 from clade.extensions.callgraph import Callgraph
 from clade.extensions.initializations import parse_initialization_functions
+from clade.extensions.utils import parse_args
 
 
 class Variables(Callgraph):
+    requires = ["Callgraph", "Info", "SrcGraph"]
+
     def __init__(self, work_dir, conf=None):
         if not conf:
             conf = dict()
-
-        self.requires = ["Info", "Callgraph", "SrcGraph"]
 
         super().__init__(work_dir, conf)
 
@@ -103,3 +105,10 @@ class Variables(Callgraph):
 
     def load_used_in_vars(self):
         return self.load_data(self.used_in_vars_file)
+
+
+def parse(args=sys.argv[1:]):
+    conf = parse_args(args)
+
+    c = Variables(conf["work_dir"], conf=conf)
+    c.parse(conf["cmds_file"])

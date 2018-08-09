@@ -24,11 +24,11 @@ from clade.extensions.utils import parse_args
 
 
 class Callgraph(Extension):
+    requires = ["Info", "SrcGraph"]
+
     def __init__(self, work_dir, conf=None):
         if not conf:
             conf = dict()
-
-        self.requires = ["Info", "SrcGraph"]
 
         super().__init__(work_dir, conf)
 
