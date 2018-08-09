@@ -18,7 +18,8 @@ import re
 import subprocess
 import sys
 
-from clade.extensions.common import Common, parse_args
+from clade.extensions.common import Common
+from clade.extensions.utils import parse_args
 
 
 class CC(Common):
@@ -49,6 +50,10 @@ class CC(Common):
         cmd_id = cmd["id"]
 
         parsed_cmd = super().parse_cmd(cmd, self.name)
+
+        if self.is_bad(parsed_cmd):
+            return
+
         self.debug("Parsed command: {}".format(parsed_cmd))
 
         deps = self.__get_deps(cmd_id, parsed_cmd)
@@ -120,7 +125,7 @@ class CC(Common):
 
 
 def parse(args=sys.argv[1:]):
-    args = parse_args(args)
+    conf = parse_args(args)
 
-    c = CC(args.work_dir, conf={"log_level": args.log_level})
-    c.parse(args.cmds_file)
+    c = CC(conf["work_dir"], conf=conf)
+    c.parse(conf["cmds_file"])

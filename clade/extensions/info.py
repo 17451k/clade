@@ -22,8 +22,7 @@ import subprocess
 import sys
 
 from clade.extensions.abstract import Extension
-from clade.extensions.common import parse_args
-from clade.extensions.utils import normalize_path
+from clade.extensions.utils import normalize_path, parse_args
 from clade.cmds import get_build_cwd
 
 
@@ -282,7 +281,7 @@ class Info(Extension):
 
 
 def parse(args=sys.argv[1:]):
-    args = parse_args(args)
+    conf = parse_args(args)
 
-    c = Info(args.work_dir, conf={"log_level": args.log_level})
-    c.parse(args.cmds_file)
+    c = Info(conf["work_dir"], conf=conf)
+    c.parse(conf["cmds_file"])

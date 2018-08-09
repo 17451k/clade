@@ -17,7 +17,8 @@ import os
 import re
 import sys
 
-from clade.extensions.common import Common, parse_args
+from clade.extensions.common import Common
+from clade.extensions.utils import parse_args
 
 
 class MV(Common):
@@ -55,12 +56,15 @@ class MV(Common):
             else:
                 parsed_cmd["out"] = os.path.normpath(opt)
 
+        if self.is_bad(parsed_cmd):
+            return
+
         self.debug("Parsed command: {}".format(parsed_cmd))
         self.dump_cmd_by_id(cmd["id"], parsed_cmd)
 
 
 def parse(args=sys.argv[1:]):
-    args = parse_args(args)
+    conf = parse_args(args)
 
-    c = MV(args.work_dir, conf={"log_level": args.log_level})
-    c.parse(args.cmds_file)
+    c = MV(conf["work_dir"], conf=conf)
+    c.parse(conf["cmds_file"])

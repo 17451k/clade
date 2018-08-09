@@ -13,7 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import argparse
 import os
+import sys
+import ujson
 
 
 def normalize_path(path, cwd, cache=dict()):
@@ -34,3 +37,29 @@ def normalize_path(path, cwd, cache=dict()):
         cache[cwd][path] = os.path.normpath(path)
 
     return cache[cwd][path]
+
+
+def parse_args(args):
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("-w", "--work_dir", help="a path to the DIR where processed commands will be saved", metavar='DIR', default="clade")
+    parser.add_argument("-l", "--log_level", help="set logging level (ERROR, INFO, or DEBUG)", default="ERROR")
+    parser.add_argument("-c", "--config", help="a path to the JSON file with configuration", metavar='JSON', default=None)
+    parser.add_argument(dest="cmds_file", help="a path to the file with intercepted commands")
+
+    args = parser.parse_args(args)
+
+    conf = dict()
+    if args.config:
+        try:
+            with open(args.config, "r") as f:
+                conf = ujson.load(f)
+        except FileNotFoundError:
+            print("Configuration file is not found")
+            sys.exit(-1)
+
+    conf["work_dir"] = conf.get("work_dir", args.work_dir)
+    conf["log_level"] = conf.get("log_level", args.log_level)
+    conf["cmds_file"] = conf.get("cmds_file", args.cmds_file)
+
+    return conf
