@@ -49,7 +49,7 @@ class Variables(Callgraph):
         self.__process_init_global()
         self._clean_error_log()
 
-        self.dump_variables()
+        self.dump_data_by_key(self.variables, self.variables_suffix)
         self.dump_data(self.used_in_vars, self.used_in_vars_file)
 
     def __process_init_global(self):
@@ -96,11 +96,8 @@ class Variables(Callgraph):
                 elif context_file not in self.used_in_vars[func][possible_file]:
                     self.used_in_vars[func][possible_file].append(context_file)
 
-    def dump_variables(self):
-        self._dump_collection(self.variables, self.variables_suffix)
-
-    def load_variables(self, files):
-        return self._load_collection(self.variables_suffix, files)
+    def load_variables(self, files=None):
+        return self.load_data_by_key(self.variables_suffix, files)
 
     def load_used_in_vars(self):
         return self.load_data(self.used_in_vars_file)
