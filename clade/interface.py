@@ -45,6 +45,10 @@ def get_cc(identifier):
     return CC(workdir).load_cmd_by_id(identifier)
 
 
+def get_cc_opts(identifier):
+    return CC(workdir).load_opts_by_id(identifier)
+
+
 def get_ld(identifier):
     return LD(workdir).load_cmd_by_id(identifier)
 
@@ -83,7 +87,8 @@ class SourceGraph:
         return {f: self.graph[f]['loc'] for f in files}
 
     def get_ccs_by_file(self, file):
-        return self.graph[file]['compiled in']
+        ccs = (get_cc(identifier) for identifier in self.graph[file]['compiled_in'])
+        return [cc for cc in ccs if cc['in'][0] == file]
 
 
 class CallGraph:
