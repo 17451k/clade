@@ -15,6 +15,7 @@
 
 import abc
 import glob
+import hashlib
 import logging
 import os
 import sys
@@ -120,6 +121,29 @@ class Extension(metaclass=abc.ABCMeta):
         except RecursionError:
             # todo: This is a workaround but it is required rarely
             self.warning("Do not print data to file due to recursion limit {}".format(file_name))
+
+    def load_data_by_key(self, file_suffix, files=[]):
+        """Load data stored in multiple json files using dump_data_by_key()."""
+        data = dict()
+        if not files:
+            for file in glob.glob(os.path.join(self.work_dir, '*' + file_suffix)):
+                data.update(self.load_data(file))
+        else:
+            for key in files:
+                file_name = hashlib.md5(key.encode('utf-8')).hexdigest() + file_suffix
+
+                data.update(self.load_data(file_name))
+
+        return data
+
+    def dump_data_by_key(self, data, file_suffix):
+        """Dump data to multiple json files in the object working directory."""
+        for key in data:
+            to_dump = {key: data[key]}
+
+            file_name = hashlib.md5(key.encode('utf-8')).hexdigest() + file_suffix
+
+            self.dump_data(to_dump, file_name)
 
     @staticmethod
     def __get_all_subclasses(cls):

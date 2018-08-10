@@ -22,13 +22,13 @@ from clade.extensions.utils import parse_args
 
 
 class CmdGraph(Extension):
+    requires = ["CC", "LD", "MV", "Objcopy"]
+
     def __init__(self, work_dir, conf=None):
         if not conf:
             conf = dict()
 
-        if "requires" not in conf:
-            self.requires = ["CC", "LD", "MV", "Objcopy"]
-        else:
+        if "requires" in conf:
             self.requires = conf["requires"]
 
         self.graph = dict()

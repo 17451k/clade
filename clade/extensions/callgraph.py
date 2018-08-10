@@ -24,11 +24,11 @@ from clade.extensions.utils import parse_args
 
 
 class Callgraph(Extension):
+    requires = ["Info", "SrcGraph"]
+
     def __init__(self, work_dir, conf=None):
         if not conf:
             conf = dict()
-
-        self.requires = ["Info", "SrcGraph"]
 
         super().__init__(work_dir, conf)
 
@@ -53,14 +53,14 @@ class Callgraph(Extension):
         self.parse_prerequisites(cmds_file)
         self.src_graph = self.extensions["SrcGraph"].load_src_graph()
         stages = [
-            (self.__process_execution, "processing functions definitions"),
+            (self.__process_definitions, "processing functions definitions"),
             (self.__process_declarations, "processing functions declarations"),
             (self.__process_exported, "processing export funcitons"),
-            (self.__process_call, "processing explicit function calls"),
-            (self.__process_callp, "processing function pointer calls"),
-            (self.__process_use_func, "processing function pointers arithmetic"),
+            (self.__process_calls, "processing explicit function calls"),
+            (self.__process_calls_by_pointers, "processing function pointer calls"),
+            (self.__process_functions_usages, "processing function pointers arithmetic"),
             (self.dump_callgraph, "dumping callgraph to disk"),
-            (self.__clean_error_log, "clean errors log"),
+            (self._clean_error_log, "clean errors log"),
         ]
 
         for method, stage in stages:
@@ -136,18 +136,18 @@ class Callgraph(Extension):
                         final[func].update(files_data)
         return final
 
-    def __process_execution(self):
+    def __process_definitions(self):
         self.log("Processing function definitions")
 
         regex = re.compile(r"(\S*) (\S*) signature='([^']*)' (\S*) (\S*)")
 
-        for line in self.extensions["Info"].iter_execution():
+        for line in self.extensions["Info"].iter_definitions():
             m = regex.match(line)
             if m:
                 src_file, func, signature, def_line, func_type = m.groups()
 
                 if func in self.callgraph and src_file in self.callgraph[func]:
-                    self.__error("Function is defined more than once: '{}' '{}'".format(func, src_file))
+                    self._error("Function is defined more than once: '{}' '{}'".format(func, src_file))
                     continue
 
                 val = self._get_initial_value()
@@ -168,7 +168,7 @@ class Callgraph(Extension):
             val["declared_in"][decl_file] = dec_val
             return val
 
-        for line in self.extensions["Info"].iter_decl():
+        for line in self.extensions["Info"].iter_declarations():
             m = regex.match(line)
             if m:
                 decl_file, decl_name, decl_signature, decl_line, decl_type = m.groups()
@@ -185,11 +185,11 @@ class Callgraph(Extension):
                     continue
 
                 if decl_file not in self.src_graph:
-                    self.__error("Not in source graph: {}".format(decl_file))
+                    self._error("Not in source graph: {}".format(decl_file))
 
                 for src_file in self.callgraph[decl_name]:
                     if src_file not in self.src_graph:
-                        self.__error("Not in source graph: {}".format(src_file))
+                        self._error("Not in source graph: {}".format(src_file))
 
                     if src_file == decl_file or self._t_unit_is_common(src_file, decl_file):
                         self.callgraph[decl_name][src_file]["declared_in"][decl_file] = dec_val
@@ -216,7 +216,7 @@ class Callgraph(Extension):
                     continue
                 self.callgraph[func][src_file]["type"] = "exported"
 
-    def __process_call(self):
+    def __process_calls(self):
         self.log("Processing calls")
 
         all_args = "(?:\sarg\d+='[^']*')*"
@@ -228,7 +228,7 @@ class Callgraph(Extension):
         args_extract = r"arg\d+='([^']*)'"
         args_regex = re.compile(args_extract)
 
-        for line in self.extensions["Info"].iter_call():
+        for line in self.extensions["Info"].iter_calls():
             m = regex.match(line)
             if m:
                 context_file, cc_in_file, context_func, func, call_line, call_type, args = m.groups()
@@ -270,7 +270,7 @@ class Callgraph(Extension):
                         break
 
                 if len(matched_files) > 1:
-                    self.__error("Multiple matches: {} {}".format(func, context_func))
+                    self._error("Multiple matches: {} {}".format(func, context_func))
 
                 for possible_file in matched_files:
                     if possible_file in description and \
@@ -307,138 +307,115 @@ class Callgraph(Extension):
                     if possible_file == "unknown":
                         description[possible_file]["defined_on_line"] = "unknown"
                         description[possible_file]["type"] = call_type
-                        self.__error("Can't match definition: {} {}".format(func, context_file))
+                        self._error("Can't match definition: {} {}".format(func, context_file))
 
-    def __process_callp(self):
-        callp = self.extensions["Info"].callp
-        if not os.path.isfile(callp):
-            return
-
+    def __process_calls_by_pointers(self):
         self.log("Processing calls by pointers")
-        callgraph = self.callgraph
-        get_init_val = self._get_initial_value
-        with open(callp, "r") as callp_fh:
-            for line in callp_fh:
-                m = re.match(r'(\S*) (\S*) (\S*) (\S*)', line)
-                if m:
-                    context_file, context_func, func_ptr, call_line = m.groups()
-                    if context_func not in callgraph:
-                        val = get_init_val()
-                        description = callgraph.setdefault(context_func, {'unknown': val})
-                    else:
-                        description = callgraph[context_func]
 
-                    if context_file not in description:
-                        val = get_init_val()
-                        description[context_file] = val
-                        val["calls_by_pointer"] = {func_ptr: {call_line: 1}}
-                    elif func_ptr not in description[context_file]["calls_by_pointer"]:
-                        description[context_file]["calls_by_pointer"][func_ptr] = {call_line: 1}
-                    else:
-                        description[context_file]["calls_by_pointer"][func_ptr][call_line] = 1
+        for line in self.extensions["Info"].iter_calls_by_pointers():
+            m = re.match(r'(\S*) (\S*) (\S*) (\S*)', line)
+            if m:
+                context_file, context_func, func_ptr, call_line = m.groups()
 
-    def __process_use_func(self):
-        use_func = self.extensions["Info"].use_func
+                if context_func not in self.callgraph:
+                    val = self._get_initial_value()
+                    description = self.callgraph.setdefault(context_func, {'unknown': val})
+                else:
+                    description = self.callgraph[context_func]
 
-        if not os.path.isfile(use_func):
-            return
+                if context_file not in description:
+                    val = self._get_initial_value()
+                    description[context_file] = val
+                    val["calls_by_pointer"] = {func_ptr: {call_line: 1}}
+                elif func_ptr not in description[context_file]["calls_by_pointer"]:
+                    description[context_file]["calls_by_pointer"][func_ptr] = {call_line: 1}
+                else:
+                    description[context_file]["calls_by_pointer"][func_ptr][call_line] = 1
 
-        self.log("Processing functions use")
+    def __process_functions_usages(self):
+        self.log("Processing functions usages")
 
-        cached = dict()
-        # This helps performance
-        callgraph = self.callgraph
-        is_common = self._t_unit_is_common
-        are_linked = self._files_are_linked
-        get_init_val = self._get_initial_value
         is_builtin = re.compile(r'(__builtin)|(__compiletime)')
 
-        with open(use_func, "r") as use_func_fh:
-            for file_line in use_func_fh:
-                m = re.match(r'(\S*) (\S*) (\S*) (\S*)', file_line)
-                if m:
-                    context_file = m.group(1)
-                    context_func = m.group(2)
-                    func = m.group(3)
-                    line = m.group(4)
-                    if is_builtin.match(func):
-                        continue
-                    if func not in callgraph:
-                        self.__error("Use of function without definition: {}".format(func))
-                        continue
+        for file_line in self.extensions["Info"].iter_functions_usages():
+            m = re.match(r'(\S*) (\S*) (\S*) (\S*)', file_line)
+            if m:
+                context_file = m.group(1)
+                context_func = m.group(2)
+                func = m.group(3)
+                line = m.group(4)
+                if is_builtin.match(func):
+                    continue
+                if func not in self.callgraph:
+                    self._error("Use of function without definition: {}".format(func))
+                    continue
+                else:
+                    description = self.callgraph[func]
+
+                # For each function call there can be many definitions with the same name, defined in different files.
+                # possible_files is a list of them.
+                possible_files = tuple(f for f in description if f != "unknown")
+                if len(possible_files) == 0:
+                    self._error("No possible definitions for use: {}".format(func))
+                    continue
+
+                # Assign priority number for each possible definition. Examples:
+                # 5 means that definition is located in the same file as the call
+                # 4 - in the same translation unit
+                # 3 - in the object file that is linked with the object file that contains the call
+                index = 5
+                for files in (
+                        (f for f in possible_files if f == context_file),
+                        (f for f in possible_files if self._t_unit_is_common(f, context_file)),
+                        (f for f in possible_files if self._files_are_linked(f, context_file)),
+                        ['unknown']):
+                    matched_files = tuple(files)
+                    if matched_files:
+                        break
+                    index -= 1
+                else:
+                    raise RuntimeError("We do not expect any other file class")
+
+                if len(matched_files) > 1:
+                    self._error("Multiple matches for use: {} call in {}".format(func, context_func))
+
+                for possible_file in matched_files:
+                    if possible_file not in description:
+                        val = self._get_initial_value()
+
+                        if context_func == "NULL":
+                            val["used_in_file"] = {context_file: {line: index}}
+                        else:
+                            val["used_in_func"][context_func] = {context_file: {line: index}}
+
+                        description[possible_file] = val
                     else:
-                        description = callgraph[func]
-
-                    if func in cached and context_file in cached[func]:
-                        files, index = cached[func][context_file]
-                    else:
-                        # For each function call there can be many definitions with the same name, defined in different files.
-                        # possible_files is a list of them.
-                        possible_files = tuple(f for f in description if f != "unknown")
-                        if len(possible_files) == 0:
-                            self.__error("No possible definitions for use: {}".format(func))
-                            continue
-
-                        # Assign priority number for each possible definition. Examples:
-                        # 5 means that definition is located in the same file as the call
-                        # 4 - in the same translation unit
-                        # 3 - in the object file that is linked with the object file that contains the call
-                        # 2 - reserved for exported functions (Linux kernel only)
-                        # 1 - TODO: investigate this case
-                        # 0 - definition is not found
-                        for i, matched_files in enumerate((fls for fls in (
-                                tuple(f for f in possible_files if f == context_file),
-                                tuple(f for f in possible_files if is_common(f, context_file)),
-                                tuple(f for f in possible_files if are_linked(f, context_file)),
-                                ('unknown',)) if len(fls) > 0)):
-                            files = matched_files
-                            index = i
-                            break
-                        else:
-                            raise RuntimeError("We do not expect any other file class")
-                        if len(files) > 1:
-                            self.__error("Multiple matches for use: {} call in {}".format(func, context_func))
-
-                        if func in cached:
-                            cached[func][context_file] = (files, index)
-                        else:
-                            cached[func] = {context_file: (files, index)}
-
-                    for possible_file in files:
-                        if possible_file not in description:
-                            val = get_init_val()
-                            if context_func == "NULL":
-                                val["used_in_file"] = {context_file: {line: index}}
+                        if context_func == "NULL":
+                            if context_file in description[possible_file]["used_in_file"]:
+                                description[possible_file]["used_in_file"][context_file][line] = index
                             else:
-                                val["used_in_func"][context_func] = {context_file: {line: index}}
-                            description[possible_file] = val
+                                description[possible_file]["used_in_file"][context_file] = {line: index}
                         else:
-                            if context_func == "NULL":
-                                if context_file in description[possible_file]["used_in_file"]:
-                                    description[possible_file]["used_in_file"][context_file][line] = index
-                                else:
-                                    description[possible_file]["used_in_file"][context_file] = {line: index}
-                            else:
-                                if context_func not in description[possible_file]["used_in_func"]:
-                                    description[possible_file]["used_in_func"][context_func] = {
-                                        context_file: {
-                                            line: index
-                                        }
+                            if context_func not in description[possible_file]["used_in_func"]:
+                                description[possible_file]["used_in_func"][context_func] = {
+                                    context_file: {
+                                        line: index
                                     }
-                                elif context_file not in description[possible_file]["used_in_func"][context_func]:
-                                    description[possible_file]["used_in_func"][context_func][context_file] = \
-                                        {line: index}
-                                else:
-                                    description[possible_file]["used_in_func"][context_func][context_file][line] = index
+                                }
+                            elif context_file not in description[possible_file]["used_in_func"][context_func]:
+                                description[possible_file]["used_in_func"][context_func][context_file] = \
+                                    {line: index}
+                            else:
+                                description[possible_file]["used_in_func"][context_func][context_file][line] = index
 
-                        uses = self.callgraph[context_func][context_file]["uses"]
-                        if func not in uses:
-                            uses[func] = {context_file: callgraph[func][possible_file]["used_in_func"][context_func][context_file]}
-                        elif context_file not in uses[func]:
-                            uses[func][context_file] = callgraph[func][possible_file]["used_in_func"][context_func][context_file]
+                    uses = self.callgraph[context_func][context_file]["uses"]
+                    if func not in uses:
+                        uses[func] = {context_file: self.callgraph[func][possible_file]["used_in_func"][context_func][context_file]}
+                    elif context_file not in uses[func]:
+                        uses[func][context_file] = self.callgraph[func][possible_file]["used_in_func"][context_func][context_file]
 
-                        if possible_file == "unknown":
-                            self.__error("Can't match definition for use: {} {}".format(func, context_file))
+                    if possible_file == "unknown":
+                        self._error("Can't match definition for use: {} {}".format(func, context_file))
 
     def _dump_collection(self, collection, suffix):
         for file in list(collection.keys()):
@@ -494,7 +471,7 @@ class Callgraph(Extension):
 
         return result
 
-    def __error(self, msg):
+    def _error(self, msg):
         """
         Prints an error message
         """
@@ -516,7 +493,7 @@ class Callgraph(Extension):
             "declared_in": dict()
         }
 
-    def __clean_error_log(self):
+    def _clean_error_log(self):
         """
         Removes duplicate error messages
         """
