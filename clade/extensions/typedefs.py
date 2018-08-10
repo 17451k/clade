@@ -59,7 +59,7 @@ class Typedefs(Extension):
                 elif declaration not in typedefs[scope_file]:
                     typedefs[scope_file].append(declaration)
 
-    def load_typedefs(self, files=[]):
+    def load_typedefs(self, files=None):
         return self.load_data_by_key(self.typedefs_suffix, files)
 
 

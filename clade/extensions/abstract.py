@@ -122,7 +122,7 @@ class Extension(metaclass=abc.ABCMeta):
             # todo: This is a workaround but it is required rarely
             self.warning("Do not print data to file due to recursion limit {}".format(file_name))
 
-    def load_data_by_key(self, file_suffix, files=[]):
+    def load_data_by_key(self, file_suffix, files=None):
         """Load data stored in multiple json files using dump_data_by_key()."""
         data = dict()
         if not files:
