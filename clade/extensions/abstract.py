@@ -100,7 +100,8 @@ class Extension(metaclass=abc.ABCMeta):
             file_name = os.path.join(self.work_dir, file_name)
 
         if not os.path.isfile(file_name):
-            raise FileNotFoundError("'{}' file is not found".format(file_name))
+            self.warning("{!r} file is not found".format(file_name))
+            return dict()
 
         self.debug("Load {}".format(file_name))
         with open(file_name, "r") as fh:
@@ -122,7 +123,7 @@ class Extension(metaclass=abc.ABCMeta):
             # todo: This is a workaround but it is required rarely
             self.warning("Do not print data to file due to recursion limit {}".format(file_name))
 
-    def load_data_by_key(self, file_suffix, files=[]):
+    def load_data_by_key(self, file_suffix, files=None):
         """Load data stored in multiple json files using dump_data_by_key()."""
         data = dict()
         if not files:
@@ -131,7 +132,6 @@ class Extension(metaclass=abc.ABCMeta):
         else:
             for key in files:
                 file_name = hashlib.md5(key.encode('utf-8')).hexdigest() + file_suffix
-
                 data.update(self.load_data(file_name))
 
         return data

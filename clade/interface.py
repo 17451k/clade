@@ -49,6 +49,10 @@ def get_cc_opts(identifier):
     return CC(workdir).load_opts_by_id(identifier)
 
 
+def get_cc_deps(identifier):
+    return CC(workdir).load_deps_by_id(identifier)
+
+
 def get_ld(identifier):
     return LD(workdir).load_cmd_by_id(identifier)
 
@@ -95,3 +99,12 @@ class CallGraph:
 
     def __init__(self):
         self.graph = Callgraph(workdir, configuration).load_callgraph()
+
+
+class TypeDefinitions:
+
+    def __init__(self, files):
+        self.graph = Typedefs(workdir, configuration).load_typedefs(files)
+
+
+

@@ -67,7 +67,7 @@ class Macros(Extension):
                 else:
                     self.expand[file] = {func: {'args': [args]}}
 
-    def load_macros_expansions(self, files=[]):
+    def load_macros_expansions(self, files=None):
         return self.load_data_by_key(self.expand_suffix, files)
 
 
