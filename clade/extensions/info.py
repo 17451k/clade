@@ -18,6 +18,7 @@ import hashlib
 import jinja2
 import os
 import re
+import shutil
 import subprocess
 import sys
 
@@ -69,6 +70,29 @@ class Info(Extension):
 
         self.cif_err_log = os.path.join(self.work_dir, "cif_err.log")  # Path to file containing CIF error log
 
+    def parse(self, cmd_file):
+        if self.is_parsed():
+            self.log("Skip parsing")
+            return
+
+        self.parse_prerequisites(cmd_file)
+
+        if not shutil.which("cif"):
+            sys.exit("Can't find CIF in PATH")
+
+        self.log("Start CIF")
+        self.__gen_info_requests()
+
+        cmds = self.extensions["CC"].load_all_cmds()
+
+        with concurrent.futures.ProcessPoolExecutor(max_workers=os.cpu_count()) as p:
+            for cmd in cmds:
+                p.submit(unwrap, self, cmd)
+
+        self.log("CIF finished")
+
+        self.__normalize_cif_output(cmd_file)
+
     def __gen_info_requests(self):
         env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(os.path.dirname(self.aspect_template)),
@@ -100,27 +124,6 @@ class Info(Extension):
                              for i in range(self.conf["Info.max_args"])}
             }))
         self.debug('Rendered template was stored into file {}'.format(self.aspect))
-
-    def parse(self, cmd_file):
-        if self.is_parsed():
-            self.log("Skip parsing")
-            return
-
-        self.parse_prerequisites(cmd_file)
-
-        self.log("Start CIF")
-
-        self.__gen_info_requests()
-
-        cmds = self.extensions["CC"].load_all_cmds()
-
-        with concurrent.futures.ProcessPoolExecutor(max_workers=os.cpu_count()) as p:
-            for cmd in cmds:
-                p.submit(unwrap, self, cmd)
-
-        self.log("CIF finished")
-
-        self.__normalize_cif_output(cmd_file)
 
     def _run_cif(self, cmd):
         if self.__is_cmd_bad_for_cif(cmd):
