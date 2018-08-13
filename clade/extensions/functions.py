@@ -32,10 +32,10 @@ class Functions(Callgraph):
         super().__init__(work_dir, conf)
 
         self.funcs = dict()
-        self.funcs_file = "functions.json"
+        self.funcs_suffix = ".functions.json"
 
         self.funcs_by_file = dict()
-        self.funcs_by_file_file = "functions_by_file.json"
+        self.funcs_by_file_suffix = ".functions_by_file.json"
 
     def parse(self, cmds_file):
         if self.is_parsed():
@@ -52,23 +52,23 @@ class Functions(Callgraph):
         self._clean_error_log()
 
         self.log("Dump parsed data")
-        self.dump_data(self.funcs, self.funcs_file)
-        self.dump_data(self.funcs_by_file, self.funcs_by_file_file)
+        self.dump_data_by_key(self.funcs, self.funcs_suffix)
+        self.dump_data_by_key(self.funcs_by_file, self.funcs_by_file_suffix)
         self.log("Finish")
 
-    def load_functions(self):
+    def load_functions(self, files=None):
         """Load information about functions."""
         if self.funcs:
             return self.funcs
         else:
-            return self.load_data(self.funcs_file)
+            return self.load_data_by_key(self.funcs_suffix, files)
 
-    def load_functions_by_file(self):
+    def load_functions_by_file(self, files=None):
         """Load information about functions grouped by files."""
-        if self.funcs:
-            return self.funcs
+        if self.funcs_by_file:
+            return self.funcs_by_file
         else:
-            return self.load_data(self.funcs_file)
+            return self.load_data_by_key(self.funcs_by_file_suffix, files)
 
     def __process_definitions(self):
         self.log("Processing function definitions")
