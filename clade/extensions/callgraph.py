@@ -71,7 +71,7 @@ class Callgraph(Extension):
         self.log("Processing calls")
 
         all_args = "(?:\sarg\d+='[^']*')*"
-        regex = re.compile(r'(\S*) (\S*) (\S*) (\S*) (\S*) (\S*)({0})'.format(all_args))
+        regex = re.compile(r'(\S*) (\S*) (\S*) (\S*) (\S*)({0})'.format(all_args))
 
         is_builtin = re.compile(r'(__builtin)|(__compiletime)')
         is_bad = re.compile(r'__bad')
@@ -82,7 +82,7 @@ class Callgraph(Extension):
         for line in self.extensions["Info"].iter_calls():
             m = regex.match(line)
             if m:
-                context_file, _, context_func, func, call_line, call_type, args = m.groups()
+                context_file, context_func, func, call_line, call_type, args = m.groups()
 
                 if is_builtin.match(func) or (is_bad.match(func) and func not in self.callgraph):
                     continue

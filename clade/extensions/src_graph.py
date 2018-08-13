@@ -59,8 +59,11 @@ class SrcGraph(Extension):
         build_cwd = get_build_cwd(cmds)
 
         for cmd in self.extensions["CC"].load_all_cmds():
-            if not cmd["out"] or not cmd["in"] or cmd["in"][0] == "/dev/null" or cmd["in"][0] == "-":
+            if not cmd["in"] or cmd["in"][0] == "/dev/null" or cmd["in"][0] == "-":
                 continue
+
+            if not cmd["out"]:
+                cmd["out"] = cmd["in"][0] + ".out"
 
             cmd_id = str(cmd["id"])
 
@@ -78,8 +81,10 @@ class SrcGraph(Extension):
                 self.src_graph[rel_in]["compiled_in"].add(cmd_id)
                 self.src_graph[rel_in]["used_by"].update(used_by)
 
-        if self.src_graph:
-            self.dump_data(self.src_graph, self.src_graph_file)
+        self.dump_data(self.src_graph, self.src_graph_file)
+
+        if not self.src_graph:
+            self.warning("Source graph is empty")
 
         self.log("Constructing finished")
 
