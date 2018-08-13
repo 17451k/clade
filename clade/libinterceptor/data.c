@@ -30,7 +30,17 @@ static void expand_newlines(char* dest, const char* src) {
         switch(src[i]) {
             case '\n':
                 dest += sprintf(dest, "\\n");
+                if (i + 1 < strlen(src) && src[i + 1] == '\r') {
+                    i++;
+                }
                 break;
+            case '\r':
+                dest += sprintf(dest, "\\n");
+                if (i + 1 < strlen(src) && src[i + 1] == '\n') {
+                    i++;
+                }
+                break;
+
             default:
                 *(dest++) = src[i];
         }
