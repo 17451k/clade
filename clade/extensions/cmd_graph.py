@@ -57,11 +57,13 @@ class CmdGraph(Extension):
         for parsed_cmd, ext_name in sorted(parsed_cmds, key=lambda x: x[0]["id"]):
             self.__add_to_graph(parsed_cmd, ext_name)
 
-        if self.graph:
-            self.dump_data(self.graph, self.graph_file)
+        self.dump_data(self.graph, self.graph_file)
 
+        if self.graph:
             if self.conf.get("CmdGraph.as_picture"):
                 self.__print_source_graph()
+        else:
+            self.warning("Command graph is empty")
 
         self.log("Constructing finished")
 

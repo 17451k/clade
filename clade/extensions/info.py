@@ -136,8 +136,9 @@ class Info(Extension):
                 if e.errno != 17:
                     raise
 
-        os.environ["CWD"] = self.work_dir
+        os.environ["CIF_INFO_DIR"] = self.work_dir
         os.environ["CC_IN_FILE"] = cmd['in'][0]
+        os.environ["CIF_CMD_CWD"] = cmd['cwd']
 
         cif_args = ["cif",
                     "--debug", "ALL",
@@ -162,8 +163,8 @@ class Info(Extension):
             return True
 
         if not cmd["out"]:
-            # TODO: investigate this case
-            return True
+            # Add output file for CIF
+            cmd["out"] = cmd["in"][0]
 
         cif_in = cmd["in"][0]
 
@@ -227,7 +228,7 @@ class Info(Extension):
 
         src = get_build_cwd(cmd_file)
 
-        regexp = re.compile(r'(\S*) (.*)')
+        regexp = re.compile(r'(\S*) (\S*) (.*)')
 
         for file in self.files:
             if file == self.init_global:
@@ -249,7 +250,9 @@ class Info(Extension):
                                 m = regexp.match(line)
 
                                 if m:
-                                    path, rest = m.groups()
+                                    cwd, path, rest = m.groups()
+                                    if not os.path.isabs(path):
+                                        path = os.path.join(cwd, path)
                                     path = normalize_path(path, src)
                                     temp_fh.write("{} {}\n".format(path, rest))
             except UnicodeDecodeError as err:
