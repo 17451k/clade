@@ -33,7 +33,8 @@ class CC(Common):
                 "/usr/bin/gcc",
                 "/usr/local/bin/gcc",
                 "/usr/bin/clang",
-                "/usr/local/bin/clang"
+                "/usr/local/bin/clang",
+                "/usr/bin/cc"
             ]
         else:
             self.which_list = conf["CC.which_list"]
