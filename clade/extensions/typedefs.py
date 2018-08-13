@@ -46,7 +46,7 @@ class Typedefs(Extension):
     def __process_typedefs(self):
         self.log("Processing typedefs")
 
-        regex = re.compile(r'(\S*) (.*)')
+        regex = re.compile(r'(\S*) typedef (.*)')
         typedefs = self.typedefs
 
         for line in self.extensions["Info"].iter_typedefs():
