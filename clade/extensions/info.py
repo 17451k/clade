@@ -21,6 +21,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 
 from clade.extensions.abstract import Extension
 from clade.extensions.utils import normalize_path, parse_args
@@ -68,7 +69,7 @@ class Info(Extension):
                       self.expand, self.exported,
                       self.exported]
 
-        self.cif_err_log = os.path.join(self.work_dir, "cif_err.log")  # Path to file containing CIF error log
+        self.err_log = os.path.join(self.work_dir, "err.log")  # Path to file containing CIF error log
 
     def parse(self, cmd_file):
         if self.is_parsed():
@@ -91,7 +92,11 @@ class Info(Extension):
 
         self.log("CIF finished")
 
+        if os.path.exists(self.temp_dir):
+            shutil.rmtree(self.temp_dir)
+
         self.__normalize_cif_output(cmd_file)
+        self.log("Finish")
 
     def __gen_info_requests(self):
         env = jinja2.Environment(
@@ -129,8 +134,7 @@ class Info(Extension):
         if self.__is_cmd_bad_for_cif(cmd):
             return
 
-        cif_work_dir = os.path.join(self.work_dir, "cif")
-        cif_out = os.path.normpath(os.path.join(cif_work_dir, cmd["out"]))
+        cif_out = os.path.join(self.temp_dir, os.path.basename(cmd["out"]))
 
         if not os.path.isdir(cif_out):
             try:
@@ -156,10 +160,10 @@ class Info(Extension):
         opts = self.extensions["CC"].load_opts_by_id(cmd["id"])
         cif_args.extend(self.__filter_opts_for_cif(opts))
 
-        cif_log = os.path.join(cif_out + ".log")
-        with open(cif_log, "w") as log_fh:
-            if subprocess.call(cif_args, stdout=log_fh, stderr=log_fh, cwd=cmd["cwd"]):
-                self.__store_error_information(cif_args, cif_log)
+        r = subprocess.run(cif_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cmd["cwd"], text=True)
+
+        if r.returncode:
+            self.__save_log(cif_args, r.stdout)
 
     def __is_cmd_bad_for_cif(self, cmd):
         if cmd["in"] == []:
@@ -216,14 +220,10 @@ class Info(Extension):
 
         return filtered_opts
 
-    def __store_error_information(self, args, log):
-        with open(log, "r") as log_fh:
-            log_str = log_fh.readlines()
-
-        with open(self.cif_err_log, "a") as log_fh:
-            log_fh.write("CIF ARGUMENTS: " + ' '.join(args) + "\n\n")
-            log_fh.write("CIF LOG: ")
-            log_fh.writelines(log_str)
+    def __save_log(self, args, log):
+        with open(self.err_log, "a") as log_fh:
+            log_fh.write(' '.join(args) + "\n\n")
+            log_fh.writelines(log)
             log_fh.write("\n\n")
 
     def __normalize_cif_output(self, cmd_file):
