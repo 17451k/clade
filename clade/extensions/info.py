@@ -160,7 +160,7 @@ class Info(Extension):
         opts = self.extensions["CC"].load_opts_by_id(cmd["id"])
         cif_args.extend(self.__filter_opts_for_cif(opts))
 
-        r = subprocess.run(cif_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cmd["cwd"], text=True)
+        r = subprocess.run(cif_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cmd["cwd"], universal_newlines=True)
 
         if r.returncode:
             self.__save_log(cif_args, r.stdout)
