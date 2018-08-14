@@ -42,13 +42,27 @@ opts_info = {
             "asan-stack",
             "asan-globals",
             "asan-instrumentation-with-call-threshold",
+            "-triple",
+            "-main-file-name",
+            "-mrelocation-model",
+            "-pic-level",
+            "-mthread-model",
+            "-target-cpu",
+            "-target-linker-version",
+            "-coverage-notes-file",
+            "-resource-dir",
+            "-fdebug-compilation-dir",
+            "-ferror-limit",
+            "-fmessage-length",
+            "-stack-protector"
         )
     },
     "LD": {
         "require_values": (
             "-T",
             "-m",
-            "-o"
+            "-o",
+            "-z"
         )
     },
     "Objcopy": {
