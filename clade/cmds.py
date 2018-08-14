@@ -54,7 +54,7 @@ def iter_cmds(cmds_fp):
     """
     for cmd_id, line in enumerate(cmds_fp):
         cmd = dict()
-        cmd["id"] = cmd_id
+        cmd["id"] = cmd_id + 1  # cmd_id should be line number in cmds_fp file
         cmd["cwd"], cmd["which"], *cmd["command"] = line.strip().split(DELIMITER)
         cmd["which"] = os.path.normpath(cmd["which"])
 
