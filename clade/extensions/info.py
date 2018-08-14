@@ -21,7 +21,6 @@ import re
 import shutil
 import subprocess
 import sys
-import tempfile
 
 from clade.extensions.abstract import Extension
 from clade.extensions.utils import normalize_path, parse_args
