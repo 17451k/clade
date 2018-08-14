@@ -22,6 +22,8 @@ from clade.extensions.callgraph import Callgraph
 from clade.extensions.macros import Macros
 from clade.extensions.variables import Variables
 from clade.extensions.typedefs import Typedefs
+from clade.extensions.functions import Functions
+
 
 workdir = None
 configuration = None
@@ -98,13 +100,95 @@ class SourceGraph:
 class CallGraph:
 
     def __init__(self):
-        self.graph = Callgraph(workdir, configuration).load_callgraph()
+        self._graph = Callgraph(workdir, configuration)
+
+    @property
+    def graph(self):
+        return self._graph.load_callgraph()
+
+    def partial_graph(self, files=None):
+        graph = self.graph
+        if files is None:
+            return graph
+        elif isinstance(files, list) or isinstance(files, set):
+            afiles = set(files)
+            return {f: data for f, data in graph.items() for p, desc in data.items()
+                    if p in files or set(desc['called_in']).intersection(afiles)}
+        else:
+            raise TypeError("Provide None, list or set but not {!r} to filter files".format(type(files).__name__))
 
 
 class TypeDefinitions:
 
     def __init__(self, files):
-        self.graph = Typedefs(workdir, configuration).load_typedefs(files)
+        self._graph = Typedefs(workdir, configuration)
+        self._files = files
 
+    @property
+    def graph(self):
+        return self._graph.load_typedefs(self._files)
+
+
+class VariableInitializations:
+
+    def __init__(self, files):
+        self._obj = Variables(workdir, configuration)
+        self._files = files
+
+    @property
+    def vars(self):
+        return self._obj.load_variables(self._files)
+
+    @property
+    def used_vars_functions(self):
+        return self._used_vars_functions(self._files)
+
+    @staticmethod
+    def _used_vars_functions(files=None):
+        data = Variables(workdir, configuration).load_used_in_vars()
+        if files is None:
+            return data
+        elif isinstance(files, list) or isinstance(files, set):
+            afiles = set(files)
+            return {f: {k: set(used_in).intersection(afiles)} for f, fs in data.items() for k, used_in in fs.items()
+                    if f in afiles or set(used_in).intersection(afiles)}
+        else:
+            raise TypeError("Provide None, list or set but not {!r} to filter files".format(type(files).__name__))
+
+
+class FunctionsScopes:
+
+    def __init__(self, files=None):
+        self.fs = Functions(workdir, configuration)
+        self._files = files
+
+    @property
+    def funcs_to_scope(self):
+        return self._funcs_to_scope(self._files)
+
+    @property
+    def scope_to_funcs(self):
+        return self._scope_to_funcs(self._files)
+
+    def _funcs_to_scope(self, files=None):
+        data = self.fs.load_functions()
+        if files is None:
+            return data
+        elif isinstance(files, list) or isinstance(files, set):
+            files = set(files)
+            return {func: {scope: scopes[scope]} for func, scopes in data.items() for scope in scopes
+                    if scope in files or set(scopes[scope].get('declared_in', set())).intersection(files)}
+        else:
+            raise TypeError("Provide None, list or set but not {!r} to filter files".format(type(files).__name__))
+
+    def _scope_to_funcs(self, files=None):
+        data = self.fs.load_functions()
+        if files is None:
+            return data
+        elif isinstance(files, list) or isinstance(files, set):
+            return {scope: {func: funcs[func]} for scope, funcs in data.items() for func in funcs
+                    if scope in files or set(funcs[func].get('declared_in', set())).intersection(files)}
+        else:
+            raise TypeError("Provide None, list or set but not {!r} to filter files".format(type(files).__name__))
 
 
