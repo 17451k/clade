@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import sys
 
 from graphviz import Digraph
@@ -32,9 +33,7 @@ class CmdGraph(Extension):
             self.requires = conf["requires"]
 
         self.graph = dict()
-        self.out_dict = dict()
         self.graph_file = "cmd_graph.json"
-        self.graph_dot = "cmd_graph.dot"
 
         super().__init__(work_dir, conf)
 
@@ -67,18 +66,18 @@ class CmdGraph(Extension):
 
         self.log("Constructing finished")
 
-    def __add_to_graph(self, cmd, ext_name):
+    def __add_to_graph(self, cmd, ext_name, out_dict=dict()):
         out_id = str(cmd["id"])
         if out_id not in self.graph:
             self.graph[out_id] = self.__get_new_value(ext_name)
 
-        for cmd_in in (i for i in cmd["in"] if i in self.out_dict):
-            in_id = self.out_dict[cmd_in]
+        for cmd_in in (i for i in cmd["in"] if i in out_dict):
+            in_id = out_dict[cmd_in]
             self.graph[in_id]["used_by"].append(out_id)
             self.graph[out_id]["using"].append(in_id)
 
         # Rewrite cmd["out"] value to keep the latest used command id
-        self.out_dict[cmd["out"]] = out_id
+        out_dict[cmd["out"]] = out_id
 
     def __print_source_graph(self):
         dot = Digraph(graph_attr={'rankdir': 'LR'}, node_attr={'shape': 'rectangle'})
@@ -88,7 +87,7 @@ class CmdGraph(Extension):
         graph = self.graph
         for cmd_id in graph:
             cmd_type = graph[cmd_id]["type"]
-            cmd = self.extensions[cmd_type].load_json_by_id(cmd_id)
+            cmd = self.extensions[cmd_type].load_cmd_by_id(cmd_id)
 
             if not cmd["out"]:
                 continue
@@ -103,7 +102,8 @@ class CmdGraph(Extension):
                     added_nodes[cmd_in] = 1
                 dot.edge(cmd_in, cmd["out"], label="{}({})".format(cmd_type, cmd_id))
 
-        dot.render(self.graph_dot)
+        graph_dot = os.path.join(self.work_dir, "cmd_graph.dot")
+        dot.render(graph_dot)
 
     @staticmethod
     def __get_new_value(cmd_type):
