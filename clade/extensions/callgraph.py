@@ -120,32 +120,27 @@ class Callgraph(Extension):
                     self._error("Multiple matches: {} {}".format(func, context_func))
 
                 for possible_file in matched_files:
-                    if func in self.callgraph and possible_file in self.callgraph[func] and \
-                            context_func in self.callgraph[func][possible_file]['called_in'] and \
-                            context_file in self.callgraph[func][possible_file]['called_in'][context_func] and \
-                            args is not None:
-                        self.callgraph[func][possible_file]['called_in'][context_func][context_file]['args'].append(args)
+                    # TODO: Remove cc_in_file field
+                    call_val = {
+                        'match_type': index,
+                    }
+
+                    if args:
+                        call_val["args"] = args
+
+                    if possible_file not in self.callgraph:
+                        self.callgraph[possible_file] = dict()
+
+                    if func not in self.callgraph[possible_file]:
+                        val = {"called_in": dict()}
+                        val['called_in'] = {context_file: {context_func: {call_line: call_val}}}
+                        self.callgraph[possible_file][func] = val
+                    elif context_file not in self.callgraph[possible_file][func]['called_in']:
+                        self.callgraph[possible_file][func]['called_in'][context_file] = {context_func: {call_line: call_val}}
+                    elif context_func not in self.callgraph[possible_file][func]['called_in'][context_file]:
+                        self.callgraph[possible_file][func]['called_in'][context_file][context_func] = {call_line: call_val}
                     else:
-                        # TODO: Remove cc_in_file field
-                        call_val = {
-                            'call_line': call_line,
-                            'match_type': index
-                        }
-
-                        if args:
-                            call_val["args"] = args
-
-                        if possible_file not in self.callgraph:
-                            self.callgraph[possible_file] = dict()
-
-                        if func not in self.callgraph[possible_file]:
-                            val = {"called_in": dict()}
-                            val['called_in'] = {context_file: {context_func: call_val}}
-                            self.callgraph[possible_file][func] = val
-                        elif context_file not in self.callgraph[possible_file][func]['called_in']:
-                            self.callgraph[possible_file][func]['called_in'][context_file] = {context_func: call_val}
-                        else:
-                            self.callgraph[possible_file][func]['called_in'][context_file][context_func] = call_val
+                        self.callgraph[possible_file][func]['called_in'][context_file][context_func][call_line] = call_val
 
                     if possible_file == "unknown":
                         self._error("Can't match definition: {} {}".format(func, context_file))

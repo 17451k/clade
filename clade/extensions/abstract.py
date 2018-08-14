@@ -127,13 +127,15 @@ class Extension(metaclass=abc.ABCMeta):
     def load_data_by_key(self, file_suffix, files=None):
         """Load data stored in multiple json files using dump_data_by_key()."""
         data = dict()
-        if not files:
+        if files is None:
             for file in glob.glob(os.path.join(self.work_dir, '*' + file_suffix)):
                 data.update(self.load_data(file))
-        else:
+        elif isinstance(files, list) or isinstance(files, set):
             for key in files:
                 file_name = hashlib.md5(key.encode('utf-8')).hexdigest() + file_suffix
                 data.update(self.load_data(file_name))
+        else:
+            raise TypeError("Provide a list or set of files to retrieve data but not {!r}".format(type(files).__name__))
 
         return data
 

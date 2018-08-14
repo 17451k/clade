@@ -224,7 +224,7 @@ def parse_declaration(string):
     return __parser.parse(string, lexer=__lexer)
 
 
-def parse_initialization_functions(filename, callgraph_functions, commit_method):
+def parse_variables_initializations(filename, callgraph_functions, commit_method):
     global functions
     global callgraph_update_method
     functions = callgraph_functions
