@@ -43,7 +43,7 @@ def parse_args(args):
     parser = argparse.ArgumentParser()
 
     parser.add_argument("-w", "--work_dir", help="a path to the DIR where processed commands will be saved", metavar='DIR', default="clade")
-    parser.add_argument("-l", "--log_level", help="set logging level (ERROR, INFO, or DEBUG)", default="ERROR")
+    parser.add_argument("-l", "--log_level", help="set logging level (ERROR, INFO, or DEBUG)", default="INFO")
     parser.add_argument("-c", "--config", help="a path to the JSON file with configuration", metavar='JSON', default=None)
     parser.add_argument(dest="cmds_file", help="a path to the file with intercepted commands")
 

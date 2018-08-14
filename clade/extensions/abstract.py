@@ -50,8 +50,8 @@ class Extension(metaclass=abc.ABCMeta):
         self.extensions = dict()
 
         logging.basicConfig(
-            format="%(asctime)s {}: %(message)s".format(os.path.basename(sys.argv[0])),
-            level=self.conf["log_level"],
+            format="%(asctime)s clade %(message)s",
+            level=self.conf.get("log_level", "INFO"),
             datefmt="%H:%M:%S"
         )
 
@@ -66,7 +66,7 @@ class Extension(metaclass=abc.ABCMeta):
         if not self.requires:
             return
 
-        self.log("Prerequisites to initialise: {}".format(
+        self.debug("Prerequisites to initialise: {}".format(
             [x for x in self.requires if x not in self.already_initialised]
         ))
 
@@ -115,6 +115,7 @@ class Extension(metaclass=abc.ABCMeta):
         os.makedirs(os.path.dirname(file_name), exist_ok=True)
 
         self.debug("Dump {}".format(file_name))
+
         try:
             with open(file_name, "w") as fh:
                 ujson.dump(data, fh, sort_keys=True, indent=4, ensure_ascii=False, escape_forward_slashes=False)
