@@ -24,6 +24,9 @@ from clade.extensions.utils import parse_args
 
 class CC(Common):
     """Class for parsing CC build commands."""
+
+    requires = ["Storage"]
+
     def __init__(self, work_dir, conf=None):
         if not conf:
             conf = dict()
@@ -41,6 +44,9 @@ class CC(Common):
 
         if "CC.with_system_header_files" not in conf:
             conf["CC.with_system_header_files"] = True
+
+        if "CC.store_deps" not in conf:
+            conf["CC.store_deps"] = False
 
         super().__init__(work_dir, conf)
 
@@ -65,6 +71,9 @@ class CC(Common):
         del parsed_cmd["opts"]
 
         self.dump_cmd_by_id(cmd_id, parsed_cmd)
+
+        if self.conf["CC.store_deps"]:
+            self.__store_src_files(deps, parsed_cmd["cwd"])
 
     def __get_deps(self, cmd_id, cmd):
         """Get a list of CC command dependencies."""
@@ -111,6 +120,12 @@ class CC(Common):
             os.remove(deps_file)
 
         return deps
+
+    def __store_src_files(self, deps, cwd):
+        for file in deps:
+            if not os.path.isabs(file):
+                file = os.path.join(cwd, file)
+            self.extensions["Storage"].add_file(file)
 
     def load_opts_by_id(self, id):
         return self.load_data("{}-opts.json".format(id))
