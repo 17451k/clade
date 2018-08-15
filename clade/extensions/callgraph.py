@@ -120,7 +120,6 @@ class Callgraph(Extension):
                     self._error("Multiple matches: {} {}".format(func, context_func))
 
                 for possible_file in matched_files:
-                    # TODO: Remove cc_in_file field
                     call_val = {
                         'match_type': index,
                     }
@@ -141,6 +140,18 @@ class Callgraph(Extension):
                         self.callgraph[possible_file][func]['called_in'][context_file][context_func] = {call_line: call_val}
                     else:
                         self.callgraph[possible_file][func]['called_in'][context_file][context_func][call_line] = call_val
+
+		    # Create reversed callgraph
+                    if context_file not in self.callgraph:
+                        self.callgraph[context_file] = {context_func: {"calls": {possible_file: {func: call_val}}}}
+                    elif context_func not in self.callgraph[context_file]:
+                        self.callgraph[context_file][context_func] = {"calls": {possible_file: {func: call_val}}}
+                    elif "calls" not in self.callgraph[context_file][context_func]:
+                        self.callgraph[context_file][context_func]["calls"] = {possible_file: {func: call_val}}
+                    elif possible_file not in self.callgraph[context_file][context_func]["calls"]:
+                        self.callgraph[context_file][context_func]["calls"][possible_file] = {func: call_val}
+                    else:
+                        self.callgraph[context_file][context_func]["calls"][possible_file][func] = call_val
 
                     if possible_file == "unknown":
                         self._error("Can't match definition: {} {}".format(func, context_file))
