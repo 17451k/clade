@@ -19,39 +19,23 @@ around: define(likely(x)) { (x) }
 
 around: define(unlikely(x)) { (x) }
 
-info: execution(static $ $(void)) {
-	$fprintf<"$env<CIF_INFO_DIR>/execution.txt","%s %s %s signature='%s' %s static\n",$env<CIF_CMD_CWD>,$path,$func_name,$signature,$decl_line>
-}
-
 info: execution(static $ $(..)) {
 	$fprintf<"$env<CIF_INFO_DIR>/execution.txt","%s %s %s signature='%s' %s static\n",$env<CIF_CMD_CWD>,$path,$func_name,$signature,$decl_line>
-}
-
-info: execution($ $(void)) {
-	$fprintf<"$env<CIF_INFO_DIR>/execution.txt","%s %s %s signature='%s' %s global\n",$env<CIF_CMD_CWD>,$path,$func_name,$signature,$decl_line>
 }
 
 info: execution($ $(..)) {
 	$fprintf<"$env<CIF_INFO_DIR>/execution.txt","%s %s %s signature='%s' %s global\n",$env<CIF_CMD_CWD>,$path,$func_name,$signature,$decl_line>
 }
 
-info: declare_func(static $ $(void)) {
-	$fprintf<"$env<CIF_INFO_DIR>/declare_func.txt","%s %s %s signature='%s' %s static\n",$env<CIF_CMD_CWD>,$path,$func_name,$signature,$decl_line>
-}
-
 info: declare_func(static $ $(..)) {
 	$fprintf<"$env<CIF_INFO_DIR>/declare_func.txt","%s %s %s signature='%s' %s static\n",$env<CIF_CMD_CWD>,$path,$func_name,$signature,$decl_line>
-}
-
-info: declare_func($ $(void)) {
-	$fprintf<"$env<CIF_INFO_DIR>/declare_func.txt","%s %s %s signature='%s' %s global\n",$env<CIF_CMD_CWD>,$path,$func_name,$signature,$decl_line>
 }
 
 info: declare_func($ $(..)) {
 	$fprintf<"$env<CIF_INFO_DIR>/declare_func.txt","%s %s %s signature='%s' %s global\n",$env<CIF_CMD_CWD>,$path,$func_name,$signature,$decl_line>
 }
 
-info: expand(__EXPORT_SYMBOL(sym, sec)){
+info: expand(__EXPORT_SYMBOL(sym, sec)) {
 	$fprintf<"$env<CIF_INFO_DIR>/exported.txt","%s %s %s\n",$env<CIF_CMD_CWD>,$path,$arg_val1>
 }
 
