@@ -66,7 +66,7 @@ class Info(Extension):
                       self.callp, self.use_func, self.use_var,
                       self.init_global, self.define,
                       self.expand, self.exported,
-                      self.exported]
+                      self.exported, self.typedefs]
 
         self.err_log = os.path.join(self.work_dir, "err.log")  # Path to file containing CIF error log
 
