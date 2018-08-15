@@ -134,6 +134,8 @@ class Callgraph(Extension):
                         val = {"called_in": dict()}
                         val['called_in'] = {context_file: {context_func: {call_line: call_val}}}
                         self.callgraph[possible_file][func] = val
+                    elif 'called_in' not in self.callgraph[possible_file][func]:
+                        self.callgraph[possible_file][func]['called_in'] = {context_file: {context_func: {call_line: call_val}}}
                     elif context_file not in self.callgraph[possible_file][func]['called_in']:
                         self.callgraph[possible_file][func]['called_in'][context_file] = {context_func: {call_line: call_val}}
                     elif context_func not in self.callgraph[possible_file][func]['called_in'][context_file]:
@@ -141,7 +143,7 @@ class Callgraph(Extension):
                     else:
                         self.callgraph[possible_file][func]['called_in'][context_file][context_func][call_line] = call_val
 
-		    # Create reversed callgraph
+                    # Create reversed callgraph
                     if context_file not in self.callgraph:
                         self.callgraph[context_file] = {context_func: {"calls": {possible_file: {func: call_val}}}}
                     elif context_func not in self.callgraph[context_file]:
