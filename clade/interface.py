@@ -150,8 +150,8 @@ class VariableInitializations:
             return data
         elif isinstance(files, list) or isinstance(files, set):
             afiles = set(files)
-            return {f: {k: set(used_in).intersection(afiles)} for f, fs in data.items() for k, used_in in fs.items()
-                    if f in afiles or set(used_in).intersection(afiles)}
+            return {f: {k: set(used_in).intersection(afiles) for k, used_in in fs.items()
+                        if f in afiles or set(used_in).intersection(afiles)} for f, fs in data.items()}
         else:
             raise TypeError("Provide None, list or set but not {!r} to filter files".format(type(files).__name__))
 
@@ -176,8 +176,9 @@ class FunctionsScopes:
             return data
         elif isinstance(files, list) or isinstance(files, set):
             files = set(files)
-            return {func: {scope: scopes[scope]} for func, scopes in data.items() for scope in scopes
-                    if scope in files or set(scopes[scope].get('declared_in', set())).intersection(files)}
+            return {func: {scope: scopes[scope] for scope in scopes
+                           if scope in files or set(scopes[scope].get('declared_in', set())).intersection(files)}
+                    for func, scopes in data.items()}
         else:
             raise TypeError("Provide None, list or set but not {!r} to filter files".format(type(files).__name__))
 
@@ -186,9 +187,24 @@ class FunctionsScopes:
         if files is None:
             return data
         elif isinstance(files, list) or isinstance(files, set):
-            return {scope: {func: funcs[func]} for scope, funcs in data.items() for func in funcs
-                    if scope in files or set(funcs[func].get('declared_in', set())).intersection(files)}
+            return {scope: {func: funcs[func] for func in funcs
+                            if scope in files or set(funcs[func].get('declared_in', set())).intersection(files)}
+                    for scope, funcs in data.items()}
         else:
             raise TypeError("Provide None, list or set but not {!r} to filter files".format(type(files).__name__))
 
 
+class MacroExpansions:
+
+    def __init__(self, white_list=None, files=None):
+        self.data = Macros(workdir, configuration)
+        self._white_list = white_list
+        self._files = files
+
+    @property
+    def macros(self):
+        data = self.data.load_macros_expansions(self._files)
+        if self._white_list:
+            return {f: {m: desc for m, desc in macros.items() if m in self._white_list} for f, macros in data.items()}
+        else:
+            return data
