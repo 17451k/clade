@@ -13,7 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import sys
+import subprocess
 
 from clade.extensions.abstract import Extension
 from clade.extensions.utils import normalize_path, parse_args
@@ -73,6 +75,7 @@ class SrcGraph(Extension):
 
                 if rel_in not in self.src_graph:
                     self.src_graph[rel_in] = self.__get_new_value()
+                    self.src_graph[rel_in]['loc'] = self.__estimate_loc_size(src_file, build_cwd)
 
                 # compiled_in is a list of commands that compile 'rel_in' source file
                 self.src_graph[rel_in]["compiled_in"].add(cmd_id)
@@ -93,6 +96,17 @@ class SrcGraph(Extension):
             used_by.update(self.__find_used_by(cmd_graph, used_by_id))
 
         return used_by
+
+    def __estimate_loc_size(self, src_file, build_cwd):
+        file = os.path.join(build_cwd, src_file)
+        try:
+            with open(file, 'rb') as stream:
+                result = subprocess.check_output(['wc', '-l'], stdin=stream)
+            number = int(result)
+            return number
+        except (subprocess.CalledProcessError, ValueError, FileNotFoundError):
+            self.warning("Cannot get size of file {}".format(file))
+            return None
 
     @staticmethod
     def __get_new_value():

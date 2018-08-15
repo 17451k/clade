@@ -46,13 +46,13 @@ class Typedefs(Extension):
     def __process_typedefs(self):
         self.log("Processing typedefs")
 
-        regex = re.compile(r"^declaration: typedef ([^\n]+); path: ([^\n]+)")
+        regex = re.compile(r'(\S*) typedef (.*)')
         typedefs = self.typedefs
 
         for line in self.extensions["Info"].iter_typedefs():
             m = regex.match(line)
             if m:
-                declaration, scope_file = m.groups()
+                scope_file, declaration = m.groups()
 
                 if scope_file not in self.typedefs:
                     typedefs[scope_file] = [declaration]

@@ -17,12 +17,12 @@ import os
 import sys
 
 from clade.extensions.callgraph import Callgraph
-from clade.extensions.initializations import parse_initialization_functions
+from clade.extensions.initializations import parse_variables_initializations
 from clade.extensions.utils import parse_args
 
 
 class Variables(Callgraph):
-    requires = ["Callgraph", "Info", "SrcGraph"]
+    requires = ["Functions", "Info", "SrcGraph"]
 
     def __init__(self, work_dir, conf=None):
         if not conf:
@@ -43,7 +43,7 @@ class Variables(Callgraph):
 
         self.parse_prerequisites(cmds_file)
 
-        self.callgraph = self.extensions["Callgraph"].load_callgraph()
+        self.functions = self.extensions["Functions"].load_functions()
         self.src_graph = self.extensions["SrcGraph"].load_src_graph()
 
         self.__process_init_global()
@@ -59,9 +59,12 @@ class Variables(Callgraph):
             return
 
         self.log("Processing global variables initializations")
-        self.variables = parse_initialization_functions(init_global, self.callgraph, self.__process_callv)
+        self.variables = parse_variables_initializations(init_global, self.functions, self.__process_callv)
 
     def __process_callv(self, functions, context_file):
+        if not functions:
+            return
+
         options = (
             lambda fs: tuple(f for f in fs if f == context_file),
             lambda fs: tuple(f for f in fs if self._t_unit_is_common(f, context_file)),
@@ -71,7 +74,7 @@ class Variables(Callgraph):
         for func in functions:
             # For each function call there can be many definitions with the same name, defined in different files.
             # possible_files is a list of them.
-            possible_files = tuple(f for f in self.callgraph[func] if f != "unknown")
+            possible_files = tuple(f for f in self.functions[func] if f != "unknown")
 
             if len(possible_files) == 0:
                 self._error("No possible definitions for use: {}".format(func))
