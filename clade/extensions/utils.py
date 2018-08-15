@@ -29,10 +29,8 @@ def normalize_path(path, cwd, cache=dict()):
     if path in cache[cwd]:
         return cache[cwd][path]
 
-    abs_path = os.path.abspath(path)
-
-    if os.path.commonprefix([abs_path, cwd]) == cwd:
-        cache[cwd][path] = os.path.relpath(abs_path, start=cwd)
+    if os.path.commonprefix([path, cwd]) == cwd:
+        cache[cwd][path] = os.path.relpath(path, start=cwd)
     else:
         cache[cwd][path] = os.path.normpath(path)
 
