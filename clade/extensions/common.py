@@ -20,7 +20,6 @@ import re
 import shutil
 
 from clade.extensions.abstract import Extension
-from clade.extensions.utils import normalize_path
 from clade.cmds import iter_cmds_by_which, open_cmds_file
 
 opts_info = {
@@ -192,10 +191,7 @@ class Common(Extension):
                     parsed_cmd["opts"].append(opt)
                 # Input files.
                 else:
-                    parsed_cmd["in"].append(os.path.normpath(opt))
-
-        if parsed_cmd["out"]:
-            parsed_cmd["out"] = normalize_path(parsed_cmd["out"], parsed_cmd["cwd"])
+                    parsed_cmd["in"].append(opt)
 
         return parsed_cmd
 
