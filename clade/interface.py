@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 from clade.extensions.info import Info
 from clade.extensions.cc import CC
 from clade.extensions.ld import LD
@@ -23,6 +24,7 @@ from clade.extensions.macros import Macros
 from clade.extensions.variables import Variables
 from clade.extensions.typedefs import Typedefs
 from clade.extensions.functions import Functions
+from clade.extensions.storage import Storage
 
 
 workdir = None
@@ -97,6 +99,25 @@ class SourceGraph:
         return [cc for cc in ccs if cc['in'][0] == file]
 
 
+class FileStorage:
+
+    def __init__(self):
+        self._storage = Storage(workdir, configuration)
+
+    @property
+    def storage_dir(self):
+        return self._storage.get_storage_dir()
+
+    def convert_path(self, clade_path):
+        return os.path.join(self.storage_dir, clade_path)
+
+    def normal_path(self, clade_path):
+        if os.path.isabs(clade_path):
+            return self.convert_path(clade_path)
+        else:
+            return clade_path
+
+
 class CallGraph:
 
     def __init__(self):
@@ -113,7 +134,7 @@ class CallGraph:
         elif isinstance(files, list) or isinstance(files, set):
             afiles = set(files)
             return {f: data for f, data in graph.items() for p, desc in data.items()
-                    if p in files or set(desc['called_in']).intersection(afiles)}
+                    if p in files or set(desc.get('called_in', {})).intersection(afiles)}
         else:
             raise TypeError("Provide None, list or set but not {!r} to filter files".format(type(files).__name__))
 
