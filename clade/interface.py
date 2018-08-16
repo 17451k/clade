@@ -111,14 +111,14 @@ class FileStorage:
     def save_file(self, path):
         self._storage.add_file(path)
 
-    def convert_path(self, clade_path):
-        return os.path.join(self.storage_dir, clade_path.lstrip(os.path.sep))
+    def convert_path(self, path):
+        return os.path.join(self.storage_dir, path.lstrip(os.path.sep))
 
-    def normal_path(self, clade_path):
-        if os.path.isabs(clade_path):
-            return self.convert_path(clade_path)
+    def normal_path(self, path):
+        if os.path.isabs(path):
+            return self.convert_path(path)
         else:
-            return clade_path
+            return path
 
 
 class CallGraph:
