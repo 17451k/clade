@@ -109,7 +109,7 @@ class FileStorage:
         return self._storage.get_storage_dir()
 
     def convert_path(self, clade_path):
-        return os.path.join(self.storage_dir, clade_path)
+        return os.path.join(self.storage_dir, clade_path.lstrip(os.path.sep))
 
     def normal_path(self, clade_path):
         if os.path.isabs(clade_path):
