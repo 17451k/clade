@@ -15,7 +15,6 @@
 
 import os
 import sys
-import subprocess
 
 from clade.extensions.abstract import Extension
 from clade.extensions.utils import normalize_path, parse_args
@@ -26,10 +25,6 @@ class SrcGraph(Extension):
     requires = ["CmdGraph", "CC"]
 
     def __init__(self, work_dir, conf=None):
-        if not conf:
-            conf = dict()
-
-        self.out_list = []
         self.src_graph = dict()
         self.src_graph_file = "src_graph.json"
 
@@ -71,11 +66,13 @@ class SrcGraph(Extension):
             used_by = self.__find_used_by(cmd_graph, cmd_id)
 
             for src_file in self.extensions["CC"].load_deps_by_id(cmd_id):
+                if not os.path.isabs(src_file):
+                    src_file = os.path.join(cmd["cwd"], src_file)
                 rel_in = normalize_path(src_file, build_cwd)
 
                 if rel_in not in self.src_graph:
                     self.src_graph[rel_in] = self.__get_new_value()
-                    self.src_graph[rel_in]['loc'] = self.__estimate_loc_size(src_file, build_cwd)
+                    self.src_graph[rel_in]['loc'] = self.__estimate_loc_size(rel_in, build_cwd)
 
                 # compiled_in is a list of commands that compile 'rel_in' source file
                 self.src_graph[rel_in]["compiled_in"].add(cmd_id)
@@ -97,16 +94,17 @@ class SrcGraph(Extension):
 
         return used_by
 
-    def __estimate_loc_size(self, src_file, build_cwd):
-        file = os.path.join(build_cwd, src_file)
+    def __estimate_loc_size(self, file, build_cwd):
+        if not os.path.isabs(file):
+            file = os.path.join(build_cwd, file)
         try:
-            with open(file, 'rb') as stream:
-                result = subprocess.check_output(['wc', '-l'], stdin=stream)
-            number = int(result)
-            return number
-        except (subprocess.CalledProcessError, ValueError, FileNotFoundError):
+            with open(file) as f:
+                for i, _ in enumerate(f):
+                    pass
+            return i + 1
+        except FileNotFoundError:
             self.warning("Cannot get size of file {}".format(file))
-            return None
+            return 0
 
     @staticmethod
     def __get_new_value():
@@ -114,17 +112,6 @@ class SrcGraph(Extension):
             "compiled_in": set(),
             "used_by": set()
         }
-
-    def __estimate_loc_size(self, src_file, build_cwd):
-        file = os.path.join(build_cwd, src_file)
-        try:
-            with open(file, 'rb') as stream:
-                result = subprocess.check_output(['wc', '-l'], stdin=stream)
-            number = int(result)
-            return number
-        except (subprocess.CalledProcessError, ValueError, FileNotFoundError):
-            self.warning("Cannot get size of file {}".format(file))
-            return None
 
 
 def parse(args=sys.argv[1:]):

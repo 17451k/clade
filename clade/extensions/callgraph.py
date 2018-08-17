@@ -55,7 +55,7 @@ class Callgraph(Extension):
 
         self.__process_calls()
         self.__process_calls_by_pointers()
-        self.__process_functions_usages(),
+        self.__process_functions_usages()
         self._clean_error_log()
 
         self.log("Dump parsed data")
@@ -70,14 +70,12 @@ class Callgraph(Extension):
     def __process_calls(self):
         self.log("Processing calls")
 
-        all_args = "(?:\sarg\d+='[^']*')*"
-        regex = re.compile(r'(\S*) (\S*) (\S*) (\S*) (\S*)({0})'.format(all_args))
+        regex = re.compile(r'(\S*) (\S*) (\S*) (\S*) (\S*) (.*)')
 
         is_builtin = re.compile(r'(__builtin)|(__compiletime)')
         is_bad = re.compile(r'__bad')
 
-        args_extract = r"arg\d+='([^']*)'"
-        args_regex = re.compile(args_extract)
+        args_regex = re.compile(r"actual_arg_func_name(\d+)=(\S*)")
 
         for line in self.extensions["Info"].iter_calls():
             m = regex.match(line)
@@ -88,7 +86,6 @@ class Callgraph(Extension):
                     continue
 
                 args = args_regex.findall(args)
-                args = args if any(map(lambda i: i != '0', args)) else None
 
                 # For each function call there can be many definitions with the same name, defined in different
                 # files. Possible_files is a list of them.
