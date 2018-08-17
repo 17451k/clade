@@ -136,8 +136,13 @@ class CallGraph:
             return graph
         elif isinstance(files, list) or isinstance(files, set):
             afiles = set(files)
-            return {f: data for f, data in graph.items() for p, desc in data.items()
-                    if p in files or set(desc.get('called_in', {})).intersection(afiles)}
+            rg = dict()
+            for p, data in graph.items():
+                functions = {f: desc for f, desc in data.items()
+                             if p in files or set(desc.get('called_in', {})).intersection(afiles)}
+                if len(functions) > 0:
+                    rg[p] = functions
+            return rg
         else:
             raise TypeError("Provide None, list or set but not {!r} to filter files".format(type(files).__name__))
 
