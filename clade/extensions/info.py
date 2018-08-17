@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import codecs
 import concurrent.futures
 import hashlib
 import jinja2
@@ -241,24 +242,21 @@ class Info(Extension):
                 continue
 
             seen = set()
-            try:
-                with open(file, "r", encoding='utf8') as fh:
-                    with open(file + ".temp", "w") as temp_fh:
-                        for line in fh:
-                            # Storing hash of string instead of string itself reduces memory usage by 30-40%
-                            h = hashlib.blake2s(line.encode('utf-8'), digest_size=16).hexdigest()
-                            if h not in seen:
-                                seen.add(h)
-                                m = regexp.match(line)
+            with codecs.open(file, "r", encoding='utf8', errors='ignore') as fh:
+                with open(file + ".temp", "w") as temp_fh:
+                    for line in fh:
+                        # Storing hash of string instead of string itself reduces memory usage by 30-40%
+                        h = hashlib.md5(line.encode('utf-8')).hexdigest()
+                        if h not in seen:
+                            seen.add(h)
+                            m = regexp.match(line)
 
-                                if m:
-                                    cwd, path, rest = m.groups()
-                                    if not os.path.isabs(path):
-                                        path = os.path.join(cwd, path)
-                                    path = normalize_path(path, src)
-                                    temp_fh.write("{} {}\n".format(path, rest))
-            except UnicodeDecodeError as err:
-                self.warning("Cannot open file {0} or {0}.temp: {1}".format(file, err))
+                            if m:
+                                cwd, path, rest = m.groups()
+                                if not os.path.isabs(path):
+                                    path = os.path.join(cwd, path)
+                                path = normalize_path(path, src)
+                                temp_fh.write("{} {}\n".format(path, rest))
 
             os.remove(file)
             os.rename(file + ".temp", file)
