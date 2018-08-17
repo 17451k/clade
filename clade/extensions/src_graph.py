@@ -98,7 +98,7 @@ class SrcGraph(Extension):
         if not os.path.isabs(file):
             file = os.path.join(build_cwd, file)
         try:
-            with open(file) as f:
+            with open(file, "rb") as f:
                 for i, _ in enumerate(f):
                     pass
             return i + 1
