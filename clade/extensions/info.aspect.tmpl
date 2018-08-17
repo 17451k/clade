@@ -45,25 +45,13 @@ info: expand($({{ arg_patterns[i] }})) {
 }
 // endfor
 
-info: call(static $ $(void)) {
-	$fprintf<"$env<CIF_INFO_DIR>/call.txt","%s %s %s %s %s static\n",$env<CIF_CMD_CWD>,$func_context_path,$func_context_name,$func_name,$call_line>
+info: call(static $ $(..)) {
+	$fprintf<"$env<CIF_INFO_DIR>/call.txt","%s %s %s %s %s static %s\n",$env<CIF_CMD_CWD>,$func_context_path,$func_context_name,$func_name,$call_line,$actual_arg_func_names>
 }
 
-
-// for i in range(max_args_num)
-info: call(static $ $({{ arg_patterns[i] }})) {
-	$fprintf<"$env<CIF_INFO_DIR>/call.txt","%s %s %s %s %s static {{ arg_printf_patterns[i] }}\n",$env<CIF_CMD_CWD>,$func_context_path,$func_context_name,$func_name,$call_line,{{ arg_values[i] }}>
+info: call($ $(..)) {
+	$fprintf<"$env<CIF_INFO_DIR>/call.txt","%s %s %s %s %s global %s\n",$env<CIF_CMD_CWD>,$func_context_path,$func_context_name,$func_name,$call_line,$actual_arg_func_names>
 }
-// endfor
-
-info: call( $ $(void)) {
-	$fprintf<"$env<CIF_INFO_DIR>/call.txt","%s %s %s %s %s global\n",$env<CIF_CMD_CWD>,$func_context_path,$func_context_name,$func_name,$call_line>
-}
-// for i in range(max_args_num)
-info: call($ $({{ arg_patterns[i] }})) {
-	$fprintf<"$env<CIF_INFO_DIR>/call.txt","%s %s %s %s %s global {{ arg_printf_patterns[i] }}\n",$env<CIF_CMD_CWD>,$func_context_path,$func_context_name,$func_name,$call_line,{{ arg_values[i] }}>
-}
-// endfor
 
 info: callp($ $(..)) {
 	$fprintf<"$env<CIF_INFO_DIR>/callp.txt","%s %s %s %s %s\n",$env<CIF_CMD_CWD>,$func_context_path,$func_context_name,$func_ptr_name,$call_line>
