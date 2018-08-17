@@ -56,12 +56,12 @@ class Functions(Callgraph):
         self.dump_data_by_key(self.funcs_by_file, self.funcs_by_file_suffix)
         self.log("Finish")
 
-    def load_functions(self, files=None):
+    def load_functions(self, functions=None):
         """Load information about functions."""
         if self.funcs:
             return self.funcs
         else:
-            return self.load_data_by_key(self.funcs_suffix, files)
+            return self.load_data_by_key(self.funcs_suffix, functions)
 
     def load_functions_by_file(self, files=None):
         """Load information about functions grouped by files."""
