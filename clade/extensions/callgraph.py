@@ -89,8 +89,12 @@ class Callgraph(Extension):
 
                 # For each function call there can be many definitions with the same name, defined in different
                 # files. Possible_files is a list of them.
-                possible_files = tuple(f for f in self.funcs[func]
-                                       if f is not "unknown" and self.funcs[func][f]["type"] in (call_type, "exported"))
+                if func in self.funcs:
+                    possible_files = tuple(f for f in self.funcs[func]
+                                           if f is not "unknown" and self.funcs[func][f]["type"] in (call_type, "exported"))
+                else:
+                    self._error("Can't find '{}' in Functions".format(func))
+                    possible_files = []
 
                 # Assign priority number for each possible definition. Examples:
                 # 5 means that definition is located in the same file as the call
