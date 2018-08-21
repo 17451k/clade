@@ -75,7 +75,7 @@ class Callgraph(Extension):
         is_builtin = re.compile(r'(__builtin)|(__compiletime)')
         is_bad = re.compile(r'__bad')
 
-        args_regex = re.compile(r"actual_arg_func_name(\d+)=(\S*)")
+        args_regex = re.compile(r"actual_arg_func_name(\d+)=\s*(\w+)\s*")
 
         for line in self.extensions["Info"].iter_calls():
             m = regex.match(line)
