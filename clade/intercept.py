@@ -164,7 +164,7 @@ def parse_args(args):
     args = parser.parse_args(args)
 
     if not args.command:
-        sys.exit("Build command is mising")
+        sys.exit("Build command is missing")
 
     return args
 
