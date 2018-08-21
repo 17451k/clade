@@ -15,6 +15,8 @@
 
 import os
 import sys
+# todo: You can remove it as it will work with ujson everywhere (almost)
+import json
 
 from clade.extensions.callgraph import Callgraph
 from clade.extensions.initializations import parse_variables_initializations
@@ -51,6 +53,24 @@ class Variables(Callgraph):
 
         self.dump_data_by_key(self.variables, self.variables_suffix)
         self.dump_data(self.used_in_vars, self.used_in_vars_file)
+
+    # todo: Remove this as probkem with ujson dump will be solved
+    def dump_data(self, data, file_name):
+        """Dump data to a json file in the object working directory."""
+
+        if not os.path.isabs(file_name):
+            file_name = os.path.join(self.work_dir, file_name)
+
+        os.makedirs(os.path.dirname(file_name), exist_ok=True)
+
+        self.debug("Dump {}".format(file_name))
+
+        try:
+            with open(file_name, "w") as fh:
+                json.dump(data, fh, sort_keys=True, indent=4, ensure_ascii=False)
+        except RecursionError:
+            # todo: This is a workaround but it is required rarely
+            self.warning("Do not print data to file due to recursion limit {}".format(file_name))
 
     def __process_init_global(self):
         init_global = self.extensions["Info"].init_global
