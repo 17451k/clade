@@ -134,7 +134,7 @@ class Info(Extension):
         if self.__is_cmd_bad_for_cif(cmd):
             return
 
-        cif_out = os.path.join(self.temp_dir, os.path.basename(cmd["out"]))
+        cif_out = os.path.join(self.temp_dir, cmd["out"])
 
         if not os.path.isdir(cif_out):
             try:
