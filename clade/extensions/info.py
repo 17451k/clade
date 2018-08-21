@@ -158,6 +158,7 @@ class Info(Extension):
         cif_args.append("--")
 
         opts = self.extensions["CC"].load_opts_by_id(cmd["id"])
+        opts.extend(self.conf.get("Info.extra CIF opts", []))
         cif_args.extend(self.__filter_opts_for_cif(opts))
 
         r = subprocess.run(cif_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cmd["cwd"], universal_newlines=True)
