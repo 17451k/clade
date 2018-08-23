@@ -49,11 +49,7 @@ class Extension(metaclass=abc.ABCMeta):
 
         self.extensions = dict()
 
-        logging.basicConfig(
-            format="%(asctime)s clade %(message)s",
-            level=self.conf.get("log_level", "INFO"),
-            datefmt="%H:%M:%S"
-        )
+        self.logger = self.__setup_logger()
 
         self.already_initialised[self.name] = self
         self.init_extensions(work_dir)
@@ -185,12 +181,25 @@ class Extension(metaclass=abc.ABCMeta):
         else:
             raise NotImplementedError("Can't find '{}' class".format(ext_name))
 
+    def __setup_logger(self):
+        logger = logging.getLogger("Clade")
+
+        if not logger.hasHandlers():
+            logger.setLevel(self.conf.get("log_level", "INFO"))
+
+            handler = logging.StreamHandler()
+            handler.setFormatter(logging.Formatter("%(asctime)s clade %(message)s", "%H:%M:%S"))
+
+            logger.addHandler(handler)
+
+        return logger
+
     def log(self, message):
         """Print debug message.
 
         self.conf["log_level"] must be set to INFO or DEBUG in order to see the message.
         """
-        logging.info("{}: {}".format(self.name, message))
+        self.logger.info("{}: {}".format(self.name, message))
 
     def debug(self, message):
         """Print debug message.
@@ -199,11 +208,11 @@ class Extension(metaclass=abc.ABCMeta):
 
         WARNING: debug messages can have a great impact on the performance.
         """
-        logging.debug("{}: {}".format(self.name, message))
+        self.logger.debug("{}: {}".format(self.name, message))
 
     def warning(self, message):
         """Print warning message.
 
         self.conf["log_level"] must be set to WARNING, INFO or DEBUG in order to see the message.
         """
-        logging.warning("{}: {}".format(self.name, message))
+        self.logger.warning("{}: {}".format(self.name, message))
