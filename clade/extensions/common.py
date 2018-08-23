@@ -96,10 +96,10 @@ class Common(Extension):
         self.regex_out = None
 
         # Make a regex that matches if any of our regexes match.
-        if cmd_filter and cmd_filter_in:
+        if cmd_filter or cmd_filter_in:
             self.regex_in = re.compile("(" + ")|(".join(cmd_filter + cmd_filter_in) + ")")
 
-        if cmd_filter and cmd_filter_out:
+        if cmd_filter or cmd_filter_out:
             self.regex_out = re.compile("(" + ")|(".join(cmd_filter + cmd_filter_out) + ")")
 
     def parse(self, cmds_file, which_list):
