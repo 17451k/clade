@@ -216,3 +216,10 @@ class Extension(metaclass=abc.ABCMeta):
         self.conf["log_level"] must be set to WARNING, INFO or DEBUG in order to see the message.
         """
         self.logger.warning("{}: {}".format(self.name, message))
+
+    def error(self, message):
+        """Print error message.
+
+        self.conf["log_level"] must be set to ERROR, WARNING, INFO or DEBUG in order to see the message.
+        """
+        self.logger.error("{}: {}".format(self.name, message))

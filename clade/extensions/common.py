@@ -18,6 +18,7 @@ import multiprocessing
 import os
 import re
 import shutil
+import sys
 
 from clade.extensions.abstract import Extension
 from clade.cmds import iter_cmds_by_which, open_cmds_file
@@ -122,22 +123,21 @@ class Common(Extension):
         cmd_workers = []
         cmd_workers_num = os.cpu_count()
 
-        for i in range(cmd_workers_num):
+        for _ in range(cmd_workers_num):
             cmd_worker = CmdWorker(cmds_queue, self)
             cmd_workers.append(cmd_worker)
             cmd_worker.start()
 
-        with open_cmds_file(cmds_file) as cmds_fp:
-            for cmd in iter_cmds_by_which(cmds_fp, which_list):
-                cmds_queue.put(cmd)
+        try:
+            with open_cmds_file(cmds_file) as cmds_fp:
+                for cmd in iter_cmds_by_which(cmds_fp, which_list):
+                    cmds_queue.put(cmd)
+        except RuntimeError as e:
+            self.__terminate_workers(cmds_queue, cmd_workers, cmd_workers_num)
+            self.error(e)
+            sys.exit(-1)
 
-        # Terminate all workers.
-        for i in range(cmd_workers_num):
-            cmds_queue.put(None)
-
-        # Wait for all workers do finish their operation
-        for i in range(cmd_workers_num):
-            cmd_workers[i].join()
+        self.__terminate_workers(cmds_queue, cmd_workers, cmd_workers_num)
 
         self.__merge_all_cmds()
 
@@ -145,6 +145,15 @@ class Common(Extension):
             shutil.rmtree(self.temp_dir)
 
         self.log("Parsing finished")
+
+    def __terminate_workers(self, cmds_queue, cmd_workers, cmd_workers_num):
+        # Terminate all workers.
+        for i in range(cmd_workers_num):
+            cmds_queue.put(None)
+
+        # Wait for all workers do finish their operation
+        for i in range(cmd_workers_num):
+            cmd_workers[i].join()
 
     def parse_cmd(self, cmd, cmd_type):
         """Parse single bulid command."""
