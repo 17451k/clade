@@ -54,7 +54,8 @@ opts_info = {
             "-fdebug-compilation-dir",
             "-ferror-limit",
             "-fmessage-length",
-            "-stack-protector"
+            "-stack-protector",
+            "-imultiarch"
         )
     },
     "LD": {
