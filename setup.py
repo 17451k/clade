@@ -89,7 +89,7 @@ setuptools.setup(
     long_description_content_type="text/x-rst",
     packages=["clade"],
     package_data={
-        "clade": ["libinterceptor/*"],
+        "clade": ["libinterceptor/*", "extensions/*"],
     },
     entry_points={
         "console_scripts": [
