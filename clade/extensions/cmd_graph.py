@@ -23,7 +23,7 @@ from clade.extensions.utils import parse_args
 
 
 class CmdGraph(Extension):
-    requires = ["CC", "LD", "MV", "Objcopy"]
+    requires = ["CC", "LD", "MV", "AR", "Objcopy"]
 
     def __init__(self, work_dir, conf=None):
         if not conf:
