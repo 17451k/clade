@@ -70,6 +70,10 @@ class CommandGraph:
     def LDs(self):
         return ((desc['id'], desc) for desc in LD(workdir).load_all_cmds())
 
+    @property
+    def CCs(self):
+        return ((desc['id'], desc) for desc in CC(workdir).load_all_cmds())
+
     def get_ccs_for_ld(self, identifier):
         ccs = dict()
         identifier = str(identifier)
