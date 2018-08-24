@@ -159,6 +159,12 @@ class Callgraph(Extension):
                     if possible_file == "unknown":
                         self._error("Can't match definition: {} {}".format(func, context_file))
 
+        for path, funcs in self.callgraph.items():
+            for func, desc in funcs.items():
+                if path == 'unknown' and not self.funcs[func].get(path):
+                    continue
+                desc['type'] = self.funcs[func][path].get('type')
+
     def __process_calls_by_pointers(self):
         self.log("Processing calls by pointers")
 
