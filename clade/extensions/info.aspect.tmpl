@@ -39,6 +39,10 @@ info: expand(__EXPORT_SYMBOL(sym, sec)) {
 	$fprintf<"$env<CIF_INFO_DIR>/exported.txt","%s %s %s\n",$env<CIF_CMD_CWD>,$path,$arg_val1>
 }
 
+info: expand(___EXPORT_SYMBOL(sym, sec)) {
+	$fprintf<"$env<CIF_INFO_DIR>/exported.txt","%s %s %s\n",$env<CIF_CMD_CWD>,$path,$arg_val1>
+}
+
 // for i in range(max_args_num)
 info: expand($({{ arg_patterns[i] }})) {
 	$fprintf<"$env<CIF_INFO_DIR>/expand.txt","%s %s %s {{ arg_printf_patterns[i] }}\n",$env<CIF_CMD_CWD>,$path,$macro_name,{{ arg_vals[i] }}>
