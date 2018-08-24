@@ -207,7 +207,11 @@ class Info(Extension):
             '-mindirect-branch-register',
             '-mindirect-branch=thunk-extern',
             '-mindirect-branch-register',
-            "-DPAGER_ENV=\"LESS=FRX LV=-c\""
+            "-DPAGER_ENV=\"LESS=FRX LV=-c\"",
+            "-imultiarch",
+            "-quiet",
+            "-auxbase-strip",
+            "-fstack-protector-strong"
         ]
 
         # Make a regex that matches if any of our regexes match.
