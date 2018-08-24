@@ -66,6 +66,12 @@ opts_info = {
             "-z"
         )
     },
+    "AS": {
+        "require_values": (
+            "-I",
+            "-o"
+        )
+    },
     "Objcopy": {
         "require_values": (
             "--set-section-flags",
