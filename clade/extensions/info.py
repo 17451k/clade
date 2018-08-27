@@ -71,12 +71,12 @@ class Info(Extension):
 
         self.err_log = os.path.join(self.work_dir, "err.log")  # Path to file containing CIF error log
 
-    def parse(self, cmd_file):
+    def parse(self, cmds_file):
         if self.is_parsed():
             self.log("Skip parsing")
             return
 
-        self.parse_prerequisites(cmd_file)
+        self.parse_prerequisites(cmds_file)
 
         if not shutil.which("cif"):
             sys.exit("Can't find CIF in PATH")
@@ -95,7 +95,7 @@ class Info(Extension):
         if os.path.exists(self.temp_dir):
             shutil.rmtree(self.temp_dir)
 
-        self.__normalize_cif_output(cmd_file)
+        self.__normalize_cif_output(cmds_file)
         self.log("Finish")
 
     def __gen_info_requests(self):
@@ -231,10 +231,10 @@ class Info(Extension):
             log_fh.writelines(log)
             log_fh.write("\n\n")
 
-    def __normalize_cif_output(self, cmd_file):
+    def __normalize_cif_output(self, cmds_file):
         self.log("Normalizing CIF output")
 
-        src = get_build_cwd(cmd_file)
+        src = get_build_cwd(cmds_file)
 
         regexp = re.compile(r'(\S*) (\S*) (.*)')
 
