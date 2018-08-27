@@ -18,8 +18,9 @@ import sys
 
 from graphviz import Digraph
 
+from clade.cmds import get_build_cwd
 from clade.extensions.abstract import Extension
-from clade.extensions.utils import parse_args
+from clade.extensions.utils import parse_args, normalize_path
 
 
 class CmdGraph(Extension):
@@ -60,7 +61,7 @@ class CmdGraph(Extension):
 
         if self.graph:
             if self.conf.get("CmdGraph.as_picture"):
-                self.__print_source_graph()
+                self.__print_source_graph(cmds_file)
         else:
             self.warning("Command graph is empty")
 
@@ -79,7 +80,9 @@ class CmdGraph(Extension):
         # Rewrite cmd["out"] value to keep the latest used command id
         out_dict[cmd["out"]] = out_id
 
-    def __print_source_graph(self):
+    def __print_source_graph(self, cmds_file):
+        src = get_build_cwd(cmds_file)
+
         dot = Digraph(graph_attr={'rankdir': 'LR'}, node_attr={'shape': 'rectangle'})
 
         added_nodes = dict()
@@ -92,15 +95,28 @@ class CmdGraph(Extension):
             if not cmd["out"]:
                 continue
 
-            if cmd["out"] not in added_nodes:
-                dot.node(cmd["out"])
-                added_nodes[cmd["out"]] = 1
+            cmd_out = cmd["out"]
+
+            if not os.path.isabs(cmd_out):
+                cmd_out = os.path.join(cmd["cwd"], cmd_out)
+
+            cmd_out = normalize_path(cmd_out, src)
+
+            if cmd_out not in added_nodes:
+                dot.node(cmd_out)
+                added_nodes[cmd_out] = 1
 
             for cmd_in in cmd["in"]:
+                if not os.path.isabs(cmd_in):
+                    cmd_in = os.path.join(cmd["cwd"], cmd_in)
+
+                cmd_in = normalize_path(cmd_in, src)
+
                 if cmd_in not in added_nodes:
                     dot.node(cmd_in)
                     added_nodes[cmd_in] = 1
-                dot.edge(cmd_in, cmd["out"], label="{}({})".format(cmd_type, cmd_id))
+
+                dot.edge(cmd_in, cmd_out, label="{}({})".format(cmd_type, cmd_id))
 
         graph_dot = os.path.join(self.work_dir, "cmd_graph.dot")
         dot.render(graph_dot)
