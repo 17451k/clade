@@ -22,6 +22,8 @@ import sys
 import tempfile
 import ujson
 
+import clade.cmds
+
 
 # Setup extensions logger
 logger = logging.getLogger("Clade")
@@ -95,6 +97,9 @@ class Extension(metaclass=abc.ABCMeta):
     def parse(self, cmds_file):
         """Parse intercepted commands."""
         pass
+
+    def get_build_cwd(self, cmds_file):
+        return self.conf.get("build_cwd", clade.cmds.get_build_cwd(cmds_file))
 
     def load_data(self, file_name):
         """Load json file by name."""

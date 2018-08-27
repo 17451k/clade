@@ -18,7 +18,6 @@ import sys
 
 from clade.extensions.abstract import Extension
 from clade.extensions.utils import normalize_path, parse_args
-from clade.cmds import get_build_cwd
 
 
 class SrcGraph(Extension):
@@ -51,7 +50,7 @@ class SrcGraph(Extension):
 
         self.log("Start source graph constructing")
 
-        build_cwd = get_build_cwd(cmds)
+        build_cwd = self.get_build_cwd(cmds)
 
         for cmd in self.extensions["CC"].load_all_cmds():
             if not cmd["in"] or cmd["in"][0] == "/dev/null" or cmd["in"][0] == "-":

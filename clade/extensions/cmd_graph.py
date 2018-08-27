@@ -18,7 +18,6 @@ import sys
 
 from graphviz import Digraph
 
-from clade.cmds import get_build_cwd
 from clade.extensions.abstract import Extension
 from clade.extensions.utils import parse_args, normalize_path
 
@@ -81,7 +80,7 @@ class CmdGraph(Extension):
         out_dict[cmd["out"]] = out_id
 
     def __print_source_graph(self, cmds_file):
-        src = get_build_cwd(cmds_file)
+        src = self.get_build_cwd(cmds_file)
 
         dot = Digraph(graph_attr={'rankdir': 'LR'}, node_attr={'shape': 'rectangle'})
 

@@ -25,7 +25,6 @@ import sys
 
 from clade.extensions.abstract import Extension
 from clade.extensions.utils import normalize_path, parse_args
-from clade.cmds import get_build_cwd
 
 
 def unwrap(*args, **kwargs):
@@ -234,7 +233,7 @@ class Info(Extension):
     def __normalize_cif_output(self, cmds_file):
         self.log("Normalizing CIF output")
 
-        src = get_build_cwd(cmds_file)
+        src = self.get_build_cwd(cmds_file)
 
         regexp = re.compile(r'(\S*) (\S*) (.*)')
 
