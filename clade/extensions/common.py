@@ -55,7 +55,9 @@ opts_info = {
             "-ferror-limit",
             "-fmessage-length",
             "-stack-protector",
-            "-imultiarch"
+            "-imultiarch",
+            "-target",
+            "-iwithprefix"
         )
     },
     "LD": {
