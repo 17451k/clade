@@ -139,6 +139,17 @@ class CC(Common):
     def dump_deps_by_id(self, id, deps):
         self.dump_data(deps, "{}-deps.json".format(id))
 
+    def load_all_cmds(self, with_opts=True, with_deps=False):
+        cmds = super().load_all_cmds()
+
+        for cmd in cmds:
+            if with_opts:
+                cmd["opts"] = self.load_opts_by_id(cmd["id"])
+            if with_deps:
+                cmd["de[s"] = self.load_deps_by_id(cmd["id"])
+
+            yield cmd
+
 
 def parse(args=sys.argv[1:]):
     conf = parse_args(args)
