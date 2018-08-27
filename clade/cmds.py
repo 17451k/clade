@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import os
+import re
 import sys
 
 from clade.intercept import DELIMITER
@@ -42,7 +43,7 @@ def iter_cmds_by_which(cmds_fp, which_list):
     """
     for cmd in iter_cmds(cmds_fp):
         for which in which_list:
-            if cmd["which"] == which:
+            if re.search(which, cmd["which"]):
                 yield cmd
 
 
