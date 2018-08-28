@@ -23,14 +23,14 @@ from clade.extensions.utils import parse_args, normalize_path
 
 
 class CmdGraph(Extension):
-    requires = ["CC", "LD", "MV", "AR", "Objcopy"]
+    requires = ["CC", "LD", "MV", "AR", "AS", "Objcopy"]
 
     def __init__(self, work_dir, conf=None):
         if not conf:
             conf = dict()
 
-        if "requires" in conf:
-            self.requires = conf["requires"]
+        if "CmdGraph.requires" in conf:
+            self.requires = conf["CmdGraph.requires"]
 
         self.graph = dict()
         self.graph_file = "cmd_graph.json"
