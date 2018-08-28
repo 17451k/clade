@@ -57,7 +57,8 @@ opts_info = {
             "-stack-protector",
             "-imultiarch",
             "-target",
-            "-iwithprefix"
+            "-iwithprefix",
+            "-dumpbase"
         )
     },
     "LD": {
