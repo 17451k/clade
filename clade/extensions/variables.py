@@ -33,7 +33,7 @@ class Variables(Callgraph):
         super().__init__(work_dir, conf)
 
         self.variables = dict()
-        self.variables_suffix = ".vars.json"
+        self.variables_folder = "variables"
 
         self.used_in_vars = dict()
         self.used_in_vars_file = "used_in_vars.json"
@@ -51,7 +51,7 @@ class Variables(Callgraph):
         self.__process_init_global()
         self._clean_error_log()
 
-        self.dump_data_by_key(self.variables, self.variables_suffix)
+        self.dump_data_by_key(self.variables, self.variables_folder)
         self.dump_data(self.used_in_vars, self.used_in_vars_file)
 
     # todo: Remove this as probkem with ujson dump will be solved
@@ -120,7 +120,7 @@ class Variables(Callgraph):
                     self.used_in_vars[func][possible_file].append(context_file)
 
     def load_variables(self, files=None):
-        return self.load_data_by_key(self.variables_suffix, files)
+        return self.load_data_by_key(self.variables_folder, files)
 
     def load_used_in_vars(self):
         return self.load_data(self.used_in_vars_file)

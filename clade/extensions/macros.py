@@ -30,7 +30,7 @@ class Macros(Extension):
         super().__init__(work_dir, conf)
 
         self.expand = dict()
-        self.expand_suffix = ".expand.json"
+        self.expand_folder = "expand"
 
     def parse(self, cmds_file):
         if self.is_parsed():
@@ -42,7 +42,7 @@ class Macros(Extension):
         self.__process_macros_expansions()
 
         self.log("Dump parsed data")
-        self.dump_data_by_key(self.expand, self.expand_suffix)
+        self.dump_data_by_key(self.expand, self.expand_folder)
         self.log("Finish")
 
     def __process_macros_expansions(self):
@@ -68,7 +68,7 @@ class Macros(Extension):
                     self.expand[file] = {func: {'args': [args]}}
 
     def load_macros_expansions(self, files=None):
-        return self.load_data_by_key(self.expand_suffix, files)
+        return self.load_data_by_key(self.expand_folder, files)
 
 
 def parse(args=sys.argv[1:]):

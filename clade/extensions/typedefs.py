@@ -30,7 +30,7 @@ class Typedefs(Extension):
         super().__init__(work_dir, conf)
 
         self.typedefs = dict()
-        self.typedefs_suffix = ".typedefs.json"
+        self.typedefs_folder = "typedefs"
 
     def parse(self, cmds_file):
         if self.is_parsed():
@@ -40,7 +40,7 @@ class Typedefs(Extension):
         self.parse_prerequisites(cmds_file)
 
         self.__process_typedefs()
-        self.dump_data_by_key(self.typedefs, self.typedefs_suffix)
+        self.dump_data_by_key(self.typedefs, self.typedefs_folder)
         self.log("Finish")
 
     def __process_typedefs(self):
@@ -60,7 +60,7 @@ class Typedefs(Extension):
                     typedefs[scope_file].append(declaration)
 
     def load_typedefs(self, files=None):
-        return self.load_data_by_key(self.typedefs_suffix, files)
+        return self.load_data_by_key(self.typedefs_folder, files)
 
 
 def parse(args=sys.argv[1:]):

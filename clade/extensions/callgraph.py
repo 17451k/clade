@@ -36,7 +36,8 @@ class Callgraph(Extension):
         self.err_log = os.path.join(self.work_dir, "err.log")
 
         self.callgraph = dict()
-        self.callgraph_suffix = ".callgraph.json"
+        self.callgraph_file = "callgraph.json"
+        self.callgraph_folder = "callgraph"
 
         self.calls_by_ptr = dict()
         self.calls_by_ptr_file = "calls_by_ptr.json"
@@ -59,13 +60,23 @@ class Callgraph(Extension):
         self._clean_error_log()
 
         self.log("Dump parsed data")
-        self.dump_data_by_key(self.callgraph, self.callgraph_suffix)
+        self.dump_data_by_key(self.callgraph, self.callgraph_folder)
+        self.dump_data(self.callgraph, self.callgraph_file)
         self.dump_data(self.calls_by_ptr, self.calls_by_ptr_file)
         self.dump_data(self.used_in, self.used_in_file)
         self.log("Finish")
 
     def load_callgraph(self, files=None):
-        return self.load_data_by_key(self.callgraph_suffix, files)
+        if files:
+            return self.load_data_by_key(self.callgraph_folder, files)
+        else:
+            return self.load_data(self.callgraph_file)
+
+    def load_calls_by_ptr(self):
+        return self.load_data(self.calls_by_ptr_file)
+
+    def load_used_in(self):
+        return self.load_data(self.used_in_file)
 
     def __process_calls(self):
         self.log("Processing calls")

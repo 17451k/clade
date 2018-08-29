@@ -132,27 +132,27 @@ class Extension(metaclass=abc.ABCMeta):
             # todo: This is a workaround but it is required rarely
             self.warning("Do not print data to file due to recursion limit {}".format(file_name))
 
-    def load_data_by_key(self, file_suffix, files=None):
+    def load_data_by_key(self, folder, files=None):
         """Load data stored in multiple json files using dump_data_by_key()."""
         data = dict()
         if files is None:
-            for file in glob.glob(os.path.join(self.work_dir, '*' + file_suffix)):
+            for file in glob.glob(os.path.join(self.work_dir, folder, "*")):
                 data.update(self.load_data(file))
         elif isinstance(files, list) or isinstance(files, set):
             for key in files:
-                file_name = hashlib.md5(key.encode('utf-8')).hexdigest() + file_suffix
+                file_name = os.path.join(folder, hashlib.md5(key.encode('utf-8')).hexdigest() + ".json")
                 data.update(self.load_data(file_name))
         else:
             raise TypeError("Provide a list or set of files to retrieve data but not {!r}".format(type(files).__name__))
 
         return data
 
-    def dump_data_by_key(self, data, file_suffix):
+    def dump_data_by_key(self, data, folder):
         """Dump data to multiple json files in the object working directory."""
         for key in data:
             to_dump = {key: data[key]}
 
-            file_name = hashlib.md5(key.encode('utf-8')).hexdigest() + file_suffix
+            file_name = os.path.join(folder, hashlib.md5(key.encode('utf-8')).hexdigest() + ".json")
 
             self.dump_data(to_dump, file_name)
 
