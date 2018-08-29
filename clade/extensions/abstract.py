@@ -115,7 +115,7 @@ class Extension(metaclass=abc.ABCMeta):
         with open(file_name, "r") as fh:
             return ujson.load(fh)
 
-    def dump_data(self, data, file_name):
+    def dump_data(self, data, file_name, indent=4):
         """Dump data to a json file in the object working directory."""
 
         if not os.path.isabs(file_name):
@@ -127,7 +127,7 @@ class Extension(metaclass=abc.ABCMeta):
 
         try:
             with open(file_name, "w") as fh:
-                ujson.dump(data, fh, sort_keys=True, indent=4, ensure_ascii=False, escape_forward_slashes=False)
+                ujson.dump(data, fh, sort_keys=True, indent=indent, ensure_ascii=False, escape_forward_slashes=False)
         except RecursionError:
             # todo: This is a workaround but it is required rarely
             self.warning("Do not print data to file due to recursion limit {}".format(file_name))
@@ -154,7 +154,7 @@ class Extension(metaclass=abc.ABCMeta):
 
             file_name = os.path.join(folder, hashlib.md5(key.encode('utf-8')).hexdigest() + ".json")
 
-            self.dump_data(to_dump, file_name)
+            self.dump_data(to_dump, file_name, indent=0)
 
     @staticmethod
     def __get_all_subclasses(cls):
