@@ -31,6 +31,10 @@ def unwrap(*args, **kwargs):
     return Info._run_cif(*args, **kwargs)
 
 
+def unwrap_normalize(*args, **kwargs):
+    return Info._normilize_file(*args, **kwargs)
+
+
 class Info(Extension):
     requires = ["CC"]
 
@@ -230,40 +234,40 @@ class Info(Extension):
             log_fh.writelines(log)
             log_fh.write("\n\n")
 
+    def _normilize_file(self, file, src):
+        if not os.path.isfile(file):
+            return
+
+        regexp = re.compile(r'(\S*) (\S*) (.*)')
+
+        seen = set()
+        with codecs.open(file, "r", encoding='utf8', errors='ignore') as fh:
+            with open(file + ".temp", "w") as temp_fh:
+                for line in fh:
+                    # Storing hash of string instead of string itself reduces memory usage by 30-40%
+                    h = hashlib.md5(line.encode('utf-8')).hexdigest()
+                    if h not in seen:
+                        seen.add(h)
+                        m = regexp.match(line)
+
+                        if m:
+                            cwd, path, rest = m.groups()
+                            if not os.path.isabs(path):
+                                path = os.path.join(cwd, path)
+                            path = normalize_path(path, src)
+                            temp_fh.write("{} {}\n".format(path, rest))
+
+        os.remove(file)
+        os.rename(file + ".temp", file)
+
     def __normalize_cif_output(self, cmds_file):
         self.log("Normalizing CIF output")
 
         src = self.get_build_cwd(cmds_file)
 
-        regexp = re.compile(r'(\S*) (\S*) (.*)')
-
-        for file in self.files:
-            if file == self.init_global:
-                continue
-
-            if not os.path.isfile(file):
-                self.debug("Couldn't find '{}'".format(file))
-                continue
-
-            seen = set()
-            with codecs.open(file, "r", encoding='utf8', errors='ignore') as fh:
-                with open(file + ".temp", "w") as temp_fh:
-                    for line in fh:
-                        # Storing hash of string instead of string itself reduces memory usage by 30-40%
-                        h = hashlib.md5(line.encode('utf-8')).hexdigest()
-                        if h not in seen:
-                            seen.add(h)
-                            m = regexp.match(line)
-
-                            if m:
-                                cwd, path, rest = m.groups()
-                                if not os.path.isabs(path):
-                                    path = os.path.join(cwd, path)
-                                path = normalize_path(path, src)
-                                temp_fh.write("{} {}\n".format(path, rest))
-
-            os.remove(file)
-            os.rename(file + ".temp", file)
+        with concurrent.futures.ProcessPoolExecutor(max_workers=os.cpu_count()) as p:
+            for file in [f for f in self.files if f != self.init_global]:
+                p.submit(unwrap_normalize, self, file, src)
 
         self.log("Normalizing finished")
 
