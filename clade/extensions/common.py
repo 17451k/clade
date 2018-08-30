@@ -66,7 +66,10 @@ opts_info = {
             "-T",
             "-m",
             "-o",
-            "-z"
+            "-z",
+            "-arch",
+            "-macosx_version_min",
+            "-lto_library"
         )
     },
     "AS": {
@@ -99,6 +102,7 @@ class Common(Extension):
 
         self.cmds_dir = "cmds"
         self.opts_dir = "opts"
+        self.unparsed_dir = "unparsed"
 
         cmd_filter = self.conf.get("Common.filter")
         cmd_filter_in = self.conf.get("Common.filter_in")
@@ -130,6 +134,9 @@ class Common(Extension):
 
             def run(self):
                 for cmd in iter(self.cmds_queue.get, None):
+                    if self.ext.conf.get("Common.save_unparsed_cmd", False):
+                        file = os.path.join(self.ext.unparsed_dir, "{}.json".format(cmd["id"]))
+                        self.ext.dump_data(cmd, file)
                     self.ext.parse_cmd(cmd)
 
         cmds_queue = multiprocessing.Queue()
@@ -187,28 +194,26 @@ class Common(Extension):
 
         for opt in opts:
             # Options with values.
-            match = None
             for opt_requiring_val in opts_info[cmd_type]["require_values"]:
-                match = re.search(r"^({})(=?)(.*)".format(opt_requiring_val), opt)
-                if match:
-                    opt, eq, val = match.groups()
-
+                # Options with value specified after "="
+                if re.search(r"^{}=.+$".format(opt_requiring_val), opt):
+                    parsed_cmd["opts"].append(opt)
+                    break
+                elif opt_requiring_val == opt:
                     # Option value is specified by means of the following option.
-                    if not val:
-                        val = next(opts)
-                        if opt != "-o":
-                            parsed_cmd["opts"].extend(["{}".format(opt), val])
-                            break
+                    val = next(opts)
+                    if opt != "-o":
+                        parsed_cmd["opts"].extend([opt, val])
+                        break
 
                     if opt == "-o":
                         parsed_cmd["out"] = os.path.normpath(val)
                     else:
-                        parsed_cmd["opts"].append("{}{}{}".format(opt, eq, val))
+                        parsed_cmd["opts"].append(opt)
 
                     break
-
-            if not match:
-                # Options without values.
+            # Options without values.
+            else:
                 if re.search(r"^-.+$", opt):
                     parsed_cmd["opts"].append(opt)
                 # Input files.
