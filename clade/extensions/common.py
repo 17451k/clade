@@ -21,71 +21,8 @@ import shutil
 import sys
 
 from clade.extensions.abstract import Extension
+from clade.extensions.opts import requires_value
 from clade.cmds import iter_cmds_by_which, open_cmds_file
-
-opts_info = {
-    "CC": {
-        "require_values": (
-            "-D",
-            "-I",
-            "-O",
-            "-include",
-            "-isystem",
-            "-mcmodel",
-            "-o",
-            "-print-file-name",
-            "-x",
-            "-idirafter",
-            "-MT",
-            "-MF",
-            "-MQ",
-            "asan-stack",
-            "asan-globals",
-            "asan-instrumentation-with-call-threshold",
-            "-triple",
-            "-main-file-name",
-            "-mrelocation-model",
-            "-pic-level",
-            "-mthread-model",
-            "-target-cpu",
-            "-target-linker-version",
-            "-coverage-notes-file",
-            "-resource-dir",
-            "-fdebug-compilation-dir",
-            "-ferror-limit",
-            "-fmessage-length",
-            "-stack-protector",
-            "-imultiarch",
-            "-target",
-            "-iwithprefix",
-            "-dumpbase"
-        )
-    },
-    "LD": {
-        "require_values": (
-            "-T",
-            "-m",
-            "-o",
-            "-z",
-            "-arch",
-            "-macosx_version_min",
-            "-lto_library"
-        )
-    },
-    "AS": {
-        "require_values": (
-            "-I",
-            "-o"
-        )
-    },
-    "Objcopy": {
-        "require_values": (
-            "--set-section-flags",
-            "--rename-section",
-            "-O"
-        )
-    }
-}
 
 
 class Common(Extension):
@@ -187,38 +124,26 @@ class Common(Extension):
             "command": cmd["command"][0]
         }
 
-        if cmd_type not in opts_info:
+        if cmd_type not in requires_value:
             raise RuntimeError("Command type '{}' is not supported".format(cmd_type))
 
         opts = iter(cmd["command"][1:])
 
         for opt in opts:
             # Options with values.
-            for opt_requiring_val in opts_info[cmd_type]["require_values"]:
-                # Options with value specified after "="
-                if re.search(r"^{}=.+$".format(opt_requiring_val), opt):
-                    parsed_cmd["opts"].append(opt)
-                    break
-                elif opt_requiring_val == opt:
-                    # Option value is specified by means of the following option.
-                    val = next(opts)
-                    if opt != "-o":
-                        parsed_cmd["opts"].extend([opt, val])
-                        break
-
-                    if opt == "-o":
-                        parsed_cmd["out"] = os.path.normpath(val)
-                    else:
-                        parsed_cmd["opts"].append(opt)
-
-                    break
-            # Options without values.
-            else:
-                if re.search(r"^-.+$", opt):
-                    parsed_cmd["opts"].append(opt)
-                # Input files.
+            if opt in requires_value[cmd_type]:
+                # Option value is specified by means of the following option.
+                val = next(opts)
+                if opt == "-o":
+                    parsed_cmd["out"] = os.path.normpath(val)
                 else:
-                    parsed_cmd["in"].append(opt)
+                    parsed_cmd["opts"].extend([opt, val])
+            # Options without values (or with values that are not separated by space).
+            elif re.search(r"^-", opt):
+                parsed_cmd["opts"].append(opt)
+            # Input files.
+            else:
+                parsed_cmd["in"].append(opt)
 
         return parsed_cmd
 
