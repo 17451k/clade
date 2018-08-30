@@ -43,6 +43,9 @@ gcc_opts = [
     "-iwithprefixbefore",
     "-isysroot",
     "-imultilib",
+    "-imultiarch",
+    "-auxbase",
+    "-dumpbase",
 ]
 
 clang_opts = [
@@ -274,6 +277,8 @@ ld_gnu_opts = [
     "-u",
     "-y",
     "-z",
+    "-plugin",
+    "-dynamic-linker",
 ]
 
 # Warning: next options are not supported:
@@ -460,4 +465,7 @@ cif_unsupported_opts = [
     "-Werror",
     "-MT",
     "-dependency-file",
+    "-imultiarch",
+    "-auxbase",
+    "-quiet",
 ]
