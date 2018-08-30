@@ -66,10 +66,6 @@ class CC(Common):
         deps = self.__get_deps(cmd_id, parsed_cmd)
         self.debug("Dependencies: {}".format(deps))
         self.dump_deps_by_id(cmd_id, deps)
-
-        self.dump_opts_by_id(cmd_id, parsed_cmd["opts"])
-        del parsed_cmd["opts"]
-
         self.dump_cmd_by_id(cmd_id, parsed_cmd)
 
         if self.conf["CC.store_deps"]:
@@ -127,17 +123,11 @@ class CC(Common):
                 file = os.path.join(cwd, file)
             self.extensions["Storage"].add_file(file)
 
-    def load_opts_by_id(self, id):
-        return self.load_data("{}-opts.json".format(id))
-
-    def dump_opts_by_id(self, id, opts):
-        self.dump_data(opts, "{}-opts.json".format(id))
-
     def load_deps_by_id(self, id):
-        return self.load_data("{}-deps.json".format(id))
+        return self.load_data(os.path.join("deps", "{}-deps.json".format(id)))
 
     def dump_deps_by_id(self, id, deps):
-        self.dump_data(deps, "{}-deps.json".format(id))
+        self.dump_data(deps, os.path.join("deps", "{}-deps.json".format(id)))
 
     def load_all_cmds(self, with_opts=True, with_deps=False):
         cmds = super().load_all_cmds()
@@ -146,7 +136,7 @@ class CC(Common):
             if with_opts:
                 cmd["opts"] = self.load_opts_by_id(cmd["id"])
             if with_deps:
-                cmd["de[s"] = self.load_deps_by_id(cmd["id"])
+                cmd["deps"] = self.load_deps_by_id(cmd["id"])
 
             yield cmd
 

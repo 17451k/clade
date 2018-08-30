@@ -97,6 +97,9 @@ class Common(Extension):
 
         super().__init__(work_dir, conf)
 
+        self.cmds_dir = "cmds"
+        self.opts_dir = "opts"
+
         cmd_filter = self.conf.get("Common.filter")
         cmd_filter_in = self.conf.get("Common.filter_in")
         cmd_filter_out = self.conf.get("Common.filter_out")
@@ -215,14 +218,22 @@ class Common(Extension):
         return parsed_cmd
 
     def load_cmd_by_id(self, id):
-        return self.load_data("{}.json".format(id))
+        return self.load_data(os.path.join(self.cmds_dir, "{}.json".format(id)))
 
     def dump_cmd_by_id(self, id, cmd):
-        self.dump_data(cmd, "{}.json".format(id))
+        self.dump_opts_by_id(cmd["id"], cmd["opts"])
+        del cmd["opts"]
+        self.dump_data(cmd, os.path.join(self.cmds_dir, "{}.json".format(id)))
+
+    def load_opts_by_id(self, id):
+        return self.load_data(os.path.join(self.opts_dir, "{}-opts.json".format(id)))
+
+    def dump_opts_by_id(self, id, opts):
+        self.dump_data(opts, os.path.join(self.opts_dir, "{}-opts.json".format(id)))
 
     def __merge_all_cmds(self):
         """Merge all parsed commands into a single json file."""
-        cmd_jsons = glob.glob(os.path.join(self.work_dir, '*[0-9].json'))
+        cmd_jsons = glob.glob(os.path.join(self.work_dir, self.cmds_dir, "*[0-9].json"))
 
         merged_cmds = []
 
@@ -230,17 +241,18 @@ class Common(Extension):
             parsed_cmd = self.load_data(cmd_json)
             merged_cmds.append(parsed_cmd)
 
+        for cmd in merged_cmds:
+            if self.conf.get("Common.with_opts", True):
+                cmd["opts"] = self.load_opts_by_id(cmd["id"])
+
         if not merged_cmds:
             self.warning("Not commands were parsed")
 
-        self.dump_data(merged_cmds, "all.json")
+        self.dump_data(merged_cmds, "cmds.json")
 
     def load_all_cmds(self):
         """Load all parsed commands."""
-        try:
-            return self.load_data("all.json")
-        except FileNotFoundError:
-            return self.__merge_all_cmds()
+        return self.load_data("cmds.json")
 
     def is_bad(self, cmd):
         for _ in (cmd_in for cmd_in in cmd["in"] if self.regex_in and self.regex_in.match(cmd_in)):
