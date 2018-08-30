@@ -426,3 +426,38 @@ requires_value = {
     "AS": set(as_gnu_opts + as_osx_opts),
     "Objcopy": set(objcopy_opts),
 }
+
+# This options will be used in a regular expression
+# So you can write "-mindirect-branch" instead of "-mindirect-branch=thunk-extern"
+cif_unsupported_opts = [
+    "-cc1",
+    "-triple",
+    "-Wdeprecated-objc-isa-usage",
+    "-main-file-name",
+    "-mrelocation-model",
+    "-pic-level",
+    "-mthread-model",
+    "-mdisable-fp-elim",
+    "-fno-strict-return",
+    "-masm-verbose",
+    "-munwind-tables",
+    "-target-cpu",
+    "-target-linker-version",
+    "-coverage-notes-file",
+    "-resource-dir",
+    "-fdebug-compilation-dir",
+    "-ferror-limit",
+    "-fmessage-length",
+    "-stack-protector",
+    "-fblocks",
+    "-fobjc-runtime",
+    "-fencode-extended-block-signature",
+    "-fmax-type-align",
+    "-fcolor-diagnostics",
+    "-vectorize-loops",
+    "-vectorize-slp",
+    "-Eonly",
+    "-Werror",
+    "-MT",
+    "-dependency-file",
+]

@@ -24,6 +24,7 @@ import subprocess
 import sys
 
 from clade.extensions.abstract import Extension
+from clade.extensions.opts import requires_value, cif_unsupported_opts
 from clade.extensions.utils import normalize_path, parse_args
 
 
@@ -72,6 +73,8 @@ class Info(Extension):
                       self.expand, self.exported,
                       self.typedefs]
 
+        self.unsupported_opts_regex = re.compile(r"unrecognized command line option ‘(.*?)’")
+        self.unsupported_opts_file = os.path.join(self.work_dir, "unsupported_opts.log")
         self.err_log = os.path.join(self.work_dir, "err.log")  # Path to file containing CIF error log
 
     def parse(self, cmds_file):
@@ -99,6 +102,8 @@ class Info(Extension):
             shutil.rmtree(self.temp_dir)
 
         self.__normalize_cif_output(cmds_file)
+        if os.path.exists(self.unsupported_opts_file):
+            self._normilize_file(self.unsupported_opts_file)
         self.log("Finish")
 
     def __gen_info_requests(self):
@@ -133,18 +138,15 @@ class Info(Extension):
             }))
         self.debug('Rendered template was stored into file {}'.format(self.aspect))
 
-    def _run_cif(self, cmd):
+    def _run_cif(self, cmd, opts_to_filter=None):
         if self.__is_cmd_bad_for_cif(cmd):
             return
 
-        cif_out = os.path.join(self.temp_dir, cmd["out"])
+        if not opts_to_filter:
+            opts_to_filter = []
 
-        if not os.path.isdir(cif_out):
-            try:
-                os.makedirs(os.path.dirname(cif_out))
-            except OSError as e:
-                if e.errno != 17:
-                    raise
+        cif_out = os.path.join(self.temp_dir, cmd["out"])
+        os.makedirs(os.path.dirname(cif_out), exist_ok=True)
 
         os.environ["CIF_INFO_DIR"] = self.work_dir
         os.environ["CC_IN_FILE"] = cmd['in'][0]
@@ -162,12 +164,19 @@ class Info(Extension):
 
         opts = self.extensions["CC"].load_opts_by_id(cmd["id"])
         opts.extend(self.conf.get("Info.extra CIF opts", []))
-        cif_args.extend(self.__filter_opts_for_cif(opts))
+        cif_args.extend(self.__filter_opts_for_cif(opts, opts_to_filter[:]))
 
         r = subprocess.run(cif_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cmd["cwd"], universal_newlines=True)
 
         if r.returncode:
-            self.__save_log(cif_args, r.stdout)
+            # CIF may fail if it does not support some options
+            # We can try to parse stdout to identify unsupported options and relaunch CIF without it
+            m = self.unsupported_opts_regex.findall(r.stdout)
+            if m and not opts_to_filter:
+                self.__save_unsupported_opts(m)
+                self._run_cif(cmd, m)
+            else:
+                self.__save_log(cif_args, r.stdout)
 
     def __is_cmd_bad_for_cif(self, cmd):
         if cmd["in"] == []:
@@ -187,46 +196,29 @@ class Info(Extension):
 
         return False
 
-    def __filter_opts_for_cif(self, opts):
+    def __filter_opts_for_cif(self, opts, opts_to_filter):
+        if not cif_unsupported_opts and not opts_to_filter:
+            return opts
+
         filtered_opts = []
 
-        # CIF is based on GCC 4.6 which doesn't support some options
-        # TODO: Check this list for compatibility with new CIF based on GCC 7.3
-        unsupported_opts = [
-            "--param=allow-store-data-races",
-            "-mpreferred-stack-boundary",
-            "-Wno-unused-const-variable",
-            "-fsanitize=kernel-address",
-            "-Wno-maybe-uninitialized",
-            "--param", "asan",  # --param asan-stack=1
-            "-mno-abicalls",
-            "-Werror",
-            "-mthumb",
-            "-mips32",
-            "-fasan",
-            "-mcpu",
-            "-m16",
-            "-G0",
-            '-mindirect-branch-register',
-            '-mindirect-branch=thunk-extern',
-            '-mindirect-branch-register',
-            "-DPAGER_ENV=\"LESS=FRX LV=-c\"",
-            "-imultiarch",
-            "-quiet",
-            "-auxbase-strip",
-            "-fstack-protector-strong"
-        ]
+        # Make a regex that matches if any of the regexes match.
+        regex = re.compile("(" + ")|(".join(cif_unsupported_opts + opts_to_filter) + ")")
 
-        # Make a regex that matches if any of our regexes match.
-        combined = "(" + ")|(".join(unsupported_opts) + ")"
-
+        opts = iter(opts)
         for opt in opts:
-            if re.match(combined, opt):
+            if regex.match(opt):
+                if opt in requires_value["CC"]:
+                    next(opts)
                 continue
-
             filtered_opts.append(opt)
 
         return filtered_opts
+
+    def __save_unsupported_opts(self, opts):
+        with open(self.unsupported_opts_file, "a") as f:
+            for opt in opts:
+                f.write("{}\n".format(opt))
 
     def __save_log(self, args, log):
         with open(self.err_log, "a") as log_fh:
@@ -234,7 +226,7 @@ class Info(Extension):
             log_fh.writelines(log)
             log_fh.write("\n\n")
 
-    def _normilize_file(self, file, src):
+    def _normilize_file(self, file, src=""):
         if not os.path.isfile(file):
             return
 
@@ -256,6 +248,8 @@ class Info(Extension):
                                 path = os.path.join(cwd, path)
                             path = normalize_path(path, src)
                             temp_fh.write("{} {}\n".format(path, rest))
+                        else:
+                            temp_fh.write(line)
 
         os.remove(file)
         os.rename(file + ".temp", file)
