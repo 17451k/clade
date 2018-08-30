@@ -71,7 +71,7 @@ class Common(Extension):
 
             def run(self):
                 for cmd in iter(self.cmds_queue.get, None):
-                    if self.ext.conf.get("Common.save_unparsed_cmd", False):
+                    if self.ext.conf.get("Common.save_unparsed_cmds", False):
                         file = os.path.join(self.ext.unparsed_dir, "{}.json".format(cmd["id"]))
                         self.ext.dump_data(cmd, file)
                     self.ext.parse_cmd(cmd)
