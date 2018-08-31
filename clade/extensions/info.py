@@ -24,7 +24,7 @@ import subprocess
 import sys
 
 from clade.extensions.abstract import Extension
-from clade.extensions.opts import requires_value, cif_unsupported_opts
+from clade.extensions.opts import cif_unsupported_opts, filter_opts
 from clade.extensions.utils import normalize_path, parse_args
 
 
@@ -164,7 +164,7 @@ class Info(Extension):
 
         opts = self.extensions["CC"].load_opts_by_id(cmd["id"])
         opts.extend(self.conf.get("Info.extra CIF opts", []))
-        cif_args.extend(self.__filter_opts_for_cif(opts, opts_to_filter[:]))
+        cif_args.extend(filter_opts(opts, cif_unsupported_opts[:] + opts_to_filter[:]))
 
         r = subprocess.run(cif_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cmd["cwd"], universal_newlines=True)
 
@@ -195,25 +195,6 @@ class Info(Extension):
             return True
 
         return False
-
-    def __filter_opts_for_cif(self, opts, opts_to_filter):
-        if not cif_unsupported_opts and not opts_to_filter:
-            return opts
-
-        filtered_opts = []
-
-        # Make a regex that matches if any of the regexes match.
-        regex = re.compile("(" + ")|(".join(cif_unsupported_opts + opts_to_filter) + ")")
-
-        opts = iter(opts)
-        for opt in opts:
-            if regex.match(opt):
-                if opt in requires_value["CC"]:
-                    next(opts)
-                continue
-            filtered_opts.append(opt)
-
-        return filtered_opts
 
     def __save_unsupported_opts(self, opts):
         with open(self.unsupported_opts_file, "a") as f:

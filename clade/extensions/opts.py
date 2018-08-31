@@ -16,6 +16,8 @@
 # These are options like "-include header.h" with space betwen option and value
 # Options with values that are not separated by space should not be included here
 
+import re
+
 gcc_opts = [
     "-x",
     "-o",
@@ -233,6 +235,19 @@ clang_opts = [
     "-z",
 ]
 
+preprocessor_deps_opts = [
+    "-M",
+    "-MM",
+    "-MF",
+    "-MG",
+    "-MP",
+    "-MT",
+    "-MQ",
+    "-MD",
+    "-MMD",
+    "-dependency-file",
+]
+
 # Warning: --start-group archives --end-group options are not supported
 ld_gnu_opts = [
     "--audit",
@@ -434,7 +449,7 @@ requires_value = {
 
 # This options will be used in a regular expression
 # So you can write "-mindirect-branch" instead of "-mindirect-branch=thunk-extern"
-cif_unsupported_opts = [
+cif_unsupported_opts = preprocessor_deps_opts + [
     "-cc1",
     "-triple",
     "-Wdeprecated-objc-isa-usage",
@@ -463,9 +478,27 @@ cif_unsupported_opts = [
     "-vectorize-slp",
     "-Eonly",
     "-Werror",
-    "-MT",
-    "-dependency-file",
     "-imultiarch",
     "-auxbase",
     "-quiet",
 ]
+
+
+def filter_opts(opts, opts_to_filter):
+    if not opts_to_filter:
+        return opts
+
+    filtered_opts = []
+
+    # Make a regex that matches if any of the regexes match.
+    regex = re.compile("(" + ")|(".join(opts_to_filter) + ")")
+
+    opts = iter(opts)
+    for opt in opts:
+        if regex.match(opt):
+            if opt in requires_value["CC"]:
+                next(opts)
+            continue
+        filtered_opts.append(opt)
+
+    return filtered_opts
