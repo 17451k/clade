@@ -50,7 +50,12 @@ class Execute(Extension):
         self.parse_prerequisites(cmds_file)
         cmds = self.extensions["CC"].load_all_cmds()
 
-        with concurrent.futures.ProcessPoolExecutor(max_workers=os.cpu_count()) as p:
+        if self.conf.get("Execute.parallel"):
+            max_workers = os.cpu_count()
+        else:
+            max_workers = 1
+
+        with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as p:
             for cmd in cmds:
                 p.submit(unwrap, self, cmd)
 
