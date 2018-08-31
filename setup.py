@@ -108,6 +108,7 @@ setuptools.setup(
             "clade-macros=clade.extensions.macros:parse",
             "clade-typedefs=clade.extensions.typedefs:parse",
             "clade-ar=clade.extensions.ar:parse",
+            "clade-execute=clade.extensions.execute:parse",
         ],
     },
     cmdclass={"build": CustomBuild, "develop": CustomDevelop, 'bdist_wheel': bdist_wheel},
