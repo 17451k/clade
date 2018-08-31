@@ -481,6 +481,7 @@ cif_unsupported_opts = preprocessor_deps_opts + [
     "-imultiarch",
     "-auxbase",
     "-quiet",
+    "-DIPATH",
 ]
 
 
