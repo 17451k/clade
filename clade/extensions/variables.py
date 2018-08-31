@@ -54,7 +54,7 @@ class Variables(Callgraph):
         self.dump_data_by_key(self.variables, self.variables_suffix)
         self.dump_data(self.used_in_vars, self.used_in_vars_file)
 
-    # todo: Remove this as probkem with ujson dump will be solved
+    # todo: Remove this as problem with ujson dump will be solved
     def dump_data(self, data, file_name):
         """Dump data to a json file in the object working directory."""
 
