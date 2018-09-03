@@ -40,7 +40,7 @@ class MV(Common):
         parsed_cmd = {
             "id": cmd["id"],
             "in": [],
-            "out": None,
+            "out": [],
             "opts": [],
             "cwd": cmd["cwd"],
             "command": cmd["command"][0]
@@ -54,7 +54,7 @@ class MV(Common):
             elif not parsed_cmd["in"]:
                 parsed_cmd["in"].append(os.path.normpath(opt))
             else:
-                parsed_cmd["out"] = os.path.normpath(opt)
+                parsed_cmd["out"].append(os.path.normpath(opt))
 
         if self.is_bad(parsed_cmd):
             return

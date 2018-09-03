@@ -38,7 +38,7 @@ class AR(Common):
         parsed_cmd = {
             "id": cmd["id"],
             "in": cmd["command"][3:],
-            "out": cmd["command"][2],
+            "out": [cmd["command"][2]],
             "opts": cmd["command"][1],
             "cwd": cmd["cwd"],
             "command": cmd["command"][0]

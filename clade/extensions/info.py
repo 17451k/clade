@@ -145,38 +145,44 @@ class Info(Extension):
         if not opts_to_filter:
             opts_to_filter = []
 
-        cif_out = os.path.join(self.temp_dir, cmd["out"])
-        os.makedirs(os.path.dirname(cif_out), exist_ok=True)
-
-        os.environ["CIF_INFO_DIR"] = self.work_dir
-        os.environ["CC_IN_FILE"] = cmd['in'][0]
-        os.environ["CIF_CMD_CWD"] = cmd['cwd']
-
-        cif_args = ["cif",
-                    "--debug", "ALL",
-                    "--in", cmd["in"][0],
-                    "--aspect", self.aspect,
-                    "--back-end", "src",
-                    "--stage", "instrumentation",
-                    "--out", cif_out]
-
-        cif_args.append("--")
-
-        opts = self.extensions["CC"].load_opts_by_id(cmd["id"])
-        opts.extend(self.conf.get("Info.extra CIF opts", []))
-        cif_args.extend(filter_opts(opts, cif_unsupported_opts[:] + opts_to_filter[:]))
-
-        r = subprocess.run(cif_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cmd["cwd"], universal_newlines=True)
-
-        if r.returncode:
-            # CIF may fail if it does not support some options
-            # We can try to parse stdout to identify unsupported options and relaunch CIF without it
-            m = self.unsupported_opts_regex.findall(r.stdout)
-            if m and not opts_to_filter:
-                self.__save_unsupported_opts(m)
-                self._run_cif(cmd, m)
+        for i, cmd_in in enumerate(cmd["in"]):
+            if "-c" in cmd["opts"]:
+                cmd_out = cmd["out"][i]
             else:
-                self.__save_log(cif_args, r.stdout)
+                cmd_out = cmd["out"][0]
+
+            cif_out = os.path.join(self.temp_dir, cmd_out)
+            os.makedirs(os.path.dirname(cif_out), exist_ok=True)
+
+            os.environ["CIF_INFO_DIR"] = self.work_dir
+            os.environ["CC_IN_FILE"] = cmd['in'][0]
+            os.environ["CIF_CMD_CWD"] = cmd['cwd']
+
+            cif_args = ["cif",
+                        "--debug", "ALL",
+                        "--in", cmd_in,
+                        "--aspect", self.aspect,
+                        "--back-end", "src",
+                        "--stage", "instrumentation",
+                        "--out", cif_out]
+
+            cif_args.append("--")
+
+            opts = self.extensions["CC"].load_opts_by_id(cmd["id"])
+            opts.extend(self.conf.get("Info.extra CIF opts", []))
+            cif_args.extend(filter_opts(opts, cif_unsupported_opts[:] + opts_to_filter[:]))
+
+            r = subprocess.run(cif_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cmd["cwd"], universal_newlines=True)
+
+            if r.returncode:
+                # CIF may fail if it does not support some options
+                # We can try to parse stdout to identify unsupported options and relaunch CIF without it
+                m = self.unsupported_opts_regex.findall(r.stdout)
+                if m and not opts_to_filter:
+                    self.__save_unsupported_opts(m)
+                    self._run_cif(cmd, m)
+                else:
+                    self.__save_log(cif_args, r.stdout)
 
     def __is_cmd_bad_for_cif(self, cmd):
         if cmd["in"] == []:
@@ -184,15 +190,14 @@ class Info(Extension):
 
         if not cmd["out"]:
             # Add output file for CIF
-            cmd["out"] = cmd["in"][0]
+            cmd["out"] = ["cif_output.c"]
 
-        cif_in = cmd["in"][0]
-
-        if cif_in == "-" or cif_in == "/dev/null":
-            return True
-        elif re.search(r'\.(s|S)$', cif_in) or re.search(r'\.o$', cif_in):
-            # Assember or object files are not supported
-            return True
+        for cif_in in cmd["in"]:
+            if cif_in == "-" or cif_in == "/dev/null":
+                return True
+            elif re.search(r'\.(s|S)$', cif_in) or re.search(r'\.o$', cif_in):
+                # Assember or object files are not supported
+                return True
 
         return False
 

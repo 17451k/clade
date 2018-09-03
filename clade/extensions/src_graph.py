@@ -53,11 +53,8 @@ class SrcGraph(Extension):
         build_cwd = self.get_build_cwd(cmds)
 
         for cmd in self.extensions["CC"].load_all_cmds():
-            if not cmd["in"] or cmd["in"][0] == "/dev/null" or cmd["in"][0] == "-":
+            if [cmd_in for cmd_in in cmd["in"] if cmd_in == "/dev/null" or cmd_in == "-"]:
                 continue
-
-            if not cmd["out"]:
-                cmd["out"] = cmd["in"][0] + ".out"
 
             cmd_id = str(cmd["id"])
 
@@ -71,7 +68,7 @@ class SrcGraph(Extension):
 
                 if rel_in not in self.src_graph:
                     self.src_graph[rel_in] = self.__get_new_value()
-                    self.src_graph[rel_in]['loc'] = self.__estimate_loc_size(rel_in, build_cwd)
+                    self.src_graph[rel_in]["loc"] = self.__estimate_loc_size(rel_in, build_cwd)
 
                 # compiled_in is a list of commands that compile 'rel_in' source file
                 self.src_graph[rel_in]["compiled_in"].add(cmd_id)

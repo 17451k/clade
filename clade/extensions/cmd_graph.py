@@ -76,8 +76,9 @@ class CmdGraph(Extension):
             self.graph[in_id]["used_by"].append(out_id)
             self.graph[out_id]["using"].append(in_id)
 
-        # Rewrite cmd["out"] value to keep the latest used command id
-        out_dict[cmd["out"]] = out_id
+        # Rewrite out_dict[cmd_out] values to keep the latest used command id
+        for cmd_out in cmd["out"]:
+            out_dict[cmd_out] = out_id
 
     def __print_source_graph(self, cmds_file):
         src = self.get_build_cwd(cmds_file)
@@ -91,31 +92,27 @@ class CmdGraph(Extension):
             cmd_type = graph[cmd_id]["type"]
             cmd = self.extensions[cmd_type].load_cmd_by_id(cmd_id)
 
-            if not cmd["out"]:
-                continue
+            for cmd_out in cmd["out"]:
+                if not os.path.isabs(cmd_out):
+                    cmd_out = os.path.join(cmd["cwd"], cmd_out)
 
-            cmd_out = cmd["out"]
+                cmd_out = normalize_path(cmd_out, src)
 
-            if not os.path.isabs(cmd_out):
-                cmd_out = os.path.join(cmd["cwd"], cmd_out)
+                if cmd_out not in added_nodes:
+                    dot.node(cmd_out)
+                    added_nodes[cmd_out] = 1
 
-            cmd_out = normalize_path(cmd_out, src)
+                for cmd_in in cmd["in"]:
+                    if not os.path.isabs(cmd_in):
+                        cmd_in = os.path.join(cmd["cwd"], cmd_in)
 
-            if cmd_out not in added_nodes:
-                dot.node(cmd_out)
-                added_nodes[cmd_out] = 1
+                    cmd_in = normalize_path(cmd_in, src)
 
-            for cmd_in in cmd["in"]:
-                if not os.path.isabs(cmd_in):
-                    cmd_in = os.path.join(cmd["cwd"], cmd_in)
+                    if cmd_in not in added_nodes:
+                        dot.node(cmd_in)
+                        added_nodes[cmd_in] = 1
 
-                cmd_in = normalize_path(cmd_in, src)
-
-                if cmd_in not in added_nodes:
-                    dot.node(cmd_in)
-                    added_nodes[cmd_in] = 1
-
-                dot.edge(cmd_in, cmd_out, label="{}({})".format(cmd_type, cmd_id))
+                    dot.edge(cmd_in, cmd_out, label="{}({})".format(cmd_type, cmd_id))
 
         graph_dot = os.path.join(self.work_dir, "cmd_graph.dot")
         dot.render(graph_dot)

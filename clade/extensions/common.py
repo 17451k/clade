@@ -118,7 +118,7 @@ class Common(Extension):
         parsed_cmd = {
             "id": cmd["id"],
             "in": [],
-            "out": None,
+            "out": [],
             "opts": [],
             "cwd": cmd["cwd"],
             "command": cmd["command"][0]
@@ -135,7 +135,7 @@ class Common(Extension):
                 # Option value is specified by means of the following option.
                 val = next(opts)
                 if opt == "-o":
-                    parsed_cmd["out"] = os.path.normpath(val)
+                    parsed_cmd["out"].append(os.path.normpath(val))
                 else:
                     parsed_cmd["opts"].extend([opt, val])
             # Options without values (or with values that are not separated by space).
@@ -144,6 +144,11 @@ class Common(Extension):
             # Input files.
             else:
                 parsed_cmd["in"].append(opt)
+
+        if cmd_type == "CC" and "-c" in parsed_cmd["opts"]:
+            for cmd_in in parsed_cmd["in"]:
+                cmd_out = os.path.splitext(cmd_in)[0] + ".o"
+                parsed_cmd["out"].append(cmd_out)
 
         return parsed_cmd
 
@@ -188,7 +193,7 @@ class Common(Extension):
         for _ in (cmd_in for cmd_in in cmd["in"] if self.regex_in and self.regex_in.match(cmd_in)):
             return True
 
-        if cmd["out"] and self.regex_out and self.regex_out.match(cmd["out"]):
+        for _ in (cmd_out for cmd_out in cmd["out"] if self.regex_out and self.regex_out.match(cmd_out)):
             return True
 
         return False
