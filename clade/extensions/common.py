@@ -21,7 +21,7 @@ import shutil
 import sys
 
 from clade.extensions.abstract import Extension
-from clade.extensions.opts import requires_value
+from clade.extensions.opts import requires_value, preprocessor_deps_opts
 from clade.cmds import iter_cmds_by_which, open_cmds_file
 
 
@@ -194,6 +194,9 @@ class Common(Extension):
             return True
 
         for _ in (cmd_out for cmd_out in cmd["out"] if self.regex_out and self.regex_out.match(cmd_out)):
+            return True
+
+        if self.name == "CC" and self.conf.get("Common.filter_deps", True) and set(cmd["opts"]).intersection(preprocessor_deps_opts):
             return True
 
         return False
