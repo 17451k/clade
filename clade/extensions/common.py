@@ -147,7 +147,9 @@ class Common(Extension):
 
         if cmd_type == "CC" and not parsed_cmd["out"] and "-c" in parsed_cmd["opts"]:
             for cmd_in in parsed_cmd["in"]:
-                cmd_out = os.path.splitext(cmd_in)[0] + ".o"
+                # Output file is located inside "cwd" directory, not near cmd_in
+                # For example, gcc -c work/1.c will produce 1.o file, not work/1.o
+                cmd_out = os.path.join(parsed_cmd["cwd"], os.path.basename(os.path.splitext(cmd_in)[0] + ".o"))
                 parsed_cmd["out"].append(cmd_out)
 
         return parsed_cmd
