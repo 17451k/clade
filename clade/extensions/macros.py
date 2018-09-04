@@ -29,6 +29,9 @@ class Macros(Extension):
 
         super().__init__(work_dir, conf)
 
+        self.define = dict()
+        self.define_folder = "define"
+
         self.expand = dict()
         self.expand_folder = "expand"
 
@@ -39,16 +42,35 @@ class Macros(Extension):
 
         self.parse_prerequisites(cmds_file)
 
+        self.__process_macros_definitions()
         self.__process_macros_expansions()
 
         self.log("Dump parsed data")
+        self.dump_data_by_key(self.define, self.define_folder)
         self.dump_data_by_key(self.expand, self.expand_folder)
         self.log("Finish")
 
-    def __process_macros_expansions(self):
-        self.log("Processing macros expansion")
+    def __process_macros_definitions(self):
+        self.log("Processing macros definitions")
 
-        all_args = "(?:\sarg\d+='[^']*')*"
+        regex = re.compile(r"(\S*) (\S*) (\S*)")
+
+        for line in self.extensions["Info"].iter_macros_definitions():
+            m = regex.match(line)
+            if m:
+                file, macro, line = m.groups()
+
+                if file in self.define and macro in self.define[file]:
+                    self.define[file][macro].append(line)
+                elif file in self.define:
+                    self.define[file][macro] = [line]
+                else:
+                    self.define[file] = {macro: [line]}
+
+    def __process_macros_expansions(self):
+        self.log("Processing macros expansions")
+
+        all_args = r"(?:\sarg\d+='[^']*')*"
         regex = re.compile(r'(\S*) (\S*)({0})'.format(all_args))
 
         args_extract = r"arg\d+='([^']*)'"
@@ -57,15 +79,18 @@ class Macros(Extension):
         for line in self.extensions["Info"].iter_macros_expansions():
             m = regex.match(line)
             if m:
-                file, func, args = m.groups()
+                file, macro, args = m.groups()
                 args = regex2.findall(args)
 
-                if file in self.expand and func in self.expand[file]:
-                    self.expand[file][func]["args"].append(args)
+                if file in self.expand and macro in self.expand[file]:
+                    self.expand[file][macro]["args"].append(args)
                 elif file in self.expand:
-                    self.expand[file][func] = {'args': [args]}
+                    self.expand[file][macro] = {'args': [args]}
                 else:
-                    self.expand[file] = {func: {'args': [args]}}
+                    self.expand[file] = {macro: {'args': [args]}}
+
+    def load_macros_definitions(self, files=None):
+        return self.load_data_by_key(self.define_folder, files)
 
     def load_macros_expansions(self, files=None):
         return self.load_data_by_key(self.expand_folder, files)

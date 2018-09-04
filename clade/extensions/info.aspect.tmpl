@@ -49,6 +49,16 @@ info: expand($({{ arg_patterns[i] }})) {
 }
 // endfor
 
+info: define($) {
+	$fprintf<"$env<CIF_INFO_DIR>/define.txt","%s %s %s %s\n",$env<CIF_CMD_CWD>,$path,$macro_name,$line>
+}
+
+// for i in range(max_args_num)
+info: define($({{ arg_patterns[i] }})) {
+	$fprintf<"$env<CIF_INFO_DIR>/define.txt","%s %s %s %s\n",$env<CIF_CMD_CWD>,$path,$macro_name,$line>
+}
+// endfor
+
 info: call(static $ $(..)) {
 	$fprintf<"$env<CIF_INFO_DIR>/call.txt","%s %s %s %s %s static %s\n",$env<CIF_CMD_CWD>,$func_context_path,$func_context_name,$func_name,$call_line,$actual_arg_func_names>
 }
