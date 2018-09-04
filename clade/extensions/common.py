@@ -145,7 +145,7 @@ class Common(Extension):
             else:
                 parsed_cmd["in"].append(opt)
 
-        if cmd_type == "CC" and "-c" in parsed_cmd["opts"]:
+        if cmd_type == "CC" and not parsed_cmd["out"] and "-c" in parsed_cmd["opts"]:
             for cmd_in in parsed_cmd["in"]:
                 cmd_out = os.path.splitext(cmd_in)[0] + ".o"
                 parsed_cmd["out"].append(cmd_out)
