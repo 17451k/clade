@@ -25,7 +25,7 @@ class LD(Common):
             conf = dict()
 
         if "LD.which_list" not in conf:
-            self.which_list = ["/usr/bin/ld"]
+            self.which_list = ["^/usr/(local/)?bin/[^/]*?ld$"]
         else:
             self.which_list = conf["LD.which_list"]
 

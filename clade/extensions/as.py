@@ -25,7 +25,7 @@ class AS(Common):
             conf = dict()
 
         if "AS.which_list" not in conf:
-            self.which_list = ["/usr/bin/as"]
+            self.which_list = ["^/usr/(local/)?bin/[^/]*?as$"]
         else:
             self.which_list = conf["AS.which_list"]
 

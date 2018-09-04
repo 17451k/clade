@@ -25,7 +25,7 @@ class AR(Common):
             conf = dict()
 
         if "AR.which_list" not in conf:
-            self.which_list = ["/usr/bin/ar"]
+            self.which_list = ["^/usr/(local/)?bin/[^/]*?ar$"]
         else:
             self.which_list = conf["AR.which_list"]
 
