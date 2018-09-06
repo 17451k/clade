@@ -60,7 +60,9 @@ class CC(Common):
 
         self.debug("Parsed command: {}".format(parsed_cmd))
 
-        deps = self.__get_deps(cmd_id, parsed_cmd)
+        # BUG: gcc do not print proper dependencies for commands with several input file
+        # For example, there is no "file.c" in dependencies for command "gcc func.c main.c -o main"
+        deps = set(self.__get_deps(cmd_id, parsed_cmd) + parsed_cmd["in"])
         self.debug("Dependencies: {}".format(deps))
         self.dump_deps_by_id(cmd_id, deps)
         self.dump_cmd_by_id(cmd_id, parsed_cmd)
