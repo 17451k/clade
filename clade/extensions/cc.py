@@ -129,10 +129,10 @@ class CC(Common):
             self.extensions["Storage"].add_file(file)
 
     def load_deps_by_id(self, id):
-        return self.load_data(os.path.join("deps", "{}-deps.json".format(id)))
+        return self.load_data(os.path.join("deps", "{}.json".format(id)))
 
     def dump_deps_by_id(self, id, deps):
-        self.dump_data(deps, os.path.join("deps", "{}-deps.json".format(id)))
+        self.dump_data(deps, os.path.join("deps", "{}.json".format(id)))
 
     def load_all_cmds(self, with_opts=True, with_deps=False):
         cmds = super().load_all_cmds()
