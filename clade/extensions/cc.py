@@ -27,6 +27,12 @@ class CC(Common):
 
     requires = ["Storage"]
 
+    file_extensions = [
+        ".c", ".i", ".h",  # C
+        "C", ".cc", ".cpp", ".cxx", ".c++", ".h", ".hh", ".hpp", ".hxx", ".h++",  # C++
+        ".s", ".S", ".asm"  # Assembly
+    ]
+
     def __init__(self, work_dir, conf=None):
         if not conf:
             conf = dict()

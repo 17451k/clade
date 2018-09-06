@@ -42,6 +42,12 @@ class CDB(Extension):
 
         for cmd in cmds:
             for i, cmd_in in enumerate(cmd["in"]):
+                # Ignore commands with object files as input
+                # So, gcc lib1.o lib2.o -o lib will be ignored
+                file_ext = os.path.splitext(os.path.basename(cmd_in))[1]
+                if file_ext not in self.extensions["CC"].file_extensions:
+                    continue
+
                 arguments = [cmd["command"]] + cmd["opts"] + [cmd_in]
                 if cmd["out"]:
                     if "-c" in cmd["opts"]:
