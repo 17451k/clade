@@ -72,8 +72,7 @@ class Common(Extension):
             def run(self):
                 for cmd in iter(self.cmds_queue.get, None):
                     if self.ext.conf.get("Common.save_unparsed_cmds", False):
-                        file = os.path.join(self.ext.unparsed_dir, "{}.json".format(cmd["id"]))
-                        self.ext.dump_data(cmd, file)
+                        self.ext.dump_unparsed_by_id(cmd["id"], cmd)
                     self.ext.parse_cmd(cmd)
 
         cmds_queue = multiprocessing.Queue()
@@ -163,10 +162,16 @@ class Common(Extension):
         self.dump_data(cmd, os.path.join(self.cmds_dir, "{}.json".format(id)))
 
     def load_opts_by_id(self, id):
-        return self.load_data(os.path.join(self.opts_dir, "{}-opts.json".format(id)))
+        return self.load_data(os.path.join(self.opts_dir, "{}.json".format(id)))
 
     def dump_opts_by_id(self, id, opts):
-        self.dump_data(opts, os.path.join(self.opts_dir, "{}-opts.json".format(id)))
+        self.dump_data(opts, os.path.join(self.opts_dir, "{}.json".format(id)))
+
+    def load_unparsed_by_id(self, id):
+        return self.load_data(os.path.join(self.unparsed_dir, "{}.json".format(id)))
+
+    def dump_unparsed_by_id(self, id, cmd):
+        self.dump_data(cmd, os.path.join(self.unparsed_dir, "{}.json".format(id)))
 
     def __merge_all_cmds(self):
         """Merge all parsed commands into a single json file."""
