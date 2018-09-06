@@ -41,9 +41,9 @@ class Common(Extension):
         self.opts_dir = "opts"
         self.unparsed_dir = "unparsed"
 
-        cmd_filter = self.conf.get("Common.filter")
-        cmd_filter_in = self.conf.get("Common.filter_in")
-        cmd_filter_out = self.conf.get("Common.filter_out")
+        cmd_filter = self.conf.get("Common.filter", [])
+        cmd_filter_in = self.conf.get("Common.filter_in", [])
+        cmd_filter_out = self.conf.get("Common.filter_out", [])
 
         self.regex_in = None
         self.regex_out = None
