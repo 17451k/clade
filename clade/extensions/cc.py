@@ -39,8 +39,8 @@ class CC(Common):
 
         if "CC.which_list" not in conf:
             self.which_list = [
-                r"^/usr/(local/)?bin/[^/]*[mg]?cc(-?\d+(\.\d+){0,2})?$",
-                r"^/usr/(local/)?bin/[^/]*clang(-?\d+(\.\d+){0,2})?$"
+                r"^.*[mg]?cc(-?\d+(\.\d+){0,2})?$",
+                r"^.*clang(-?\d+(\.\d+){0,2})?$"
             ]
         else:
             self.which_list = conf["CC.which_list"]

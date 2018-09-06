@@ -25,7 +25,7 @@ class Objcopy(Common):
             conf = dict()
 
         if "Objcopy.which_list" not in conf:
-            self.which_list = ["/usr/bin/objcopy"]
+            self.which_list = ["^.*?objcopy$"]
         else:
             self.which_list = conf["Objcopy.which_list"]
 

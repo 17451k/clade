@@ -27,7 +27,7 @@ class MV(Common):
             conf = dict()
 
         if "MV.which_list" not in conf:
-            self.which_list = ["/bin/mv", "/usr/bin/mv"]
+            self.which_list = ["^.*?mv$"]
         else:
             self.which_list = conf["MV.which_list"]
 
