@@ -22,7 +22,7 @@ from clade.extensions.utils import parse_args
 
 
 class Callgraph(Extension):
-    requires = ["Info", "SrcGraph", "Functions"]
+    requires = ["SrcGraph", "Info", "Functions"]
 
     def __init__(self, work_dir, conf=None):
         if not conf:

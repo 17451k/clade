@@ -24,7 +24,7 @@ from clade.extensions.utils import parse_args
 
 
 class Variables(Callgraph):
-    requires = ["Functions", "Info", "SrcGraph"]
+    requires = ["SrcGraph", "Info", "Functions"]
 
     def __init__(self, work_dir, conf=None):
         if not conf:
