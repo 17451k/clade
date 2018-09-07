@@ -83,8 +83,12 @@ class Functions(Callgraph):
                     self._error("Function is defined more than once: '{}' '{}'".format(func, src_file))
                     continue
 
-                val = self._get_initial_value()
-                val.update({"type": func_type, "defined_on_line": def_line, "signature": signature})
+                val = {
+                    "type": func_type,
+                    "line": def_line,
+                    "signature": signature,
+                    "declarations": None
+                }
 
                 if func in self.funcs:
                     self.funcs[func][src_file] = val
@@ -96,24 +100,27 @@ class Functions(Callgraph):
 
         regex = re.compile(r"(\S*) (\S*) signature='([^']*)' (\S*) (\S*)")
 
-        def get_unknown_val(decl_file, dec_val):
-            val = self._get_initial_value()
-            val["declared_in"][decl_file] = dec_val
-            return val
+        def get_unknown_val(decl_file, decl_val):
+            return {
+                "type": "global",
+                "line": None,
+                "signature": None,
+                "declarations": {decl_file: decl_val}
+            }
 
         for line in self.extensions["Info"].iter_declarations():
             m = regex.match(line)
             if m:
                 decl_file, decl_name, decl_signature, decl_line, decl_type = m.groups()
 
-                dec_val = {
-                    'signature': decl_signature,
-                    'def_line': decl_line,
-                    'type': decl_type,
+                decl_val = {
+                    "signature": decl_signature,
+                    "line": decl_line,
+                    "type": decl_type,
                 }
 
                 if decl_name not in self.funcs:
-                    self.funcs[decl_name] = {"unknown": get_unknown_val(decl_file, dec_val)}
+                    self.funcs[decl_name] = {"unknown": get_unknown_val(decl_file, decl_val)}
                     continue
 
                 if decl_file not in self.src_graph:
@@ -123,13 +130,16 @@ class Functions(Callgraph):
                     if src_file not in self.src_graph:
                         self._error("Not in source graph: {}".format(src_file))
 
+                    if not self.funcs[decl_name][src_file]["declarations"]:
+                        self.funcs[decl_name][src_file]["declarations"] = dict()
+
                     if src_file == decl_file or self._t_unit_is_common(src_file, decl_file):
-                        self.funcs[decl_name][src_file]["declared_in"][decl_file] = dec_val
+                        self.funcs[decl_name][src_file]["declarations"][decl_file] = decl_val
                     elif src_file == "unknown":
                         if "unknown" in self.funcs[decl_name]:
-                            self.funcs[decl_name]["unknown"]["declared_in"][decl_file] = dec_val
+                            self.funcs[decl_name]["unknown"]["declarations"][decl_file] = decl_val
                         else:
-                            self.funcs[decl_name]["unknown"] = get_unknown_val(decl_file, dec_val)
+                            self.funcs[decl_name]["unknown"] = get_unknown_val(decl_file, decl_val)
 
     def __process_exported(self):
         self.log("Processing exported functions")
@@ -147,15 +157,6 @@ class Functions(Callgraph):
                 elif src_file not in self.funcs[func]:
                     continue
                 self.funcs[func][src_file]["type"] = "exported"
-
-    @staticmethod
-    def _get_initial_value():
-        return {
-            "type": None,
-            "defined_on_line": None,
-            "signature": None,
-            "declared_in": dict()
-        }
 
     def __group_functions_by_file(self):
         self.log("Split functions by file")
