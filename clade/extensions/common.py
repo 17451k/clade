@@ -203,7 +203,10 @@ class Common(Extension):
         for _ in (cmd_out for cmd_out in cmd["out"] if self.regex_out and self.regex_out.match(cmd_out)):
             return True
 
-        if self.name == "CC" and self.conf.get("Common.filter_deps", True) and set(cmd["opts"]).intersection(preprocessor_deps_opts):
+        if self.name == "CC" and self.conf.get("CC.filter_deps", True) and set(cmd["opts"]).intersection(preprocessor_deps_opts):
+            return True
+
+        if self.name == "CC" and self.conf.get("CC.ignore_cc1", True) and "-cc1" in cmd["opts"]:
             return True
 
         return False
