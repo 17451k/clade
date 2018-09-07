@@ -72,7 +72,7 @@ class Info(Extension):
                       self.expand, self.exported,
                       self.typedefs]
 
-        self.unsupported_opts_regex = re.compile(r"unrecognized command line option ‘(.*?)’")
+        self.unsupported_opts_regex = re.compile(r"unrecognized command line option [‘«\"](.*?)[’»\"]")
         self.unsupported_opts_file = os.path.join(self.work_dir, "unsupported_opts.log")
         self.err_log = os.path.join(self.work_dir, "err.log")  # Path to file containing CIF error log
 
