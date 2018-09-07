@@ -45,8 +45,6 @@ class Extension(metaclass=abc.ABCMeta):
         FileNotFoundError: Cant find file with parsed build command
     """
 
-    already_initialised = dict()
-
     def __init__(self, work_dir, conf=None):
         self.name = self.__class__.__name__
         self.work_dir = os.path.join(os.path.abspath(work_dir), self.name)
@@ -60,6 +58,7 @@ class Extension(metaclass=abc.ABCMeta):
 
         logger.setLevel(self.conf.get("log_level", "INFO"))
 
+        self.already_initialised = dict()
         self.already_initialised[self.name] = self
         self.init_extensions(work_dir)
 
