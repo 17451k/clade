@@ -77,7 +77,7 @@ static char *prepare_data(const char *path, char const *const argv[]) {
 
     // Sometimes "path" contains incorrect values ("gcc" instead of "/usr/bin/gcc")
     char *correct_path = NULL;
-    if (path == argv[0]) {
+    if (access(path, X_OK)) {
         correct_path = which(path);
     }
 

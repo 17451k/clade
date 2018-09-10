@@ -65,7 +65,7 @@ int posix_spawn(pid_t *restrict pid, const char *restrict path, const posix_spaw
                 const posix_spawnattr_t *restrict attrp, char *const argv[restrict], char *const envp[restrict])
 {
     int (*posix_spawn_real)(pid_t *restrict, const char *restrict, const posix_spawn_file_actions_t *,
-                const posix_spawnattr_t *restrict, char *const *, char *const *) = dlsym(RTLD_NEXT, "posix_spawn");
+                const posix_spawnattr_t *restrict, char *const *restrict, char *const *restrict) = dlsym(RTLD_NEXT, "posix_spawn");
 
     // DO NOT check if (! intercepted) here: it will result in command loss
     if (access(path, F_OK ) != -1) {
