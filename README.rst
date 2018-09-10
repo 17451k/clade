@@ -1,3 +1,8 @@
+.. image:: https://travis-ci.org/17451k/clade.svg?branch=master
+    :target: https://travis-ci.org/17451k/clade
+.. image:: https://coveralls.io/repos/github/17451k/clade/badge.svg?branch=master
+    :target: https://coveralls.io/github/17451k/clade?branch=master
+
 Clade
 =====
 
