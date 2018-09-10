@@ -188,7 +188,7 @@ class Common(Extension):
                 cmd["opts"] = self.load_opts_by_id(cmd["id"])
 
         if not merged_cmds:
-            self.warning("Not commands were parsed")
+            self.warning("No commands were parsed")
 
         self.dump_data(merged_cmds, "cmds.json")
 
