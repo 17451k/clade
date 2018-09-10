@@ -187,15 +187,15 @@ class Callgraph(Extension):
                 context_file, context_func, func_ptr, call_line = m.groups()
 
                 if context_file not in self.calls_by_ptr:
-                    self.calls_by_ptr[context_file] = {context_func: {"calls_by_pointer": dict()}}
+                    self.calls_by_ptr[context_file] = {context_func: dict()}
 
                 if context_func not in self.calls_by_ptr[context_file]:
-                    self.calls_by_ptr[context_file][context_func] = {"calls_by_pointer": {func_ptr: [call_line]}}
+                    self.calls_by_ptr[context_file][context_func] = {func_ptr: [call_line]}
 
-                if func_ptr not in self.calls_by_ptr[context_file][context_func]["calls_by_pointer"]:
-                    self.calls_by_ptr[context_file][context_func]["calls_by_pointer"][func_ptr] = [call_line]
+                if func_ptr not in self.calls_by_ptr[context_file][context_func]:
+                    self.calls_by_ptr[context_file][context_func][func_ptr] = [call_line]
                 else:
-                    self.calls_by_ptr[context_file][context_func]["calls_by_pointer"][func_ptr].append(call_line)
+                    self.calls_by_ptr[context_file][context_func][func_ptr].append(call_line)
 
     def __process_functions_usages(self):
         self.log("Processing functions usages")
@@ -247,10 +247,10 @@ class Callgraph(Extension):
                     if possible_file not in self.used_in:
                         val = {"used_in_file": dict(), "used_in_func": dict()}
 
-                        if context_func == "NULL":
-                            val["used_in_file"] = {context_file: {line: index}}
+                        if context_func:
+                            val["used_in_func"][context_file] = {context_func: {line: index}}
                         else:
-                            val["used_in_func"][context_func] = {context_file: {line: index}}
+                            val["used_in_file"] = {context_file: {line: index}}
 
                         self.used_in[possible_file] = {func: val}
                     else:
@@ -263,17 +263,17 @@ class Callgraph(Extension):
                             else:
                                 self.used_in[possible_file][func]["used_in_file"][context_file] = {line: index}
                         else:
-                            if context_func not in self.used_in[possible_file][func]["used_in_func"]:
-                                self.used_in[possible_file][func]["used_in_func"][context_func] = {
-                                    context_file: {
+                            if context_file not in self.used_in[possible_file][func]["used_in_func"]:
+                                self.used_in[possible_file][func]["used_in_func"][context_file] = {
+                                    context_func: {
                                         line: index
                                     }
                                 }
-                            elif context_file not in self.used_in[possible_file][func]["used_in_func"][context_func]:
-                                self.used_in[possible_file][func]["used_in_func"][context_func][context_file] = \
+                            elif context_func not in self.used_in[possible_file][func]["used_in_func"][context_file]:
+                                self.used_in[possible_file][func]["used_in_func"][context_file][context_func] = \
                                     {line: index}
                             else:
-                                self.used_in[possible_file][func]["used_in_func"][context_func][context_file][line] = index
+                                self.used_in[possible_file][func]["used_in_func"][context_file][context_func][line] = index
 
                     if possible_file == "unknown":
                         self._error("Can't match definition for use: {} {}".format(func, context_file))
