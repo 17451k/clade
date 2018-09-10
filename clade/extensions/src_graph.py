@@ -58,7 +58,7 @@ class SrcGraph(Extension):
 
         build_cwd = self.get_build_cwd(cmds)
 
-        for cmd in self.extensions["CC"].load_all_cmds():
+        for cmd in self.extensions["CC"].load_all_cmds(compile_only=True):
             if [cmd_in for cmd_in in cmd["in"] if cmd_in == "/dev/null" or cmd_in == "-"]:
                 continue
 

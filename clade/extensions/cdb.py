@@ -38,7 +38,7 @@ class CDB(Extension):
     def parse(self, cmds_file):
         self.parse_prerequisites(cmds_file)
 
-        cmds = self.extensions["CC"].load_all_cmds()
+        cmds = self.extensions["CC"].load_all_cmds(compile_only=True)
 
         for cmd in cmds:
             for i, cmd_in in enumerate(cmd["in"]):

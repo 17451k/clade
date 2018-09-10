@@ -89,7 +89,7 @@ class Info(Extension):
         self.log("Start CIF")
         self.__gen_info_requests()
 
-        cmds = self.extensions["CC"].load_all_cmds()
+        cmds = self.extensions["CC"].load_all_cmds(compile_only=True)
 
         with concurrent.futures.ProcessPoolExecutor(max_workers=os.cpu_count()) as p:
             for cmd in cmds:
