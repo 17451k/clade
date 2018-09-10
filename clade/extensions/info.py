@@ -144,13 +144,8 @@ class Info(Extension):
         if not opts_to_filter:
             opts_to_filter = []
 
-        for i, cmd_in in enumerate(cmd["in"]):
-            if "-c" in cmd["opts"]:
-                cmd_out = cmd["out"][i]
-            else:
-                cmd_out = cmd["out"][0]
-
-            cif_out = os.path.join(self.temp_dir, cmd_out)
+        for cmd_in in cmd["in"]:
+            cif_out = os.path.join(self.temp_dir, str(os.getpid()), cmd_in + ".o")
             os.makedirs(os.path.dirname(cif_out), exist_ok=True)
 
             os.environ["CIF_INFO_DIR"] = self.work_dir
@@ -187,15 +182,11 @@ class Info(Extension):
         if cmd["in"] == []:
             return True
 
-        if not cmd["out"]:
-            # Add output file for CIF
-            cmd["out"] = ["cif_output.c"]
-
         for cif_in in cmd["in"]:
             if cif_in == "-" or cif_in == "/dev/null":
                 return True
-            elif re.search(r'\.(s|S)$', cif_in) or re.search(r'\.o$', cif_in):
-                # Assember or object files are not supported
+            elif re.search(r'\.(s|S)$', cif_in):
+                # Assember files are not supported
                 return True
 
         return False
