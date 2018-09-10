@@ -40,15 +40,21 @@ class SrcGraph(Extension):
 
         self.parse_prerequisites(cmds)
 
+        self.log("Start source graph constructing")
+
         self.__generate_src_graph(cmds)
+        self.dump_data(self.src_graph, self.src_graph_file)
+
+        if not self.src_graph:
+            self.warning("Source graph is empty")
+
+        self.log("Constructing finished")
 
     def __generate_src_graph(self, cmds):
         try:
             cmd_graph = self.extensions["CmdGraph"].load_cmd_graph()
         except FileNotFoundError:
             return
-
-        self.log("Start source graph constructing")
 
         build_cwd = self.get_build_cwd(cmds)
 
@@ -73,13 +79,6 @@ class SrcGraph(Extension):
                 # compiled_in is a list of commands that compile 'rel_in' source file
                 self.src_graph[rel_in]["compiled_in"].add(cmd_id)
                 self.src_graph[rel_in]["used_by"].update(used_by)
-
-        self.dump_data(self.src_graph, self.src_graph_file)
-
-        if not self.src_graph:
-            self.warning("Source graph is empty")
-
-        self.log("Constructing finished")
 
     def __find_used_by(self, cmd_graph, cmd_id):
         used_by = set()
