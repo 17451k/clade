@@ -47,7 +47,7 @@ class Extension(metaclass=abc.ABCMeta):
 
     def __init__(self, work_dir, conf=None):
         self.name = self.__class__.__name__
-        self.work_dir = os.path.join(os.path.abspath(work_dir), self.name)
+        self.work_dir = os.path.join(os.path.abspath(str(work_dir)), self.name)
         self.conf = conf if conf else dict()
         self.temp_dir = tempfile.mkdtemp()
 

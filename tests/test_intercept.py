@@ -31,7 +31,7 @@ def calculate_loc(file):
 
 
 def test_no_fallback(tmpdir):
-    output = os.path.join(tmpdir, "cmds.txt")
+    output = os.path.join(str(tmpdir), "cmds.txt")
 
     i = Interceptor(command=test_project_make, output=output, fallback=False)
     i.execute()
@@ -45,7 +45,7 @@ def test_no_fallback(tmpdir):
 
 
 def test_fallback(tmpdir):
-    output = os.path.join(tmpdir, "cmds.txt")
+    output = os.path.join(str(tmpdir), "cmds.txt")
 
     i = Interceptor(command=test_project_make, output=output, fallback=True)
     i.execute()
@@ -56,7 +56,7 @@ def test_fallback(tmpdir):
 
 
 def test_main(tmpdir):
-    output = os.path.join(tmpdir, "cmds.txt")
+    output = os.path.join(str(tmpdir), "cmds.txt")
 
     with pytest.raises(SystemExit) as excinfo:
         main(["-o", output] + test_project_make)
@@ -64,7 +64,7 @@ def test_main(tmpdir):
     assert "0" in str(excinfo.value)
 
 
-def test_main_no_args(tmpdir):
+def test_main_no_args():
     with pytest.raises(SystemExit) as excinfo:
         main([])
 
