@@ -60,9 +60,9 @@ class Interceptor():
             raise NotImplementedError("To use Clade on Windows please run it with fallback mode enabled ({})".format(sys.platform))
 
         if not os.path.exists(libinterceptor):
-            raise RuntimeError("libinterceptor is not found")
+            raise RuntimeError("libinterceptor is not found in {!r}".format(libinterceptor))
 
-        logging.debug("Path to libinterceptor library: {}".format(libinterceptor))
+        logging.debug("Path to libinterceptor library: {!r}".format(libinterceptor))
 
         return libinterceptor
 
@@ -70,15 +70,15 @@ class Interceptor():
         wrapper = os.path.join(os.path.dirname(__file__), "libinterceptor", "wrapper")
 
         if not os.path.exists(wrapper):
-            raise RuntimeError("wrapper is not found")
+            raise RuntimeError("wrapper is not found in {!r}".format(wrapper))
 
-        logging.debug("Path to the wrapper: {}".format(wrapper))
+        logging.debug("Path to the wrapper: {!r}".format(wrapper))
 
         return wrapper
 
     def __crete_wrappers(self):
         clade_bin = tempfile.mkdtemp()
-        logging.debug("Create temporary directory for wrappers: {}".format(clade_bin))
+        logging.debug("Create temporary directory for wrappers: {!r}".format(clade_bin))
 
         if os.path.exists(clade_bin):
             shutil.rmtree(clade_bin)
@@ -88,7 +88,7 @@ class Interceptor():
         paths = os.environ.get("PATH", "").split(os.pathsep)
 
         counter = 0
-        logging.debug("Walk through every directory in PATH to create wrappers: {}".format(paths))
+        logging.debug("Walk through every directory in PATH to create wrappers: {!r}".format(paths))
         for path in paths:
             for file in os.listdir(path):
                 if os.access(os.path.join(path, file), os.X_OK):
@@ -147,7 +147,7 @@ class Interceptor():
             # Fallback mode can intercept first command without our help
             self.__intercept_first_command()
 
-        logging.debug("Execute '{}' command with the following environment: {}".format(self.command, self.env))
+        logging.debug("Execute {} command with the following environment: {}".format(self.command, self.env))
         result = subprocess.run(self.command, env=self.env)
 
         return result.returncode

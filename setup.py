@@ -13,37 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import setuptools
-import shutil
-import subprocess
 import sys
-import re
-import tempfile
 
 from distutils.command.build import build
 from setuptools.command.develop import develop
 
-
-def build_libinterceptor():
-    try:
-        build_dir = tempfile.mkdtemp()
-        libint_src = os.path.abspath(os.path.join(os.path.dirname(__file__), "clade", "libinterceptor"))
-
-        os.makedirs(build_dir, exist_ok=True)
-
-        try:
-            ret = subprocess.call(["cmake", libint_src], cwd=build_dir)
-            ret += subprocess.call(["make"], cwd=build_dir)
-        except FileNotFoundError as e:
-            # cmd is either cmake or make
-            cmd = re.sub(r".*? '(.*)'", r"\1", e.args[1])
-            raise OSError("{} is not installed on your system - please fix it".format(cmd), e.args[0])
-
-        if ret:
-            raise sys.exit("Can't build libinterceptor - something went wrong")
-    finally:
-        shutil.rmtree(build_dir)
+from clade.utils import build_libinterceptor
 
 
 class CustomBuild(build):

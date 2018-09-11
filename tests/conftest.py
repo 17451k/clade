@@ -17,6 +17,7 @@ import os
 import pytest
 
 from clade.intercept import Interceptor
+from clade.utils import build_libinterceptor
 from tests.test_intercept import test_project_make
 
 
@@ -31,3 +32,8 @@ def cmds_file():
     yield test_cmds_file
 
     os.remove(test_cmds_file)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def prepare_libinterceptor(request):
+    build_libinterceptor()
