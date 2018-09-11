@@ -28,7 +28,7 @@ def test_cmd_graph_requires(tmpdir, cmds_file):
 
     cmd_id = None
     for cmd in c.extensions["CC"].load_all_cmds():
-        if "main.c" in cmd["in"] and "zero.c" in cmd["in"]:
+        if "main.c" in cmd["in"] and "zero.c" in cmd["in"] and "tmp_main" in cmd["out"]:
             cmd_id = str(cmd["id"])
 
     assert cmd_id
