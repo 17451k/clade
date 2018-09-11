@@ -90,13 +90,16 @@ class Interceptor():
         counter = 0
         logging.debug("Walk through every directory in PATH to create wrappers: {!r}".format(paths))
         for path in paths:
-            for file in os.listdir(path):
-                if os.access(os.path.join(path, file), os.X_OK):
-                    try:
-                        os.symlink(self.wrapper, os.path.join(clade_bin, file))
-                        counter += 1
-                    except FileExistsError:
-                        continue
+            try:
+                for file in os.listdir(path):
+                    if os.access(os.path.join(path, file), os.X_OK):
+                        try:
+                            os.symlink(self.wrapper, os.path.join(clade_bin, file))
+                            counter += 1
+                        except FileExistsError:
+                            continue
+            except FileNotFoundError:
+                continue
 
         logging.debug("{} wrappers were created".format(counter))
 

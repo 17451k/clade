@@ -1,19 +1,43 @@
 language: python
 dist: xenial
-sudo: true
 
 python:
   - "3.4"
   - "3.5"
   - "3.6"
   - "3.7"
+  - "nightly"
+
+matrix:
+  include:
+    - python: 3.4
+      dist: trusty
+
+    - python: 3.5
+      dist: trusty
+
+    - python: 3.6
+      dist: xenial
+
+    - python: 3.7
+      dist: xenial
+
+    - python: nightly
+      dist: xenial
+
+allow_failures:
+    - python: "nightly"
 
 install:
-  - pip3 install coveralls
-  - pip3 install .
+  - pip install .
+
+before_script:
+  - pip install coveralls pytest
 
 script:
-  - coverage run -m pytest && coverage combine
+  - curl -sSfL -o cif.tar.xz https://github.com/17451k/cif/releases/download/2018-09-06/cif-20180906-linux.tar.xz
+  - tar xf cif.tar.xz
+  - PATH=$TRAVIS_BUILD_DIR/cif/bin:$PATH coverage run -m pytest && coverage combine
 
 after_success:
   - coveralls
