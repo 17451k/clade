@@ -12,8 +12,7 @@ target_link_libraries(interceptor ${CMAKE_DL_LIBS} which data)
 add_executable(wrapper wrapper.c)
 target_link_libraries(wrapper which data)
 
-set_property(TARGET interceptor PROPERTY C_STANDARD 11)
-set_property(TARGET wrapper PROPERTY C_STANDARD 11)
+set_target_properties(data which interceptor which PROPERTIES C_STANDARD 11)
 
 add_custom_command(
         TARGET interceptor POST_BUILD
