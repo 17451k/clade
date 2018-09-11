@@ -26,11 +26,19 @@ def test_cmd_graph_requires(tmpdir, cmds_file):
 
     cmd_graph = c.load_cmd_graph()
 
+    cmd_id = None
+    for cmd in c.extensions["CC"].load_all_cmds():
+        if "main.c" in cmd["in"] and "zero.c" in cmd["in"]:
+            cmd_id = str(cmd["id"])
+
+    assert cmd_id
     assert cmd_graph
-    assert cmd_graph["2"]["type"] == "CC"
-    assert cmd_graph["2"]["used_by"] == ["3"]
-    assert cmd_graph["2"]["using"] == []
-    assert cmd_graph["3"]["using"] == ["2"]
+    assert cmd_graph[cmd_id]["type"] == "CC"
+    assert len(cmd_graph[cmd_id]["used_by"]) == 1
+    assert cmd_graph[cmd_id]["using"] == []
+
+    used_by_id = cmd_graph[cmd_id]["used_by"][0]
+    assert cmd_graph[used_by_id]["using"] == [cmd_id]
 
 
 def test_cmd_graph_empty_requires(tmpdir, cmds_file):
