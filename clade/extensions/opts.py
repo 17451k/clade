@@ -48,6 +48,7 @@ gcc_opts = [
     "-imultiarch",
     "-auxbase",
     "-dumpbase",
+    "-G"
 ]
 
 clang_opts = [
@@ -482,6 +483,7 @@ cif_unsupported_opts = preprocessor_deps_opts + [
     "-auxbase",
     "-quiet",
     "-DIPATH",
+    "-mabi",
 ]
 
 
