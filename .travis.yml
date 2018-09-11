@@ -1,19 +1,11 @@
 language: python
 
-matrix:
-  include:
-    - python: 3.4
-    - python: 3.5
-      dist: trusty
+dist: xenial
 
-  include:
-    - python: 3.6
-    - python: 3.7
-    - python: nightly
-      dist: xenial
-
-allow_failures:
-    - python: "nightly"
+python:
+  - "3.5"
+  - "3.6"
+  - "3.7"
 
 install:
   - pip install .
