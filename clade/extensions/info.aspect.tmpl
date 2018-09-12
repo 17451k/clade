@@ -44,7 +44,7 @@ info: expand(___EXPORT_SYMBOL(sym, sec)) {
 }
 
 info: expand($) {
-	$fprintf<"$env<CIF_INFO_DIR>/expand.txt","%s %s %s %s\n",$env<CIF_CMD_CWD>,$path,$macro_name>
+	$fprintf<"$env<CIF_INFO_DIR>/expand.txt","%s %s %s\n",$env<CIF_CMD_CWD>,$path,$macro_name>
 }
 
 // for i in range(max_args_num)
