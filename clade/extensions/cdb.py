@@ -69,13 +69,16 @@ def parse_args(args):
 
     parser.add_argument("-o", "--output", help="a path to the FILE where compilation database will be saved", metavar='FILE', default="compile_commands.json")
     parser.add_argument("-f", "--fallback", help="enable fallback intercepting mode", action="store_true")
-    parser.add_argument("-c", "--cmds_file", help="a path to the file with intercepted commands", default=os.path.join(tempfile.mkdtemp(), "cmds.txt"))
+    parser.add_argument("-c", "--cmds_file", help="a path to the file with intercepted commands")
     parser.add_argument(dest="command", nargs=argparse.REMAINDER, help="build command to run")
 
     args = parser.parse_args(args)
 
     if not args.command and not args.cmds_file:
         sys.exit("Build command is missing")
+
+    if not args.cmds_file:
+        args.cmds_file = os.path.join(tempfile.mkdtemp(), "cmds.txt")
 
     return args
 
