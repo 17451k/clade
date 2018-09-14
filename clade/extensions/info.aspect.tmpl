@@ -47,21 +47,17 @@ info: expand($) {
 	$fprintf<"$env<CIF_INFO_DIR>/expand.txt","%s %s %s\n",$env<CIF_CMD_CWD>,$path,$macro_name>
 }
 
-// for i in range(max_args_num)
-info: expand($({{ arg_patterns[i] }})) {
-	$fprintf<"$env<CIF_INFO_DIR>/expand.txt","%s %s %s {{ arg_printf_patterns[i] }}\n",$env<CIF_CMD_CWD>,$path,$macro_name,{{ arg_vals[i] }}>
+info: expand($(..)) {
+	$fprintf<"$env<CIF_INFO_DIR>/expand.txt","%s %s %s %s\n",$env<CIF_CMD_CWD>,$path,$macro_name,$actual_args>
 }
-// endfor
 
 info: define($) {
 	$fprintf<"$env<CIF_INFO_DIR>/define.txt","%s %s %s %s\n",$env<CIF_CMD_CWD>,$path,$macro_name,$line>
 }
 
-// for i in range(max_args_num)
-info: define($({{ arg_patterns[i] }})) {
+info: define($(..)) {
 	$fprintf<"$env<CIF_INFO_DIR>/define.txt","%s %s %s %s\n",$env<CIF_CMD_CWD>,$path,$macro_name,$line>
 }
-// endfor
 
 info: call(static $ $(..)) {
 	$fprintf<"$env<CIF_INFO_DIR>/call.txt","%s %s %s %s %s static %s\n",$env<CIF_CMD_CWD>,$func_context_path,$func_context_name,$func_name,$call_line,$actual_arg_func_names>
