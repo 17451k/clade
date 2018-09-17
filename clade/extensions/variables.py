@@ -15,7 +15,7 @@
 
 import os
 import sys
-# todo: You can remove it as it will work with ujson everywhere (almost)
+# TODO: You can remove it as it will work with ujson everywhere (almost)
 import json
 
 from clade.extensions.callgraph import Callgraph
@@ -54,7 +54,7 @@ class Variables(Callgraph):
         self.dump_data_by_key(self.variables, self.variables_folder)
         self.dump_data(self.used_in_vars, self.used_in_vars_file, indent=4)
 
-    # todo: Remove this as probkem with ujson dump will be solved
+    # TODO: Remove this as problem with ujson dump will be solved
     def dump_data(self, data, file_name, indent=0):
         """Dump data to a json file in the object working directory."""
 
