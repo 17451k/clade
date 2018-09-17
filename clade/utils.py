@@ -37,7 +37,7 @@ def build_target(target, build_dir, src_dir, options=None):
     ret += subprocess.call(["make", target], cwd=build_dir)
 
     if ret:
-        raise sys.exit("Can't build {!r} - something went wrong", format(target))
+        raise sys.exit("Can't build {!r} - something went wrong".format(target))
 
 
 def build_wrapper(build_dir):
