@@ -69,7 +69,8 @@ def build_libinterceptor():
         try:
             build_wrapper(os.path.join(build_dir, "wrapper"))
             build_libinterceptor64(os.path.join(build_dir, "libinterceptor64"))
-            build_libinterceptor32(os.path.join(build_dir, "libinterceptor"))
+            if not sys.platform == "darwin":
+                build_libinterceptor32(os.path.join(build_dir, "libinterceptor"))
         except FileNotFoundError as e:
             # cmd is either cmake or make
             cmd = re.sub(r".*? '(.*)'", r"\1", e.args[1])

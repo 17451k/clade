@@ -55,18 +55,34 @@ class Interceptor():
 
     def __find_libinterceptor(self):
         if sys.platform == "linux":
-            libinterceptor = "libinterceptor.so"
+            libinterceptor = self.__find_libinterceptor_linux()
         elif sys.platform == "darwin":
-            libinterceptor = "libinterceptor.dylib"
+            libinterceptor = self.__find_libinterceptor_darwin()
         else:
             raise NotImplementedError("To use Clade on {!r} please run it with fallback mode enabled".format(sys.platform))
 
-        libinterceptor_path = os.path.join(LIB, libinterceptor)
-        libinterceptor64_path = os.path.join(LIB, libinterceptor)
-        if not os.path.exists(libinterceptor_path) or not os.path.exists(libinterceptor64_path):
-            raise RuntimeError("libinterceptor is not found in: {!r}, {!r}".format(libinterceptor_path, libinterceptor64_path))
+        return libinterceptor
 
-        logging.debug("Path to libinterceptor library locations: {!r}, {!r}".format(libinterceptor_path, libinterceptor64_path))
+    def __find_libinterceptor_linux(self):
+        libinterceptor = "libinterceptor.so"
+
+        path = os.path.join(LIB, libinterceptor)
+        path64 = os.path.join(LIB64, libinterceptor)
+
+        if not os.path.exists(path) or not os.path.exists(path64):
+            raise RuntimeError("libinterceptor is not found in: {!r}, {!r}".format(path, path64))
+
+        logging.debug("Path to libinterceptor library locations: {!r}, {!r}".format(path, path64))
+
+        return libinterceptor
+
+    def __find_libinterceptor_darwin(self):
+        libinterceptor = os.path.join(LIB64, "libinterceptor.dylib")
+
+        if not os.path.exists(libinterceptor):
+            raise RuntimeError("libinterceptor is not found in {!r}".format(libinterceptor))
+
+        logging.debug("Path to libinterceptor library location: {!r}".format(libinterceptor))
 
         return libinterceptor
 
@@ -133,14 +149,8 @@ class Interceptor():
             env["CLADE_INTERCEPT_FALLBACK"] = self.output
 
         if sys.platform == "linux":
-            library_path_env = "LD_LIBRARY_PATH"
-        elif sys.platform == "darwin":
-            library_path_env = "DYLD_LIBRARY_PATH"
-        else:
-            raise NotImplementedError("To use Clade on {!r} please run it with fallback mode enabled".format(sys.platform))
-
-        env[library_path_env] = env.get(library_path_env, "") + ":" + LIB64 + ":" + LIB
-        logging.debug("Set {!r} environment variable value as {!r}".format(library_path_env, env[library_path_env]))
+            env["LD_LIBRARY_PATH"] = env.get("LD_LIBRARY_PATH", "") + ":" + LIB64 + ":" + LIB
+            logging.debug("Set LD_LIBRARY_PATH environment variable value as {!r}".format(env["LD_LIBRARY_PATH"]))
 
         return env
 
