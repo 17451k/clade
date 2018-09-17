@@ -13,14 +13,3 @@ add_executable(wrapper wrapper.c)
 target_link_libraries(wrapper which data)
 
 set_target_properties(data which interceptor which PROPERTIES C_STANDARD 11)
-
-add_custom_command(
-        TARGET interceptor POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-                ${CMAKE_CURRENT_BINARY_DIR}/libinterceptor.*
-                ${CMAKE_SOURCE_DIR})
-add_custom_command(
-        TARGET wrapper POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-                ${CMAKE_CURRENT_BINARY_DIR}/wrapper*
-                ${CMAKE_SOURCE_DIR})

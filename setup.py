@@ -67,6 +67,8 @@ setuptools.setup(
     package_data={
         "clade": [
             "libinterceptor/*",
+            "libinterceptor/lib/*",
+            "libinterceptor/lib64/*",
             "extensions/*",
             "extensions/info/*"
         ],
