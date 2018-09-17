@@ -84,8 +84,8 @@ class CommandGraph:
 
             if current_type == 'CC':
                 desc = get_cc(current)
-                if not any(f.endswith('.S') for f in desc['in']):
-                    ccs[current] = desc
+                ccs[current] = desc
+
             todo_commands.extend(self.graph[current]['using'])
         return list(ccs.items())
 
