@@ -65,7 +65,11 @@ setuptools.setup(
     long_description_content_type="text/x-rst",
     packages=["clade"],
     package_data={
-        "clade": ["libinterceptor/*", "extensions/*"],
+        "clade": [
+            "libinterceptor/*",
+            "extensions/*",
+            "extensions/info/*"
+        ],
     },
     entry_points={
         "console_scripts": [
@@ -89,7 +93,7 @@ setuptools.setup(
         ],
     },
     cmdclass={"build": CustomBuild, "develop": CustomDevelop, 'bdist_wheel': bdist_wheel},
-    install_requires=["ujson", "graphviz", "jinja2", "ply"],
+    install_requires=["ujson", "graphviz", "ply"],
     classifiers=(
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: Apache Software License",

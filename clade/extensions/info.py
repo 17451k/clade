@@ -16,7 +16,6 @@
 import codecs
 import concurrent.futures
 import hashlib
-import jinja2
 import os
 import re
 import shutil
@@ -51,8 +50,7 @@ class Info(Extension):
 
         super().__init__(work_dir, conf)
 
-        self.aspect_template = os.path.join(os.path.dirname(__file__), "info.aspect.tmpl")
-        self.aspect = os.path.join(self.work_dir, "info.aspect")
+        self.aspect = os.path.join(os.path.dirname(__file__), "info", "info.aspect")
 
         self.execution = os.path.join(self.work_dir, "execution.txt")  # Info about function definitions
         self.call = os.path.join(self.work_dir, "call.txt")  # Info about function calls
@@ -87,7 +85,6 @@ class Info(Extension):
             sys.exit("Can't find CIF in PATH")
 
         self.log("Start CIF")
-        self.__gen_info_requests()
 
         cmds = self.extensions["CC"].load_all_cmds(compile_only=True)
 
@@ -105,38 +102,6 @@ class Info(Extension):
             self._normilize_file(self.unsupported_opts_file)
         self.log("Finish")
 
-    def __gen_info_requests(self):
-        env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(os.path.dirname(self.aspect_template)),
-            line_statement_prefix='//',
-            trim_blocks=True,
-            lstrip_blocks=True,
-            undefined=jinja2.StrictUndefined
-        )
-
-        self.debug('Render template {}'.format(self.aspect_template))
-
-        if os.path.isfile(self.aspect):
-            return
-
-        if not os.path.isdir(self.work_dir):
-            os.makedirs(self.work_dir)
-
-        with open(self.aspect, "w", encoding="utf8") as fh:
-            fh.write(env.get_template(os.path.basename(self.aspect_template)).render({
-                "max_args_num": self.conf["Info.max_args"],
-                "arg_patterns": {i: ", ".join(["$"] * (i + 1)) for i in range(self.conf["Info.max_args"])},
-                "arg_printf_patterns": {i: ' '.join(["arg{}='%s'".format(j + 1) for j in range(i + 1)])
-                                        for i in range(self.conf["Info.max_args"])},
-                "arg_types": {i: ",".join(["$arg_type_str{}".format(j + 1) for j in range(i + 1)])
-                              for i in range(self.conf["Info.max_args"])},
-                "arg_values": {i: ",".join(["$arg_value{}".format(j + 1) for j in range(i + 1)])
-                               for i in range(self.conf["Info.max_args"])},
-                "arg_vals": {i: ",".join(["$arg_val{}".format(j + 1) for j in range(i + 1)])
-                             for i in range(self.conf["Info.max_args"])}
-            }))
-        self.debug('Rendered template was stored into file {}'.format(self.aspect))
-
     def _run_cif(self, cmd, opts_to_filter=None):
         if self.__is_cmd_bad_for_cif(cmd):
             return
@@ -147,6 +112,7 @@ class Info(Extension):
         for cmd_in in cmd["in"]:
             cif_out = os.path.join(self.temp_dir, str(os.getpid()), cmd_in + ".o")
             os.makedirs(os.path.dirname(cif_out), exist_ok=True)
+            os.makedirs(self.work_dir, exist_ok=True)
 
             os.environ["CIF_INFO_DIR"] = self.work_dir
             os.environ["CC_IN_FILE"] = cmd['in'][0]
