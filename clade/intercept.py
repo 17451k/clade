@@ -64,20 +64,26 @@ class Interceptor():
         return libinterceptor
 
     def __find_libinterceptor_linux(self):
-        libinterceptor = "libinterceptor.so"
+        libinterceptor_name = "libinterceptor.so"
+        libinterceptor = os.path.join(os.path.dirname(__file__), "libinterceptor", libinterceptor_name)
 
-        path = os.path.join(LIB, libinterceptor)
-        path64 = os.path.join(LIB64, libinterceptor)
+        if not os.path.exists(libinterceptor):
+            raise RuntimeError("libinterceptor is not found in {!r}".format(libinterceptor))
 
-        if not os.path.exists(path) or not os.path.exists(path64):
-            raise RuntimeError("libinterceptor is not found in: {!r}, {!r}".format(path, path64))
+        # Multilib support
+        path = os.path.join(LIB, libinterceptor_name)
+        path64 = os.path.join(LIB64, libinterceptor_name)
 
-        logging.debug("Path to libinterceptor library locations: {!r}, {!r}".format(path, path64))
+        if os.path.exists(path) and os.path.exists(path64):
+            libinterceptor = libinterceptor_name
+            logging.debug("Path to libinterceptor library locations: {!r}, {!r}".format(path, path64))
+        else:
+            logging.debug("Path to libinterceptor library location: {!r}".format(libinterceptor))
 
         return libinterceptor
 
     def __find_libinterceptor_darwin(self):
-        libinterceptor = os.path.join(LIB64, "libinterceptor.dylib")
+        libinterceptor = os.path.join(os.path.dirname(__file__), "libinterceptor", "libinterceptor.dylib")
 
         if not os.path.exists(libinterceptor):
             raise RuntimeError("libinterceptor is not found in {!r}".format(libinterceptor))

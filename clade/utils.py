@@ -37,13 +37,25 @@ def build_target(target, build_dir, src_dir, options=None):
     ret += subprocess.call(["make", target], cwd=build_dir)
 
     if ret:
-        raise sys.exit("Can't build {!r} - something went wrong".format(target))
+        raise RuntimeError("Can't build {!r} - something went wrong".format(target))
 
 
-def build_wrapper(build_dir):
-    build_target("wrapper", build_dir, LIBINT_SRC)
+def build_all(build_dir):
+    build_target("all", build_dir, LIBINT_SRC)
 
     shutil.copy(os.path.join(build_dir, "wrapper"), LIBINT_SRC)
+
+    for file in glob.glob(os.path.join(build_dir, "libinterceptor.*")):
+        shutil.copy(file, LIBINT_SRC)
+
+
+def build_multilib(build_dir):
+    try:
+        build_libinterceptor64(os.path.join(build_dir, "libinterceptor64"))
+        build_libinterceptor32(os.path.join(build_dir, "libinterceptor32"))
+    except RuntimeError:
+        # Multilib build is not mandatory
+        pass
 
 
 def build_libinterceptor64(build_dir):
@@ -67,10 +79,9 @@ def build_libinterceptor():
         build_dir = tempfile.mkdtemp()
 
         try:
-            build_wrapper(os.path.join(build_dir, "wrapper"))
-            build_libinterceptor64(os.path.join(build_dir, "libinterceptor64"))
+            build_all(build_dir)
             if not sys.platform == "darwin":
-                build_libinterceptor32(os.path.join(build_dir, "libinterceptor"))
+                build_multilib(build_dir)
         except FileNotFoundError as e:
             # cmd is either cmake or make
             cmd = re.sub(r".*? '(.*)'", r"\1", e.args[1])
