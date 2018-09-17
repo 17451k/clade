@@ -110,7 +110,7 @@ class Info(Extension):
             opts_to_filter = []
 
         for cmd_in in cmd["in"]:
-            cif_out = os.path.join(self.temp_dir, str(os.getpid()), cmd_in + ".o")
+            cif_out = os.path.join(self.temp_dir, str(os.getpid()), cmd_in.lstrip(os.sep) + ".o")
             os.makedirs(os.path.dirname(cif_out), exist_ok=True)
             os.makedirs(self.work_dir, exist_ok=True)
 
