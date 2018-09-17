@@ -70,17 +70,20 @@ class Macros(Extension):
     def __process_macros_expansions(self):
         self.log("Processing macros expansions")
 
-        all_args = r"(?:\sarg\d+='[^']*')*"
-        regex = re.compile(r'(\S*) (\S*)({0})'.format(all_args))
-
-        args_extract = r"arg\d+='([^']*)'"
-        regex2 = re.compile(args_extract)
+        regex = re.compile(r'(\S*) (\S*)(.*)')
+        regex2 = re.compile(r' actual_arg\d+=(.*)')
 
         for line in self.extensions["Info"].iter_macros_expansions():
             m = regex.match(line)
             if m:
-                file, macro, args = m.groups()
-                args = regex2.findall(args)
+                file, macro, args_str = m.groups()
+
+                args = list()
+                if args_str:
+                    for arg in args_str.split(','):
+                        m_arg = regex2.match(arg)
+                        if m_arg:
+                            args.append(m_arg.group(1))
 
                 if file in self.expand and macro in self.expand[file]:
                     self.expand[file][macro]["args"].append(args)
