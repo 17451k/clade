@@ -82,7 +82,7 @@ class Info(Extension):
         self.parse_prerequisites(cmds_file)
 
         if not shutil.which("cif"):
-            sys.exit("Can't find CIF in PATH")
+            raise RuntimeError("Can't find CIF in PATH")
 
         self.log("Start CIF")
 
@@ -96,6 +96,10 @@ class Info(Extension):
 
         if os.path.exists(self.temp_dir):
             shutil.rmtree(self.temp_dir)
+
+        if not [file for file in self.files if os.path.exists(file)]:
+            shutil.rmtree(self.work_dir)
+            raise RuntimeError("Can't find CIF output - it means that CIF most likely failed on every CC command")
 
         self.__normalize_cif_output(cmds_file)
         if os.path.exists(self.unsupported_opts_file):
@@ -247,5 +251,8 @@ class Info(Extension):
 def parse(args=sys.argv[1:]):
     conf = parse_args(args)
 
-    c = Info(conf["work_dir"], conf=conf)
-    c.parse(conf["cmds_file"])
+    try:
+        c = Info(conf["work_dir"], conf=conf)
+        c.parse(conf["cmds_file"])
+    except RuntimeError as e:
+        raise SystemExit(e)
