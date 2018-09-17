@@ -137,17 +137,17 @@ class Info(Extension):
             opts = [re.sub(r'\"', r'\\"', opt) for opt in opts]
             cif_args.extend(filter_opts(opts, cif_unsupported_opts[:] + opts_to_filter[:]))
 
-            r = subprocess.run(cif_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cmd["cwd"], universal_newlines=True)
-
-            if r.returncode:
+            try:
+                subprocess.check_output(cif_args, stderr=subprocess.STDOUT, cwd=cmd["cwd"], universal_newlines=True)
+            except subprocess.CalledProcessError as e:
                 # CIF may fail if it does not support some options
                 # We can try to parse stdout to identify unsupported options and relaunch CIF without it
-                m = self.unsupported_opts_regex.findall(r.stdout)
+                m = self.unsupported_opts_regex.findall(e.stdout)
                 if m and not opts_to_filter:
                     self.__save_unsupported_opts(m)
                     self._run_cif(cmd, m)
                 else:
-                    self.__save_log(cif_args, r.stdout)
+                    self.__save_log(cif_args, e.stdout)
 
     def __is_cmd_bad_for_cif(self, cmd):
         if cmd["in"] == []:

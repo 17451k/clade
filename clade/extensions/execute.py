@@ -75,7 +75,7 @@ class Execute(Extension):
         out = os.path.join(self.work_dir, os.path.basename(cmd_in) + ".i")
         args = [cmd["command"]] + ["-E"] + opts + [cmd_in] + ["-o", out]
 
-        subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cmd["cwd"], universal_newlines=True)
+        subprocess.call(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cmd["cwd"])
 
         if not os.path.exists(out):
             return None
@@ -96,7 +96,7 @@ class Execute(Extension):
             arg = re.sub(r"BASENAME", basename, arg)
             args.append(arg)
 
-        subprocess.run(args, cwd=cmd["cwd"])
+        subprocess.call(args, cwd=cmd["cwd"])
 
     def __is_cmd_good(self, cmd):
         if cmd["in"] == []:

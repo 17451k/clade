@@ -27,17 +27,19 @@ from clade.intercept import LIB, LIB64
 LIBINT_SRC = os.path.abspath(os.path.join(os.path.dirname(__file__), "libinterceptor"))
 
 
-def build_target(target, build_dir, src_dir, options=None):
+def build_target(target, build_dir, src_dir, options=None, quiet=False):
     if not options:
         options = []
 
     os.makedirs(build_dir, exist_ok=True)
 
-    ret = subprocess.call(["cmake", src_dir] + options, cwd=build_dir)
-    ret += subprocess.call(["make", target], cwd=build_dir)
-
-    if ret:
-        raise RuntimeError("Can't build {!r} - something went wrong".format(target))
+    try:
+        subprocess.check_output(["cmake", src_dir], stderr=subprocess.STDOUT, cwd=build_dir, universal_newlines=True)
+        subprocess.check_output(["make", target], stderr=subprocess.STDOUT, cwd=build_dir, universal_newlines=True)
+    except subprocess.CalledProcessError as e:
+        if not quiet:
+            print(e.stdout)
+        raise RuntimeError("Can't build target {!r} - something went wrong".format(target))
 
 
 def build_all(build_dir):
@@ -59,7 +61,7 @@ def build_multilib(build_dir):
 
 
 def build_libinterceptor64(build_dir):
-    build_target("interceptor", build_dir, LIBINT_SRC, ["-DCMAKE_C_COMPILER_ARG1=-m64"])
+    build_target("interceptor", build_dir, LIBINT_SRC, ["-DCMAKE_C_COMPILER_ARG1=-m64"], quiet=True)
 
     os.makedirs(LIB64, exist_ok=True)
     for file in glob.glob(os.path.join(build_dir, "libinterceptor.*")):
@@ -67,7 +69,7 @@ def build_libinterceptor64(build_dir):
 
 
 def build_libinterceptor32(build_dir):
-    build_target("interceptor", build_dir, LIBINT_SRC, ["-DCMAKE_C_COMPILER_ARG1=-m32"])
+    build_target("interceptor", build_dir, LIBINT_SRC, ["-DCMAKE_C_COMPILER_ARG1=-m32"], quiet=True)
 
     os.makedirs(LIB, exist_ok=True)
     for file in glob.glob(os.path.join(build_dir, "libinterceptor.*")):

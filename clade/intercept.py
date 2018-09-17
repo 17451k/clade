@@ -181,9 +181,7 @@ class Interceptor():
             self.__intercept_first_command()
 
         logging.debug("Execute {} command with the following environment: {}".format(self.command, self.env))
-        result = subprocess.run(self.command, env=self.env)
-
-        return result.returncode
+        return subprocess.call(self.command, env=self.env)
 
 
 def parse_args(args):

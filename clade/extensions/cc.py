@@ -94,7 +94,7 @@ class CC(Common):
 
         # Do not execute a command that does not contain any input files
         if "-" not in command and cmd["in"]:
-            subprocess.run(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, cwd=cmd["cwd"])
+            subprocess.call(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, cwd=cmd["cwd"])
 
         return deps_file
 
