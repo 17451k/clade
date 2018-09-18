@@ -63,6 +63,7 @@ setuptools.setup(
     license="LICENSE.txt",
     long_description=open("README.rst").read(),
     long_description_content_type="text/x-rst",
+    python_requires=">=3.4",
     packages=["clade"],
     package_data={
         "clade": [
