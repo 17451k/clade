@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import abc
+import fnmatch
 import glob
 import hashlib
 import logging
@@ -170,15 +171,14 @@ class Extension(metaclass=abc.ABCMeta):
     @staticmethod
     def __import_extension_modules():
         """Import all Python modules located in 'extensions' folder."""
-        files = glob.glob(os.path.join(os.path.dirname(__file__), '*.py'), recursive=True)
-        for file in files:
-            sys.path.insert(0, os.path.dirname(file))
-            name, _ = os.path.splitext(os.path.basename(file))
+        for root, _, filenames in os.walk(os.path.dirname(__file__)):
+            for filename in fnmatch.filter(filenames, '*.py'):
+                file = os.path.join(root, filename)
 
-            if file != __file__:
-                __import__(name)
-
-            sys.path.pop(0)
+                if file != __file__:
+                    sys.path.insert(0, os.path.dirname(file))
+                    __import__(os.path.splitext(os.path.basename(file))[0])
+                    sys.path.pop(0)
 
     @staticmethod
     def find_subclass(ext_name):
