@@ -39,7 +39,8 @@ class CC(Common):
 
         if "CC.which_list" not in conf:
             self.which_list = [
-                r"^.*[mg]?cc(-?\d+(\.\d+){0,2})?$",
+                r"^.*cc$",
+                r"^.*[mg]cc(-?\d+(\.\d+){0,2})?$",
                 r"^.*clang(-?\d+(\.\d+){0,2})?$"
             ]
         else:

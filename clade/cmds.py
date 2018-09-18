@@ -45,6 +45,7 @@ def iter_cmds_by_which(cmds_fp, which_list):
         for which in which_list:
             if re.search(which, cmd["which"]):
                 yield cmd
+                break
 
 
 def iter_cmds(cmds_fp):
