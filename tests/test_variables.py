@@ -23,10 +23,12 @@ def test_variables(tmpdir, cmds_file):
     c.parse(cmds_file)
 
     variables = c.load_variables()
-    assert variables
+    assert variables[zero_c]
+    assert variables[zero_c][0]["declaration"] == "int (*fp3[1U])(void)"
+    assert variables[zero_c][0]["path"] == zero_c
+    assert variables[zero_c][0]["type"] == "global"
+    assert variables[zero_c][0]["value"][0]["index"] == 0
+    assert variables[zero_c][0]["value"][0]["value"] == " & zero"
 
     used_in_vars = c.load_used_in_vars()
-    assert used_in_vars
-
-    # TODO: Relative paths are broken right now inside Variables extension
-    # Check something after errors are fixed
+    assert used_in_vars["zero"][zero_c] == [zero_c]

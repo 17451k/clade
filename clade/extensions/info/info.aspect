@@ -80,13 +80,13 @@ info: use_var($ $) {
 }
 
 info: init_global(static $ $){
-	$fprintf<"$env<CIF_INFO_DIR>/init_global.txt","declaration: %s path: %s; type: static\n%s",$signature,$env<CC_IN_FILE>,$var_init_list>
+	$fprintf<"$env<CIF_INFO_DIR>/init_global.txt","declaration: %s path: %s; type: static\n%s",$signature,$env<VAR_C_FILE>,$var_init_list>
 }
 
 info: init_global($ $){
-	$fprintf<"$env<CIF_INFO_DIR>/init_global.txt","declaration: %s path: %s; type: global\n%s",$signature,$env<CC_IN_FILE>,$var_init_list>
+	$fprintf<"$env<CIF_INFO_DIR>/init_global.txt","declaration: %s path: %s; type: global\n%s",$signature,$env<VAR_C_FILE>,$var_init_list>
 }
 
 info: introduce($ $) {
-	$fprintf<"$env<CIF_INFO_DIR>/typedefs.txt","%s %s %s\n",$env<CIF_CMD_CWD>,$env<CC_IN_FILE>,$signature>
+	$fprintf<"$env<CIF_INFO_DIR>/typedefs.txt","%s %s %s\n",$env<CIF_CMD_CWD>,$env<C_FILE>,$signature>
 }

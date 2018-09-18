@@ -93,7 +93,7 @@ class Info(Extension):
 
         with concurrent.futures.ProcessPoolExecutor(max_workers=os.cpu_count()) as p:
             for cmd in cmds:
-                p.submit(unwrap, self, cmd)
+                p.submit(unwrap, self, cmd, cmds_file)
 
         self.log("CIF finished")
 
@@ -109,20 +109,28 @@ class Info(Extension):
             self._normilize_file(self.unsupported_opts_file)
         self.log("Finish")
 
-    def _run_cif(self, cmd, opts_to_filter=None):
+    def _run_cif(self, cmd, cmds_file, opts_to_filter=None):
         if self.__is_cmd_bad_for_cif(cmd):
             return
 
         if not opts_to_filter:
             opts_to_filter = []
 
+        src = self.get_build_cwd(cmds_file)
+
         for cmd_in in cmd["in"]:
             cif_out = os.path.join(self.temp_dir, str(os.getpid()), cmd_in.lstrip(os.sep) + ".o")
             os.makedirs(os.path.dirname(cif_out), exist_ok=True)
             os.makedirs(self.work_dir, exist_ok=True)
 
+            var_c_file = cmd_in
+            if not os.path.isabs(var_c_file):
+                var_c_file = os.path.join(cmd["cwd"], var_c_file)
+            var_c_file = normalize_path(var_c_file, src)
+
             os.environ["CIF_INFO_DIR"] = self.work_dir
-            os.environ["CC_IN_FILE"] = cmd['in'][0]
+            os.environ["VAR_C_FILE"] = var_c_file
+            os.environ["C_FILE"] = cmd_in
             os.environ["CIF_CMD_CWD"] = cmd['cwd']
 
             cif_args = ["cif",
@@ -148,7 +156,7 @@ class Info(Extension):
                 m = self.unsupported_opts_regex.findall(e.stdout)
                 if m and not opts_to_filter:
                     self.__save_unsupported_opts(m)
-                    self._run_cif(cmd, m)
+                    self._run_cif(cmd, cmds_file, m)
                 else:
                     self.__save_log(cif_args, e.stdout)
 
