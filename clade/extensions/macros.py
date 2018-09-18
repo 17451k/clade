@@ -57,15 +57,18 @@ class Macros(Extension):
 
         for line in self.extensions["Info"].iter_macros_definitions():
             m = regex.match(line)
-            if m:
-                file, macro, line = m.groups()
 
-                if file in self.define and macro in self.define[file]:
-                    self.define[file][macro].append(line)
-                elif file in self.define:
-                    self.define[file][macro] = [line]
-                else:
-                    self.define[file] = {macro: [line]}
+            if not m:
+                raise RuntimeError("CIF output has unexpected format")
+
+            file, macro, line = m.groups()
+
+            if file in self.define and macro in self.define[file]:
+                self.define[file][macro].append(line)
+            elif file in self.define:
+                self.define[file][macro] = [line]
+            else:
+                self.define[file] = {macro: [line]}
 
     def __process_macros_expansions(self):
         self.log("Processing macros expansions")
@@ -75,22 +78,25 @@ class Macros(Extension):
 
         for line in self.extensions["Info"].iter_macros_expansions():
             m = regex.match(line)
-            if m:
-                file, macro, args_str = m.groups()
 
-                args = list()
-                if args_str:
-                    for arg in args_str.split(','):
-                        m_arg = regex2.match(arg)
-                        if m_arg:
-                            args.append(m_arg.group(1))
+            if not m:
+                raise RuntimeError("CIF output has unexpected format")
 
-                if file in self.expand and macro in self.expand[file]:
-                    self.expand[file][macro]["args"].append(args)
-                elif file in self.expand:
-                    self.expand[file][macro] = {'args': [args]}
-                else:
-                    self.expand[file] = {macro: {'args': [args]}}
+            file, macro, args_str = m.groups()
+
+            args = list()
+            if args_str:
+                for arg in args_str.split(','):
+                    m_arg = regex2.match(arg)
+                    if m_arg:
+                        args.append(m_arg.group(1))
+
+            if file in self.expand and macro in self.expand[file]:
+                self.expand[file][macro]["args"].append(args)
+            elif file in self.expand:
+                self.expand[file][macro] = {'args': [args]}
+            else:
+                self.expand[file] = {macro: {'args': [args]}}
 
     def load_macros_definitions(self, files=None):
         return self.load_data_by_key(self.define_folder, files)

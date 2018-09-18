@@ -51,13 +51,16 @@ class Typedefs(Extension):
 
         for line in self.extensions["Info"].iter_typedefs():
             m = regex.match(line)
-            if m:
-                scope_file, declaration = m.groups()
 
-                if scope_file not in self.typedefs:
-                    typedefs[scope_file] = [declaration]
-                elif declaration not in typedefs[scope_file]:
-                    typedefs[scope_file].append(declaration)
+            if not m:
+                raise RuntimeError("CIF output has unexpected format")
+
+            scope_file, declaration = m.groups()
+
+            if scope_file not in self.typedefs:
+                typedefs[scope_file] = [declaration]
+            elif declaration not in typedefs[scope_file]:
+                typedefs[scope_file].append(declaration)
 
     def load_typedefs(self, files=None):
         return self.load_data_by_key(self.typedefs_folder, files)

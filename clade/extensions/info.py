@@ -88,6 +88,9 @@ class Info(Extension):
 
         cmds = self.extensions["CC"].load_all_cmds(compile_only=True)
 
+        if not cmds:
+            raise RuntimeError("There is no parsed CC commands")
+
         with concurrent.futures.ProcessPoolExecutor(max_workers=os.cpu_count()) as p:
             for cmd in cmds:
                 p.submit(unwrap, self, cmd)
