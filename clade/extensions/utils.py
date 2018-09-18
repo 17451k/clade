@@ -19,7 +19,19 @@ import sys
 import ujson
 
 
-def normalize_path(path, cwd, cache=dict()):
+def normalize_paths(paths, cwd, src):
+    for path in paths:
+        yield normalize_path(path, cwd, src)
+
+
+def normalize_path(path, cwd, src):
+    if not os.path.isabs(path):
+        path = os.path.join(cwd, path)
+
+    return normalize_relative_path(path, src)
+
+
+def normalize_relative_path(path, cwd, cache=dict()):
     # Cache variable considerably speeds up normalizing.
     # Cache size is quite small even for extra large files.
 

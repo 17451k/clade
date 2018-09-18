@@ -124,9 +124,7 @@ class Info(Extension):
             os.makedirs(self.work_dir, exist_ok=True)
 
             var_c_file = cmd_in
-            if not os.path.isabs(var_c_file):
-                var_c_file = os.path.join(cmd["cwd"], var_c_file)
-            var_c_file = normalize_path(var_c_file, src)
+            var_c_file = normalize_path(var_c_file, cmd["cwd"], src)
 
             os.environ["CIF_INFO_DIR"] = self.work_dir
             os.environ["VAR_C_FILE"] = var_c_file
@@ -202,9 +200,7 @@ class Info(Extension):
 
                         if m:
                             cwd, path, rest = m.groups()
-                            if not os.path.isabs(path):
-                                path = os.path.join(cwd, path)
-                            path = normalize_path(path, src)
+                            path = normalize_path(path, cwd, src)
                             temp_fh.write("{} {}\n".format(path, rest))
                         else:
                             temp_fh.write(line)

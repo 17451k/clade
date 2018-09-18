@@ -33,16 +33,16 @@ class SrcGraph(Extension):
         """Load source graph."""
         return self.load_data(self.src_graph_file)
 
-    def parse(self, cmds):
+    def parse(self, cmds_file):
         if self.is_parsed():
             self.log("Skip parsing")
             return
 
-        self.parse_prerequisites(cmds)
+        self.parse_prerequisites(cmds_file)
 
         self.log("Start source graph constructing")
 
-        self.__generate_src_graph(cmds)
+        self.__generate_src_graph(cmds_file)
         self.dump_data(self.src_graph, self.src_graph_file)
 
         if not self.src_graph:
@@ -50,13 +50,13 @@ class SrcGraph(Extension):
 
         self.log("Constructing finished")
 
-    def __generate_src_graph(self, cmds):
+    def __generate_src_graph(self, cmds_file):
         try:
             cmd_graph = self.extensions["CmdGraph"].load_cmd_graph()
         except FileNotFoundError:
             return
 
-        build_cwd = self.get_build_cwd(cmds)
+        src = self.get_build_cwd(cmds_file)
 
         for cmd in self.extensions["CC"].load_all_cmds(compile_only=True):
             if [cmd_in for cmd_in in cmd["in"] if cmd_in == "/dev/null" or cmd_in == "-"]:
@@ -68,13 +68,11 @@ class SrcGraph(Extension):
             used_by = self.__find_used_by(cmd_graph, cmd_id)
 
             for src_file in self.extensions["CC"].load_deps_by_id(cmd_id):
-                if not os.path.isabs(src_file):
-                    src_file = os.path.join(cmd["cwd"], src_file)
-                rel_in = normalize_path(src_file, build_cwd)
+                rel_in = normalize_path(src_file, cmd["cwd"], src)
 
                 if rel_in not in self.src_graph:
                     self.src_graph[rel_in] = self.__get_new_value()
-                    self.src_graph[rel_in]["loc"] = self.__estimate_loc_size(rel_in, build_cwd)
+                    self.src_graph[rel_in]["loc"] = self.__estimate_loc_size(os.path.join(src, rel_in))
 
                 # compiled_in is a list of commands that compile 'rel_in' source file
                 self.src_graph[rel_in]["compiled_in"].add(cmd_id)
@@ -89,9 +87,7 @@ class SrcGraph(Extension):
 
         return used_by
 
-    def __estimate_loc_size(self, file, build_cwd):
-        if not os.path.isabs(file):
-            file = os.path.join(build_cwd, file)
+    def __estimate_loc_size(self, file):
         try:
             with open(file, "rb") as f:
                 for i, _ in enumerate(f):

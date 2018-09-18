@@ -19,7 +19,7 @@ import sys
 from graphviz import Digraph
 
 from clade.extensions.abstract import Extension
-from clade.extensions.utils import parse_args, normalize_path
+from clade.extensions.utils import parse_args, normalize_paths
 
 
 class CmdGraph(Extension):
@@ -53,8 +53,10 @@ class CmdGraph(Extension):
         for ext_name in self.extensions:
             parsed_cmds.extend([(x, ext_name) for x in self.extensions[ext_name].load_all_cmds()])
 
+        src = self.get_build_cwd(cmds_file)
+
         for parsed_cmd, ext_name in sorted(parsed_cmds, key=lambda x: x[0]["id"]):
-            self.__add_to_graph(parsed_cmd, ext_name)
+            self.__add_to_graph(parsed_cmd, ext_name, src)
 
         self.dump_data(self.graph, self.graph_file)
 
@@ -66,18 +68,18 @@ class CmdGraph(Extension):
 
         self.log("Constructing finished")
 
-    def __add_to_graph(self, cmd, ext_name, out_dict=dict()):
+    def __add_to_graph(self, cmd, ext_name, src, out_dict=dict()):
         out_id = str(cmd["id"])
         if out_id not in self.graph:
             self.graph[out_id] = self.__get_new_value(ext_name)
 
-        for cmd_in in (i for i in cmd["in"] if i in out_dict):
+        for cmd_in in (i for i in normalize_paths(cmd["in"], cmd["cwd"], src) if i in out_dict):
             in_id = out_dict[cmd_in]
             self.graph[in_id]["used_by"].append(out_id)
             self.graph[out_id]["using"].append(in_id)
 
         # Rewrite out_dict[cmd_out] values to keep the latest used command id
-        for cmd_out in cmd["out"]:
+        for cmd_out in normalize_paths(cmd["out"], cmd["cwd"], src):
             out_dict[cmd_out] = out_id
 
     def __print_source_graph(self, cmds_file):
@@ -92,22 +94,12 @@ class CmdGraph(Extension):
             cmd_type = graph[cmd_id]["type"]
             cmd = self.extensions[cmd_type].load_cmd_by_id(cmd_id)
 
-            for cmd_out in cmd["out"]:
-                if not os.path.isabs(cmd_out):
-                    cmd_out = os.path.join(cmd["cwd"], cmd_out)
-
-                cmd_out = normalize_path(cmd_out, src)
-
+            for cmd_out in normalize_paths(cmd["out"], cmd["cwd"], src):
                 if cmd_out not in added_nodes:
                     dot.node(cmd_out)
                     added_nodes[cmd_out] = 1
 
-                for cmd_in in cmd["in"]:
-                    if not os.path.isabs(cmd_in):
-                        cmd_in = os.path.join(cmd["cwd"], cmd_in)
-
-                    cmd_in = normalize_path(cmd_in, src)
-
+                for cmd_in in normalize_paths(cmd["in"], cmd["cwd"], src):
                     if cmd_in not in added_nodes:
                         dot.node(cmd_in)
                         added_nodes[cmd_in] = 1
