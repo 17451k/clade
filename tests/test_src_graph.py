@@ -35,4 +35,4 @@ def test_src_graph_empty_conf(tmpdir, cmds_file):
 
     src_graph = c.load_src_graph()
     assert src_graph
-    assert len(src_graph["tests/test_project/main.c"]["used_by"]) == 1
+    assert len(src_graph["tests/test_project/main.c"]["used_by"]) >= 1
