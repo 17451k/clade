@@ -181,5 +181,8 @@ class Functions(Callgraph):
 def parse(args=sys.argv[1:]):
     conf = parse_args(args)
 
-    c = Functions(conf["work_dir"], conf=conf)
-    c.parse(conf["cmds_file"])
+    try:
+        c = Functions(conf["work_dir"], conf=conf)
+        c.parse(conf["cmds_file"])
+    except RuntimeError as e:
+        raise SystemExit(e)

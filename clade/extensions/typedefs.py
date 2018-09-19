@@ -69,5 +69,8 @@ class Typedefs(Extension):
 def parse(args=sys.argv[1:]):
     conf = parse_args(args)
 
-    c = Typedefs(conf["work_dir"], conf=conf)
-    c.parse(conf["cmds_file"])
+    try:
+        c = Typedefs(conf["work_dir"], conf=conf)
+        c.parse(conf["cmds_file"])
+    except RuntimeError as e:
+        raise SystemExit(e)

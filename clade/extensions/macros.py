@@ -108,5 +108,8 @@ class Macros(Extension):
 def parse(args=sys.argv[1:]):
     conf = parse_args(args)
 
-    c = Macros(conf["work_dir"], conf=conf)
-    c.parse(conf["cmds_file"])
+    try:
+        c = Macros(conf["work_dir"], conf=conf)
+        c.parse(conf["cmds_file"])
+    except RuntimeError as e:
+        raise SystemExit(e)
