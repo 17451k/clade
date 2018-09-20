@@ -150,7 +150,7 @@ class Functions(Callgraph):
     def __process_exported(self):
         self.log("Processing exported functions")
 
-        regex = re.compile(r"(\S*) (\S*) signature='([^']*)' (\S*) (\S*)")
+        regex = re.compile(r"(\S*) (\S*)")
 
         for line in self.extensions["Info"].iter_exported():
             m = regex.match(line)
