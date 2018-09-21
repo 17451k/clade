@@ -40,7 +40,7 @@ class Objcopy(Common):
         # objcopy has only one input file and no more than one output file.
         # out file is the same as in file if it didn't specified.
         if len(parsed_cmd["in"]) == 2:
-            parsed_cmd["out"] = parsed_cmd["in"].pop()
+            parsed_cmd["out"] = [parsed_cmd["in"].pop()]
         elif len(parsed_cmd["in"]) < 2:
             parsed_cmd["out"] = parsed_cmd["in"]
 
