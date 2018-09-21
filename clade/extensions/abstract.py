@@ -101,14 +101,19 @@ class Extension(metaclass=abc.ABCMeta):
     def get_build_cwd(self, cmds_file):
         return self.conf.get("build_cwd", clade.cmds.get_build_cwd(cmds_file))
 
-    def load_data(self, file_name):
+    def load_data(self, file_name, raise_exception=True):
         """Load json file by name."""
 
         if not os.path.isabs(file_name):
             file_name = os.path.join(self.work_dir, file_name)
 
         if not os.path.isfile(file_name):
-            self.warning("{!r} file is not found".format(file_name))
+            message = "{!r} file is not found".format(file_name)
+
+            if raise_exception:
+                raise FileNotFoundError(message)
+
+            self.warning(message)
             return dict()
 
         self.debug("Load {}".format(file_name))
@@ -137,11 +142,11 @@ class Extension(metaclass=abc.ABCMeta):
         data = dict()
         if files is None:
             for file in glob.glob(os.path.join(self.work_dir, folder, "*")):
-                data.update(self.load_data(file))
+                data.update(self.load_data(file, raise_exception=False))
         elif isinstance(files, list) or isinstance(files, set):
             for key in files:
                 file_name = os.path.join(folder, hashlib.md5(key.encode('utf-8')).hexdigest() + ".json")
-                data.update(self.load_data(file_name))
+                data.update(self.load_data(file_name, raise_exception=False))
         else:
             raise TypeError("Provide a list or set of files to retrieve data but not {!r}".format(type(files).__name__))
 

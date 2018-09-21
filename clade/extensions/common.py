@@ -162,13 +162,13 @@ class Common(Extension):
         self.dump_data(cmd, os.path.join(self.cmds_dir, "{}.json".format(id)))
 
     def load_opts_by_id(self, id):
-        return self.load_data(os.path.join(self.opts_dir, "{}.json".format(id)))
+        return self.load_data(os.path.join(self.opts_dir, "{}.json".format(id)), raise_exception=False)
 
     def dump_opts_by_id(self, id, opts):
         self.dump_data(opts, os.path.join(self.opts_dir, "{}.json".format(id)))
 
     def load_unparsed_by_id(self, id):
-        return self.load_data(os.path.join(self.unparsed_dir, "{}.json".format(id)))
+        return self.load_data(os.path.join(self.unparsed_dir, "{}.json".format(id)), raise_exception=False)
 
     def dump_unparsed_by_id(self, id, cmd):
         self.dump_data(cmd, os.path.join(self.unparsed_dir, "{}.json".format(id)))
