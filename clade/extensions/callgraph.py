@@ -177,7 +177,7 @@ class Callgraph(Extension):
 
         for path, funcs in self.callgraph.items():
             for func, desc in funcs.items():
-                if path == 'unknown' and not self.funcs[func].get(path):
+                if path == 'unknown' and (func not in self.funcs or not self.funcs[func].get(path)):
                     continue
                 desc['type'] = self.funcs[func][path].get('type')
 
