@@ -34,7 +34,7 @@ def build_target(target, build_dir, src_dir, options=None, quiet=False):
     os.makedirs(build_dir, exist_ok=True)
 
     try:
-        subprocess.check_output(["cmake", src_dir], stderr=subprocess.STDOUT, cwd=build_dir, universal_newlines=True)
+        subprocess.check_output(["cmake", src_dir] + options, stderr=subprocess.STDOUT, cwd=build_dir, universal_newlines=True)
         subprocess.check_output(["make", target], stderr=subprocess.STDOUT, cwd=build_dir, universal_newlines=True)
     except subprocess.CalledProcessError as e:
         if not quiet:
