@@ -112,8 +112,8 @@ class FileStorage:
     def storage_dir(self):
         return self._storage.get_storage_dir()
 
-    def save_file(self, path):
-        self._storage.add_file(path)
+    def save_file(self, filename, storage_filename=None):
+        self._storage.add_file(filename, storage_filename=storage_filename)
 
     def convert_path(self, path):
         return os.path.join(self.storage_dir, path.lstrip(os.path.sep))

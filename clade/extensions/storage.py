@@ -20,10 +20,10 @@ from clade.extensions.abstract import Extension
 
 
 class Storage(Extension):
-    def add_file(self, file, cache=set()):
+    def add_file(self, filename, storage_filename=None, cache=set()):
         """Add file to the storage."""
 
-        dst = self.work_dir + os.sep + file
+        dst = self.work_dir + os.sep + storage_filename if storage_filename else filename
 
         if dst in cache:
             return
@@ -32,7 +32,7 @@ class Storage(Extension):
 
         try:
             os.makedirs(os.path.dirname(dst), exist_ok=True)
-            shutil.copyfile(file, dst)
+            shutil.copyfile(filename, dst)
         except FileNotFoundError as e:
             self.warning(e)
         except shutil.SameFileError:
