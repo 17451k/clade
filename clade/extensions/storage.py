@@ -23,7 +23,7 @@ class Storage(Extension):
     def add_file(self, filename, storage_filename=None, cache=set()):
         """Add file to the storage."""
 
-        dst = self.work_dir + os.sep + storage_filename if storage_filename else filename
+        dst = self.work_dir + os.sep + (storage_filename if storage_filename else filename)
 
         if dst in cache:
             return
