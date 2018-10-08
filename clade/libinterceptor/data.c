@@ -25,7 +25,7 @@
 
 #define DELIMITER "||"
 
-static void expand_newlines(char* dest, const char* src) {
+static void expand_newlines(char *dest, const char *src) {
     for (int i = 0; i < strlen(src); i++) {
         switch(src[i]) {
             case '\n':
@@ -50,8 +50,8 @@ static void expand_newlines(char* dest, const char* src) {
 }
 
 // Returned buffer may be up to twice as large as necessary
-static char* expand_newlines_alloc(const char* src) {
-    char* dest = malloc(2 * strlen(src) + 1);
+static char *expand_newlines_alloc(const char *src) {
+    char *dest = malloc(2 * strlen(src) + 1);
     expand_newlines(dest, src);
     return dest;
 }

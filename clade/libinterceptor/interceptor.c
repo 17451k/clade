@@ -45,7 +45,7 @@ int execvp(const char *filename, char *const argv[]) {
 
     if (! intercepted) {
         intercept_call(filename, (char const *const *)argv);
-        intercepted = true;
+        // DO NOT change value of intercepted to TRUE here
     }
 
     return execvp_real(filename, argv);
@@ -55,8 +55,8 @@ int execv(const char *filename, char *const argv[]) {
     int (*execv_real)(const char *, char *const *) = dlsym(RTLD_NEXT, "execv");
 
     // DO NOT check if (! intercepted) here: it will result in command loss
+    // Also DO NOT change value of intercepted to TRUE for the same reason
     intercept_call(filename, (char const *const *)argv);
-    intercepted = true;
 
     return execv_real(filename, argv);
 }
