@@ -40,16 +40,20 @@ class Interceptor():
         RuntimeError: Clade installation is corrupted, or intercepting process failed
     """
 
-    def __init__(self, command=[], output="cmds.txt", debug=False, fallback=False):
+    def __init__(self, command=[], output="cmds.txt", debug=False, fallback=False, append=False):
         self.command = command
         self.output = os.path.abspath(output)
         self.debug = debug
         self.fallback = fallback
+        self.append = append
 
         if self.fallback:
             self.wrapper = self.__find_wrapper()
         else:
             self.libinterceptor = self.__find_libinterceptor()
+
+        if not self.append and os.path.exists(self.output):
+            os.remove(self.output)
 
         self.env = self.__setup_env()
 
@@ -190,6 +194,7 @@ def parse_args(args):
     parser.add_argument("-o", "--output", help="a path to the FILE where intercepted commands will be saved", metavar='FILE', default="cmds.txt")
     parser.add_argument("-d", "--debug", help="enable debug logging messages", action="store_true")
     parser.add_argument("-f", "--fallback", help="enable fallback intercepting mode", action="store_true")
+    parser.add_argument("-a", "--append", help="append intercepted commands to existing cmds.txt file", action="store_true")
     parser.add_argument(dest="command", nargs=argparse.REMAINDER, help="build command to run and intercept")
 
     args = parser.parse_args(args)
@@ -209,7 +214,8 @@ def main(args=sys.argv[1:]):
 
     logging.debug("Parsed command line arguments: {}".format(args))
 
-    i = Interceptor(command=args.command, output=args.output, debug=args.debug, fallback=args.fallback)
+    i = Interceptor(command=args.command, output=args.output, debug=args.debug,
+                    fallback=args.fallback, append=args.append)
     sys.exit(i.execute())
 
 
