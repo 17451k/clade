@@ -57,6 +57,10 @@ int execv(const char *filename, char *const argv[]) {
     // DO NOT check if (! intercepted) here: it will result in command loss
     // Also DO NOT change value of intercepted to TRUE for the same reason
     intercept_call(filename, (char const *const *)argv);
+    // BUT we need to change it for macOS to avoid duplicating commands
+    #ifdef __APPLE__
+    intercepted = TRUE;
+    #endif
 
     return execv_real(filename, argv);
 }
