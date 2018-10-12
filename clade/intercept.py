@@ -16,6 +16,7 @@
 import argparse
 import logging
 import os
+import shlex
 import shutil
 import subprocess
 import sys
@@ -150,29 +151,20 @@ class Interceptor():
             env["PATH"] = self.__crete_wrappers() + ":" + os.environ.get("PATH", "")
             logging.debug("Add directory with wrappers to PATH")
 
-        # 2 CLADE_INTERCEPT variables are needed purely for debugging purposes
-        if not self.fallback:
-            logging.debug("Set 'CLADE_INTERCEPT' environment variable value")
-            env["CLADE_INTERCEPT"] = self.output
-        else:
-            logging.debug("Set 'CLADE_INTERCEPT_FALLBACK' environment variable value")
-            env["CLADE_INTERCEPT_FALLBACK"] = self.output
+        logging.debug("Set 'CLADE_INTERCEPT' environment variable value")
+        env["CLADE_INTERCEPT"] = self.output
 
         if sys.platform == "linux":
             env["LD_LIBRARY_PATH"] = env.get("LD_LIBRARY_PATH", "") + ":" + LIB64 + ":" + LIB
             logging.debug("Set LD_LIBRARY_PATH environment variable value as {!r}".format(env["LD_LIBRARY_PATH"]))
 
+        # Prepare environment variables for PID graph
+        f = tempfile.NamedTemporaryFile(delete=False)
+        f.write(b"0")
+        env["CLADE_ID_FILE"] = f.name
+        env["CLADE_PARENT_ID"] = "0"
+
         return env
-
-    def __intercept_first_command(self):
-        logging.debug("'Intercept' the main command manually in order for it to appear in the output file")
-        which = shutil.which(self.command[0])
-
-        if not which:
-            return
-
-        with open(self.output, "a") as f:
-            f.write(DELIMITER.join([os.getcwd(), which] + self.command) + "\n")
 
     def execute(self):
         """Execute intercepting and parsing of build commands.
@@ -180,12 +172,10 @@ class Interceptor():
         Returns:
             0 if everything went successful and error code otherwise
         """
-        if not self.fallback:
-            # Fallback mode can intercept first command without our help
-            self.__intercept_first_command()
 
-        logging.debug("Execute {} command with the following environment: {}".format(self.command, self.env))
-        return subprocess.call(self.command, env=self.env)
+        shell_command = " ".join([shlex.quote(x) for x in self.command])
+        logging.debug("Execute {!r} command with the following environment: {!r}".format(shell_command, self.env))
+        return subprocess.call(shell_command, env=self.env, shell=True)
 
 
 def parse_args(args):

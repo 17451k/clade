@@ -31,6 +31,9 @@ class Common(Extension):
     Raises:
         RuntimeError: Command can't be parsed as its type is not supported.
     """
+
+    requires = ["PidGraph"]
+
     def __init__(self, work_dir, conf=None, preset="base"):
         super().__init__(work_dir, conf, preset)
 
@@ -57,6 +60,8 @@ class Common(Extension):
         if self.is_parsed():
             self.log("Skip parsing")
             return
+
+        self.parse_prerequisites(cmds_file)
 
         self.log("Start parsing")
 
@@ -189,9 +194,14 @@ class Common(Extension):
 
         self.dump_data(merged_cmds, "cmds.json")
 
-    def load_all_cmds(self):
+    def load_all_cmds(self, filter_by_pid=True):
         """Load all parsed commands."""
-        return self.load_data("cmds.json")
+        cmds = self.load_data("cmds.json")
+
+        if filter_by_pid and self.conf.get("PidGraph.filter_cmds_by_pid", True):
+            return self.extensions["PidGraph"].filter_cmds_by_pid(cmds)
+
+        return cmds
 
     def is_bad(self, cmd):
         for _ in (cmd_in for cmd_in in cmd["in"] if self.regex_in and self.regex_in.match(cmd_in)):

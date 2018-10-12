@@ -22,6 +22,7 @@
 #include <unistd.h>
 
 #include "which.h"
+#include "env.h"
 
 #define DELIMITER "||"
 
@@ -85,8 +86,8 @@ static char *prepare_data(const char *path, char const *const argv[]) {
         correct_path = (char *)path;
     }
 
-    // Allocate memory to store the data + cwd + delimeters
-    char *data = malloc(args_len + strlen(cwd) + strlen(DELIMITER)
+    // Allocate memory to store the data + cwd + which + PID (50) + delimeters.
+    char *data = malloc(args_len + strlen(cwd) + strlen(DELIMITER) + 500 + strlen(DELIMITER)
                         + strlen(correct_path) + strlen(DELIMITER) + strlen("\n"));
 
     if (!data) {
@@ -96,6 +97,11 @@ static char *prepare_data(const char *path, char const *const argv[]) {
 
     written_len += sprintf(data + written_len, "%s", cwd);
     written_len += sprintf(data + written_len, DELIMITER);
+
+    char *parent_id = get_parent_id();
+    written_len += sprintf(data + written_len, "%s", parent_id);
+    written_len += sprintf(data + written_len, DELIMITER);
+    free(parent_id);
 
     written_len += sprintf(data + written_len, "%s", correct_path);
     written_len += sprintf(data + written_len, DELIMITER);
@@ -130,28 +136,30 @@ static void store_data(char *data, char *data_file) {
 
 void intercept_call(const char *path, char const *const argv[]) {
     char *data_file = getenv("CLADE_INTERCEPT");
+    char *id_file = getenv("CLADE_ID_FILE");
 
     if (!data_file) {
         fprintf(stderr, "Environment is not prepared: CLADE_INTERCEPT is not specified\n");
         exit(EXIT_FAILURE);
     }
 
-    // Data with intercepted command which will be stored
-    char *data = prepare_data(path, argv);
-    store_data(data, data_file);
-    free(data);
-}
-
-void intercept_call_fallback(const char *path, char const *const argv[]) {
-    char *data_file = getenv("CLADE_INTERCEPT_FALLBACK");
-
-    if (!data_file) {
-        fprintf(stderr, "Environment is not prepared: CLADE_INTERCEPT_FALLBACK is not specified\n");
+    if (!id_file) {
+        fprintf(stderr, "Environment is not prepared: CLADE_ID_FILE is not specified\n");
         exit(EXIT_FAILURE);
     }
 
+    FILE *f = fopen(id_file, "r");
+    if (!f) {
+        fprintf(stderr, "Couldn't open %s file\n", id_file);
+        exit(EXIT_FAILURE);
+    }
+    flock(fileno(f), LOCK_EX);
+
     // Data with intercepted command which will be stored
     char *data = prepare_data(path, argv);
     store_data(data, data_file);
     free(data);
+
+    fclose(f);
+    flock(fileno(f), LOCK_UN);
 }

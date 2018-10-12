@@ -23,14 +23,15 @@ from clade.extensions.utils import parse_args, normalize_paths
 
 
 class CmdGraph(Extension):
-    requires = ["CC", "LD", "AR"]
+    always_requires = ["PidGraph"]
+    requires = always_requires + ["CC", "LD", "AR"]
 
     def __init__(self, work_dir, conf=None, preset="base"):
         if not conf:
             conf = dict()
 
         if "CmdGraph.requires" in conf:
-            self.requires = conf["CmdGraph.requires"]
+            self.requires = self.always_requires + conf["CmdGraph.requires"]
 
         super().__init__(work_dir, conf, preset)
 
@@ -49,14 +50,20 @@ class CmdGraph(Extension):
         self.parse_prerequisites(cmds_file)
 
         self.log("Start command graph constructing")
-        parsed_cmds = list()
-        for ext_name in self.extensions:
-            parsed_cmds.extend([(x, ext_name) for x in self.extensions[ext_name].load_all_cmds()])
+
+        cmds = list()
+        for ext_name in [x for x in self.extensions if x != "PidGraph"]:
+            for cmd in self.extensions[ext_name].load_all_cmds(filter_by_pid=False):
+                cmd["type"] = ext_name
+                cmds.append(cmd)
+
+        if self.conf.get("PidGraph.filter_cmds_by_pid", True):
+            cmds = self.extensions["PidGraph"].filter_cmds_by_pid(cmds)
 
         src = self.get_build_cwd(cmds_file)
 
-        for parsed_cmd, ext_name in sorted(parsed_cmds, key=lambda x: x[0]["id"]):
-            self.__add_to_graph(parsed_cmd, ext_name, src)
+        for cmd in sorted(cmds, key=lambda x: x["id"]):
+            self.__add_to_graph(cmd, src)
 
         self.dump_data(self.graph, self.graph_file)
 
@@ -68,10 +75,10 @@ class CmdGraph(Extension):
 
         self.log("Constructing finished")
 
-    def __add_to_graph(self, cmd, ext_name, src, out_dict=dict()):
+    def __add_to_graph(self, cmd, src, out_dict=dict()):
         out_id = str(cmd["id"])
         if out_id not in self.graph:
-            self.graph[out_id] = self.__get_new_value(ext_name)
+            self.graph[out_id] = self.__get_new_value(cmd["type"])
 
         for cmd_in in (i for i in normalize_paths(cmd["in"], cmd["cwd"], src) if i in out_dict):
             in_id = out_dict[cmd_in]

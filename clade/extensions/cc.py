@@ -25,7 +25,7 @@ from clade.extensions.utils import parse_args
 class CC(Common):
     """Class for parsing CC build commands."""
 
-    requires = ["Storage"]
+    requires = Common.requires + ["Storage"]
 
     file_extensions = [
         ".c", ".i", ".h",  # C
@@ -132,10 +132,10 @@ class CC(Common):
     def dump_deps_by_id(self, id, deps):
         self.dump_data(deps, os.path.join("deps", "{}.json".format(id)))
 
-    def load_all_cmds(self, with_opts=True, with_deps=False, compile_only=False):
-        # compile only - ignore linker commands, like gcc func.o main.o -o main
-        cmds = super().load_all_cmds()
+    def load_all_cmds(self, filter_by_pid=True, with_opts=True, with_deps=False, compile_only=False):
+        cmds = super().load_all_cmds(filter_by_pid=filter_by_pid)
 
+        # compile only - ignore linker commands, like gcc func.o main.o -o main
         for cmd in cmds:
             if compile_only:
                 if [cmd_in for cmd_in in cmd["in"] if os.path.splitext(os.path.basename(cmd_in))[1] not in self.file_extensions]:

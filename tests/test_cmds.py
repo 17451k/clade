@@ -45,7 +45,7 @@ def test_get_build_cmd(cmds_file):
 
 
 def test_get_last_id(cmds_file):
-    assert get_last_id(cmds_file) >= number_of_cmds
+    assert int(get_last_id(cmds_file)) >= number_of_cmds
 
 
 def test_get_stats(cmds_file):

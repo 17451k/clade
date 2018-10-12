@@ -1,10 +1,11 @@
 {
     "base": {
         "inherit": [],
+        "PidGraph.filter_cmds_by_pid": true,
         "Common.save_unparsed_cmds": true,
         "CC.filter_deps": true,
-        "log_level": "INFO",
-        "CC.store_deps": true
+        "CC.store_deps": true,
+        "log_level": "INFO"
     },
     "print_graphs": {
         "inherit": [],

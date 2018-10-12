@@ -82,6 +82,7 @@ setuptools.setup(
             "clade-ld=clade.extensions.ld:parse",
             "clade-objcopy=clade.extensions.objcopy:parse",
             "clade-mv=clade.extensions.mv:parse",
+            "clade-pid-graph=clade.extensions.pid_graph:parse",
             "clade-cmd-graph=clade.extensions.cmd_graph:parse",
             "clade-src-graph=clade.extensions.src_graph:parse",
             "clade-info=clade.extensions.info:parse",
