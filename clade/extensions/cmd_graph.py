@@ -25,17 +25,17 @@ from clade.extensions.utils import parse_args, normalize_paths
 class CmdGraph(Extension):
     requires = ["CC", "LD", "AR"]
 
-    def __init__(self, work_dir, conf=None):
+    def __init__(self, work_dir, conf=None, preset="base"):
         if not conf:
             conf = dict()
 
         if "CmdGraph.requires" in conf:
             self.requires = conf["CmdGraph.requires"]
 
+        super().__init__(work_dir, conf, preset)
+
         self.graph = dict()
         self.graph_file = "cmd_graph.json"
-
-        super().__init__(work_dir, conf)
 
     def load_cmd_graph(self):
         """Load command graph."""

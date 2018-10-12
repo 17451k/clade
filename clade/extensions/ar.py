@@ -20,16 +20,13 @@ from clade.extensions.utils import parse_args
 
 
 class AR(Common):
-    def __init__(self, work_dir, conf=None):
-        if not conf:
-            conf = dict()
+    def __init__(self, work_dir, conf=None, preset="base"):
+        super().__init__(work_dir, conf, preset)
 
-        if "AR.which_list" not in conf:
+        if "AR.which_list" not in self.conf:
             self.which_list = ["^.*?ar$"]
         else:
-            self.which_list = conf["AR.which_list"]
-
-        super().__init__(work_dir, conf)
+            self.which_list = self.conf["AR.which_list"]
 
     def parse(self, cmds_file):
         super().parse(cmds_file, self.which_list)

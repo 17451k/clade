@@ -38,17 +38,14 @@ def unwrap_normalize(*args, **kwargs):
 class Info(Extension):
     requires = ["CC"]
 
-    def __init__(self, work_dir, conf=None):
+    def __init__(self, work_dir, conf=None, preset="base"):
         if not conf:
             conf = dict()
 
         # Without this option it will be difficult to link data coming from Info and by CC extensions
         conf["CC.with_system_header_files"] = True
 
-        if "Info.max_args" not in conf:
-            conf["Info.max_args"] = 30
-
-        super().__init__(work_dir, conf)
+        super().__init__(work_dir, conf, preset)
 
         self.aspect = os.path.join(os.path.dirname(__file__), "info", "info.aspect")
 

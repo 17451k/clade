@@ -23,13 +23,10 @@ from clade.extensions.utils import parse_args
 class Functions(Callgraph):
     requires = ["SrcGraph", "Info"]
 
-    def __init__(self, work_dir, conf=None):
-        if not conf:
-            conf = dict()
+    def __init__(self, work_dir, conf=None, preset="base"):
+        super().__init__(work_dir, conf, preset)
 
         self.src_graph = dict()
-
-        super().__init__(work_dir, conf)
 
         self.funcs = dict()
         self.funcs_file = "functions.json"

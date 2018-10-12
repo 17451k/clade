@@ -49,12 +49,33 @@ def normalize_relative_path(path, cwd, cache=dict()):
     return cache[cwd][path]
 
 
+def merge_preset_to_conf(preset_name, conf):
+    # print("MERGE: {!r} {!r}".format(preset_name, conf))
+    preset_file = os.path.join(os.path.dirname(__file__), "presets.json")
+
+    with open(preset_file, "r") as f:
+        presets = ujson.load(f)
+
+        if preset_name not in presets:
+            print("Preset {!r} is not found".format(preset_name))
+            sys.exit(-1)
+
+        preset_conf = presets[preset_name]
+
+        for parent_preset in preset_conf.get("inherit", []):
+            preset_conf = merge_preset_to_conf(parent_preset, preset_conf)
+
+    preset_conf.update(conf)
+    return preset_conf
+
+
 def parse_args(args):
     parser = argparse.ArgumentParser()
 
     parser.add_argument("-w", "--work_dir", help="a path to the DIR where processed commands will be saved", metavar='DIR', default="clade")
     parser.add_argument("-l", "--log_level", help="set logging level (ERROR, INFO, or DEBUG)", default="INFO")
     parser.add_argument("-c", "--config", help="a path to the JSON file with configuration", metavar='JSON', default=None)
+    parser.add_argument("-p", "--preset", help="a name of the preset configuration", metavar='JSON', default="base")
     parser.add_argument(dest="cmds_file", help="a path to the file with intercepted commands")
 
     args = parser.parse_args(args)
@@ -72,4 +93,4 @@ def parse_args(args):
     conf["log_level"] = conf.get("log_level", args.log_level)
     conf["cmds_file"] = conf.get("cmds_file", args.cmds_file)
 
-    return conf
+    return merge_preset_to_conf(args.preset, conf)

@@ -23,11 +23,11 @@ from clade.extensions.utils import normalize_path, parse_args
 class SrcGraph(Extension):
     requires = ["CmdGraph", "CC"]
 
-    def __init__(self, work_dir, conf=None):
+    def __init__(self, work_dir, conf=None, preset="base"):
+        super().__init__(work_dir, conf, preset)
+
         self.src_graph = dict()
         self.src_graph_file = "src_graph.json"
-
-        super().__init__(work_dir, conf)
 
     def load_src_graph(self):
         """Load source graph."""

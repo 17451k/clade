@@ -24,11 +24,8 @@ from clade.extensions.utils import parse_args
 class Callgraph(Extension):
     requires = ["SrcGraph", "Info", "Functions"]
 
-    def __init__(self, work_dir, conf=None):
-        if not conf:
-            conf = dict()
-
-        super().__init__(work_dir, conf)
+    def __init__(self, work_dir, conf=None, preset="base"):
+        super().__init__(work_dir, conf, preset)
 
         self.src_graph = dict()
         self.funcs = dict()

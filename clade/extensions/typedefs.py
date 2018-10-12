@@ -23,11 +23,8 @@ from clade.extensions.utils import parse_args
 class Typedefs(Extension):
     requires = ["Info"]
 
-    def __init__(self, work_dir, conf=None):
-        if not conf:
-            conf = dict()
-
-        super().__init__(work_dir, conf)
+    def __init__(self, work_dir, conf=None, preset="base"):
+        super().__init__(work_dir, conf, preset)
 
         self.typedefs = dict()
         self.typedefs_folder = "typedefs"

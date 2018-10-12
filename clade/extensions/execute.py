@@ -33,12 +33,12 @@ def unwrap(*args, **kwargs):
 class Execute(Extension):
     requires = ["CC"]
 
-    def __init__(self, work_dir, conf=None):
+    def __init__(self, work_dir, conf=None, preset="base"):
         if not conf:
             conf = dict()
 
         conf["log_level"] = conf.get("log_level", "ERROR")
-        super().__init__(work_dir, conf)
+        super().__init__(work_dir, conf, preset)
 
     def parse(self, cmds_file):
         if self.is_parsed():

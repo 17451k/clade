@@ -1,0 +1,79 @@
+{
+    "base": {
+        "inherit": [],
+        "Common.save_unparsed_cmds": true,
+        "CC.filter_deps": true,
+        "log_level": "INFO",
+        "CC.store_deps": true
+    },
+    "print_graphs": {
+        "inherit": [],
+        "CmdGraph.as_picture": true,
+        "PidGraph.as_picture": true,
+        "SrcGraph.as_picture": true
+    },
+    "linux_kernel": {
+        "inherit": ["base"],
+        "CmdGraph.requires": [
+            "CC",
+            "LD",
+            "MV",
+            "AR",
+            "Objcopy"
+        ],
+        "Common.filter": [
+            ".*?\\.tmp$"
+        ],
+        "Common.filter_in": [
+            "-",
+            "/dev/null",
+            "scripts/(?!mod/empty\\.c)",
+            "kernel/.*?bounds.*?",
+            "arch/x86/tools/relocs",
+            "arch/x86/kernel/asm-offsets.c",
+            ".*\\.mod\\.c"
+        ],
+        "Common.filter_out": [
+            "/dev/null",
+            ".*?\\.cmd$",
+            "vmlinux"
+        ]
+    },
+    "busybox_linux": {
+        "inherit": ["base", "print_graphs"],
+        "Common.filter": [],
+        "Common.filter_in": [
+            ".*?\\.tmp$",
+            "tmp\\.\\w+\\.c$",
+            "^tmp.*?\\.c$",
+            "/tmp/\\w+.o",
+            "-",
+            "/dev/null",
+            ".*?built-in\\.o$"
+        ],
+        "Common.filter_out": [
+            "/dev/null",
+            ".*?\\.cmd$",
+            "tmp\\.\\w+"
+        ]
+    },
+    "apache_linux": {
+        "inherit": ["base", "print_graphs"],
+        "Common.filter": [
+            "/tmp/.*"
+        ],
+        "Common.filter_in": [
+            ".*?\\.tmp$",
+            "tmp\\.\\w+\\.c$",
+            "^tmp.*?\\.c$",
+            "-",
+            "/dev/null",
+            ".*?built-in\\.o$"
+        ],
+        "Common.filter_out": [
+            "/dev/null",
+            ".*?\\.cmd$",
+            "tmp\\.\\w+"
+        ]
+    }
+}

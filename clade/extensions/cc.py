@@ -33,26 +33,23 @@ class CC(Common):
         ".s", ".S", ".asm"  # Assembly
     ]
 
-    def __init__(self, work_dir, conf=None):
-        if not conf:
-            conf = dict()
+    def __init__(self, work_dir, conf=None, preset="base"):
+        super().__init__(work_dir, conf, preset)
 
-        if "CC.which_list" not in conf:
+        if "CC.which_list" not in self.conf:
             self.which_list = [
                 r"^.*cc$",
                 r"^.*[mg]cc(-?\d+(\.\d+){0,2})?$",
                 r"^.*clang(-?\d+(\.\d+){0,2})?$"
             ]
         else:
-            self.which_list = conf["CC.which_list"]
+            self.which_list = self.conf["CC.which_list"]
 
-        if "CC.with_system_header_files" not in conf:
-            conf["CC.with_system_header_files"] = True
+        if "CC.with_system_header_files" not in self.conf:
+            self.conf["CC.with_system_header_files"] = True
 
-        if "CC.store_deps" not in conf:
-            conf["CC.store_deps"] = False
-
-        super().__init__(work_dir, conf)
+        if "CC.store_deps" not in self.conf:
+            self.conf["CC.store_deps"] = False
 
     def parse(self, cmds_file):
         super().parse(cmds_file, self.which_list)

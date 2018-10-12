@@ -25,12 +25,12 @@ from clade.intercept import Interceptor
 class CDB(Extension):
     requires = ["CC"]
 
-    def __init__(self, work_dir, conf=None):
+    def __init__(self, work_dir, conf=None, preset="base"):
         if not conf:
             conf = dict()
 
         conf["log_level"] = "ERROR"
-        super().__init__(work_dir, conf)
+        super().__init__(work_dir, conf, preset)
 
         self.cdb = []
         self.cdb_file = os.path.abspath(self.conf.get("CDB.output", "compile_commands.json"))

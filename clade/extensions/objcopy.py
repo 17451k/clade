@@ -20,16 +20,13 @@ from clade.extensions.utils import parse_args
 
 
 class Objcopy(Common):
-    def __init__(self, work_dir, conf=None):
-        if not conf:
-            conf = dict()
+    def __init__(self, work_dir, conf=None, preset="base"):
+        super().__init__(work_dir, conf, preset)
 
-        if "Objcopy.which_list" not in conf:
+        if "Objcopy.which_list" not in self.conf:
             self.which_list = ["^.*?objcopy$"]
         else:
             self.which_list = conf["Objcopy.which_list"]
-
-        super().__init__(work_dir, conf)
 
     def parse(self, cmds_file):
         super().parse(cmds_file, self.which_list)

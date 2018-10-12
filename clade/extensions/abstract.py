@@ -24,6 +24,7 @@ import tempfile
 import ujson
 
 import clade.cmds
+from clade.extensions.utils import merge_preset_to_conf
 
 
 # Setup extensions logger
@@ -46,10 +47,11 @@ class Extension(metaclass=abc.ABCMeta):
         FileNotFoundError: Cant find file with parsed build command
     """
 
-    def __init__(self, work_dir, conf=None):
+    def __init__(self, work_dir, conf=None, preset="base"):
         self.name = self.__class__.__name__
         self.work_dir = os.path.join(os.path.abspath(str(work_dir)), self.name)
         self.conf = conf if conf else dict()
+        self.conf = merge_preset_to_conf(preset, self.conf)
         self.temp_dir = tempfile.mkdtemp()
 
         if not hasattr(self, "requires"):
