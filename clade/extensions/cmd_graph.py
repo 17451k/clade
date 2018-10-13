@@ -38,6 +38,8 @@ class CmdGraph(Extension):
         self.graph = dict()
         self.graph_file = "cmd_graph.json"
 
+        self.graph_dot = os.path.join(self.work_dir, "cmd_graph.dot")
+
     def load_cmd_graph(self):
         """Load command graph."""
         return self.load_data(self.graph_file)
@@ -108,8 +110,7 @@ class CmdGraph(Extension):
 
                     dot.edge(cmd_in, cmd_out, label="{}({})".format(cmd_type, cmd_id))
 
-        graph_dot = os.path.join(self.work_dir, "cmd_graph.dot")
-        dot.render(graph_dot)
+        dot.render(self.graph_dot)
 
     @staticmethod
     def __get_new_value(cmd_type):

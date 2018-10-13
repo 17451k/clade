@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import os
+import pytest
 
 from clade.extensions.cmd_graph import CmdGraph
 
@@ -51,13 +52,15 @@ def test_cmd_graph_empty_requires(tmpdir, cmds_file):
     assert not cmd_graph
 
 
-def test_cmd_graph_as_picture(tmpdir, cmds_file):
-    conf = {"CmdGraph.as_picture": True}
+@pytest.mark.parametrize("as_picture", [True, False])
+def test_cmd_graph_as_picture(tmpdir, cmds_file, as_picture):
+    conf = {"CmdGraph.as_picture": as_picture}
 
     c = CmdGraph(tmpdir, conf)
     c.parse(cmds_file)
 
-    assert os.path.exists(os.path.join(c.work_dir, "cmd_graph.dot.pdf"))
+    assert os.path.exists(c.graph_dot) == as_picture
+    assert os.path.exists(c.graph_dot + ".pdf") == as_picture
 
 
 def test_cmd_graph_empty_conf(tmpdir, cmds_file):

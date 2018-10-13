@@ -23,9 +23,8 @@ from clade.extensions.utils import common_main
 
 
 class PidGraph(Extension):
-    def __init__(self, work_dir, conf=None):
-        if not conf:
-            conf = dict()
+    def __init__(self, work_dir, conf=None, preset="base"):
+        super().__init__(work_dir, conf, preset)
 
         self.graph = dict()
         self.graph_file = "pid_graph.json"
@@ -33,7 +32,7 @@ class PidGraph(Extension):
         self.pid_by_id = dict()
         self.pid_by_id_file = "pid_by_id.json"
 
-        super().__init__(work_dir, conf)
+        self.graph_dot = os.path.join(self.work_dir, "pid_graph.dot")
 
     @Extension.prepare
     def parse(self, cmds_file):
@@ -57,7 +56,7 @@ class PidGraph(Extension):
     def __print_pid_graph(self, cmds_file, reduced=False):
         dot = Digraph(graph_attr={'rankdir': 'LR'}, node_attr={'shape': 'rectangle'})
 
-        with open_cmds_file("cmds.txt") as cmds_fp:
+        with open_cmds_file(cmds_file) as cmds_fp:
             cmds = list(iter_cmds(cmds_fp))
 
             for cmd in cmds:
@@ -70,8 +69,7 @@ class PidGraph(Extension):
                     parent_cmd_node = "[{}] {}".format(parent_cmd["id"], parent_cmd["which"])
                     dot.edge(parent_cmd_node, cmd_node)
 
-        graph_dot = os.path.join(self.work_dir, "pid_graph.dot")
-        dot.render(graph_dot)
+        dot.render(self.graph_dot)
 
     def load_pid_graph(self):
         return self.load_data(self.graph_file)
