@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
+
 from clade.extensions.assembler import AS
 
 
@@ -21,7 +23,14 @@ def test_as(tmpdir, cmds_file):
     c.parse(cmds_file)
 
     cmds = c.load_all_cmds()
-    assert len(cmds) == 1
-    assert len(cmds[0]["in"]) == 1
-    assert len(cmds[0]["out"]) == 1
-    assert len(cmds[0]["opts"]) == 2
+    target_cmd = dict()
+
+    for cmd in cmds:
+        for cmd_in in cmd["in"]:
+            if re.search("empty.s", cmd_in):
+                target_cmd = cmd
+
+    assert len(cmds) >= 1
+    assert len(target_cmd["in"]) == 1
+    assert len(target_cmd["out"]) == 1
+    assert len(target_cmd["opts"]) == 2

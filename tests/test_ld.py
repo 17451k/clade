@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
+
 from clade.extensions.ld import LD
 
 
@@ -21,7 +23,15 @@ def test_ld(tmpdir, cmds_file):
     c.parse(cmds_file)
 
     cmds = c.load_all_cmds()
-    assert len(cmds) == 1
-    assert len(cmds[0]["in"]) == 1
-    assert len(cmds[0]["out"]) == 1
-    assert len(cmds[0]["opts"]) == 1
+
+    target_cmd = dict()
+
+    for cmd in cmds:
+        for cmd_out in cmd["out"]:
+            if re.search("main.o2", cmd_out):
+                target_cmd = cmd
+
+    assert len(cmds) >= 1
+    assert len(target_cmd["in"]) == 1
+    assert len(target_cmd["out"]) == 1
+    assert len(target_cmd["opts"]) == 1

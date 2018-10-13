@@ -10,5 +10,5 @@ all:
 	-ar rcs zero.a zero.o main.o
 	-objcopy main.o --strip-all
 	-objcopy main.o zero.o --strip-all
-	-ld main.o -o main.o -g
+	-ld main.o -o main.o2 -g
 	-rm main zero.txt zero.o* main.o* zero.a
