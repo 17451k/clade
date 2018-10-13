@@ -6,4 +6,9 @@ all:
 	-clang -cc1 /dev/null
 	gcc -c zero.c main.c
 	gcc zero.o main.o -o main
-	-rm main zero.txt zero.o* main.o*
+	-as empty.s -o zero.o -I /usr/include
+	-ar rcs zero.a zero.o main.o
+	-objcopy main.o --strip-all
+	-objcopy main.o zero.o --strip-all
+	-ld main.o -o main.o -g
+	-rm main zero.txt zero.o* main.o* zero.a

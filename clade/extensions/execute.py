@@ -134,7 +134,7 @@ def parse_args(args):
     return conf
 
 
-def parse(args=sys.argv[1:]):
+def main(args=sys.argv[1:]):
     conf = parse_args(args)
 
     c = Execute(conf["work_dir"], conf=conf)

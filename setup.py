@@ -92,6 +92,7 @@ setuptools.setup(
             "clade-macros=clade.extensions.macros:main",
             "clade-typedefs=clade.extensions.typedefs:main",
             "clade-ar=clade.extensions.ar:main",
+            "clade-as=clade.extensions.assembler:main",
             "clade-execute=clade.extensions.execute:main",
             "clade=clade.extensions.cdb:main"
         ],

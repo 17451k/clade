@@ -62,6 +62,10 @@ class CDB(Extension):
 
         self.dump_data(self.cdb, self.cdb_file)
 
+    def load_cdb(self):
+        """Load compilation database."""
+        return self.load_data(self.cdb_file)
+
 
 def parse_args(args):
     parser = argparse.ArgumentParser()
@@ -82,7 +86,7 @@ def parse_args(args):
     return args
 
 
-def parse(args=sys.argv[1:]):
+def main(args=sys.argv[1:]):
     args = parse_args(args)
 
     if args.command:

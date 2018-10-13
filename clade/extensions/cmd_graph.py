@@ -59,7 +59,7 @@ class CmdGraph(Extension):
 
         src = self.get_build_cwd(cmds_file)
 
-        for cmd in sorted(cmds, key=lambda x: x["id"]):
+        for cmd in sorted(cmds, key=lambda x: int(x["id"])):
             self.__add_to_graph(cmd, src)
 
         self.dump_data(self.graph, self.graph_file)
