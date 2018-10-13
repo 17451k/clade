@@ -22,7 +22,8 @@ import subprocess
 import sys
 import tempfile
 
-DELIMITER = "||"
+from clade.cmds import get_last_id
+
 LIB = os.path.join(os.path.dirname(__file__), "libinterceptor", "lib")
 LIB64 = os.path.join(os.path.dirname(__file__), "libinterceptor", "lib64")
 
@@ -159,8 +160,9 @@ class Interceptor():
             logging.debug("Set LD_LIBRARY_PATH environment variable value as {!r}".format(env["LD_LIBRARY_PATH"]))
 
         # Prepare environment variables for PID graph
+        last_used_id = get_last_id(self.output)
         f = tempfile.NamedTemporaryFile(delete=False)
-        f.write(b"0")
+        f.write(last_used_id.encode())
         env["CLADE_ID_FILE"] = f.name
         env["CLADE_PARENT_ID"] = "0"
 

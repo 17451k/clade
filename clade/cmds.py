@@ -17,7 +17,7 @@ import os
 import re
 import sys
 
-from clade.intercept import DELIMITER
+DELIMITER = "||"
 
 
 def open_cmds_file(cmds_file):
@@ -87,8 +87,11 @@ def get_last_cmd(cmds_file):
 
 def get_last_id(cmds_file):
     """Get last used id."""
-    last_cmd = get_last_cmd(cmds_file)
-    return last_cmd["id"]
+    try:
+        last_cmd = get_last_cmd(cmds_file)
+        return last_cmd["id"]
+    except RuntimeError:
+        return "0"
 
 
 def get_stats(cmds_file):
