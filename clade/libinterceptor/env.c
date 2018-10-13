@@ -63,6 +63,9 @@ static int find_parent_id(char **envp) {
 }
 
 char **update_envp(char **input_envp) {
+    if (!input_envp)
+        return input_envp;
+
     char *value = getenv(key);
     size_t new_value_len = strlen(key) + strlen(value) + 2;
     char *new_value = malloc(new_value_len);
@@ -76,6 +79,9 @@ char **update_envp(char **input_envp) {
 }
 
 void update_environ(char **envp) {
+    if (!envp)
+        return;
+
     int i = find_parent_id(envp);
     setenv(key, strchr(envp[i], '=') + 1, 1);
 }

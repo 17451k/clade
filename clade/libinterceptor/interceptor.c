@@ -79,7 +79,7 @@ int posix_spawn(pid_t *restrict pid, const char *restrict path, const posix_spaw
                 const posix_spawnattr_t *restrict, char *const *restrict, char *const *restrict) = dlsym(RTLD_NEXT, "posix_spawn");
 
     // DO NOT check if (! intercepted) here: it will result in command loss
-    if (access(path, F_OK ) != -1) {
+    if ((access(path, F_OK ) != -1) && argv) {
         update_environ((char **)envp);
         intercept_call(path, (char const *const *)argv);
         intercepted = true;
