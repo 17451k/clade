@@ -19,7 +19,7 @@ import sys
 
 from clade.cmds import iter_cmds, open_cmds_file
 from clade.extensions.abstract import Extension
-from clade.extensions.utils import parse_args
+from clade.extensions.utils import common_main
 
 
 class PidGraph(Extension):
@@ -35,13 +35,8 @@ class PidGraph(Extension):
 
         super().__init__(work_dir, conf)
 
+    @Extension.prepare
     def parse(self, cmds_file):
-        if self.is_parsed():
-            self.log("Skip parsing")
-            return
-
-        self.parse_prerequisites(cmds_file)
-
         self.log("Start pid graph constructing")
 
         with open_cmds_file(cmds_file) as cmds_fp:
@@ -102,8 +97,5 @@ class PidGraph(Extension):
         return filtered_cmds
 
 
-def parse(args=sys.argv[1:]):
-    conf = parse_args(args)
-
-    c = PidGraph(conf["work_dir"], conf=conf)
-    c.parse(conf["cmds_file"])
+def main(args=sys.argv[1:]):
+    common_main(PidGraph, args)

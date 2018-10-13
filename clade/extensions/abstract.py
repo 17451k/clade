@@ -95,6 +95,23 @@ class Extension(metaclass=abc.ABCMeta):
         """Returns True if build commands are already parsed."""
         return os.path.exists(self.work_dir)
 
+    @staticmethod
+    def prepare(parse):
+        """Decorator for parse() method
+
+        It checks that commands were not already parsed
+        and run parse() for required extensions.
+        """
+        def parse_wrapper(self, *args, **kwargs):
+            if self.is_parsed():
+                self.log("Build commands are already parsed")
+                return
+
+            self.parse_prerequisites(args[0])
+            return parse(self, *args, **kwargs)
+
+        return parse_wrapper
+
     @abc.abstractmethod
     def parse(self, cmds_file):
         """Parse intercepted commands."""

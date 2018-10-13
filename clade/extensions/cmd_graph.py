@@ -19,7 +19,7 @@ import sys
 from graphviz import Digraph
 
 from clade.extensions.abstract import Extension
-from clade.extensions.utils import parse_args, normalize_paths
+from clade.extensions.utils import common_main, normalize_paths
 
 
 class CmdGraph(Extension):
@@ -42,17 +42,12 @@ class CmdGraph(Extension):
         """Load command graph."""
         return self.load_data(self.graph_file)
 
+    @Extension.prepare
     def parse(self, cmds_file):
-        if self.is_parsed():
-            self.log("Skip parsing")
-            return
-
-        self.parse_prerequisites(cmds_file)
-
         self.log("Start command graph constructing")
 
         cmds = list()
-        for ext_name in [x for x in self.extensions if x != "PidGraph"]:
+        for ext_name in [x for x in self.extensions if x not in self.always_requires]:
             for cmd in self.extensions[ext_name].load_all_cmds(filter_by_pid=False):
                 cmd["type"] = ext_name
                 cmds.append(cmd)
@@ -125,8 +120,5 @@ class CmdGraph(Extension):
         }
 
 
-def parse(args=sys.argv[1:]):
-    conf = parse_args(args)
-
-    c = CmdGraph(conf["work_dir"], conf=conf)
-    c.parse(conf["cmds_file"])
+def main(args=sys.argv[1:]):
+    common_main(CmdGraph, args)

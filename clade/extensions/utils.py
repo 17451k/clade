@@ -94,3 +94,16 @@ def parse_args(args):
     conf["cmds_file"] = conf.get("cmds_file", args.cmds_file)
 
     return merge_preset_to_conf(args.preset, conf)
+
+
+def common_main(cl, args):
+    conf = parse_args(args)
+
+    try:
+        c = cl(conf["work_dir"], conf=conf)
+        c.parse(conf["cmds_file"])
+    except Exception as e:
+        if e.args:
+            raise SystemExit(e)
+        else:
+            raise SystemExit

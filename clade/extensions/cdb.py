@@ -35,9 +35,8 @@ class CDB(Extension):
         self.cdb = []
         self.cdb_file = os.path.abspath(self.conf.get("CDB.output", "compile_commands.json"))
 
+    @Extension.prepare
     def parse(self, cmds_file):
-        self.parse_prerequisites(cmds_file)
-
         cmds = self.extensions["CC"].load_all_cmds(compile_only=True)
 
         for cmd in cmds:

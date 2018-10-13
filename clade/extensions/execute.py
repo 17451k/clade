@@ -39,15 +39,10 @@ class Execute(Extension):
 
         conf["log_level"] = conf.get("log_level", "ERROR")
         super().__init__(work_dir, conf, preset)
-
-    def parse(self, cmds_file):
-        if self.is_parsed():
-            self.log("Skip parsing")
-            return
-
         os.makedirs(self.work_dir, exist_ok=True)
 
-        self.parse_prerequisites(cmds_file)
+    @Extension.prepare
+    def parse(self, cmds_file):
         cmds = self.extensions["CC"].load_all_cmds()
 
         if self.conf.get("Execute.parallel"):

@@ -24,7 +24,7 @@ import sys
 
 from clade.extensions.abstract import Extension
 from clade.extensions.opts import cif_unsupported_opts, filter_opts
-from clade.extensions.utils import normalize_path, parse_args
+from clade.extensions.utils import common_main, normalize_path
 
 
 def unwrap(*args, **kwargs):
@@ -71,13 +71,8 @@ class Info(Extension):
         self.unsupported_opts_file = os.path.join(self.work_dir, "unsupported_opts.log")
         self.err_log = os.path.join(self.work_dir, "err.log")  # Path to file containing CIF error log
 
+    @Extension.prepare
     def parse(self, cmds_file):
-        if self.is_parsed():
-            self.log("Skip parsing")
-            return
-
-        self.parse_prerequisites(cmds_file)
-
         if not shutil.which("cif"):
             raise RuntimeError("Can't find CIF in PATH")
 
@@ -252,11 +247,5 @@ class Info(Extension):
                 yield line
 
 
-def parse(args=sys.argv[1:]):
-    conf = parse_args(args)
-
-    try:
-        c = Info(conf["work_dir"], conf=conf)
-        c.parse(conf["cmds_file"])
-    except RuntimeError as e:
-        raise SystemExit(e)
+def main(args=sys.argv[1:]):
+    common_main(Info, args)

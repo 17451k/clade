@@ -16,8 +16,9 @@
 import re
 import sys
 
+from clade.extensions.abstract import Extension
 from clade.extensions.callgraph import Callgraph
-from clade.extensions.utils import parse_args
+from clade.extensions.utils import common_main
 
 
 class Functions(Callgraph):
@@ -35,12 +36,8 @@ class Functions(Callgraph):
         self.funcs_by_file_file = "functions_by_file.json"
         self.funcs_by_file_folder = "functions_by_file"
 
+    @Extension.prepare
     def parse(self, cmds_file):
-        if self.is_parsed():
-            self.log("Skip parsing")
-            return
-
-        self.parse_prerequisites(cmds_file)
         self.src_graph = self.extensions["SrcGraph"].load_src_graph()
 
         self.__process_definitions()
@@ -175,11 +172,5 @@ class Functions(Callgraph):
                     self.funcs_by_file[file] = {func: self.funcs[func][file]}
 
 
-def parse(args=sys.argv[1:]):
-    conf = parse_args(args)
-
-    try:
-        c = Functions(conf["work_dir"], conf=conf)
-        c.parse(conf["cmds_file"])
-    except RuntimeError as e:
-        raise SystemExit(e)
+def main(args=sys.argv[1:]):
+    common_main(Functions, args)

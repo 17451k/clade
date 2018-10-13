@@ -17,7 +17,7 @@ import re
 import sys
 
 from clade.extensions.abstract import Extension
-from clade.extensions.utils import parse_args
+from clade.extensions.utils import common_main
 
 
 class Macros(Extension):
@@ -32,13 +32,8 @@ class Macros(Extension):
         self.expand = dict()
         self.expand_folder = "expand"
 
+    @Extension.prepare
     def parse(self, cmds_file):
-        if self.is_parsed():
-            self.log("Skip parsing")
-            return
-
-        self.parse_prerequisites(cmds_file)
-
         self.__process_macros_definitions()
         self.__process_macros_expansions()
 
@@ -102,11 +97,5 @@ class Macros(Extension):
         return self.load_data_by_key(self.expand_folder, files)
 
 
-def parse(args=sys.argv[1:]):
-    conf = parse_args(args)
-
-    try:
-        c = Macros(conf["work_dir"], conf=conf)
-        c.parse(conf["cmds_file"])
-    except RuntimeError as e:
-        raise SystemExit(e)
+def main(args=sys.argv[1:]):
+    common_main(Macros, args)

@@ -18,9 +18,10 @@ import sys
 # TODO: You can remove it as it will work with ujson everywhere (almost)
 import json
 
+from clade.extensions.abstract import Extension
 from clade.extensions.callgraph import Callgraph
 from clade.extensions.initializations import parse_variables_initializations
-from clade.extensions.utils import parse_args
+from clade.extensions.utils import common_main
 
 
 class Variables(Callgraph):
@@ -35,13 +36,8 @@ class Variables(Callgraph):
         self.used_in_vars = dict()
         self.used_in_vars_file = "used_in_vars.json"
 
+    @Extension.prepare
     def parse(self, cmds_file):
-        if self.is_parsed():
-            self.log("Skip parsing")
-            return
-
-        self.parse_prerequisites(cmds_file)
-
         self.functions = self.extensions["Functions"].load_functions()
         self.src_graph = self.extensions["SrcGraph"].load_src_graph()
 
@@ -123,11 +119,5 @@ class Variables(Callgraph):
         return self.load_data(self.used_in_vars_file)
 
 
-def parse(args=sys.argv[1:]):
-    conf = parse_args(args)
-
-    try:
-        c = Variables(conf["work_dir"], conf=conf)
-        c.parse(conf["cmds_file"])
-    except RuntimeError as e:
-        raise SystemExit(e)
+def main(args=sys.argv[1:]):
+    common_main(Variables, args)

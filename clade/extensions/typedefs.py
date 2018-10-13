@@ -17,7 +17,7 @@ import re
 import sys
 
 from clade.extensions.abstract import Extension
-from clade.extensions.utils import parse_args
+from clade.extensions.utils import common_main
 
 
 class Typedefs(Extension):
@@ -29,13 +29,8 @@ class Typedefs(Extension):
         self.typedefs = dict()
         self.typedefs_folder = "typedefs"
 
+    @Extension.prepare
     def parse(self, cmds_file):
-        if self.is_parsed():
-            self.log("Skip parsing")
-            return
-
-        self.parse_prerequisites(cmds_file)
-
         self.__process_typedefs()
         self.dump_data_by_key(self.typedefs, self.typedefs_folder)
         self.log("Finish")
@@ -63,11 +58,5 @@ class Typedefs(Extension):
         return self.load_data_by_key(self.typedefs_folder, files)
 
 
-def parse(args=sys.argv[1:]):
-    conf = parse_args(args)
-
-    try:
-        c = Typedefs(conf["work_dir"], conf=conf)
-        c.parse(conf["cmds_file"])
-    except RuntimeError as e:
-        raise SystemExit(e)
+def main(args=sys.argv[1:]):
+    common_main(Typedefs, args)

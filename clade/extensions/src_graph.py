@@ -17,7 +17,7 @@ import os
 import sys
 
 from clade.extensions.abstract import Extension
-from clade.extensions.utils import normalize_path, parse_args
+from clade.extensions.utils import common_main, normalize_path
 
 
 class SrcGraph(Extension):
@@ -33,13 +33,8 @@ class SrcGraph(Extension):
         """Load source graph."""
         return self.load_data(self.src_graph_file)
 
+    @Extension.prepare
     def parse(self, cmds_file):
-        if self.is_parsed():
-            self.log("Skip parsing")
-            return
-
-        self.parse_prerequisites(cmds_file)
-
         self.log("Start source graph constructing")
 
         self.__generate_src_graph(cmds_file)
@@ -105,8 +100,5 @@ class SrcGraph(Extension):
         }
 
 
-def parse(args=sys.argv[1:]):
-    conf = parse_args(args)
-
-    c = SrcGraph(conf["work_dir"], conf=conf)
-    c.parse(conf["cmds_file"])
+def main(args=sys.argv[1:]):
+    common_main(SrcGraph, args)

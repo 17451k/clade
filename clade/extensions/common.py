@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import abc
 import glob
 import multiprocessing
 import os
@@ -25,7 +26,7 @@ from clade.extensions.opts import requires_value, preprocessor_deps_opts
 from clade.cmds import iter_cmds_by_which, open_cmds_file
 
 
-class Common(Extension):
+class Common(Extension, metaclass=abc.ABCMeta):
     """Parent class for CC, LD and Objcopy classes.
 
     Raises:
@@ -55,14 +56,9 @@ class Common(Extension):
         if cmd_filter or cmd_filter_out:
             self.regex_out = re.compile("(" + ")|(".join(cmd_filter + cmd_filter_out) + ")")
 
+    @Extension.prepare
     def parse(self, cmds_file, which_list):
         """Multiprocess parsing of build commands filtered by 'which' field."""
-        if self.is_parsed():
-            self.log("Skip parsing")
-            return
-
-        self.parse_prerequisites(cmds_file)
-
         self.log("Start parsing")
 
         class CmdWorker(multiprocessing.Process):

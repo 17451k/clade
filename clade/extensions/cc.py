@@ -19,7 +19,7 @@ import subprocess
 import sys
 
 from clade.extensions.common import Common
-from clade.extensions.utils import parse_args
+from clade.extensions.utils import common_main
 
 
 class CC(Common):
@@ -149,8 +149,5 @@ class CC(Common):
             yield cmd
 
 
-def parse(args=sys.argv[1:]):
-    conf = parse_args(args)
-
-    c = CC(conf["work_dir"], conf=conf)
-    c.parse(conf["cmds_file"])
+def main(args=sys.argv[1:]):
+    common_main(CC, args)
