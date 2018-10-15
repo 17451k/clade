@@ -61,7 +61,7 @@ def merge_preset_to_conf(preset_name, conf):
 
         preset_conf = presets[preset_name]
 
-        for parent_preset in preset_conf.get("inherit", []):
+        for parent_preset in preset_conf.get("extends", []):
             preset_conf = merge_preset_to_conf(parent_preset, preset_conf)
 
     preset_conf.update(conf)
@@ -91,6 +91,7 @@ def parse_args(args):
     conf["work_dir"] = conf.get("work_dir", args.work_dir)
     conf["log_level"] = conf.get("log_level", args.log_level)
     conf["cmds_file"] = conf.get("cmds_file", args.cmds_file)
+    conf["preset"] = args.preset
 
     return merge_preset_to_conf(args.preset, conf)
 

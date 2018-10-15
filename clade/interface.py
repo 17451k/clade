@@ -14,7 +14,8 @@
 # limitations under the License.
 
 import os
-from clade.extensions.info import Info
+import sys
+
 from clade.extensions.cc import CC
 from clade.extensions.ld import LD
 from clade.extensions.cmd_graph import CmdGraph
@@ -25,57 +26,59 @@ from clade.extensions.variables import Variables
 from clade.extensions.typedefs import Typedefs
 from clade.extensions.functions import Functions
 from clade.extensions.storage import Storage
+from clade.extensions.utils import parse_args
 
 
-workdir = None
-configuration = None
-preset_configuration = "base"
+work_dir = None
+conf = None
+preset = "base"
 
 
-def setup(work_dir, conf=None, preset="base"):
-    global workdir
-    global configuration
-    global preset_configuration
-    workdir = work_dir
-    configuration = conf
-    preset_configuration = preset
+def setup(working_directory, configuration=None, preset_configuration="base"):
+    global work_dir
+    global conf
+    global preset
+
+    work_dir = working_directory
+    conf = configuration
+    preset = preset_configuration
 
 
-def initialize_extensions(work_dir, cmd_file, conf=None, preset="base"):
+def initialize_extensions(work_dir, cmds_file, conf=None, preset="base"):
     setup(work_dir, conf, preset)
-    for cls in (CmdGraph, SrcGraph, Info, Callgraph, Variables, Macros, Typedefs):
-        inst = cls(workdir, configuration, preset)
-        inst.parse(cmd_file)
+    for cls in (CmdGraph, SrcGraph, Callgraph, Variables, Macros, Typedefs):
+        inst = cls(work_dir, conf=conf, preset=preset)
+        inst.parse(cmds_file)
 
 
 def get_cc(identifier):
-    return CC(workdir).load_cmd_by_id(identifier)
+    return CC(work_dir).load_cmd_by_id(identifier)
 
 
 def get_cc_opts(identifier):
-    return CC(workdir).load_opts_by_id(identifier)
+    return CC(work_dir).load_opts_by_id(identifier)
 
 
 def get_cc_deps(identifier):
-    return CC(workdir).load_deps_by_id(identifier)
+    return CC(work_dir).load_deps_by_id(identifier)
 
 
 def get_ld(identifier):
-    return LD(workdir).load_cmd_by_id(identifier)
+    return LD(work_dir).load_cmd_by_id(identifier)
 
 
 class CommandGraph:
 
     def __init__(self):
-        self.graph = CmdGraph(workdir, configuration, preset_configuration).load_cmd_graph()
+        self.graph = CmdGraph(work_dir, conf, preset).load_cmd_graph()
 
     @property
     def LDs(self):
-        return ((desc['id'], desc) for desc in LD(workdir).load_all_cmds())
+        return ((desc['id'], desc) for desc in LD(work_dir).load_all_cmds())
 
     @property
     def CCs(self):
-        return ((desc['id'], desc) for desc in CC(workdir).load_all_cmds())
+        return ((desc['id'], desc) for desc in CC(work_dir).load_all_cmds())
 
     def get_ccs_for_ld(self, identifier):
         ccs = dict()
@@ -96,7 +99,7 @@ class CommandGraph:
 class SourceGraph:
 
     def __init__(self):
-        self.graph = SrcGraph(workdir, configuration, preset_configuration).load_src_graph()
+        self.graph = SrcGraph(work_dir, conf, preset).load_src_graph()
 
     def get_sizes(self, files):
         return {f: self.graph[f]['loc'] for f in files}
@@ -109,7 +112,7 @@ class SourceGraph:
 class FileStorage:
 
     def __init__(self):
-        self._storage = Storage(workdir, configuration, preset_configuration)
+        self._storage = Storage(work_dir, conf, preset)
 
     @property
     def storage_dir(self):
@@ -131,7 +134,7 @@ class FileStorage:
 class CallGraph:
 
     def __init__(self):
-        self._graph = Callgraph(workdir, configuration, preset_configuration)
+        self._graph = Callgraph(work_dir, conf, preset)
 
     @property
     def graph(self):
@@ -147,7 +150,7 @@ class CallGraph:
 class TypeDefinitions:
 
     def __init__(self, files):
-        self._graph = Typedefs(workdir, configuration, preset_configuration)
+        self._graph = Typedefs(work_dir, conf, preset)
         self._files = files
 
     @property
@@ -158,7 +161,7 @@ class TypeDefinitions:
 class VariableInitializations:
 
     def __init__(self, files):
-        self._obj = Variables(workdir, configuration, preset_configuration)
+        self._obj = Variables(work_dir, conf, preset)
         self._files = set(files)
 
     @property
@@ -171,7 +174,7 @@ class VariableInitializations:
 
     @staticmethod
     def _used_vars_functions(files=None):
-        data = Variables(workdir, configuration, preset_configuration).load_used_in_vars()
+        data = Variables(work_dir, conf, preset).load_used_in_vars()
         if files is None:
             return data
         elif isinstance(files, list) or isinstance(files, set):
@@ -185,7 +188,7 @@ class VariableInitializations:
 class FunctionsScopes:
 
     def __init__(self, files=None):
-        self.fs = Functions(workdir, configuration, preset_configuration)
+        self.fs = Functions(work_dir, conf, preset)
         self._files = files
         if isinstance(files, set) or isinstance(files, list):
             self._files = set(files)
@@ -199,7 +202,7 @@ class FunctionsScopes:
 class MacroExpansions:
 
     def __init__(self, white_list=None, files=None):
-        self.data = Macros(workdir, configuration, preset_configuration)
+        self.data = Macros(work_dir, conf, preset)
         self._white_list = white_list
         self._files = files
 
@@ -210,3 +213,9 @@ class MacroExpansions:
             return {f: {m: desc for m, desc in macros.items() if m in self._white_list} for f, macros in data.items()}
         else:
             return data
+
+
+def main(args=sys.argv[1:]):
+    conf = parse_args(args)
+
+    initialize_extensions(conf["work_dir"], conf["cmds_file"], conf, conf["preset"])

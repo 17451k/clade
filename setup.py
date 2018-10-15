@@ -95,6 +95,7 @@ setuptools.setup(
             "clade-ar=clade.extensions.ar:main",
             "clade-as=clade.extensions.assembler:main",
             "clade-execute=clade.extensions.execute:main",
+            "clade-all=clade.interface:main",
             "clade=clade.extensions.cdb:main"
         ],
     },
