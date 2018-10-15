@@ -29,19 +29,22 @@ from clade.extensions.storage import Storage
 
 workdir = None
 configuration = None
+preset_configuration = "base"
 
 
-def setup(work_dir, conf=None):
+def setup(work_dir, conf=None, preset="base"):
     global workdir
     global configuration
+    global preset_configuration
     workdir = work_dir
     configuration = conf
+    preset_configuration = preset
 
 
-def initialize_extensions(work_dir, cmd_file, conf=None):
+def initialize_extensions(work_dir, cmd_file, conf=None, preset="base"):
     setup(work_dir, conf)
     for cls in (CmdGraph, SrcGraph, Info, Callgraph, Variables, Macros, Typedefs):
-        inst = cls(workdir, configuration)
+        inst = cls(workdir, configuration, preset)
         inst.parse(cmd_file)
 
 
@@ -64,7 +67,7 @@ def get_ld(identifier):
 class CommandGraph:
 
     def __init__(self):
-        self.graph = CmdGraph(workdir, configuration).load_cmd_graph()
+        self.graph = CmdGraph(workdir, configuration, preset_configuration).load_cmd_graph()
 
     @property
     def LDs(self):
@@ -93,7 +96,7 @@ class CommandGraph:
 class SourceGraph:
 
     def __init__(self):
-        self.graph = SrcGraph(workdir, configuration).load_src_graph()
+        self.graph = SrcGraph(workdir, configuration, preset_configuration).load_src_graph()
 
     def get_sizes(self, files):
         return {f: self.graph[f]['loc'] for f in files}
@@ -106,7 +109,7 @@ class SourceGraph:
 class FileStorage:
 
     def __init__(self):
-        self._storage = Storage(workdir, configuration)
+        self._storage = Storage(workdir, configuration, preset_configuration)
 
     @property
     def storage_dir(self):
@@ -128,7 +131,7 @@ class FileStorage:
 class CallGraph:
 
     def __init__(self):
-        self._graph = Callgraph(workdir, configuration)
+        self._graph = Callgraph(workdir, configuration, preset_configuration)
 
     @property
     def graph(self):
@@ -144,7 +147,7 @@ class CallGraph:
 class TypeDefinitions:
 
     def __init__(self, files):
-        self._graph = Typedefs(workdir, configuration)
+        self._graph = Typedefs(workdir, configuration, preset_configuration)
         self._files = files
 
     @property
@@ -155,7 +158,7 @@ class TypeDefinitions:
 class VariableInitializations:
 
     def __init__(self, files):
-        self._obj = Variables(workdir, configuration)
+        self._obj = Variables(workdir, configuration, preset_configuration)
         self._files = set(files)
 
     @property
@@ -168,7 +171,7 @@ class VariableInitializations:
 
     @staticmethod
     def _used_vars_functions(files=None):
-        data = Variables(workdir, configuration).load_used_in_vars()
+        data = Variables(workdir, configuration, preset_configuration).load_used_in_vars()
         if files is None:
             return data
         elif isinstance(files, list) or isinstance(files, set):
@@ -182,7 +185,7 @@ class VariableInitializations:
 class FunctionsScopes:
 
     def __init__(self, files=None):
-        self.fs = Functions(workdir, configuration)
+        self.fs = Functions(workdir, configuration, preset_configuration)
         self._files = files
         if isinstance(files, set) or isinstance(files, list):
             self._files = set(files)
@@ -196,7 +199,7 @@ class FunctionsScopes:
 class MacroExpansions:
 
     def __init__(self, white_list=None, files=None):
-        self.data = Macros(workdir, configuration)
+        self.data = Macros(workdir, configuration, preset_configuration)
         self._white_list = white_list
         self._files = files
 
