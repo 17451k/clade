@@ -94,6 +94,12 @@ def get_last_id(cmds_file):
         return "0"
 
 
+def get_all_cmds(cmds_file):
+    """Get list of all intercepted build commands."""
+    with open_cmds_file(cmds_file) as cmds_fp:
+        return list(iter_cmds(cmds_fp))
+
+
 def get_stats(cmds_file):
     """Get statistics of intercepted commands number."""
     stats = dict()
