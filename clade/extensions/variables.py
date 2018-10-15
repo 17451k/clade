@@ -44,8 +44,10 @@ class Variables(Callgraph):
         self.__process_init_global()
         self._clean_error_log()
 
+        self.log("Dump parsed data")
         self.dump_data_by_key(self.variables, self.variables_folder)
         self.dump_data(self.used_in_vars, self.used_in_vars_file, indent=4)
+        self.log("Finish")
 
     # TODO: Remove this as problem with ujson dump will be solved
     def dump_data(self, data, file_name, indent=0):
@@ -69,10 +71,12 @@ class Variables(Callgraph):
         init_global = self.extensions["Info"].init_global
 
         if not os.path.isfile(init_global):
+            self.log("There is no global variables to parse")
             return
 
         self.log("Processing global variables initializations")
         self.variables = parse_variables_initializations(init_global, self.functions, self.__process_callv)
+        self.log("Processing finished")
 
     def __process_callv(self, functions, context_file):
         if not functions:
