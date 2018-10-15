@@ -42,7 +42,7 @@ def setup(work_dir, conf=None, preset="base"):
 
 
 def initialize_extensions(work_dir, cmd_file, conf=None, preset="base"):
-    setup(work_dir, conf)
+    setup(work_dir, conf, preset)
     for cls in (CmdGraph, SrcGraph, Info, Callgraph, Variables, Macros, Typedefs):
         inst = cls(workdir, configuration, preset)
         inst.parse(cmd_file)
