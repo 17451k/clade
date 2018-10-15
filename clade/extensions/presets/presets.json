@@ -1,6 +1,6 @@
 {
     "base": {
-        "inherit": [],
+        "extends": [],
         "PidGraph.filter_cmds_by_pid": true,
         "Common.save_unparsed_cmds": true,
         "CC.filter_deps": true,
@@ -8,13 +8,13 @@
         "log_level": "INFO"
     },
     "print_graphs": {
-        "inherit": [],
+        "extends": [],
         "CmdGraph.as_picture": true,
         "PidGraph.as_picture": true,
         "SrcGraph.as_picture": true
     },
     "linux_kernel": {
-        "inherit": ["base"],
+        "extends": ["base"],
         "CmdGraph.requires": [
             "CC",
             "LD",
@@ -41,7 +41,7 @@
         ]
     },
     "busybox_linux": {
-        "inherit": ["base", "print_graphs"],
+        "extends": ["base", "print_graphs"],
         "Common.filter": [],
         "Common.filter_in": [
             ".*?\\.tmp$",
@@ -59,7 +59,7 @@
         ]
     },
     "apache_linux": {
-        "inherit": ["base", "print_graphs"],
+        "extends": ["base", "print_graphs"],
         "Common.filter": [
             "/tmp/.*"
         ],

@@ -71,7 +71,8 @@ setuptools.setup(
             "libinterceptor/lib/*",
             "libinterceptor/lib64/*",
             "extensions/*",
-            "extensions/info/*"
+            "extensions/info/*",
+            "extensions/presets/*"
         ],
     },
     entry_points={

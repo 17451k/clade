@@ -50,8 +50,7 @@ def normalize_relative_path(path, cwd, cache=dict()):
 
 
 def merge_preset_to_conf(preset_name, conf):
-    # print("MERGE: {!r} {!r}".format(preset_name, conf))
-    preset_file = os.path.join(os.path.dirname(__file__), "presets.json")
+    preset_file = os.path.join(os.path.dirname(__file__), "presets", "presets.json")
 
     with open(preset_file, "r") as f:
         presets = ujson.load(f)
