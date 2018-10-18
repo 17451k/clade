@@ -38,7 +38,7 @@ def build_target(target, build_dir, src_dir, options=None, quiet=False):
         subprocess.check_output(["make", target], stderr=subprocess.STDOUT, cwd=build_dir, universal_newlines=True)
     except subprocess.CalledProcessError as e:
         if not quiet:
-            print(e.stdout)
+            print(e.output)
         raise RuntimeError("Can't build target {!r} - something went wrong".format(target))
 
 

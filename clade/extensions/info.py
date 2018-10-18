@@ -143,12 +143,12 @@ class Info(Extension):
             except subprocess.CalledProcessError as e:
                 # CIF may fail if it does not support some options
                 # We can try to parse stdout to identify unsupported options and relaunch CIF without it
-                m = self.unsupported_opts_regex.findall(e.stdout)
+                m = self.unsupported_opts_regex.findall(e.output)
                 if m and not opts_to_filter:
                     self.__save_unsupported_opts(m)
                     self._run_cif(cmd, cmds_file, m)
                 else:
-                    self.__save_log(cif_args, e.stdout)
+                    self.__save_log(cif_args, e.output)
 
     def __is_cmd_bad_for_cif(self, cmd):
         if cmd["in"] == []:
