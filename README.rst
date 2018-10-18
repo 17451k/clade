@@ -46,6 +46,7 @@ need to install some prerequisites beforehand:
   installed. CIF is an interface to Aspectator_ which in turn is a GCC
   based tool that implements aspect-oriented programming for the C programming
   language. You may download compiled CIF on `CIF releases`_ page.
+- *Optional*: graphviz for some visualization capabilities
 
 .. _CIF: https://github.com/17451k/cif
 .. _Aspectator: https://github.com/17451k/aspectator
@@ -366,7 +367,8 @@ mapping from ids to their pids and looks like this:
         "1": "0",
         "2": "1",
         "3": "2",
-        "4": "1"
+        "4": "2",
+        "5": "1"
     }
 
 Another one - *pid_graph.json* - stores information about all parent commands
@@ -378,9 +380,9 @@ for a given id:
         "1": ["0"],
         "2": ["1", "0"],
         "3": ["2", "1", "0"],
-        "4": ["1", "0"]
+        "4": ["2", "1", "0"],
+        "5": ["1", "0"]
     }
-
 
 *Pid graph* can be imported and used as a Python module:
 
@@ -400,13 +402,113 @@ for a given id:
     pid_by_id = c.load_pid_by_id()
     pid_graph = c.load_pid_graph()
 
+Other extensions use *pid graph* to filter *duplicate* commands.
+For example, on macOS executing "*gcc main.c*" command leads to the
+chain of execution of the followin commands:
 
-Note: *pid graph* can be used with any project (not only one written in C).
+- /usr/bin/gcc main.c
+- /Library/Developer/CommandLineTools/usr/bin/gcc main.c
+- /usr/bin/xcrun clang main.c
+- /Library/Developer/CommandLineTools/usr/bin/clang main.c
+- /Library/Developer/CommandLineTools/usr/bin/clang -cc1 ...
+
+So, for a single compilation command, several commands will be actually
+intercepted. You probably need only one of them (the very first one),
+so Clade filter all *duplicate* ones using *pid graph*: Clade simply
+do not parse all child commands of already parsed command.
+This behavior is of course configurable and can be disabled.
+
+*Pid graph* can be visualized with Graphviz using one of
+the configuration options:
+
+.. image:: docs/pics/pid_graph.png
+
+Note: *pid graph* can be used with any project
+(not only with ones written in C).
 
 Command graph
 ~~~~~~~~~~~~~
 
-*not written yet*
+Clade can connect commands by their input and output files.
+This information is stored in the *command graph* and can be obtained using
+*clade-cmd-graph* command line tool.
+
+To appear in the *command graph* an intercepted command needs to be parsed
+to search for input and output files.
+By default only commands parsed by *CC*, *LD* and *MV* extensions
+are parsed and appeared in the *command graph*.
+This behavior can be changed via configuration, which will be described below.
+
+
+Let's consider the following makefile:
+
+.. code-block:: make
+
+    all:
+        gcc -S main.c -o main.s  # id = 1
+        as main.s -o main.o      # id = 2
+        mv main.o main           # id = 3
+
+Using *clade-cmd-graph* these commands can be connected:
+
+.. code-block:: bash
+
+    $ clade-pid-graph cmds.txt
+    $ tree clade -L 2
+
+    clade
+    ├── CmdGraph/
+    │   └── cmd_graph.json
+    ├── CC/
+    ├── LD/
+    ├── MV/
+    ├── PidGraph
+    └── Storage/
+
+where *cmd_graph.json* looks like this (commands are represented by their
+identifiers and the type of extensions that parsed it):
+
+.. code-block:: json
+
+    {
+        "1":{
+            "type": "CC",
+            "used_by": ["2", "3"],
+            "using":[]
+        },
+        "2":{
+            "type": "AS",
+            "used_by": ["3"],
+            "using":["1"]
+        },
+        "3":{
+            "type": "MV",
+            "used_by": [],
+            "using":["1", "2"]
+        }
+    }
+
+*Command graph* can be imported and used as a Python module:
+
+.. code-block:: python
+
+    from clade.extensions.cmd_graph import CmdGraph
+
+    # Initialize extension with a path to the working directory
+    c = CmdGraph(work_dir="clade")
+
+    # Execute parsing of intercepted commands
+    # This step can be skipped if commands are already parsed
+    # and stored in the working directory
+    c.parse("cmds.txt)
+
+    # Get the command graph
+    cmd_graph = c.load_cmd_graph()
+
+*Command graph* can be visualized with Graphviz using one of
+the configuration options:
+
+.. image:: docs/pics/cmd_graph.png
 
 Source graph
 ~~~~~~~~~~~~
