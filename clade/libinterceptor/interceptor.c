@@ -27,6 +27,13 @@
 
 static bool intercepted;
 
+pid_t vfork() {
+    // Child processes that are created by vfork() can mess up data structures of the parent process.
+    // libinterceptor changes some environment variables, and due to vfork() it can affect its parent process.
+    // It breaks some things here, so to fix it we decided to replace vfork() call by fork().
+    fork();
+}
+
 // This wrapper will be executed instead of original execve() by using LD_PRELOAD ability.
 int execve(const char *path, char *const argv[], char *const envp[]) {
     int (*execve_real)(const char *, char *const *, char *const *) = dlsym(RTLD_NEXT, "execve");
