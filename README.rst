@@ -163,17 +163,17 @@ looks like this:
 .. code-block:: json
 
     {
-        "command":[
+        "command": [
             "gcc",
             "main.c",
             "-o",
             "main",
             "-O3"
         ],
-        "cwd":"/work/simple_make",
-        "id":"3",
-        "pid":"2",
-        "which":"/usr/bin/gcc"
+        "cwd": "/work/simple_make",
+        "id": "3",
+        "pid": "2",
+        "which": "/usr/bin/gcc"
     }
 
 where:
@@ -227,8 +227,8 @@ As a result, a working directory named *clade* will be created:
     │   ├── deps/
     │   ├── opts/
     │   └── unparsed/
-    ├── PidGraph
-    └── Storage
+    ├── PidGraph/
+    └── Storage/
 
 Top-level directories are in turn working directories of corresponding
 extensions that were executed inside *clade-cc* command.
@@ -338,7 +338,70 @@ as a Python module:
 Pid graph
 ~~~~~~~~~
 
-*not written yet*
+Each intercepted command, execept for the first one, is executed by another,
+parent command. For example, *gcc* internally executes
+*cc1* and *as* commands, so *gcc* is their parent.
+Clade knows about this connection and tracks it by assigning to each intercepted
+command two attributes: a unique identifier (id) and identifier of its parent
+(pid).
+This information is stored in the *pid graph* and can be obtained using
+*clade-pid-graph* command line tool:
+
+.. code-block:: bash
+
+    $ clade-pid-graph cmds.txt
+    $ tree clade -L 2
+
+    clade/
+    └── PidGraph/
+        ├── pid_by_id.json
+        └── pid_graph.json
+
+Two files will be generated. First one - *pid_by_id.json* - is a simple
+mapping from ids to their pids and looks like this:
+
+.. code-block:: json
+
+    {
+        "1": "0",
+        "2": "1",
+        "3": "2",
+        "4": "1"
+    }
+
+Another one - *pid_graph.json* - stores information about all parent commands
+for a given id:
+
+.. code-block:: json
+
+    {
+        "1": ["0"],
+        "2": ["1", "0"],
+        "3": ["2", "1", "0"],
+        "4": ["1", "0"]
+    }
+
+
+*Pid graph* can be imported and used as a Python module:
+
+.. code-block:: python
+
+    from clade.extensions.pid_graph import PidGraph
+
+    # Initialize extension with a path to the working directory
+    c = PidGraph(work_dir="clade")
+
+    # Execute parsing of intercepted commands
+    # This step can be skipped if commands are already parsed
+    # and stored in the working directory
+    c.parse("cmds.txt)
+
+    # Get all information
+    pid_by_id = c.load_pid_by_id()
+    pid_graph = c.load_pid_graph()
+
+
+Note: *pid graph* can be used with any project (not only one written in C).
 
 Command graph
 ~~~~~~~~~~~~~
@@ -357,6 +420,11 @@ Call graph
 
 Configuration
 ~~~~~~~~~~~~~
+
+*not written yet*
+
+Compilation database
+~~~~~~~~~~~~~~~~~~~~
 
 *not written yet*
 
