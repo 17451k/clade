@@ -187,7 +187,186 @@ where:
 - *which* - path to an executable file that was executed
   as a result of this command.
 
+It should be noted that all other functionality available in Clade use
+*cmds.txt* file as input.
+Due to this you do not need to rebuild your project every time you want
+to use it - you can just use previously generated *cmds.txt* file.
+
 Parsing of intercepted commands
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Once build commands are intercepted they can be parsed to search for input
+and output files, and options. Currently there are *extensions* in Clade
+for parsing following commands:
+
+- C compilation commands (cc, gcc, clang, various cross compilers);
+- linker commands (ld);
+- assembler commands (as);
+- archive commands (ar);
+- move commands (mv);
+- object copy commands (objcopy, Linux only).
+
+These extensions can be executed from command line through *clade-cc*,
+*clade-ld*, *clade-as*, *clade-ar*, *clade-mv*, *clade-objcopy* commands
+respectively. They all have similar input interface and the format
+of output files, so let's just look at *clade-cc* command. It can be executed
+as follows:
+
+.. code-block:: bash
+
+    $ clade-cc cmds.txt
+
+As a result, a working directory named *clade* will be created:
+
+::
+
+    clade/
+    ├── CC/
+    │   ├── cmds.json
+    │   ├── cmds/
+    │   ├── deps/
+    │   ├── opts/
+    │   └── unparsed/
+    ├── PidGraph
+    └── Storage
+
+Top-level directories are in turn working directories of corresponding
+extensions that were executed inside *clade-cc* command.
+*CC* extension is the one we wanted to execute, but there are also
+other extensions - *PidGraph* and *Storage* - that were executed implicitly
+by *CC* because it depends on the results of their work.
+Let's skip them for now.
+
+Inside *CC* directory there is a bunch of other directories and *cmds.json*
+file with parsed compilation commands.
+Again, it is a list of dictionaries representing each parsed command.
+Let's look at the parsed command from the above example:
+
+.. code-block:: json
+
+    {
+        "command":"gcc",
+        "cwd":"/work/simple_make",
+        "id":"3",
+        "in":[
+            "main.c"
+        ],
+        "opts":[
+            "-O3"
+        ],
+        "out":[
+            "main"
+        ]
+    }
+
+Its structure is quite simple: there is a list of input files,
+a list of output files, a list of options, and some other info that is
+self-explanatory.
+
+*CC* extension also identify *dependencies* of the main source file
+for each compillation command.
+Dependencies are the names of all included header files,
+even ones included indirectly.
+Clade stores them inside *deps* subfolder.
+For example, dependencies of the parsed command with id="3" can be found
+in *deps/3.json* file:
+
+::
+
+    [
+        "/usr/include/secure/_common.h",
+        "/usr/include/sys/_types/_u_int32_t.h",
+        "/usr/include/machine/_types.h",
+        "/usr/include/sys/_types/_u_int16_t.h",
+        "/usr/include/_stdio.h",
+        "/usr/include/sys/cdefs.h",
+        "/usr/include/secure/_stdio.h",
+        "/usr/include/sys/_types/_size_t.h",
+        "/usr/include/sys/_types/_u_int8_t.h",
+        "/usr/include/stdio.h",
+        "/usr/include/sys/_types/_ssize_t.h",
+        "/usr/include/sys/_symbol_aliasing.h",
+        "/usr/include/sys/_types/_int32_t.h",
+        "/usr/include/sys/_pthread/_pthread_types.h",
+        "/usr/include/sys/_types/_int8_t.h",
+        "main.c",
+        "/usr/include/sys/_types/_int16_t.h",
+        "/usr/include/sys/_types/_uintptr_t.h",
+        "/usr/include/sys/_types/_null.h",
+        "/usr/include/sys/_types/_off_t.h",
+        "/usr/include/sys/stdio.h",
+        "/usr/include/_types.h",
+        "/usr/include/AvailabilityInternal.h",
+        "/usr/include/sys/_types/_va_list.h",
+        "/usr/include/Availability.h",
+        "/usr/include/sys/_posix_availability.h",
+        "/usr/include/sys/_types/_u_int64_t.h",
+        "/usr/include/sys/_types/_intptr_t.h",
+        "/usr/include/sys/_types.h",
+        "/usr/include/sys/_types/_int64_t.h",
+        "/usr/include/i386/_types.h",
+        "/usr/include/i386/types.h",
+        "/usr/include/machine/types.h"
+    ]
+
+Besides dependencies, all other parsed commands (ld, mv, and so on)
+will also look this way: as a list of dictionaries representing each
+parsed command, with "command", "id", "in", "opts" and "out" fields.
+
+*CC* extension (and all others, of course) can also be imported and used
+as a Python module:
+
+.. code-block:: python
+
+    from clade.extensions.cc import CC
+
+    # Initialize extension with a path to the working directory
+    c = CC(work_dir="clade")
+
+    # Execute parsing of intercepted commands
+    # This step can be skipped if commands are already parsed
+    # and stored in the working directory
+    c.parse("cmds.txt)
+
+    # Get a list of all parsed commands
+    parsed_cmds = c.load_all_cmds()
+    for cmd in parsed_cmds:
+        # Get a list of dependencies
+        deps = c.load_deps_by_id(cmd["id"])
+        ...
+
+Pid graph
+~~~~~~~~~
+
+*not written yet*
+
+Command graph
+~~~~~~~~~~~~~
+
+*not written yet*
+
+Source graph
+~~~~~~~~~~~~
+
+*not written yet*
+
+Call graph
+~~~~~~~~~~
+
+*not written yet*
+
+Configuration
+~~~~~~~~~~~~~
+
+*not written yet*
+
+Troubleshooting
+---------------
+
+*not written yet*
+
+
+Acknowledgments
+---------------
 
 *not written yet*
