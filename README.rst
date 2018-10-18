@@ -13,21 +13,24 @@ linking, mv, rm, and all other commands that are executed during build).
 Intercepted commands can be parsed (to search for input and output files,
 and options) and then used for various purposes:
 
-- obtaining information about the dependencies between source and object files;
-- obtaining information about the source code;
-- generating of the function call graph;
+- generating `compilation database`_;
+- obtaining information about dependencies between source and object files;
+- obtaining information about the source code (source code querying);
+- generating function call graph;
 - running software verification tools;
-- visualization of the all collected information;
+- visualization of all collected information;
 - *and for much more*.
+
+.. _compilation database: https://clang.llvm.org/docs/JSONCompilationDatabase.html
 
 The interception of build commands is independent of the project type
 and used programming languages.
 However, all other functionality available in Clade IS dependent.
 Currently only C projects are supported, but other languages and additional
-functionality can be supported through the built-in extension mechanism.
+functionality can be supported through the built-in *extension mechanism*.
 
-Installation prerequisites
---------------------------
+Prerequisites
+-------------
 
 An important part of Clade - a build commands intercepting library -
 is written in C and it needs to be compiled before use.
@@ -37,9 +40,18 @@ need to install some prerequisites beforehand:
 - Python 3 (>=3.4)
 - cmake (>=3.3)
 - make
-- C and C++ compiler (gcc or clang)
+- C **and** C++ compiler (gcc or clang)
+- *Linux only*: python3-dev package (or python3-devel)
+- *Optional*: for obtaining information about the C code you will need CIF_
+  installed. CIF is an interface to Aspectator_ which in turn is a GCC
+  based tool that implements aspect-oriented programming for the C programming
+  language. You may download compiled CIF on `CIF releases`_ page.
 
-Clade is working on Linux and macOS.
+.. _CIF: https://github.com/17451k/cif
+.. _Aspectator: https://github.com/17451k/aspectator
+.. _CIF releases: https://github.com/17451k/cif/releases
+
+Clade works on Linux and macOS.
 Partial support for Windows will be implemented soon.
 
 Installation
@@ -124,13 +136,13 @@ the following *cmds.txt* file will be produced (on macOS):
 ::
 
     /work/simple_make||0||/usr/bin/make||make||all
-    /work/simple_make||1||/Library/Developer/CommandLineTools/usr/bin/make||/Library/Developer/CommandLineTools/usr/bin/make
-    /work/simple_make||2||/usr/bin/gcc||gcc||main.c||-o||main
-    /work/simple_make||3||/Library/Developer/CommandLineTools/usr/bin/gcc||/Library/Developer/CommandLineTools/usr/bin/gcc||main.c||-o||main
-    /work/simple_make||4||/usr/bin/xcrun||/usr/bin/xcrun||clang||main.c||-o||main
-    /work/simple_make||5||/Library/Developer/CommandLineTools/usr/bin/clang||/Library/Developer/CommandLineTools/usr/bin/clang||main.c||-o||main
-    /work/simple_make||6||/Library/Developer/CommandLineTools/usr/bin/clang||/Library/Developer/CommandLineTools/usr/bin/clang||-cc1||-triple||x86_64-apple-macosx10.14.0||-Wdeprecated-objc-isa-usage||-Werror=deprecated-objc-isa-usage||-emit-obj||-mrelax-all||-disable-free||-disable-llvm-verifier||-discard-value-names||-main-file-name||main.c||-mrelocation-model||pic||-pic-level||2||-mthread-model||posix||-mdisable-fp-elim||-fno-strict-return||-masm-verbose||-munwind-tables||-target-cpu||penryn||-dwarf-column-info||-debugger-tuning=lldb||-target-linker-version||409.12||-resource-dir||/Library/Developer/CommandLineTools/usr/lib/clang/10.0.0||-fdebug-compilation-dir||/work/simple_make||-ferror-limit||19||-fmessage-length||120||-stack-protector||1||-fblocks||-fencode-extended-block-signature||-fobjc-runtime=macosx-10.14.0||-fmax-type-align=16||-fdiagnostics-show-option||-fcolor-diagnostics||-o||/var/folders/w7/d45mjl5d79v0hl9gqzzfkdgh0000gn/T/main-31ba54.o||-x||c||main.c
-    /work/simple_make||7||/Library/Developer/CommandLineTools/usr/bin/ld||/Library/Developer/CommandLineTools/usr/bin/ld||-demangle||-lto_library||/Library/Developer/CommandLineTools/usr/lib/libLTO.dylib||-no_deduplicate||-dynamic||-arch||x86_64||-macosx_version_min||10.14.0||-o||main||/var/folders/w7/d45mjl5d79v0hl9gqzzfkdgh0000gn/T/main-31ba54.o||-lSystem||/Library/Developer/CommandLineTools/usr/lib/clang/10.0.0/lib/darwin/libclang_rt.osx.a
+    /work/simple_make||1||/Library/Developer/CommandLineTools/usr/bin/make||/Library/Developer/CommandLineTools/usr/bin/make||all
+    /work/simple_make||2||/usr/bin/gcc||gcc||main.c||-o||main||-O3
+    /work/simple_make||3||/Library/Developer/CommandLineTools/usr/bin/gcc||/Library/Developer/CommandLineTools/usr/bin/gcc||main.c||-o||main||-O3
+    /work/simple_make||4||/usr/bin/xcrun||/usr/bin/xcrun||clang||main.c||-o||main||-O3
+    /work/simple_make||5||/Library/Developer/CommandLineTools/usr/bin/clang||/Library/Developer/CommandLineTools/usr/bin/clang||main.c||-o||main||-O3
+    /work/simple_make||6||/Library/Developer/CommandLineTools/usr/bin/clang||/Library/Developer/CommandLineTools/usr/bin/clang||-cc1||-triple||x86_64-apple-macosx10.14.0||-Wdeprecated-objc-isa-usage||-Werror=deprecated-objc-isa-usage||-emit-obj||-disable-free||-disable-llvm-verifier||-discard-value-names||-main-file-name||main.c||-mrelocation-model||pic||-pic-level||2||-mthread-model||posix||-mdisable-fp-elim||-fno-strict-return||-masm-verbose||-munwind-tables||-target-cpu||penryn||-dwarf-column-info||-debugger-tuning=lldb||-target-linker-version||409.12||-resource-dir||/Library/Developer/CommandLineTools/usr/lib/clang/10.0.0||-O3||-fdebug-compilation-dir||/work/simple_make||-ferror-limit||19||-fmessage-length||150||-stack-protector||1||-fblocks||-fencode-extended-block-signature||-fobjc-runtime=macosx-10.14.0||-fmax-type-align=16||-fdiagnostics-show-option||-fcolor-diagnostics||-vectorize-loops||-vectorize-slp||-o||/var/folders/w7/d45mjl5d79v0hl9gqzzfkdgh0000gn/T/main-de88a6.o||-x||c||main.c
+    /work/simple_make||7||/Library/Developer/CommandLineTools/usr/bin/ld||/Library/Developer/CommandLineTools/usr/bin/ld||-demangle||-lto_library||/Library/Developer/CommandLineTools/usr/lib/libLTO.dylib||-dynamic||-arch||x86_64||-macosx_version_min||10.14.0||-o||main||/var/folders/w7/d45mjl5d79v0hl9gqzzfkdgh0000gn/T/main-de88a6.o||-lSystem||/Library/Developer/CommandLineTools/usr/lib/clang/10.0.0/lib/darwin/libclang_rt.osx.a
     /work/simple_make||2||/bin/rm||rm||main
 
 
@@ -155,9 +167,10 @@ looks like this:
             "gcc",
             "main.c",
             "-o",
-            "main"
+            "main",
+            "-O3"
         ],
-        "cwd":"/Users/siddhartha",
+        "cwd":"/work/simple_make",
         "id":"3",
         "pid":"2",
         "which":"/usr/bin/gcc"
