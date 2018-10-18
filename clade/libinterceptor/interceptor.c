@@ -26,7 +26,6 @@
 #include "env.h"
 
 static bool intercepted;
-extern char **environ;
 
 // This wrapper will be executed instead of original execve() by using LD_PRELOAD ability.
 int execve(const char *path, char *const argv[], char *const envp[]) {
@@ -52,8 +51,6 @@ int execvp(const char *filename, char *const argv[]) {
     int (*execvp_real)(const char *, char *const *) = dlsym(RTLD_NEXT, "execvp");
 
     if (! intercepted) {
-        // We need to copy environ to avoid changing environment of the parent process
-        environ = copy_envp(environ);
         intercept_call(filename, (char const *const *)argv);
         // DO NOT change value of intercepted to TRUE here
     }
@@ -66,7 +63,6 @@ int execv(const char *filename, char *const argv[]) {
 
     // DO NOT check if (! intercepted) here: it will result in command loss
     // Also DO NOT change value of intercepted to TRUE for the same reason
-    environ = copy_envp(environ);
     intercept_call(filename, (char const *const *)argv);
     // BUT we need to change it for macOS to avoid duplicating commands
     #ifdef __APPLE__

@@ -1,9 +1,8 @@
 #ifndef ENV_H
 #define ENV_H
 
-extern char **copy_envp(char **);
-extern char **update_envp(char **);
-extern void update_environ(char **);
+extern char **update_envp(char **input_envp);
+extern void update_environ(char **envp);
 
 extern char *get_parent_id();
 

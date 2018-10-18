@@ -30,6 +30,19 @@ static int get_envp_len(char **envp) {
     return i;
 }
 
+static char **copy_envp(char **envp) {
+    int envp_len = get_envp_len(envp);
+    char **copy = malloc((envp_len + 1) * sizeof(char *));
+
+    int i;
+    for (i = 0; i < envp_len; i++) {
+        copy[i] = strdup(envp[i]);
+    }
+
+    copy[i] = 0;
+    return copy;
+}
+
 static int find_parent_id(char **envp) {
     int key_len = strlen(key);
     int envp_len = get_envp_len(envp);
@@ -47,19 +60,6 @@ static int find_parent_id(char **envp) {
 
     exit(-1);
 
-}
-
-char **copy_envp(char **envp) {
-    int envp_len = get_envp_len(envp);
-    char **copy = malloc((envp_len + 1) * sizeof(char *));
-
-    int i;
-    for (i = 0; i < envp_len; i++) {
-        copy[i] = strdup(envp[i]);
-    }
-
-    copy[i] = 0;
-    return copy;
 }
 
 char **update_envp(char **input_envp) {

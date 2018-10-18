@@ -127,8 +127,11 @@ static void store_data(char *data, char *data_file) {
         exit(EXIT_FAILURE);
     }
 
+    flock(fileno(f), LOCK_EX);
     fprintf(f, "%s", data);
+
     fclose(f);
+    flock(fileno(f), LOCK_UN);
 }
 
 void intercept_call(const char *path, char const *const argv[]) {
