@@ -234,6 +234,8 @@ clang_opts = [
     "-working-directory",
     "-x",
     "-z",
+    "-dwarf-debug-producer",
+    "-filetype",
 ]
 
 preprocessor_deps_opts = [
