@@ -132,14 +132,19 @@ class CC(Common):
     def dump_deps_by_id(self, id, deps):
         self.dump_data(deps, os.path.join("deps", "{}.json".format(id)))
 
+    def is_a_compilation_command(self, cmd):
+        if [cmd_in for cmd_in in cmd["in"] if os.path.splitext(os.path.basename(cmd_in))[1] not in self.file_extensions]:
+            return False
+
+        return True
+
     def load_all_cmds(self, filter_by_pid=True, with_opts=True, with_deps=False, compile_only=False):
         cmds = super().load_all_cmds(filter_by_pid=filter_by_pid)
 
         # compile only - ignore linker commands, like gcc func.o main.o -o main
         for cmd in cmds:
-            if compile_only:
-                if [cmd_in for cmd_in in cmd["in"] if os.path.splitext(os.path.basename(cmd_in))[1] not in self.file_extensions]:
-                    continue
+            if compile_only and not self.is_a_compilation_command(cmd):
+                continue
 
             if with_opts:
                 cmd["opts"] = self.load_opts_by_id(cmd["id"])

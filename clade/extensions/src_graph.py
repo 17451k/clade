@@ -53,8 +53,8 @@ class SrcGraph(Extension):
 
         src = self.get_build_cwd(cmds_file)
 
-        for cmd in self.extensions["CC"].load_all_cmds(compile_only=True):
-            if [cmd_in for cmd_in in cmd["in"] if cmd_in == "/dev/null" or cmd_in == "-"]:
+        for cmd in self.extensions["CmdGraph"].load_all_cmds_by_type("CC"):
+            if not self.extensions["CC"].is_a_compilation_command(cmd):
                 continue
 
             cmd_id = str(cmd["id"])

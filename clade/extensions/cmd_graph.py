@@ -44,19 +44,26 @@ class CmdGraph(Extension):
         """Load command graph."""
         return self.load_data(self.graph_file)
 
-    @Extension.prepare
-    def parse(self, cmds_file):
-        self.log("Start command graph constructing")
-
+    def load_all_cmds(self, filter_by_pid=False):
         cmds = list()
         for ext_name in [x for x in self.extensions if x not in self.always_requires]:
             for cmd in self.extensions[ext_name].load_all_cmds(filter_by_pid=False):
                 cmd["type"] = ext_name
                 cmds.append(cmd)
 
-        if self.conf.get("PidGraph.filter_cmds_by_pid", True):
+        if self.conf.get("PidGraph.filter_cmds_by_pid", True) or filter_by_pid:
             cmds = self.extensions["PidGraph"].filter_cmds_by_pid(cmds)
 
+        return cmds
+
+    def load_all_cmds_by_type(self, type, filter_by_pid=False):
+        return [cmd for cmd in self.load_all_cmds(filter_by_pid=filter_by_pid) if cmd["type"] == type]
+
+    @Extension.prepare
+    def parse(self, cmds_file):
+        self.log("Start command graph constructing")
+
+        cmds = self.load_all_cmds()
         src = self.get_build_cwd(cmds_file)
 
         for cmd in sorted(cmds, key=lambda x: int(x["id"])):
