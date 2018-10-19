@@ -106,16 +106,18 @@ class Callgraph(Extension):
             # Assign priority number for each possible definition. Examples:
             # 5 means that definition is located in the same file as the call
             # 4 - in the same translation unit
-            # 3 - in the object file that is linked with the object file that contains the call
-            # 2 - reserved for exported functions (Linux kernel only)
+            # 3 - reserved for exported functions (Linux kernel only)
+            # 2 - in the object file that is linked with the object file that contains the call
             # 1 - TODO: investigate this case
             # 0 - definition is not found
             index = 5
             for files in (
                     (f for f in possible_files if f == context_file),
                     (f for f in possible_files if self._t_unit_is_common(f, context_file)),
-                    (f for f in possible_files if self._files_are_linked(f, context_file)) if call_type == "global" else tuple(),
-                    (f for f in possible_files if self.funcs[func][f]["type"] == "exported") if call_type == "global" else tuple(),
+                    (f for f in possible_files if self._files_are_linked(f, context_file) and
+                        self.funcs[func][f]["type"] == "exported") if call_type == "global" else tuple(),
+                    (f for f in possible_files if self._files_are_linked(f, context_file) and
+                        any(self._t_unit_is_common(cf, context_file) for cf in self.funcs[func][f]["declarations"])) if call_type == "global" else tuple(),
                     (f for f in possible_files if any(self._t_unit_is_common(cf, context_file) for cf in self.funcs[func][f]["declarations"]))
                     if call_type == "global" else tuple(),
                     ['unknown']):
