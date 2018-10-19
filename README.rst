@@ -812,8 +812,42 @@ Configuration
 Troubleshooting
 ---------------
 
-*not written yet*
+File with intercepted commands is empty
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+Access control mechanisms on different operating systems might disable
+library injection that is used by Clade to intercept build commands:
+
+- SELinux on Fedora, CentOS, RHEL;
+- System Integrity Protection on macOS;
+- Mandatory Integrity Control on Windows (disables similar mechanisms)
+
+A solution is to use *fallback* intercepting mechanism that is based on
+*wrappers*.
+
+File with intercepted commands is not complete
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Sometimes some commands are intercepted, so file *cmds.txt* is present and not
+empty, but other commands are clearly missing.
+Such behaviour should be reported so the issue can be fixed, but until then
+you can try to use *fallback* intercepting mechanism that is based on
+*wrappers*.
+
+Wrong ELF class
+~~~~~~~~~~~~~~~
+Build command intercepting may result in the following error:
+
+::
+
+    ERROR: ld.so: object 'libinterceptor.so' from LD_PRELOAD cannot be preloaded (wrong ELF class: ELFCLASS64): ignored.
+
+It is because your project leverages multilib capabilities, but
+*libinterceptor* library that is used to intercept build commands is
+compiled without multilib support.
+You need to install *gcc-multilib* (Ubuntu) or *gcc-32bit* (openSUSE) package
+and **reinstall Clade**. *libinterceptor* library will be recompiled and your
+issue will be fixed.
 
 Acknowledgments
 ---------------
