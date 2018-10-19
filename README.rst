@@ -47,12 +47,17 @@ need to install some prerequisites beforehand:
 - cmake (>=3.3)
 - make
 - C **and** C++ compiler (gcc or clang)
-- *Linux only*: python3-dev package (or python3-devel)
-- *Optional*: for obtaining information about the C code you will need CIF_
+- *Linux only*: python3-dev (Ubuntu) or python3-devel (openSUSE) package
+
+Optional dependencies:
+
+- For obtaining information about the C code you will need CIF_
   installed. CIF is an interface to Aspectator_ which in turn is a GCC
   based tool that implements aspect-oriented programming for the C programming
   language. You may download compiled CIF on `CIF releases`_ page.
-- *Optional*: graphviz for some visualization capabilities
+- Graphviz for some visualization capabilities
+- *Linux only*: gcc-multilib (Ubuntu) or gcc-32bit (openSUSE) package
+  to intercept build commands of projects leveraging multilib capabilities
 
 .. _CIF: https://github.com/17451k/cif
 .. _Aspectator: https://github.com/17451k/aspectator
@@ -77,6 +82,12 @@ directly from the repository (clone it on your computer beforehand):
 
     $ pip3 install -e .
 
+You can check that Clade works as expected on your machine by running
+the test suite from the repository:
+
+.. code-block:: bash
+
+    $ pytest
 
 How to use
 ----------

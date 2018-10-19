@@ -100,7 +100,7 @@ setuptools.setup(
         ],
     },
     cmdclass={"build": CustomBuild, "develop": CustomDevelop, 'bdist_wheel': bdist_wheel},
-    install_requires=["ujson", "graphviz", "ply"],
+    install_requires=["ujson", "graphviz", "ply", "pytest"],
     classifiers=(
         "Programming Language :: Python :: 3",
         'Programming Language :: Python :: 3.4',
