@@ -609,4 +609,7 @@ Troubleshooting
 Acknowledgments
 ---------------
 
-*not written yet*
+Clade is inspired by the Bear_ project created by `László Nagy`_.
+
+.. _Bear: https://github.com/rizsotto/Bear
+.. _László Nagy: https://github.com/rizsotto
