@@ -40,7 +40,7 @@ Prerequisites
 
 An important part of Clade - a build commands intercepting library -
 is written in C and it needs to be compiled before use.
-It will be performed automatially at the installation stage, but you will
+It will be performed automatically at the installation stage, but you will
 need to install some prerequisites beforehand:
 
 - Python 3 (>=3.4)
@@ -282,7 +282,7 @@ a list of output files, a list of options, and some other info that is
 self-explanatory.
 
 *CC* extension also identify *dependencies* of the main source file
-for each compillation command.
+for each compilation command.
 Dependencies are the names of all included header files,
 even ones included indirectly.
 Clade stores them inside *deps* subfolder.
@@ -356,7 +356,7 @@ as a Python module:
 Pid graph
 ~~~~~~~~~
 
-Each intercepted command, execept for the first one, is executed by another,
+Each intercepted command, except for the first one, is executed by another,
 parent command. For example, *gcc* internally executes
 *cc1* and *as* commands, so *gcc* is their parent.
 Clade knows about this connection and tracks it by assigning to each intercepted
@@ -473,13 +473,13 @@ Using *clade-cmd-graph* these commands can be connected:
 
     $ clade-pid-graph cmds.txt
 
-    clade
+    clade/
     ├── CmdGraph/
     │   └── cmd_graph.json
     ├── CC/
     ├── LD/
     ├── MV/
-    ├── PidGraph
+    ├── PidGraph/
     └── Storage/
 
 where *cmd_graph.json* looks like this (commands are represented by their
@@ -532,7 +532,7 @@ Source graph
 ~~~~~~~~~~~~
 
 For a given source file Clade can show in which commands this file
-is compiled, and in which commands it is inderectly used.
+is compiled, and in which commands it is indirectly used.
 This information is called *source graph* and can be generated
 using *clade-src-graph* command line utility:
 
@@ -540,14 +540,14 @@ using *clade-src-graph* command line utility:
 
     $ clade-src-graph cmds.txt
 
-    clade
+    clade/
     ├── SrcGraph/
     │   └── src_graph.json
     ├── CmdGraph/
     ├── CC/
     ├── LD/
     ├── MV/
-    ├── PidGraph
+    ├── PidGraph/
     └── Storage/
 
 *Source graph* for the Makefile presented in the *command graph* section above
@@ -599,12 +599,137 @@ number of the lines of code.
 Call graph
 ~~~~~~~~~~
 
-*not written yet*
+Clade can generate function *call graph* for a given project written in C.
+This requires CIF installed on your computer, and path to its bin directory
+added to the PATH environment variable.
 
-Configuration
-~~~~~~~~~~~~~
+*Call graph* can be generated through command line utility *clade-callgraph*:
 
-*not written yet*
+.. code-block:: bash
+
+    $ clade-callgraph cmds.txt
+
+    clade/
+    ├── Callgraph/
+    │   ├── callgraph/
+    │   ├── callgraph.json
+    │   ├── calls_by_ptr.json
+    │   ├── used_in.json
+    │   └── err.log
+    ├── CC/
+    ├── LD/
+    ├── MV/
+    ├── PidGraph/
+    ├── Info/
+    ├── Functions/
+    │   ├── functions_by_file/
+    │   ├── functions_by_file.json
+    │   └── functions.json
+    └── Storage/
+
+*Call graph* itself is stored inside *callgraph.json* file and can be
+rather large. Let's look at a small part of the call graph generated for
+the Linux kernel:
+
+.. code-block:: json
+
+    {
+        "drivers/net/usb/asix_common.c": {
+            "asix_get_phy_addr": {
+                "called_in": {
+                    "drivers/net/usb/asix_devices.c": {
+                        "ax88172_bind": {
+                            "242": {"match_type" : 1}
+                        },
+                        "ax88178_bind": {
+                            "809": {"match_type" : 1}
+                        }
+                    }
+                },
+                "calls": {
+                    "drivers/net/usb/asix_common.c": {
+                        "asix_read_phy_addr": {
+                            "235": {"match_type" : 5}
+                        }
+                    }
+                },
+                "type": "global"
+            }
+        }
+    }
+
+There is "drivers/net/usb/asix_common.c" file with definition of the
+"asix_get_phy_addr" function. This function is called in the
+"drivers/net/usb/asix_devices.c" file by "ax88172_bind" function on line
+"242" and by "ax88178_bind" function on line "809". "match_type" is an internal
+information needed for debug purposes. Also this function calls "asix_read_phy_addr"
+file from the "drivers/net/usb/asix_common.c" file on the line "235".
+
+All functions that call "asix_get_phy_addr" function or are called by it are
+also present in the *call graph*, but were excluded from the above example.
+
+*Callgraph* extension uses "Function" extension to get information about
+function definitions and declarations.
+They are stored in the *functions.json* file:
+
+.. code-block:: json
+
+    {
+        "asix_get_phy_addr": {
+            "drivers/net/usb/asix_common.c": {
+                "declarations": {
+                    "drivers/net/usb/asix.h": {
+                        "line": "204",
+                        "signature": "int asix_get_phy_addr(struct usbnet *);",
+                        "type": "global"
+                    }
+                },
+                "line": "232",
+                "signature": "int asix_get_phy_addr(struct usbnet *dev);",
+                "type": "global"
+            }
+    }
+
+For each function definition there is information about corresponding
+declaration, line numbers in which the definition and declaration are located,
+function signature and type (global or static).
+
+*Callgraph* and *Functions* can be imported and used as Python modules:
+
+.. code-block:: python
+
+    from clade.extensions.callgraph import Callgraph
+    from clade.extensions.functions import Functions
+
+    # Initialize extension with a path to the working directory
+    c = Callgraph(work_dir="clade")
+
+    # Execute parsing of intercepted commands
+    # This step can be skipped if commands are already parsed
+    # and stored in the working directory
+    c.parse("cmds.txt)
+
+    # Get the call graph
+    callgraph = c.load_callgraph()
+
+    # Usage looks quite ugly, yes
+    # This will be improved
+    for file in callgraph:
+        for func in callgraph[file]:
+            for caller_file in callgraph[file][func]["called_in"]:
+                for caller_func in callgraph[file][func]["called_in"][caller_file]:
+                    for call_line in callgraph[file][func]["called_in"][caller_file][caller_func]:
+                        ...
+
+            for called_file in callgraph[file][func]["calls"]:
+                for called_func in callgraph[file][func]["calls"][called_file]:
+                    for call_line in callgraph[file][func]["calls"][called_file][called_func]:
+                        ...
+
+    f = Functions(work_dir="clade")
+    functions = f.load_functions()
+    # The usage is quite similar, so it is omitted
+    ...
 
 Compilation database
 ~~~~~~~~~~~~~~~~~~~~
@@ -642,6 +767,7 @@ Other options are available through --help option.
     c = CDB(work_dir="clade")
 
     # Intercept build commands
+    # This step can be skipped if build commands are already intercepted
     cmds_txt = "cmds.txt"
     i = Interceptor(command=["make"], output=cmds_txt)
     i.execute()
@@ -653,6 +779,11 @@ Other options are available through --help option.
 
     # Get generated compilation database
     compilation_database = c.load_cdb()
+
+Configuration
+-------------
+
+*not written yet*
 
 Troubleshooting
 ---------------
