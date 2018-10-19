@@ -807,7 +807,126 @@ Other options are available through --help option.
 Configuration
 -------------
 
-*not written yet*
+There is a bunch of options that can be changed to alter the behaviour
+of various tools available in Clade. If you execute these tools from the
+command line (tools like *clade-cc*, *clade-callgraph*, *clade-cmd-graph*,
+and so on), then the configuration can be passed via the "-c" option like this:
+
+.. code-block:: bash
+
+    $ clade-cc -c conf.json cmds.txt
+
+where *conf.json* is a json file with some configuration options:
+
+.. code-block:: json
+
+    {
+        "PidGraph.as_picture": true,
+        "CmdGraph.requires": [
+            "CC",
+            "LD",
+            "MV",
+            "AR",
+            "Objcopy"
+        ],
+        "CC.which_list": ["/usr.bin.gcc", "^.*clang$"]
+    }
+
+The configuration can be also passed as a Python dictionary:
+
+.. code-block:: python
+
+    from clade.extensions.cc import CC
+
+    conf = {"PidGraph.as_picture": True}
+    c = CC(work_dir="clade", conf=conf)
+
+which list
+~~~~~~~~~~
+
+Let's highlight some notable configuration options and let's start with
+options for extensions that parse intercepted commands to search for input
+and output files, and options. These extensions need to know which commands
+to parse. They have a list of predefined regular expressions that they try
+to match with the *which* field of an intercepted command.
+For example, *CC* extension have the following list:
+
+.. code-block:: python
+
+    which_list = [
+        r"^.*cc$",
+        r"^.*[mg]cc(-?\d+(\.\d+){0,2})?$",
+        r"^.*clang(-?\d+(\.\d+){0,2})?$"
+    ]
+
+Obviously, execution of */usr/bin/gcc* will be matched, as well as
+*/usr/bin/clade*, or */usr/local/bin/powerpc-elf-gcc-7*, so all such commands
+will be treated as compilation commands and parsed accordingly.
+Sometimes this list is not enough, so there is an option to change it:
+
+::
+
+    "CC.which_list": ["regexp_to_match_your_compiler"]
+
+Options for other such extensions look the same, you just need to replace *CC*
+by the name of the extension, so, for example, "LD.which_list" will be the
+option to change the list of regexes for *LD* extension.
+
+Visualization options
+~~~~~~~~~~~~~~~~~~~~~
+
+Currently there are two small options to visualize *pid graph* and *cmd graph*
+using Graphviz:
+
+.. code-block:: json
+
+    {
+        "PidGraph.as_picture": true,
+        "CmdGraph.as_picture": true
+    }
+
+If they are set, then next to *pid_graph.json* and *cmd_graph.json* files
+respectively pdf files containing Graphviz output will appear.
+
+List of commands to parse
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you want to generate *command graph*, or *source graph*, or *call graph*,
+then you need to specify which commands to parse via "CmdGraph.requires"
+option. If you want to parse all commands that are supported now, then
+the value of this option will be:
+
+.. code-block:: json
+
+    {
+        "CmdGraph.requires": ["CC", "LD", "MV", "AR", "Objcopy"]
+    }
+
+Presets
+~~~~~~~
+
+There is predefined set of options for the following projects that can be used
+in addition to user-defined configuration:
+
+- Linux kernel (preset linux_kernel)
+- Busybox (presets busybox_linux, busybox_macos)
+- Apache (presets apache_linux, apache_macos)
+
+If you want to execute Clade on one of these projects then it might be a *good
+idea* to use this presets, since they will definitely save you from having
+to deal with various problems and mess with the configuration:
+
+.. code-block:: bash
+
+    $ clade-cc -p linux_kernel cmds.txt
+
+or
+
+.. code-block:: python
+
+    from clade.extensions.cc import CC
+
+    c = CC(work_dir="clade", preset="linux_kernel")
 
 Troubleshooting
 ---------------
@@ -848,6 +967,52 @@ compiled without multilib support.
 You need to install *gcc-multilib* (Ubuntu) or *gcc-32bit* (openSUSE) package
 and **reinstall Clade**. *libinterceptor* library will be recompiled and your
 issue will be fixed.
+
+Not all intercepted compilation commands are parsed
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The reason is because *CC* extension that parse intercepted commands cannot
+identify a command as a compilation command. You can help it by specifying
+"CC.which_list" configuration option, in which you should write a list of
+regexes that will match your compiler. For example, if path to your compiler
+is *~/.local/bin/c_compiler*, than "CC.which_list" may be set like this:
+
+::
+
+    "CC.which_list": ["^.*?c_compiler$"]
+
+If you want to parse not only commands executed by your compiler, but by system
+*gcc* as well, then you can add it to the list too:
+
+::
+
+    "CC.which_list": ["^.*?c_compiler$", ""^.*gcc$"]
+
+How to set configuration option is described in *Configuration* section of
+this readme.
+
+Compilation database miss some commands
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Same as above.
+
+Command graph is not connected properly
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Most certainly it is due to the fact that some type of commands is unparsed.
+If there is an extension in Clade that can parse them, then you will need
+to specify it via the option "CmdGraph.requires":
+
+.. code-block:: json
+
+    {
+        "CmdGraph.requires": ["CC", "LD", "MV", "AR", "Objcopy"]
+    }
+
+Otherwise such extension should be developed.
+
+Similar problems with the *source graph* and the *call graph* can be fixed
+via the same option, since they use the *command graph* internally.
 
 Acknowledgments
 ---------------
