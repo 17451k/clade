@@ -88,6 +88,9 @@ class SrcGraph(Extension):
                 for i, _ in enumerate(f):
                     pass
             return i + 1
+        except UnboundLocalError:
+            # File is empty
+            return 0
         except FileNotFoundError:
             self.warning("Cannot get size of file {}".format(file))
             return 0

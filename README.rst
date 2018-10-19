@@ -1,9 +1,15 @@
 .. image:: https://travis-ci.org/17451k/clade.svg?branch=master
     :target: https://travis-ci.org/17451k/clade
+    :alt: Build status
 .. image:: https://coveralls.io/repos/github/17451k/clade/badge.svg?branch=master
     :target: https://coveralls.io/github/17451k/clade?branch=master
+    :alt: Code coverage information
 .. image:: https://img.shields.io/pypi/pyversions/clade.svg
-    :target: https://pypi.python.org/pypi/clade
+    :target: https://pypi.org/project/clade/
+    :alt: Supported versions of Python
+.. image:: https://img.shields.io/pypi/v/clade.svg
+    :target: https://pypi.org/project/clade
+    :alt: PyPi package version
 
 Clade
 =====
@@ -58,14 +64,14 @@ Partial support for Windows will be implemented soon.
 Installation
 ------------
 
-Just run the following command:
+To install the latest stable version just run the following command:
 
 .. code-block:: bash
 
     $ pip3 install clade
 
 For development purposes you may install Clade in "editable" mode
-directly from the source code:
+directly from the repository (clone it on your computer beforehand):
 
 .. code-block:: bash
 
@@ -404,7 +410,7 @@ for a given id:
 
 Other extensions use *pid graph* to filter *duplicate* commands.
 For example, on macOS executing "*gcc main.c*" command leads to the
-chain of execution of the followin commands:
+chain of execution of the following commands:
 
 - /usr/bin/gcc main.c
 - /Library/Developer/CommandLineTools/usr/bin/gcc main.c
@@ -422,6 +428,7 @@ This behavior is of course configurable and can be disabled.
 the configuration options:
 
 .. image:: docs/pics/pid_graph.png
+    :alt: An example of the pid graph
 
 Note: *pid graph* can be used with any project
 (not only with ones written in C).
@@ -474,17 +481,17 @@ identifiers and the type of extensions that parsed it):
         "1":{
             "type": "CC",
             "used_by": ["2", "3"],
-            "using":[]
+            "using": []
         },
         "2":{
             "type": "AS",
             "used_by": ["3"],
-            "using":["1"]
+            "using": ["1"]
         },
         "3":{
             "type": "MV",
             "used_by": [],
-            "using":["1", "2"]
+            "using": ["1", "2"]
         }
     }
 
@@ -509,11 +516,75 @@ identifiers and the type of extensions that parsed it):
 the configuration options:
 
 .. image:: docs/pics/cmd_graph.png
+    :alt: An example of the command graph
 
 Source graph
 ~~~~~~~~~~~~
 
-*not written yet*
+For a given source file Clade can show in which commands this file
+is compiled, and in which commands it is inderectly used.
+This information is called *source graph* and can be generated
+using *clade-src-graph* command line utility:
+
+.. code-block:: bash
+
+    $ clade-src-graph cmds.txt
+    $ tree clade -L 2
+
+    clade
+    ├── SrcGraph/
+    │   └── src_graph.json
+    ├── CmdGraph/
+    ├── CC/
+    ├── LD/
+    ├── MV/
+    ├── PidGraph
+    └── Storage/
+
+*Source graph* for the Makefile presented in the *command graph* section above
+will be located in the *src_graph.json* file and look like this:
+
+.. code-block:: json
+
+    {
+        "/usr/include/stdio.h": {
+            "compiled_in": ["1"],
+            "loc": 414,
+            "used_by": ["2", "3"]
+        },
+        "main.c":{
+            "compiled_in": ["1"],
+            "loc": 5,
+            "used_by": ["2", "3"],
+        },
+        "main.s":{
+            "compiled_in": ["2"],
+            "loc": 20,
+            "used_by": ["3"],
+        },
+        ...
+    }
+
+As always, commands are represented through their unique identifiers.
+*loc* field contains information about the size of the source file:
+number of the lines of code.
+
+*Source graph* can be imported and used as a Python module:
+
+.. code-block:: python
+
+    from clade.extensions.src_graph import SrcGraph
+
+    # Initialize extension with a path to the working directory
+    c = SrcGraph(work_dir="clade")
+
+    # Execute parsing of intercepted commands
+    # This step can be skipped if commands are already parsed
+    # and stored in the working directory
+    c.parse("cmds.txt)
+
+    # Get the source graph
+    src_graph = c.load_src_graph()
 
 Call graph
 ~~~~~~~~~~
