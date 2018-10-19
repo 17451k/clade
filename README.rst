@@ -99,6 +99,18 @@ examples will include both use cases.
 Build command intercepting
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+Clade can intercept the *exec* calls issued by the build tool for each build
+command.
+To do this we have developed a shared library (called *libinterceptor*)
+that redefine such exec functions: before creating a new process our
+exec functions store the information about the command into a separate file.
+The library is than injected into the build process using
+*LD_PRELOAD* (Linux) and *DYLD_INSERT_LIBRARIES* (macOS) mechanisms provided by
+the dynamic linker.
+
+.. image:: docs/pics/libinterceptor.png
+    :alt: An explanation of LD_PRELOAD
+
 Intercepting of build commands is quite easy: all you need is to
 wrap your main build command like this:
 
@@ -127,14 +139,26 @@ steps, you can still create one single *cmds.txt* file using
     $ clade-intercept -a make step_two
 
 As a result, build commands of the second make command will be appended
-to the cmds.txt file created previously.
+to the *cmds.txt* file created previously.
 
-Alternatively, you can intercept build commands from a python script:
+There is an alternative *fallback* intercepting method that is based on
+*wrappers*. It can be used when LD_PRELOAD is unavailable:
+
+.. code-block:: bash
+
+    $ clade-intercept -f make
+
+Unfortunately, for now *wrappers* can't intercept commands that are executed
+bypassing the PATH environment variable: for example, *gcc* command can be
+intercepted, but calling directly to */usr/bin/gcc* cannot. We have plans
+to implement some workarounds to mitigate this issue.
+
+You can intercept build commands from a python script:
 
 .. code-block:: python
 
     from clade.intercept import Interceptor
-    i = Interceptor(command=["make"], output="cmds.txt", append=False)
+    i = Interceptor(command=["make"], output="cmds.txt", append=False, fallback=False)
     i.execute()
 
 Content of *cmds.txt* file
@@ -760,7 +784,7 @@ Other options are available through --help option.
 
 .. code-block:: python
 
-    from clade.interceptor import Interceptor
+    from clade.intercept import Interceptor
     from clade.extensions.cdb import CDB
 
     # Initialize extension with a path to the working directory
