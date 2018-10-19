@@ -598,7 +598,50 @@ Configuration
 Compilation database
 ~~~~~~~~~~~~~~~~~~~~
 
-*not written yet*
+Command line tool for generating compilation database has a different
+interface, compared to most other command line tools available in Clade.
+In that regard it's more like *clade-intercept* command. Compilation
+database can be generated using *clade* command:
+
+.. code-block:: bash
+
+    $ clade make
+
+where *make* should be replaced by your project build command.
+As a result your project will be build and the *compile_commands.json*
+file will be created in the current directory.
+
+If you have *cmds.txt* file you can skip the build process and get
+*compile_comands.json* much faster:
+
+.. code-block:: bash
+
+    $ clade -c cmds.txt
+
+Other options are available through --help option.
+
+*Compilation database* can be imported and used as a Python module:
+
+.. code-block:: python
+
+    from clade.interceptor import Interceptor
+    from clade.extensions.cdb import CDB
+
+    # Initialize extension with a path to the working directory
+    c = CDB(work_dir="clade")
+
+    # Intercept build commands
+    cmds_txt = "cmds.txt"
+    i = Interceptor(command=["make"], output=cmds_txt)
+    i.execute()
+
+    # Generate compilation database
+    # This step can be skipped if compilation database is already generated
+    # and stored in the working directory
+    c.parse(cmds_txt)
+
+    # Get generated compilation database
+    compilation_database = c.load_cdb()
 
 Troubleshooting
 ---------------
