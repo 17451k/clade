@@ -359,8 +359,8 @@ This information is stored in the *pid graph* and can be obtained using
     $ clade-pid-graph cmds.txt
     $ tree clade -L 2
 
-    clade/
-    └── PidGraph/
+    clade
+    └── PidGraph
         ├── pid_by_id.json
         └── pid_graph.json
 
@@ -461,7 +461,6 @@ Using *clade-cmd-graph* these commands can be connected:
 .. code-block:: bash
 
     $ clade-pid-graph cmds.txt
-    $ tree clade -L 2
 
     clade
     ├── CmdGraph/
@@ -529,7 +528,6 @@ using *clade-src-graph* command line utility:
 .. code-block:: bash
 
     $ clade-src-graph cmds.txt
-    $ tree clade -L 2
 
     clade
     ├── SrcGraph/
@@ -561,10 +559,11 @@ will be located in the *src_graph.json* file and look like this:
             "compiled_in": ["2"],
             "loc": 20,
             "used_by": ["3"],
-        },
-        ...
+        }
     }
 
+For simplicity information about other files has been removed from
+the presented *source graph*.
 As always, commands are represented through their unique identifiers.
 *loc* field contains information about the size of the source file:
 number of the lines of code.
