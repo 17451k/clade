@@ -52,7 +52,7 @@ class Extension(metaclass=abc.ABCMeta):
         self.work_dir = os.path.join(os.path.abspath(str(work_dir)), self.name)
         self.conf = conf if conf else dict()
         self.conf = merge_preset_to_conf(preset, self.conf)
-        self.temp_dir = tempfile.mkdtemp()
+        self.temp_dir = None
 
         if not hasattr(self, "requires"):
             self.requires = []
@@ -107,6 +107,7 @@ class Extension(metaclass=abc.ABCMeta):
                 self.log("Build commands are already parsed")
                 return
 
+            self.temp_dir = tempfile.mkdtemp()
             self.parse_prerequisites(args[0])
             return parse(self, *args, **kwargs)
 
