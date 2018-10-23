@@ -19,6 +19,7 @@ import glob
 import hashlib
 import logging
 import os
+import shutil
 import sys
 import tempfile
 import ujson
@@ -109,7 +110,12 @@ class Extension(metaclass=abc.ABCMeta):
 
             self.temp_dir = tempfile.mkdtemp()
             self.parse_prerequisites(args[0])
-            return parse(self, *args, **kwargs)
+            retval = parse(self, *args, **kwargs)
+
+            if os.path.exists(self.temp_dir):
+                shutil.rmtree(self.temp_dir)
+
+            return retval
 
         return parse_wrapper
 
