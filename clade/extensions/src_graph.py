@@ -27,11 +27,21 @@ class SrcGraph(Extension):
         super().__init__(work_dir, conf, preset)
 
         self.src_graph = dict()
+        self.src_sizes = dict()
         self.src_graph_file = "src_graph.json"
+        self.src_graph_folder = "src_graph"
+        self.src_sizes_file = "short_src_graph.json"
 
-    def load_src_graph(self):
+    def load_src_graph(self, files=None):
         """Load source graph."""
-        return self.load_data(self.src_graph_file)
+        if files:
+            return self.load_data_by_key(self.src_graph_folder, files)
+        else:
+            return self.load_data(self.src_graph_file)
+
+    def load_src_sizes(self):
+        """Load source graph without dependencies."""
+        return self.load_data(self.src_sizes_file)
 
     @Extension.prepare
     def parse(self, cmds_file):
@@ -39,6 +49,8 @@ class SrcGraph(Extension):
 
         self.__generate_src_graph(cmds_file)
         self.dump_data(self.src_graph, self.src_graph_file)
+        self.dump_data(self.src_sizes, self.src_sizes_file)
+        self.dump_data_by_key(self.src_graph, self.src_graph_folder)
 
         if not self.src_graph:
             self.warning("Source graph is empty")
@@ -72,6 +84,12 @@ class SrcGraph(Extension):
                 # compiled_in is a list of commands that compile 'rel_in' source file
                 self.src_graph[rel_in]["compiled_in"].add(cmd_id)
                 self.src_graph[rel_in]["used_by"].update(used_by)
+
+        for rel_in in self.src_graph:
+            self.src_sizes[rel_in] = {
+                "loc": self.src_graph[rel_in]["loc"]
+            }
+            del self.src_graph[rel_in]["loc"]
 
     def __find_used_by(self, cmd_graph, cmd_id):
         used_by = set()
