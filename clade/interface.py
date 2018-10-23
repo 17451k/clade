@@ -70,15 +70,16 @@ def get_ld(identifier):
 class CommandGraph:
 
     def __init__(self):
-        self.graph = CmdGraph(work_dir, conf, preset).load_cmd_graph()
+        self._obj = CmdGraph(work_dir, conf, preset)
+        self.graph = self._obj.load_cmd_graph()
 
     @property
     def LDs(self):
-        return ((desc['id'], desc) for desc in LD(work_dir).load_all_cmds())
+        return ((desc['id'], desc) for desc in self._obj.load_all_cmds_by_type('LD'))
 
     @property
     def CCs(self):
-        return ((desc['id'], desc) for desc in CC(work_dir).load_all_cmds())
+        return ((desc['id'], desc) for desc in self._obj.load_all_cmds_by_type('CC'))
 
     def get_ccs_for_ld(self, identifier):
         ccs = dict()
