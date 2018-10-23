@@ -52,19 +52,19 @@ def initialize_extensions(work_dir, cmds_file, conf=None, preset="base"):
 
 
 def get_cc(identifier):
-    return CC(work_dir).load_cmd_by_id(identifier)
+    return CC(work_dir, conf, preset).load_cmd_by_id(identifier)
 
 
 def get_cc_opts(identifier):
-    return CC(work_dir).load_opts_by_id(identifier)
+    return CC(work_dir, conf, preset).load_opts_by_id(identifier)
 
 
 def get_cc_deps(identifier):
-    return CC(work_dir).load_deps_by_id(identifier)
+    return CC(work_dir, conf, preset).load_deps_by_id(identifier)
 
 
 def get_ld(identifier):
-    return LD(work_dir).load_cmd_by_id(identifier)
+    return LD(work_dir, conf, preset).load_cmd_by_id(identifier)
 
 
 class CommandGraph:
