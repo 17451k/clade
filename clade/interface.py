@@ -100,13 +100,18 @@ class CommandGraph:
 class SourceGraph:
 
     def __init__(self):
-        self.graph = SrcGraph(work_dir, conf, preset).load_src_graph()
+        self._graph = SrcGraph(work_dir, conf, preset)
+        self._sizes = self._graph.load_src_sizes()
+
+    @property
+    def graph(self):
+        return self._graph.load_src_graph()
 
     def get_sizes(self, files):
-        return {f: self.graph[f]['loc'] for f in files}
+        return {f: self._sizes[f]['loc'] for f in files}
 
     def get_ccs_by_file(self, file):
-        ccs = (get_cc(identifier) for identifier in self.graph[file]['compiled_in'])
+        ccs = (get_cc(identifier) for identifier in self._graph.load_src_graph([file])[file]['compiled_in'])
         return [cc for cc in ccs if cc['in'][0] == file]
 
 
