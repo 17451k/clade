@@ -18,15 +18,24 @@ from clade.extensions.src_graph import SrcGraph
 
 def test_src_graph(tmpdir, cmds_file):
     conf = {"CmdGraph.requires": ["CC", "MV"]}
+    test_file = "tests/test_project/main.c"
 
     c = SrcGraph(tmpdir, conf)
     c.parse(cmds_file)
 
     src_graph = c.load_src_graph()
     assert src_graph
-    assert len(src_graph["tests/test_project/main.c"]["compiled_in"]) == 3
-    assert len(src_graph["tests/test_project/main.c"]["used_by"]) == 2
-    assert src_graph["tests/test_project/main.c"]["loc"] == 11
+    assert len(src_graph[test_file]["compiled_in"]) == 3
+    assert len(src_graph[test_file]["used_by"]) == 2
+
+    file_sizes = c.load_src_sizes()
+    assert file_sizes
+    assert file_sizes[test_file]["loc"] == 11
+
+    graph_part = c.load_src_graph([test_file])
+    assert graph_part
+    assert len(graph_part[test_file]["used_by"]) == 2
+    assert len(src_graph[test_file]["compiled_in"]) == 3
 
 
 def test_src_graph_empty_conf(tmpdir, cmds_file):
