@@ -33,7 +33,8 @@
             "arch/x86/tools/relocs",
             "arch/x86/kernel/asm-offsets.c",
             ".*\\.mod\\.c",
-            ".*?\\.tmp\\w+\\.s"
+            ".*?\\.tmp\\w+\\.s",
+            ".*\\.S"
         ],
         "Common.filter_out": [
             "/dev/null",
