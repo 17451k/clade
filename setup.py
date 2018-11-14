@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import setuptools
 import sys
 
@@ -20,6 +21,16 @@ from distutils.command.build import build
 from setuptools.command.develop import develop
 
 from clade.utils import build_libinterceptor
+
+
+def package_files(package_directory):
+    paths = []
+
+    for (path, directories, filenames) in os.walk(package_directory):
+        for filename in filenames:
+            paths.append(os.path.relpath(os.path.join(path, filename), start=package_directory))
+
+    return paths
 
 
 class CustomBuild(build):
@@ -56,7 +67,7 @@ except ImportError:
 
 setuptools.setup(
     name="clade",
-    version="2.0",
+    version="2.0.1",
     author="Ilya Shchepetkov",
     author_email="ilya.shchepetkov@yandex.ru",
     url="https://github.com/17451k/clade",
@@ -66,14 +77,7 @@ setuptools.setup(
     python_requires=">=3.4",
     packages=["clade"],
     package_data={
-        "clade": [
-            "libinterceptor/*",
-            "libinterceptor/lib/*",
-            "libinterceptor/lib64/*",
-            "extensions/*",
-            "extensions/info/*",
-            "extensions/presets/*"
-        ],
+        "clade": package_files("clade"),
     },
     entry_points={
         "console_scripts": [
