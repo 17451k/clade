@@ -33,26 +33,8 @@ class CC(Common):
         ".s", ".S", ".asm"  # Assembly
     ]
 
-    def __init__(self, work_dir, conf=None, preset="base"):
-        super().__init__(work_dir, conf, preset)
-
-        if "CC.which_list" not in self.conf:
-            self.which_list = [
-                r"^.*cc$",
-                r"^.*[mg]cc(-?\d+(\.\d+){0,2})?$",
-                r"^.*clang(-?\d+(\.\d+){0,2})?$"
-            ]
-        else:
-            self.which_list = self.conf["CC.which_list"]
-
-        if "CC.with_system_header_files" not in self.conf:
-            self.conf["CC.with_system_header_files"] = True
-
-        if "CC.store_deps" not in self.conf:
-            self.conf["CC.store_deps"] = False
-
     def parse(self, cmds_file):
-        super().parse(cmds_file, self.which_list)
+        super().parse(cmds_file, self.conf.get("CC.which_list", []))
 
     def parse_cmd(self, cmd):
         cmd_id = cmd["id"]
@@ -71,7 +53,7 @@ class CC(Common):
         self.dump_deps_by_id(cmd_id, deps)
         self.dump_cmd_by_id(cmd_id, parsed_cmd)
 
-        if self.conf["CC.store_deps"]:
+        if self.conf.get("CC.store_deps"):
             self.__store_src_files(deps, parsed_cmd["cwd"])
 
     def __get_deps(self, cmd_id, cmd):
@@ -82,7 +64,7 @@ class CC(Common):
     def __collect_deps(self, cmd_id, cmd):
         deps_file = os.path.join(self.temp_dir, "{}-deps.txt".format(cmd_id))
 
-        if self.conf["CC.with_system_header_files"]:
+        if self.conf.get("CC.with_system_header_files"):
             additional_opts = ["-Wp,-MD,{}".format(deps_file), "-M"]
         else:
             additional_opts = ["-Wp,-MMD,{}".format(deps_file), "-MM"]

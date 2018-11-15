@@ -133,7 +133,7 @@ class Info(Extension):
             cif_args.append("--")
 
             opts = self.extensions["CC"].load_opts_by_id(cmd["id"])
-            opts.extend(self.conf.get("Info.extra CIF opts", []))
+            opts.extend(self.conf.get("Info.extra_CIF_opts", []))
             opts = [re.sub(r'\"', r'\\"', opt) for opt in opts]
             cif_args.extend(filter_opts(opts, cif_unsupported_opts[:] + opts_to_filter[:]))
 

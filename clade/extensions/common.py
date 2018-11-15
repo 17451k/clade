@@ -69,7 +69,7 @@ class Common(Extension, metaclass=abc.ABCMeta):
 
             def run(self):
                 for cmd in iter(self.cmds_queue.get, None):
-                    if self.ext.conf.get("Common.save_unparsed_cmds", False):
+                    if self.ext.conf.get("Common.save_unparsed_cmds"):
                         self.ext.dump_unparsed_by_id(cmd["id"], cmd)
                     self.ext.parse_cmd(cmd)
 

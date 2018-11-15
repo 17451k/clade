@@ -22,16 +22,8 @@ from clade.extensions.utils import common_main
 
 
 class MV(Common):
-    def __init__(self, work_dir, conf=None, preset="base"):
-        super().__init__(work_dir, conf, preset)
-
-        if "MV.which_list" not in self.conf:
-            self.which_list = ["^.*?mv$"]
-        else:
-            self.which_list = self.conf["MV.which_list"]
-
     def parse(self, cmds_file):
-        super().parse(cmds_file, self.which_list)
+        super().parse(cmds_file, self.conf.get("MV.which_list", []))
 
     def parse_cmd(self, cmd):
         parsed_cmd = {

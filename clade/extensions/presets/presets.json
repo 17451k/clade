@@ -1,27 +1,38 @@
 {
     "base": {
         "extends": [],
-        "PidGraph.filter_cmds_by_pid": true,
-        "Common.save_unparsed_cmds": true,
+        "log_level": "INFO",
+        "CC.ignore_cc1": true,
         "CC.filter_deps": true,
         "CC.store_deps": true,
-        "log_level": "INFO"
+        "CC.with_system_header_files": true,
+        "CmdGraph.requires": ["AR", "AS", "CC", "LD", "MV", "Objcopy"],
+        "CDB.output": "compile_commands.json",
+        "CmdGraph.as_picture": false,
+        "Common.filter": [],
+        "Common.filter_in": [],
+        "Common.filter_out": [],
+        "Common.save_unparsed_cmds": true,
+        "Common.with_opts": true,
+        "Info.extra_CIF_opts": [],
+        "PidGraph.as_picture": false,
+        "PidGraph.filter_cmds_by_pid": true,
+        "AR.which_list": ["^.*?ar$"],
+        "AS.which_list": ["^.*?as$"],
+        "CC.which_list": ["^.*cc$", "^.*[mg]cc(-?\\d+(\\.\\d+){0,2})?$", "^.*clang(-?\\d+(\\.\\d+){0,2})?$"],
+        "LD.which_list": ["^.*?ld$"],
+        "MV.which_list": ["^.*?mv$"],
+        "Objcopy.which_list": ["^.*?objcopy$"]
     },
-    "print_graphs": {
-        "extends": [],
+    "base_print": {
+        "extends": ["base"],
         "CmdGraph.as_picture": true,
         "PidGraph.as_picture": true,
         "SrcGraph.as_picture": true
     },
     "linux_kernel": {
         "extends": ["base"],
-        "CmdGraph.requires": [
-            "CC",
-            "LD",
-            "MV",
-            "AR",
-            "Objcopy"
-        ],
+        "CmdGraph.requires": ["AR", "CC", "LD", "MV", "Objcopy"],
         "Common.filter": [
             ".*?\\.tmp$"
         ],
@@ -44,7 +55,7 @@
         ]
     },
     "busybox_linux": {
-        "extends": ["base", "print_graphs"],
+        "extends": ["base_print"],
         "Common.filter": [],
         "Common.filter_in": [
             ".*?\\.tmp$",
@@ -62,7 +73,7 @@
         ]
     },
     "apache_linux": {
-        "extends": ["base", "print_graphs"],
+        "extends": ["base_print"],
         "Common.filter": [
             "/tmp/.*"
         ],
