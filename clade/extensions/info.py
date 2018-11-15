@@ -196,6 +196,8 @@ class Info(Extension):
                         else:
                             temp_fh.write(line)
 
+        del seen
+
         os.remove(file)
         os.rename(file + ".temp", file)
 
