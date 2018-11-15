@@ -93,7 +93,6 @@ class Info(Extension):
             shutil.rmtree(self.temp_dir)
 
         if not [file for file in self.files if os.path.exists(file)]:
-            shutil.rmtree(self.work_dir)
             raise RuntimeError("Can't find CIF output - it means that CIF most likely failed on every CC command")
 
         self.__normalize_cif_output(cmds_file)
