@@ -40,6 +40,8 @@ class Macros(Extension):
         self.log("Dump parsed data")
         self.dump_data_by_key(self.define, self.define_folder)
         self.dump_data_by_key(self.expand, self.expand_folder)
+        self.define.clear()
+        self.expand.clear()
         self.log("Finish")
 
     def __process_macros_definitions(self):

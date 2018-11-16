@@ -77,6 +77,7 @@ class CmdGraph(Extension):
         else:
             self.warning("Command graph is empty")
 
+        self.graph.clear()
         self.log("Constructing finished")
 
     def __add_to_graph(self, cmd, src, out_dict=dict()):

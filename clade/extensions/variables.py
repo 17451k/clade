@@ -47,6 +47,8 @@ class Variables(Callgraph):
         self.log("Dump parsed data")
         self.dump_data_by_key(self.variables, self.variables_folder)
         self.dump_data(self.used_in_vars, self.used_in_vars_file, indent=4)
+        self.variables.clear()
+        self.used_in_vars.clear()
         self.log("Finish")
 
     # TODO: Remove this as problem with ujson dump will be solved

@@ -33,6 +33,7 @@ class Typedefs(Extension):
     def parse(self, cmds_file):
         self.__process_typedefs()
         self.dump_data_by_key(self.typedefs, self.typedefs_folder)
+        self.typedefs.clear()
         self.log("Finish")
 
     def __process_typedefs(self):

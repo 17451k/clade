@@ -57,6 +57,8 @@ class Callgraph(Extension):
         self.dump_data(self.callgraph, self.callgraph_file)
         self.dump_data(self.calls_by_ptr, self.calls_by_ptr_file)
         self.dump_data(self.used_in, self.used_in_file)
+        self.callgraph.clear()
+        self.used_in.clear()
         self.log("Finish")
 
     def load_callgraph(self, files=None):

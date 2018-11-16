@@ -55,6 +55,7 @@ class SrcGraph(Extension):
         if not self.src_graph:
             self.warning("Source graph is empty")
 
+        self.src_graph.clear()
         self.log("Constructing finished")
 
     def __generate_src_graph(self, cmds_file):

@@ -13,9 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from graphviz import Digraph
 import os
 import sys
+
+from graphviz import Digraph
 
 from clade.cmds import iter_cmds, open_cmds_file
 from clade.extensions.abstract import Extension
@@ -51,6 +52,8 @@ class PidGraph(Extension):
             if self.conf.get("PidGraph.as_picture"):
                 self.__print_pid_graph(cmds_file)
 
+        self.graph.clear()
+        self.pid_by_id.clear()
         self.log("Constructing finished")
 
     def __print_pid_graph(self, cmds_file, reduced=False):
@@ -78,12 +81,9 @@ class PidGraph(Extension):
         return self.load_data(self.pid_by_id_file)
 
     def filter_cmds_by_pid(self, cmds):
-        graph = self.graph
-        if not graph:
-            graph = self.load_pid_graph()
+        graph = self.load_pid_graph()
 
         parsed_ids = set()
-
         filtered_cmds = []
 
         for cmd in sorted(cmds, key=lambda x: int(x["id"])):
