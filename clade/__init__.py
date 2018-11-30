@@ -47,7 +47,7 @@ class Clade():
         Fix logging
     """
     def __init__(self, work_dir="clade", cmds_file="cmds.txt", conf=None, preset="base"):
-        self.work_dir = os.path.abspath(work_dir)
+        self.work_dir = os.path.abspath(str(work_dir))
         self.cmds_file = os.path.abspath(cmds_file)
         self.conf = conf
         self.preset = preset
