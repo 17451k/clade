@@ -42,10 +42,11 @@ class Extension(metaclass=abc.ABCMeta):
         work_dir: A path to the working directory where all output files will be stored
         cmds: A list with intercepted build commands
         conf: A dictionary with optional arguments
+        preset: Name of one of the available preset configurations
 
     Raises:
         NotImplementedError: Required subclass is not found
-        FileNotFoundError: Cant find file with parsed build command
+        FileNotFoundError: Cant find file with the build commands
     """
 
     def __init__(self, work_dir, conf=None, preset="base"):

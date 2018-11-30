@@ -190,12 +190,17 @@ class Common(Extension, metaclass=abc.ABCMeta):
 
         self.dump_data(merged_cmds, "cmds.json")
 
-    def load_all_cmds(self, filter_by_pid=True):
+    def load_all_cmds(self, with_opts=True, filter_by_pid=True):
         """Load all parsed commands."""
         cmds = self.load_data("cmds.json")
 
         if filter_by_pid and self.conf.get("PidGraph.filter_cmds_by_pid", True):
-            return self.extensions["PidGraph"].filter_cmds_by_pid(cmds)
+            cmds = self.extensions["PidGraph"].filter_cmds_by_pid(cmds)
+
+        if with_opts:
+            for cmd in cmds:
+                if "opts" not in cmd:
+                    cmd["opts"] = self.load_opts_by_id(cmd["id"])
 
         return cmds
 

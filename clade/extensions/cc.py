@@ -121,15 +121,13 @@ class CC(Common):
         return True
 
     def load_all_cmds(self, filter_by_pid=True, with_opts=True, with_deps=False, compile_only=False):
-        cmds = super().load_all_cmds(filter_by_pid=filter_by_pid)
+        cmds = super().load_all_cmds(with_opts=with_opts, filter_by_pid=filter_by_pid)
 
         # compile only - ignore linker commands, like gcc func.o main.o -o main
         for cmd in cmds:
             if compile_only and not self.is_a_compilation_command(cmd):
                 continue
 
-            if with_opts:
-                cmd["opts"] = self.load_opts_by_id(cmd["id"])
             if with_deps:
                 cmd["deps"] = self.load_deps_by_id(cmd["id"])
 

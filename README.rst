@@ -477,8 +477,8 @@ This information is stored in the *command graph* and can be obtained using
 
 To appear in the *command graph* an intercepted command needs to be parsed
 to search for input and output files.
-By default only commands parsed by *CC*, *LD* and *MV* extensions
-are parsed and appeared in the *command graph*.
+By default commands parsed by *CC*, *LD*, *MV*, "AR", "AS", "Objcopy"
+extensions are parsed and appeared in the *command graph*.
 This behavior can be changed via configuration, which will be described below.
 
 

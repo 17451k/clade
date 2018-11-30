@@ -27,10 +27,11 @@ class SrcGraph(Extension):
         super().__init__(work_dir, conf, preset)
 
         self.src_graph = dict()
-        self.src_sizes = dict()
         self.src_graph_file = "src_graph.json"
         self.src_graph_folder = "src_graph"
-        self.src_sizes_file = "short_src_graph.json"
+
+        self.src_sizes = dict()
+        self.src_sizes_file = "src_sizes.json"
 
     def load_src_graph(self, files=None):
         """Load source graph."""
@@ -66,10 +67,7 @@ class SrcGraph(Extension):
 
         src = self.get_build_cwd(cmds_file)
 
-        for cmd in self.extensions["CmdGraph"].load_all_cmds_by_type("CC"):
-            if not self.extensions["CC"].is_a_compilation_command(cmd):
-                continue
-
+        for cmd in self.extensions["CC"].load_all_cmds(compile_only=True):
             cmd_id = str(cmd["id"])
 
             # used_by is a list of commands that use (possibly indirectly) output of the command with ID=cmd_id
@@ -80,17 +78,11 @@ class SrcGraph(Extension):
 
                 if rel_in not in self.src_graph:
                     self.src_graph[rel_in] = self.__get_new_value()
-                    self.src_graph[rel_in]["loc"] = self.__estimate_loc_size(os.path.join(src, rel_in))
+                    self.src_sizes[rel_in] = self.__estimate_loc_size(os.path.join(src, rel_in))
 
                 # compiled_in is a list of commands that compile 'rel_in' source file
                 self.src_graph[rel_in]["compiled_in"].add(cmd_id)
                 self.src_graph[rel_in]["used_by"].update(used_by)
-
-        for rel_in in self.src_graph:
-            self.src_sizes[rel_in] = {
-                "loc": self.src_graph[rel_in]["loc"]
-            }
-            del self.src_graph[rel_in]["loc"]
 
     def __find_used_by(self, cmd_graph, cmd_id):
         used_by = set()

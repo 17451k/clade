@@ -56,8 +56,10 @@ class CmdGraph(Extension):
 
         return cmds
 
-    def load_all_cmds_by_type(self, type, filter_by_pid=False):
-        return [cmd for cmd in self.load_all_cmds(filter_by_pid=filter_by_pid) if cmd["type"] == type]
+    def load_all_cmds_by_type(self, cmd_type, filter_by_pid=True):
+        ext_obj = self.get_ext_obj(cmd_type)
+
+        return ext_obj.load_all_cmds(filter_by_pid=filter_by_pid)
 
     @Extension.prepare
     def parse(self, cmds_file):
@@ -87,8 +89,8 @@ class CmdGraph(Extension):
 
         for cmd_in in (i for i in normalize_paths(cmd["in"], cmd["cwd"], src) if i in out_dict):
             in_id = out_dict[cmd_in]
-            self.graph[in_id]["used_by"].append(out_id)
-            self.graph[out_id]["using"].append(in_id)
+            self.graph[in_id]["used_by"].add(out_id)
+            self.graph[out_id]["using"].add(in_id)
 
         # Rewrite out_dict[cmd_out] values to keep the latest used command id
         for cmd_out in normalize_paths(cmd["out"], cmd["cwd"], src):
@@ -123,10 +125,16 @@ class CmdGraph(Extension):
     @staticmethod
     def __get_new_value(cmd_type):
         return {
-            "used_by": list(),
-            "using": list(),
+            "used_by": set(),
+            "using": set(),
             "type": cmd_type
         }
+
+    def get_ext_obj(self, ext_name):
+        if ext_name not in self.extensions:
+            raise RuntimeError("{!r} extension was not executed during command graph constructing".format(ext_name))
+
+        return self.extensions[ext_name]
 
 
 def main(args=sys.argv[1:]):

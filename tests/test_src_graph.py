@@ -30,7 +30,7 @@ def test_src_graph(tmpdir, cmds_file):
 
     file_sizes = c.load_src_sizes()
     assert file_sizes
-    assert file_sizes[test_file]["loc"] == 11
+    assert file_sizes[test_file] == 11
 
     graph_part = c.load_src_graph([test_file])
     assert graph_part

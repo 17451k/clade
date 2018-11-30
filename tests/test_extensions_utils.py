@@ -13,9 +13,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
+
 from clade.extensions.cc import CC
 from clade.extensions.utils import common_main
 
 
-def test_extensions_utils(tmpdir, cmds_file):
+def test_common_main(tmpdir, cmds_file):
     common_main(CC, ["-w", str(tmpdir), cmds_file])
+
+
+def test_common_main_bad_conf(tmpdir, cmds_file):
+    with pytest.raises(SystemExit):
+        common_main(CC, ["-w", str(tmpdir), "-c", "does_not_exist.conf", cmds_file])
+
+
+def test_common_main_bad_preset(tmpdir, cmds_file):
+    with pytest.raises(SystemExit):
+        common_main(CC, ["-w", str(tmpdir), "-p", "does_not_exist", cmds_file])

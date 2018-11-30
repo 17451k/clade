@@ -35,7 +35,8 @@ class Interceptor():
         command: A list of strings representing build command to run and intercept
         output: A path to the file where intercepted commands will be saved
         debug: A boolean enabling debug logging messages
-        fallback: A boolean enableing fallback intercepting mode
+        fallback: A boolean enabling fallback intercepting mode
+        append: A boolean allowing to append intercepted commands to already existing file with commands
 
     Raises:
         NotImplementedError: Clade is launched on Windows
@@ -169,7 +170,7 @@ class Interceptor():
         return env
 
     def execute(self):
-        """Execute intercepting and parsing of build commands.
+        """Execute intercepting of build commands.
 
         Returns:
             0 if everything went successful and error code otherwise
