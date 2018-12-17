@@ -27,7 +27,6 @@ from clade.cmds import get_last_id
 LIB = os.path.join(os.path.dirname(__file__), "libinterceptor", "lib")
 LIB64 = os.path.join(os.path.dirname(__file__), "libinterceptor", "lib64")
 
-
 class Interceptor():
     """Object for intercepting and parsing build commands.
 
@@ -46,9 +45,9 @@ class Interceptor():
     def __init__(self, command=[], output="cmds.txt", debug=False, fallback=False, append=False):
         self.command = command
         self.output = os.path.abspath(output)
-        self.debug = debug
         self.fallback = fallback
         self.append = append
+        self.logger = self.__setup_logger(debug)
 
         if self.fallback:
             self.wrapper = self.__find_wrapper()
@@ -59,6 +58,17 @@ class Interceptor():
             os.remove(self.output)
 
         self.env = self.__setup_env()
+
+    def __setup_logger(self, debug):
+        logger = logging.getLogger("Clade-intercept")
+
+        handler = logging.StreamHandler(stream=sys.stdout)
+        handler.setFormatter(logging.Formatter("%(asctime)s clade Intercept: %(message)s", "%H:%M:%S"))
+
+        logger.addHandler(handler)
+        logger.setLevel(logging.DEBUG if debug else logging.INFO)
+
+        return logger
 
     def __find_libinterceptor(self):
         if sys.platform == "linux":
@@ -83,9 +93,9 @@ class Interceptor():
 
         if os.path.exists(path) and os.path.exists(path64):
             libinterceptor = libinterceptor_name
-            logging.debug("Path to libinterceptor library locations: {!r}, {!r}".format(path, path64))
+            self.logger.debug("Path to libinterceptor library locations: {!r}, {!r}".format(path, path64))
         else:
-            logging.debug("Path to libinterceptor library location: {!r}".format(libinterceptor))
+            self.logger.debug("Path to libinterceptor library location: {!r}".format(libinterceptor))
 
         return libinterceptor
 
@@ -95,7 +105,7 @@ class Interceptor():
         if not os.path.exists(libinterceptor):
             raise RuntimeError("libinterceptor is not found in {!r}".format(libinterceptor))
 
-        logging.debug("Path to libinterceptor library location: {!r}".format(libinterceptor))
+        self.logger.debug("Path to libinterceptor library location: {!r}".format(libinterceptor))
 
         return libinterceptor
 
@@ -105,13 +115,13 @@ class Interceptor():
         if not os.path.exists(wrapper):
             raise RuntimeError("wrapper is not found in {!r}".format(wrapper))
 
-        logging.debug("Path to the wrapper: {!r}".format(wrapper))
+        self.logger.debug("Path to the wrapper: {!r}".format(wrapper))
 
         return wrapper
 
     def __crete_wrappers(self):
         clade_bin = tempfile.mkdtemp()
-        logging.debug("Create temporary directory for wrappers: {!r}".format(clade_bin))
+        self.logger.debug("Create temporary directory for wrappers: {!r}".format(clade_bin))
 
         if os.path.exists(clade_bin):
             shutil.rmtree(clade_bin)
@@ -121,7 +131,7 @@ class Interceptor():
         paths = os.environ.get("PATH", "").split(os.pathsep)
 
         counter = 0
-        logging.debug("Walk through every directory in PATH to create wrappers: {!r}".format(paths))
+        self.logger.debug("Walk through every directory in PATH to create wrappers: {!r}".format(paths))
         for path in paths:
             try:
                 for file in os.listdir(path):
@@ -134,7 +144,7 @@ class Interceptor():
             except FileNotFoundError:
                 continue
 
-        logging.debug("{} wrappers were created".format(counter))
+        self.logger.debug("{} wrappers were created".format(counter))
 
         return clade_bin
 
@@ -143,22 +153,22 @@ class Interceptor():
 
         if not self.fallback:
             if sys.platform == "darwin":
-                logging.debug("Set 'DYLD_INSERT_LIBRARIES' environment variable value")
+                self.logger.debug("Set 'DYLD_INSERT_LIBRARIES' environment variable value")
                 env["DYLD_INSERT_LIBRARIES"] = self.libinterceptor
                 env["DYLD_FORCE_FLAT_NAMESPACE"] = "1"
             elif sys.platform == "linux":
-                logging.debug("Set 'LD_PRELOAD' environment variable value")
+                self.logger.debug("Set 'LD_PRELOAD' environment variable value")
                 env["LD_PRELOAD"] = self.libinterceptor
         else:
             env["PATH"] = self.__crete_wrappers() + ":" + os.environ.get("PATH", "")
-            logging.debug("Add directory with wrappers to PATH")
+            self.logger.debug("Add directory with wrappers to PATH")
 
-        logging.debug("Set 'CLADE_INTERCEPT' environment variable value")
+        self.logger.debug("Set 'CLADE_INTERCEPT' environment variable value")
         env["CLADE_INTERCEPT"] = self.output
 
         if sys.platform == "linux":
             env["LD_LIBRARY_PATH"] = env.get("LD_LIBRARY_PATH", "") + ":" + LIB64 + ":" + LIB
-            logging.debug("Set LD_LIBRARY_PATH environment variable value as {!r}".format(env["LD_LIBRARY_PATH"]))
+            self.logger.debug("Set LD_LIBRARY_PATH environment variable value as {!r}".format(env["LD_LIBRARY_PATH"]))
 
         # Prepare environment variables for PID graph
         last_used_id = get_last_id(self.output)
@@ -177,7 +187,7 @@ class Interceptor():
         """
 
         shell_command = " ".join([shlex.quote(x) for x in self.command])
-        logging.debug("Execute {!r} command with the following environment: {!r}".format(shell_command, self.env))
+        self.logger.debug("Execute {!r} command with the following environment: {!r}".format(shell_command, self.env))
         return subprocess.call(shell_command, env=self.env, shell=True)
 
 
@@ -200,12 +210,6 @@ def parse_args(args):
 
 def main(args=sys.argv[1:]):
     args = parse_args(args)
-
-    logging.basicConfig(format="%(asctime)s {}: %(message)s".format(os.path.basename(sys.argv[0])),
-                        level=logging.DEBUG if args.debug else logging.INFO,
-                        datefmt="%H:%M:%S")
-
-    logging.debug("Parsed command line arguments: {}".format(args))
 
     i = Interceptor(command=args.command, output=args.output, debug=args.debug,
                     fallback=args.fallback, append=args.append)
