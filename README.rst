@@ -45,6 +45,12 @@ need to install some prerequisites beforehand:
 
 - Python 3 (>=3.4)
 - pip (Python package manager)
+- cmake (>=3.3)
+- make
+- C **and** C++ compiler (gcc or clang)
+- *Linux only*: python3-dev (Ubuntu) or python3-devel (openSUSE) package
+- *Linux only*: gcc-multilib (Ubuntu) or gcc-32bit (openSUSE) package
+  to intercept build commands of projects leveraging multilib capabilities
 
 Optional dependencies:
 
@@ -57,15 +63,6 @@ Optional dependencies:
 .. _CIF: https://github.com/17451k/cif
 .. _Aspectator: https://github.com/17451k/aspectator
 .. _CIF releases: https://github.com/17451k/cif/releases
-
-Development dependencies:
-
-- cmake (>=3.3)
-- make
-- C **and** C++ compiler (gcc or clang)
-- *Linux only*: python3-dev (Ubuntu) or python3-devel (openSUSE) package
-- *Linux only*: gcc-multilib (Ubuntu) or gcc-32bit (openSUSE) package
-  to intercept build commands of projects leveraging multilib capabilities
 
 Clade works on Linux and macOS.
 Partial support for Windows will be implemented soon.
