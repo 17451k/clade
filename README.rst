@@ -44,7 +44,7 @@ It will be performed automatically at the installation stage, but you will
 need to install some prerequisites beforehand:
 
 - Python 3 (>=3.4)
-- pip (Pythonpackage manager)
+- pip (Python package manager)
 
 Optional dependencies:
 
