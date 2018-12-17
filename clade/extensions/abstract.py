@@ -30,10 +30,9 @@ from clade.extensions.utils import merge_preset_to_conf
 
 # Setup extensions logger
 logger = logging.getLogger("Clade")
-if not logger.hasHandlers():
-    handler = logging.StreamHandler(stream=sys.stdout)
-    handler.setFormatter(logging.Formatter("%(asctime)s clade %(message)s", "%H:%M:%S"))
-    logger.addHandler(handler)
+handler = logging.StreamHandler(stream=sys.stdout)
+handler.setFormatter(logging.Formatter("%(asctime)s clade %(message)s", "%H:%M:%S"))
+logger.addHandler(handler)
 
 
 class Extension(metaclass=abc.ABCMeta):
