@@ -77,7 +77,7 @@ class Clade():
         self._CDB = None
         self._cdb = None
 
-    def intercept(self, command, append=False, fallback=False):
+    def intercept(self, command, cwd=os.getcwd(), append=False, fallback=False):
         """Execute intercepting of build commands.
 
         Args:
@@ -89,7 +89,7 @@ class Clade():
             0 if everything went successful and error code otherwise
         """
 
-        i = Interceptor(command=command, output=self.cmds_file, append=append, fallback=fallback)
+        i = Interceptor(command=command, cwd=cwd, output=self.cmds_file, append=append, fallback=fallback)
         return i.execute()
 
     def parse_all(self, cmds_file=None):

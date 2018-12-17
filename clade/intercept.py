@@ -42,8 +42,9 @@ class Interceptor():
         RuntimeError: Clade installation is corrupted, or intercepting process failed
     """
 
-    def __init__(self, command=[], output="cmds.txt", debug=False, fallback=False, append=False):
+    def __init__(self, command=[], cwd=os.getcwd(), output="cmds.txt", debug=False, fallback=False, append=False):
         self.command = command
+        self.cwd = cwd
         self.output = os.path.abspath(output)
         self.fallback = fallback
         self.append = append
@@ -188,7 +189,7 @@ class Interceptor():
 
         shell_command = " ".join([shlex.quote(x) for x in self.command])
         self.logger.debug("Execute {!r} command with the following environment: {!r}".format(shell_command, self.env))
-        return subprocess.call(shell_command, env=self.env, shell=True)
+        return subprocess.call(shell_command, env=self.env, shell=True, cwd=self.cwd)
 
 
 def parse_args(args):
