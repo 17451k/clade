@@ -506,6 +506,7 @@ class Clade():
 
         return self._CDB
 
+    @property
     def compilation_database(self):
         """List of commands that represent compilation database."""
         if not self._cdb:

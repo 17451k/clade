@@ -7,7 +7,6 @@
         "CC.store_deps": true,
         "CC.with_system_header_files": true,
         "CmdGraph.requires": ["AR", "AS", "CC", "LD", "MV", "Objcopy"],
-        "CDB.output": "compile_commands.json",
         "CmdGraph.as_picture": false,
         "Common.filter": [],
         "Common.filter_in": [],

@@ -15,6 +15,7 @@
 
 import argparse
 import os
+import shutil
 import sys
 import tempfile
 
@@ -33,7 +34,8 @@ class CDB(Extension):
         super().__init__(work_dir, conf, preset)
 
         self.cdb = []
-        self.cdb_file = os.path.abspath(self.conf.get("CDB.output", "compile_commands.json"))
+        # DO NOT put CDB.output option to the presets file
+        self.cdb_file = self.conf.get("CDB.output", os.path.join(self.work_dir, "compile_commands.json"))
 
     @Extension.prepare
     def parse(self, cmds_file):
@@ -67,7 +69,7 @@ class CDB(Extension):
         return self.load_data(self.cdb_file)
 
 
-def parse_args(args):
+def parse_args(args, work_dir):
     parser = argparse.ArgumentParser()
 
     parser.add_argument("-o", "--output", help="a path to the FILE where compilation database will be saved", metavar='FILE', default="compile_commands.json")
@@ -81,17 +83,19 @@ def parse_args(args):
         sys.exit("Build command is missing")
 
     if not args.cmds_file:
-        args.cmds_file = os.path.join(tempfile.mkdtemp(), "cmds.txt")
+        args.cmds_file = os.path.join(work_dir, "cmds.txt")
 
     return args
 
 
 def main(args=sys.argv[1:]):
-    args = parse_args(args)
+    work_dir = tempfile.mkdtemp()
+    args = parse_args(args, work_dir)
 
     if args.command:
-        i = Interceptor(command=args.command, output=args.cmds_file, debug="ERROR", fallback=args.fallback)
+        i = Interceptor(command=args.command, output=args.cmds_file, fallback=args.fallback)
         i.execute()
 
-    c = CDB(tempfile.mkdtemp(), conf={"CDB.output": args.output})
+    c = CDB(work_dir, conf={"CDB.output": os.path.abspath(args.output)})
     c.parse(args.cmds_file)
+    shutil.rmtree(work_dir)
