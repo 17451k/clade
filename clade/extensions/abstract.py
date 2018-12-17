@@ -28,6 +28,14 @@ import clade.cmds
 from clade.extensions.utils import merge_preset_to_conf
 
 
+# Setup extensions logger
+logger = logging.getLogger("Clade")
+if not logger.hasHandlers():
+    handler = logging.StreamHandler(stream=sys.stdout)
+    handler.setFormatter(logging.Formatter("%(asctime)s clade %(message)s", "%H:%M:%S"))
+    logger.addHandler(handler)
+
+
 class Extension(metaclass=abc.ABCMeta):
     """Parent interface class for parsing intercepted build commands.
 
@@ -54,24 +62,13 @@ class Extension(metaclass=abc.ABCMeta):
 
         self.extensions = dict()
 
-        self.logger = self.__setup_logger()
+        logger.setLevel(self.conf.get("log_level", "INFO"))
 
         self.already_initialised = dict()
         self.already_initialised[self.name] = self
         self.init_extensions(work_dir)
 
         self.debug("Working directory: {}".format(self.work_dir))
-
-    def __setup_logger(self):
-        logger = logging.getLogger("Clade")
-
-        handler = logging.StreamHandler(stream=sys.stdout)
-        handler.setFormatter(logging.Formatter("%(asctime)s clade %(message)s", "%H:%M:%S"))
-
-        logger.addHandler(handler)
-        logger.setLevel(self.conf.get("log_level", "INFO"))
-
-        return logger
 
     def init_extensions(self, work_dir):
         """Initialise all extensions required by this object."""
@@ -233,7 +230,7 @@ class Extension(metaclass=abc.ABCMeta):
 
         self.conf["log_level"] must be set to INFO or DEBUG in order to see the message.
         """
-        self.logger.info("{}: {}".format(self.name, message))
+        logger.info("{}: {}".format(self.name, message))
 
     def debug(self, message):
         """Print debug message.
@@ -242,18 +239,18 @@ class Extension(metaclass=abc.ABCMeta):
 
         WARNING: debug messages can have a great impact on the performance.
         """
-        self.logger.debug("{}: {}".format(self.name, message))
+        logger.debug("{}: {}".format(self.name, message))
 
     def warning(self, message):
         """Print warning message.
 
         self.conf["log_level"] must be set to WARNING, INFO or DEBUG in order to see the message.
         """
-        self.logger.warning("{}: {}".format(self.name, message))
+        logger.warning("{}: {}".format(self.name, message))
 
     def error(self, message):
         """Print error message.
 
         self.conf["log_level"] must be set to ERROR, WARNING, INFO or DEBUG in order to see the message.
         """
-        self.logger.error("{}: {}".format(self.name, message))
+        logger.error("{}: {}".format(self.name, message))
