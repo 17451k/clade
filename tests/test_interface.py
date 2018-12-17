@@ -94,6 +94,16 @@ def test_src_graph(tmpdir, cmds_file):
     with pytest.raises(RuntimeError):
         assert c.get_file_size("this_file_does_not_exist.c")
 
+def test_pid_graph(tmpdir, cmds_file):
+    c = Clade(tmpdir, cmds_file)
+
+    assert c.pid_graph
+    assert c.pid_by_id
+
+    for cmd_id in c.cmd_ids:
+        assert cmd_id in c.pid_graph
+        assert cmd_id in c.pid_by_id
+
 
 def test_storage(tmpdir, cmds_file):
     c = Clade(tmpdir, cmds_file)
@@ -149,3 +159,9 @@ def test_get_macros_definitions(tmpdir, cmds_file):
     assert c.get_macros_definitions(macros_names=["ZERO", "WEIRD_ZERO"])
     assert not c.get_macros_definitions(macros_names=["ZERO2"])
     assert c.get_macros_definitions()
+
+
+def test_cdb(tmpdir, cmds_file):
+    c = Clade(tmpdir, cmds_file)
+
+    assert c.compilation_database

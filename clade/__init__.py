@@ -18,10 +18,12 @@ import sys
 
 from clade.intercept import Interceptor
 from clade.extensions.abstract import Extension
+from clade.extensions.cdb import CDB
 from clade.extensions.functions import Functions
 from clade.extensions.callgraph import Callgraph
 from clade.extensions.cmd_graph import CmdGraph
 from clade.extensions.macros import Macros
+from clade.extensions.pid_graph import PidGraph
 from clade.extensions.src_graph import SrcGraph
 from clade.extensions.storage import Storage
 from clade.extensions.typedefs import Typedefs
@@ -59,6 +61,10 @@ class Clade():
         self._src_graph = None
         self._src_sizes = None
 
+        self._PidGraph = None
+        self._pid_graph = None
+        self._pid_by_id = None
+
         self._Storage = Storage(self.work_dir, self.conf, self.preset)
 
         self._Callgraph = None
@@ -67,6 +73,9 @@ class Clade():
         self._Functions = None
         self._functions = None
         self._functions_by_file = None
+
+        self._CDB = None
+        self._cdb = None
 
     def intercept(self, command, append=False, fallback=False):
         """Execute intercepting of build commands.
@@ -124,7 +133,7 @@ class Clade():
 
     @property
     def cmd_graph(self):
-        """Command graph that connect commands by their input and output files."""
+        """Command graph connects commands by their input and output files."""
         if not self._cmd_graph:
             self._cmd_graph = self.CmdGraph.load_cmd_graph()
 
@@ -284,6 +293,36 @@ class Clade():
             file: A name of the source file from the source graph
         """
         return (self.get_cmd(cmd_id) for cmd_id in self.get_compilation_cmds_ids_by_file(file))
+
+    @property
+    def PidGraph(self):
+        """Object of "PidGraph" extension."""
+        if not self._PidGraph:
+            self._PidGraph = PidGraph(self.work_dir, self.conf, self.preset)
+
+        if not self._PidGraph.is_parsed():
+            self.parse("PidGraph")
+
+        return self._PidGraph
+
+    @property
+    def pid_graph(self):
+        """Pid graph connects parent and child commands by their identifiers."""
+        if not self._pid_graph:
+            self._pid_graph = self.PidGraph.load_pid_graph()
+
+        return self._pid_graph
+
+    @property
+    def pid_by_id(self):
+        """Dictionary
+
+        For a given command identifier it can show which command is its parent.
+        """
+        if not self._pid_by_id:
+            self._pid_by_id = self.PidGraph.load_pid_by_id()
+
+        return self._pid_by_id
 
     @property
     def storage_dir(self):
@@ -456,6 +495,23 @@ class Clade():
 
         return v.load_used_in_vars()
 
+    @property
+    def CDB(self):
+        """Object of "CDB" extension."""
+        if not self._CDB:
+            self._CDB = CDB(self.work_dir, self.conf, self.preset)
+
+        if not self._CDB.is_parsed():
+            self.parse("CDB")
+
+        return self._CDB
+
+    def compilation_database(self):
+        """List of commands that represent compilation database."""
+        if not self._cdb:
+            self._cdb = self.CDB.load_cdb()
+
+        return self._cdb
 
 def main(args=sys.argv[1:]):
     conf = parse_args(args)
