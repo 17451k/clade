@@ -25,15 +25,46 @@
 #include "which.h"
 
 int main(int argc, char **argv, char **envp) {
-    char *path = strstr(strdup(getenv("PATH")), WHICH_DELIMITER);
-    char *which = which_path(basename(argv[0]), path);
+    char *original_exe = malloc(strlen(argv[0]) + strlen(".clade"));
+    sprintf(original_exe, "%s%s", argv[0], ".clade");
 
-    if (!which)
-        return -1;
+    /* First case: original executable file was renamed
+     * (.clade extension was added to its name)
+     * and symlink to the wrapper was added instead.
+     */
+    if(access(original_exe, F_OK) != -1) {
+        // Intercept call only if clade-intercept is working
+        if (getenv("CLADE_INTERCEPT")) {
+            char *which = realpath(original_exe, NULL);
 
-    intercept_call(which, (char const *const *)argv);
+            if (which) {
+                // strip .clade extension
+                which[strlen(which) - 6] = 0;
 
-    // First argument must be a valid path, not just a filename
-    argv[0] = which;
-    return execve(which, argv, envp);
+                intercept_call(which, (char const *const *)argv);
+            } else {
+                return -1;
+            }
+        }
+
+        // First argument must be a valid path, not just a filename
+        argv[0] = original_exe;
+        // Execute original file
+        return execve(original_exe, argv, envp);
+    } else {
+        // Otherwise directory with wrappers is located in the PATH variable
+        char *path = strstr(strdup(getenv("PATH")), WHICH_DELIMITER);
+        char *which = which_path(basename(argv[0]), path);
+
+        if (!which)
+            return -1;
+
+        intercept_call(which, (char const *const *)argv);
+
+        // First argument must be a valid path, not just a filename
+        argv[0] = which;
+        return execve(which, argv, envp);
+    }
+
+    return -1;
 }

@@ -15,4 +15,4 @@ target_link_libraries(interceptor ${CMAKE_DL_LIBS} which data env)
 add_executable(wrapper wrapper.c)
 target_link_libraries(wrapper which data env)
 
-set_target_properties(data which interceptor which env PROPERTIES C_STANDARD 11)
+set_target_properties(data which env interceptor wrapper PROPERTIES C_STANDARD 11)

@@ -68,6 +68,20 @@ def merge_preset_to_conf(preset_name, conf):
     return preset_conf
 
 
+def load_conf_file(file_name):
+    conf = dict()
+
+    if file_name:
+        try:
+            with open(file_name, "r") as f:
+                conf = ujson.load(f)
+        except FileNotFoundError:
+            print("Configuration file is not found")
+            sys.exit(-1)
+
+    return conf
+
+
 def parse_args(args):
     parser = argparse.ArgumentParser()
 
@@ -79,15 +93,7 @@ def parse_args(args):
 
     args = parser.parse_args(args)
 
-    conf = dict()
-    if args.config:
-        try:
-            with open(args.config, "r") as f:
-                conf = ujson.load(f)
-        except FileNotFoundError:
-            print("Configuration file is not found")
-            sys.exit(-1)
-
+    conf = load_conf_file(args.config)
     conf["work_dir"] = conf.get("work_dir", args.work_dir)
     conf["log_level"] = conf.get("log_level", args.log_level)
     conf["cmds_file"] = conf.get("cmds_file", args.cmds_file)

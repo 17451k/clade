@@ -23,6 +23,7 @@ import sys
 import tempfile
 
 from clade.cmds import get_last_id
+from clade.extensions.utils import load_conf_file
 
 LIB = os.path.join(os.path.dirname(__file__), "libinterceptor", "lib")
 LIB64 = os.path.join(os.path.dirname(__file__), "libinterceptor", "lib64")
@@ -42,16 +43,18 @@ class Interceptor():
         RuntimeError: Clade installation is corrupted, or intercepting process failed
     """
 
-    def __init__(self, command=[], cwd=os.getcwd(), output="cmds.txt", debug=False, fallback=False, append=False):
+    def __init__(self, command=[], cwd=os.getcwd(), output="cmds.txt", debug=False, fallback=False, append=False, conf=None):
         self.command = command
         self.cwd = cwd
         self.output = os.path.abspath(output)
         self.fallback = fallback
         self.append = append
+        self.conf = conf if conf else dict()
         self.logger = self.__setup_logger(debug)
 
         if self.fallback:
             self.wrapper = self.__find_wrapper()
+            self.wrappers_dir = tempfile.mkdtemp()
         else:
             self.libinterceptor = self.__find_libinterceptor()
 
@@ -120,14 +123,20 @@ class Interceptor():
 
         return wrapper
 
-    def __crete_wrappers(self):
-        clade_bin = tempfile.mkdtemp()
-        self.logger.debug("Create temporary directory for wrappers: {!r}".format(clade_bin))
+    def __create_wrappers(self):
+        if not self.fallback:
+            return
 
-        if os.path.exists(clade_bin):
-            shutil.rmtree(clade_bin)
+        self.__create_path_wrappers()
+        self.__create_exe_wrappers()
 
-        os.makedirs(clade_bin)
+    def __create_path_wrappers(self):
+        self.logger.debug("Create temporary directory for wrappers: {!r}".format(self.wrappers_dir))
+
+        if os.path.exists(self.wrappers_dir):
+            shutil.rmtree(self.wrappers_dir)
+
+        os.makedirs(self.wrappers_dir)
 
         paths = os.environ.get("PATH", "").split(os.pathsep)
 
@@ -138,16 +147,81 @@ class Interceptor():
                 for file in os.listdir(path):
                     if os.access(os.path.join(path, file), os.X_OK):
                         try:
-                            os.symlink(self.wrapper, os.path.join(clade_bin, file))
+                            os.symlink(self.wrapper, os.path.join(self.wrappers_dir, file))
                             counter += 1
                         except FileExistsError:
                             continue
             except FileNotFoundError:
                 continue
 
-        self.logger.debug("{} wrappers were created".format(counter))
+        self.logger.debug("{} path wrappers were created".format(counter))
 
-        return clade_bin
+    def __create_exe_wrappers(self):
+        wrap_list = self.conf.get("Interceptor.wrap_list", [])
+
+        for path in wrap_list:
+            if os.path.isfile(path):
+                self.__create_exe_wrapper(path)
+            if os.path.isdir(path):
+                if self.conf.get("Interceptor.recursive_wrap"):
+                    for root, _, filenames in os.walk(path):
+                        for filename in filenames:
+                            self.__create_exe_wrapper(os.path.join(root, filename))
+                else:
+                    for file in os.listdir(path):
+                        self.__create_exe_wrapper(os.path.join(path, file))
+
+    def __create_exe_wrapper(self, path):
+        if not(os.path.isfile(path) and os.access(path, os.X_OK) and not os.path.basename(path) == "wrapper"):
+            return
+
+        self.logger.debug("Create exe wrapper: {!r}".format(path))
+
+        try:
+            os.rename(path, path + ".clade")
+            os.symlink(self.wrapper, path)
+        except PermissionError:
+            self.logger.warning("You do not have permissions to modify {!r}".format(path))
+        except Exception as e:
+            self.logger.warning(e)
+
+    def __delete_wrappers(self):
+        if not self.fallback:
+            return
+
+        self.logger.debug("Delete temporary directory with wrappers: {!r}".format(self.wrappers_dir))
+        if os.path.exists(self.wrappers_dir):
+            shutil.rmtree(self.wrappers_dir)
+
+        self.logger.debug("Delete all other wrapper files")
+        wrap_list = self.conf.get("Interceptor.wrap_list", [])
+
+        for path in wrap_list:
+            if os.path.isfile(path):
+                self.__delete_exe_wrapper(path)
+            elif os.path.isdir(path):
+                if self.conf.get("Interceptor.recursive_wrap"):
+                    for root, _, filenames in os.walk(path):
+                        for filename in filenames:
+                            self.__delete_exe_wrapper(os.path.join(root, filename))
+                else:
+                    for file in os.listdir(path):
+                        self.__delete_exe_wrapper(os.path.join(path, file))
+
+    def __delete_exe_wrapper(self, path):
+        if not(os.path.isfile(path) and os.access(path, os.X_OK) and not path.endswith(".clade")):
+            return
+
+        self.logger.debug("Delete exe wrapper: {!r}".format(path))
+
+        try:
+            if os.path.isfile(path + ".clade"):
+                os.remove(path)
+                os.rename(path + ".clade", path)
+        except PermissionError:
+            return
+        except Exception as e:
+            self.logger.warning(e)
 
     def __setup_env(self):
         env = dict(os.environ)
@@ -161,7 +235,7 @@ class Interceptor():
                 self.logger.debug("Set 'LD_PRELOAD' environment variable value")
                 env["LD_PRELOAD"] = self.libinterceptor
         else:
-            env["PATH"] = self.__crete_wrappers() + ":" + os.environ.get("PATH", "")
+            env["PATH"] = self.wrappers_dir + ":" + os.environ.get("PATH", "")
             self.logger.debug("Add directory with wrappers to PATH")
 
         self.logger.debug("Set 'CLADE_INTERCEPT' environment variable value")
@@ -187,9 +261,14 @@ class Interceptor():
             0 if everything went successful and error code otherwise
         """
 
-        shell_command = " ".join([shlex.quote(x) for x in self.command])
-        self.logger.debug("Execute {!r} command with the following environment: {!r}".format(shell_command, self.env))
-        return subprocess.call(shell_command, env=self.env, shell=True, cwd=self.cwd)
+        try:
+            self.__create_wrappers()
+
+            shell_command = " ".join([shlex.quote(x) for x in self.command])
+            self.logger.debug("Execute {!r} command with the following environment: {!r}".format(shell_command, self.env))
+            return subprocess.call(shell_command, env=self.env, shell=True, cwd=self.cwd)
+        finally:
+            self.__delete_wrappers()
 
 
 def parse_args(args):
@@ -199,6 +278,7 @@ def parse_args(args):
     parser.add_argument("-d", "--debug", help="enable debug logging messages", action="store_true")
     parser.add_argument("-f", "--fallback", help="enable fallback intercepting mode", action="store_true")
     parser.add_argument("-a", "--append", help="append intercepted commands to existing cmds.txt file", action="store_true")
+    parser.add_argument("-c", "--config", help="a path to the JSON file with configuration", metavar='JSON', default=None)
     parser.add_argument(dest="command", nargs=argparse.REMAINDER, help="build command to run and intercept")
 
     args = parser.parse_args(args)
@@ -213,7 +293,7 @@ def main(args=sys.argv[1:]):
     args = parse_args(args)
 
     i = Interceptor(command=args.command, output=args.output, debug=args.debug,
-                    fallback=args.fallback, append=args.append)
+                    fallback=args.fallback, append=args.append, conf=load_conf_file(args.config))
     sys.exit(i.execute())
 
 
