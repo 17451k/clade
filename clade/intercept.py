@@ -162,7 +162,7 @@ class Interceptor():
         for path in wrap_list:
             if os.path.isfile(path):
                 self.__create_exe_wrapper(path)
-            if os.path.isdir(path):
+            elif os.path.isdir(path):
                 if self.conf.get("Interceptor.recursive_wrap"):
                     for root, _, filenames in os.walk(path):
                         for filename in filenames:
@@ -170,6 +170,9 @@ class Interceptor():
                 else:
                     for file in os.listdir(path):
                         self.__create_exe_wrapper(os.path.join(path, file))
+            else:
+                self.logger.error("{!r} file or directory from 'Interceptor.wrap_list' option does not exist".format(path))
+                sys.exit(-1)
 
     def __create_exe_wrapper(self, path):
         if not(os.path.isfile(path) and os.access(path, os.X_OK) and not os.path.basename(path) == "wrapper"):

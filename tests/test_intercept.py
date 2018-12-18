@@ -55,6 +55,32 @@ def test_fallback(tmpdir):
     assert calculate_loc(output) > 1
 
 
+def test_fallback_with_exe_wrappers(tmpdir):
+    output = os.path.join(str(tmpdir), "cmds.txt")
+    conf = {"Interceptor.wrap_list": [os.path.dirname(__file__), __file__],
+            "Interceptor.recursive_wrap": False}
+
+    i = Interceptor(command=test_project_make, output=output, fallback=True, conf=conf)
+    i.execute()
+
+    assert not i.execute()
+    assert os.path.isfile(output)
+    assert calculate_loc(output) > 1
+
+
+def test_fallback_with_exe_wrappers_recursive(tmpdir):
+    output = os.path.join(str(tmpdir), "cmds.txt")
+    conf = {"Interceptor.wrap_list": [os.path.dirname(__file__), __file__],
+            "Interceptor.recursive_wrap": True}
+
+    i = Interceptor(command=test_project_make, output=output, fallback=True, conf=conf)
+    i.execute()
+
+    assert not i.execute()
+    assert os.path.isfile(output)
+    assert calculate_loc(output) > 1
+
+
 def test_main(tmpdir):
     output = os.path.join(str(tmpdir), "cmds.txt")
 
