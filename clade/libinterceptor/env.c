@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 
-#include <sys/file.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
+#include "compat.h"
 #include "env.h"
 
 static char *key = "CLADE_PARENT_ID";

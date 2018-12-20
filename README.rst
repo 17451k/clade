@@ -46,11 +46,16 @@ need to install some prerequisites beforehand:
 - Python 3 (>=3.4)
 - pip (Python package manager)
 - cmake (>=3.3)
+
+*Linux only*:
 - make
-- C **and** C++ compiler (gcc or clang)
-- *Linux only*: python3-dev (Ubuntu) or python3-devel (openSUSE) package
-- *Linux only*: gcc-multilib (Ubuntu) or gcc-32bit (openSUSE) package
+- C **and** C++ compiler (gcc, clang)
+- python3-dev (Ubuntu) or python3-devel (openSUSE) package
+- gcc-multilib (Ubuntu) or gcc-32bit (openSUSE) package
   to intercept build commands of projects leveraging multilib capabilities
+
+*Windows only*:
+- Microsoft Visual C++ Build Tools
 
 Optional dependencies:
 

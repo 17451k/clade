@@ -16,9 +16,10 @@
  */
 
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "compat.h"
 #include "which.h"
 
 // Lookup executable `name` within the PATH environment variable

@@ -2,6 +2,7 @@
 libinterceptor.so
 libinterceptor.dylib
 wrapper
+wrapper.exe
 parser.out
 parsetab.py
 

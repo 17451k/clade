@@ -39,7 +39,7 @@ def build_target(target, build_dir, src_dir, options=None, quiet=False):
 
     try:
         subprocess.check_output(["cmake", src_dir] + options, stderr=subprocess.STDOUT, cwd=build_dir, universal_newlines=True)
-        subprocess.check_output(["make", target], stderr=subprocess.STDOUT, cwd=build_dir, universal_newlines=True)
+        subprocess.check_output(["cmake", "--build", ".", "--target", target, "--config", "Release"], stderr=subprocess.STDOUT, cwd=build_dir, universal_newlines=True)
     except subprocess.CalledProcessError as e:
         if not quiet:
             print(e.output)
@@ -79,19 +79,22 @@ def build_libinterceptor32(build_dir):
     for file in glob.glob(os.path.join(build_dir, "libinterceptor.*")):
         shutil.copy(file, LIB)
 
-
 def build_libinterceptor():
     try:
         build_dir = tempfile.mkdtemp()
 
         try:
-            build_all(build_dir)
-            if not sys.platform == "darwin":
+            if sys.platform == "win32":
+                build_target("wrapper", build_dir, LIBINT_SRC)
+                shutil.copy(os.path.join(build_dir, "Release", "wrapper.exe"), LIBINT_SRC)
+            elif sys.platform == "linux":
+                build_all(build_dir)
                 build_multilib(build_dir)
+            else:
+                build_all(build_dir)
+
         except FileNotFoundError as e:
-            # cmd is either cmake or make
-            cmd = re.sub(r".*? '(.*)'", r"\1", e.args[1])
-            raise OSError("{!r} is not installed on your system - please fix it".format(cmd), e.args[0])
+            raise OSError("cmake is not installed on your system - please fix it", e.args[0])
     finally:
         shutil.rmtree(build_dir)
 
@@ -108,10 +111,7 @@ def package_files(package_directory):
 
 class CustomBuild(build):
     def run(self):
-        if sys.platform == "linux" or sys.platform == "darwin":
-            build_libinterceptor()
-        else:
-            raise NotImplementedError("clade is not yet supported on your platform ({})".format(sys.platform))
+        build_libinterceptor()
         super().run()
 
     def finalize_options(self):
@@ -120,10 +120,7 @@ class CustomBuild(build):
 
 class CustomDevelop(develop):
     def run(self):
-        if sys.platform == "linux" or sys.platform == "darwin":
-            build_libinterceptor()
-        else:
-            raise NotImplementedError("clade is not yet supported on your platform ({})".format(sys.platform))
+        build_libinterceptor()
         super().run()
 
 
@@ -146,7 +143,6 @@ setuptools.setup(
     url="https://github.com/17451k/clade",
     license="LICENSE.txt",
     long_description=open("README.rst").read(),
-    long_description_content_type="text/x-rst",
     python_requires=">=3.4",
     packages=["clade"],
     package_data={

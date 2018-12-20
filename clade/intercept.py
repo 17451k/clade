@@ -55,6 +55,7 @@ class Interceptor():
         if self.fallback:
             self.wrapper = self.__find_wrapper()
             self.wrappers_dir = tempfile.mkdtemp()
+            self.wrapper_postfix = ".clade.exe"
         else:
             self.libinterceptor = self.__find_libinterceptor()
 
@@ -114,7 +115,8 @@ class Interceptor():
         return libinterceptor
 
     def __find_wrapper(self):
-        wrapper = os.path.join(os.path.dirname(__file__), "libinterceptor", "wrapper")
+        wrapper_name = "wrapper.exe" if sys.platform == "win32" else "wrapper"
+        wrapper = os.path.join(os.path.dirname(__file__), "libinterceptor", wrapper_name)
 
         if not os.path.exists(wrapper):
             raise RuntimeError("wrapper is not found in {!r}".format(wrapper))
@@ -158,6 +160,7 @@ class Interceptor():
 
     def __create_exe_wrappers(self):
         wrap_list = self.conf.get("Interceptor.wrap_list", [])
+        self.logger.debug("Wrap list: {!r}".format(wrap_list))
 
         for path in wrap_list:
             if os.path.isfile(path):
@@ -175,13 +178,16 @@ class Interceptor():
                 sys.exit(-1)
 
     def __create_exe_wrapper(self, path):
-        if not(os.path.isfile(path) and os.access(path, os.X_OK) and not os.path.basename(path) == "wrapper"):
+        if not(os.path.isfile(path) and os.access(path, os.X_OK) and not os.path.basename(path) in ["wrapper", "wrapper.exe"]):
+            return
+
+        if sys.platform == "win32" and not path.endswith(".exe"):
             return
 
         self.logger.debug("Create exe wrapper: {!r}".format(path))
 
         try:
-            os.rename(path, path + ".clade")
+            os.rename(path, path + self.wrapper_postfix)
             os.symlink(self.wrapper, path)
         except PermissionError:
             self.logger.warning("You do not have permissions to modify {!r}".format(path))
@@ -212,15 +218,14 @@ class Interceptor():
                         self.__delete_exe_wrapper(os.path.join(path, file))
 
     def __delete_exe_wrapper(self, path):
-        if not(os.path.isfile(path) and os.access(path, os.X_OK) and not path.endswith(".clade")):
+        if not(os.path.isfile(path) and os.access(path, os.X_OK) and not path.endswith(self.wrapper_postfix)):
             return
 
-        self.logger.debug("Delete exe wrapper: {!r}".format(path))
-
         try:
-            if os.path.isfile(path + ".clade"):
+            if os.path.isfile(path + self.wrapper_postfix):
+                self.logger.debug("Delete exe wrapper: {!r}".format(path))
                 os.remove(path)
-                os.rename(path + ".clade", path)
+                os.rename(path + self.wrapper_postfix, path)
         except PermissionError:
             return
         except Exception as e:
