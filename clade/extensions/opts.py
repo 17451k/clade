@@ -486,6 +486,8 @@ cif_unsupported_opts = preprocessor_deps_opts + [
     "-quiet",
     "-DIPATH",
     "-mabi",
+    "-march",
+    "-mtune",
 ]
 
 
