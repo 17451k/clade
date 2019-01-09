@@ -243,8 +243,8 @@ class Interceptor():
                 self.logger.debug("Set 'LD_PRELOAD' environment variable value")
                 env["LD_PRELOAD"] = self.libinterceptor
         else:
-            env["PATH"] = self.wrappers_dir + ":" + os.environ.get("PATH", "")
-            self.logger.debug("Add directory with wrappers to PATH")
+            env["PATH"] = self.wrappers_dir + os.pathsep + os.environ.get("PATH", "")
+            self.logger.debug("Add directory with wrappers to PATH: {!r}".format(env["PATH"]))
 
         self.logger.debug("Set 'CLADE_INTERCEPT' environment variable value")
         env["CLADE_INTERCEPT"] = self.output

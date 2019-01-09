@@ -27,7 +27,7 @@
 
 #ifdef _WIN32
 
-static char **wrap_argv(char **argv) {
+static char **wrap_in_quotes(char **argv) {
     int argv_len;
     for(argv_len = 0; argv[argv_len] != NULL; argv_len++);
 
@@ -35,15 +35,21 @@ static char **wrap_argv(char **argv) {
 
     int i;
     for (i = 0; i < argv_len; i++) {
-        copy[i] = malloc(strlen(argv[i]) + 2);
-        sprintf(copy[i], "\"%s\"", argv[i]);
+        // Wrap only arguments that contain spaces
+        if (strchr(argv[i], ' ')) {
+            copy[i] = malloc(strlen(argv[i]) + 2);
+            sprintf(copy[i], "\"%s\"", argv[i]);
+        }
+        else {
+            copy[i] = argv[i];
+        }
     }
 
     copy[i] = 0;
     return copy;
 }
 
-int main(int argc, char **argv, char **envp) {
+int main(int argc, char **argv) {
     char *original_exe = malloc(strlen(argv[0]) + strlen(wrapper_postfix) + 1);
     sprintf(original_exe, "%s%s", argv[0], wrapper_postfix);
 
@@ -64,16 +70,17 @@ int main(int argc, char **argv, char **envp) {
         }
 
         argv[0] = original_exe;
-        return execve(original_exe, wrap_argv(argv), envp);
+        return execv(original_exe, wrap_in_quotes(argv));
     } else {
         char *path = strstr(strdup(getenv("PATH")), WHICH_DELIMITER);
         char *which = which_path(basename(argv[0]), path);
 
         if (which) {
-            intercept_call(which, (char const *const *)argv);
+            if (getenv("CLADE_INTERCEPT"))
+                intercept_call(which, (char const *const *)argv);
 
             argv[0] = which;
-            return execve(which, argv, envp);
+            return execv(which, wrap_in_quotes(argv));
         } else {
             // Otherwise
             char wrapper_name[MAX_PATH];
@@ -89,7 +96,7 @@ int main(int argc, char **argv, char **envp) {
 
             sprintf(wrapper_name, "%s%s", wrapper_name, wrapper_postfix);
             argv[0] = wrapper_name;
-            return execve(wrapper_name, argv, envp);
+            return execv(wrapper_name, wrap_in_quotes(argv));
         }
     }
 
