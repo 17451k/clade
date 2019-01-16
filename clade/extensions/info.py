@@ -23,7 +23,7 @@ import subprocess
 import sys
 
 from clade.extensions.abstract import Extension
-from clade.extensions.opts import cif_unsupported_opts, filter_opts
+from clade.extensions.opts import cif_supported_opts, filter_opts
 from clade.extensions.utils import common_main, normalize_path
 
 
@@ -100,12 +100,9 @@ class Info(Extension):
             self._normilize_file(self.unsupported_opts_file)
         self.log("Finish")
 
-    def _run_cif(self, cmd, cmds_file, opts_to_filter=None):
+    def _run_cif(self, cmd, cmds_file):
         if self.__is_cmd_bad_for_cif(cmd):
             return
-
-        if not opts_to_filter:
-            opts_to_filter = []
 
         src = self.get_build_cwd(cmds_file)
 
@@ -133,21 +130,15 @@ class Info(Extension):
             cif_args.append("--")
 
             opts = self.extensions["CC"].load_opts_by_id(cmd["id"])
+            opts = filter_opts(opts)
             opts.extend(self.conf.get("Info.extra_CIF_opts", []))
             opts = [re.sub(r'\"', r'\\"', opt) for opt in opts]
-            cif_args.extend(filter_opts(opts, cif_unsupported_opts[:] + opts_to_filter[:]))
+            cif_args.extend(opts)
 
             try:
                 subprocess.check_output(cif_args, stderr=subprocess.STDOUT, cwd=cmd["cwd"], universal_newlines=True)
             except subprocess.CalledProcessError as e:
-                # CIF may fail if it does not support some options
-                # We can try to parse stdout to identify unsupported options and relaunch CIF without it
-                m = self.unsupported_opts_regex.findall(e.output)
-                if m and not opts_to_filter:
-                    self.__save_unsupported_opts(m)
-                    self._run_cif(cmd, cmds_file, m)
-                else:
-                    self.__save_log(cif_args, e.output)
+                self.__save_log(cif_args, e.output)
 
     def __is_cmd_bad_for_cif(self, cmd):
         if cmd["in"] == []:
@@ -161,11 +152,6 @@ class Info(Extension):
                 return True
 
         return False
-
-    def __save_unsupported_opts(self, opts):
-        with open(self.unsupported_opts_file, "a") as f:
-            for opt in opts:
-                f.write("{}\n".format(opt))
 
     def __save_log(self, args, log):
         with open(self.err_log, "a") as log_fh:
