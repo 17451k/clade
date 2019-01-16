@@ -79,14 +79,14 @@ def build_libinterceptor32(build_dir):
     for file in glob.glob(os.path.join(build_dir, "libinterceptor.*")):
         shutil.copy(file, LIB)
 
+
 def build_libinterceptor():
     try:
         build_dir = tempfile.mkdtemp()
 
         try:
             if sys.platform == "win32":
-                build_target("wrapper", build_dir, LIBINT_SRC)
-                shutil.copy(os.path.join(build_dir, "Release", "wrapper.exe"), LIBINT_SRC)
+                pass
             elif sys.platform == "linux":
                 build_all(build_dir)
                 build_multilib(build_dir)

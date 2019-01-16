@@ -15,11 +15,12 @@
  * limitations under the License.
  */
 
+#include <sys/file.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
-#include "compat.h"
 #include "which.h"
 #include "env.h"
 
@@ -144,24 +145,18 @@ void intercept_call(const char *path, char const *const argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    // Locking for Windows is not implemented yet
-    #ifndef _WIN32
     FILE *f = fopen(id_file, "r");
     if (!f) {
         fprintf(stderr, "Couldn't open %s file\n", id_file);
         exit(EXIT_FAILURE);
     }
-
     flock(fileno(f), LOCK_EX);
-    #endif
 
     // Data with intercepted command which will be stored
     char *data = prepare_data(path, argv);
     store_data(data, data_file);
     free(data);
 
-    #ifndef _WIN32
     fclose(f);
     flock(fileno(f), LOCK_UN);
-    #endif
 }

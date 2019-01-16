@@ -15,103 +15,24 @@
  * limitations under the License.
  */
 
+#include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
-#include "compat.h"
 #include "data.h"
 #include "which.h"
 
-#define wrapper_postfix ".clade.exe"
+#define wrapper_postfix ".clade"
 
-#ifdef _WIN32
-
-static char **wrap_in_quotes(char **argv) {
-    int argv_len;
-    for(argv_len = 0; argv[argv_len] != NULL; argv_len++);
-
-    char **copy = malloc((argv_len + 1) * sizeof(char *));
-
-    int i;
-    for (i = 0; i < argv_len; i++) {
-        // Wrap only arguments that contain spaces
-        if (strchr(argv[i], ' ')) {
-            copy[i] = malloc(strlen(argv[i]) + 2);
-            sprintf(copy[i], "\"%s\"", argv[i]);
-        }
-        else {
-            copy[i] = argv[i];
-        }
-    }
-
-    copy[i] = 0;
-    return copy;
-}
-
-int main(int argc, char **argv) {
-    char *original_exe = malloc(strlen(argv[0]) + strlen(wrapper_postfix) + 1);
-    sprintf(original_exe, "%s%s", argv[0], wrapper_postfix);
-
-    if(access(original_exe, F_OK) != -1) {
-        // Intercept call only if clade-intercept is working
-        if (getenv("CLADE_INTERCEPT")) {
-            char *file_ext;
-            char which[MAX_PATH];
-            int r = GetFullPathName(original_exe, MAX_PATH, which, &file_ext);
-
-            if (!r) {
-                fprintf(stderr, "Couldn't get full path to the original exe file\n");
-                exit(EXIT_FAILURE);
-            }
-
-            which[strlen(which) - strlen(wrapper_postfix)] = 0;
-            intercept_call(which, (char const *const *)argv);
-        }
-
-        argv[0] = original_exe;
-        return execv(original_exe, wrap_in_quotes(argv));
-    } else {
-        char *path = strstr(strdup(getenv("PATH")), WHICH_DELIMITER);
-        char *which = which_path(basename(argv[0]), path);
-
-        if (which) {
-            if (getenv("CLADE_INTERCEPT"))
-                intercept_call(which, (char const *const *)argv);
-
-            argv[0] = which;
-            return execv(which, wrap_in_quotes(argv));
-        } else {
-            // Otherwise
-            char wrapper_name[MAX_PATH];
-            int r = GetModuleFileName(NULL, wrapper_name, MAX_PATH);
-
-            if (!r) {
-                fprintf(stderr, "Couldn't get module name\n");
-                exit(EXIT_FAILURE);
-            }
-
-            if (getenv("CLADE_INTERCEPT"))
-                intercept_call(wrapper_name, (char const *const *)argv);
-
-            sprintf(wrapper_name, "%s%s", wrapper_name, wrapper_postfix);
-            argv[0] = wrapper_name;
-            return execv(wrapper_name, wrap_in_quotes(argv));
-        }
-    }
-
-    fprintf(stderr, "Something went wrong\n");
-    exit(EXIT_FAILURE);
-}
-
-#else
 
 int main(int argc, char **argv, char **envp) {
     char *original_exe = malloc(strlen(argv[0]) + strlen(wrapper_postfix) + 1);
     sprintf(original_exe, "%s%s", argv[0], wrapper_postfix);
 
     /* First case: original executable file was renamed
-     * (.clade.exe extension was added to its name)
+     * (.clade extension was added to its name)
      * and symlink to the wrapper was added instead.
      */
     if(access(original_exe, F_OK) != -1) {
@@ -153,5 +74,3 @@ int main(int argc, char **argv, char **envp) {
     fprintf(stderr, "Something went wrong\n");
     exit(EXIT_FAILURE);
 }
-
-#endif /* _WIN32 */

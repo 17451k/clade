@@ -55,7 +55,7 @@ class Interceptor():
         if self.fallback:
             self.wrapper = self.__find_wrapper()
             self.wrappers_dir = tempfile.mkdtemp()
-            self.wrapper_postfix = ".clade.exe"
+            self.wrapper_postfix = ".clade"
         else:
             self.libinterceptor = self.__find_libinterceptor()
 
@@ -115,8 +115,7 @@ class Interceptor():
         return libinterceptor
 
     def __find_wrapper(self):
-        wrapper_name = "wrapper.exe" if sys.platform == "win32" else "wrapper"
-        wrapper = os.path.join(os.path.dirname(__file__), "libinterceptor", wrapper_name)
+        wrapper = os.path.join(os.path.dirname(__file__), "libinterceptor", "wrapper")
 
         if not os.path.exists(wrapper):
             raise RuntimeError("wrapper is not found in {!r}".format(wrapper))
@@ -178,10 +177,7 @@ class Interceptor():
                 sys.exit(-1)
 
     def __create_exe_wrapper(self, path):
-        if not(os.path.isfile(path) and os.access(path, os.X_OK) and not os.path.basename(path) in ["wrapper", "wrapper.exe"]):
-            return
-
-        if sys.platform == "win32" and not path.endswith(".exe"):
+        if not(os.path.isfile(path) and os.access(path, os.X_OK) and not os.path.basename(path) == "wrapper"):
             return
 
         self.logger.debug("Create exe wrapper: {!r}".format(path))

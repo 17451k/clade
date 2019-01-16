@@ -3,10 +3,6 @@ project(interceptor)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-if(MSVC)
-    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-endif()
-
 add_library(data STATIC data.c)
 add_library(which STATIC which.c)
 add_library(env STATIC env.c)
