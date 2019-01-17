@@ -137,7 +137,7 @@ class Interceptor():
         return wrapper
 
     def __create_wrappers(self):
-        if not self.fallback or not sys.platform == "win32":
+        if not self.fallback or sys.platform == "win32":
             return
 
         self.__create_path_wrappers()
@@ -278,17 +278,17 @@ class Interceptor():
             0 if everything went successful and error code otherwise
         """
 
+        if sys.platform == "win32":
+            self.command.insert(0, self.debugger)
+            self.logger.debug("Execute {!r} command with the following environment: {!r}".format(self.command, self.env))
+            return subprocess.call(self.command, env=self.env, shell=False, cwd=self.cwd)
+
         try:
             self.__create_wrappers()
 
-            if sys.platform == "win32":
-                self.command.insert(0, self.debugger)
-                self.logger.debug("Execute {!r} command with the following environment: {!r}".format(self.command, self.env))
-                return subprocess.call(self.command, env=self.env, shell=False, cwd=self.cwd)
-            else:
-                shell_command = " ".join([shlex.quote(x) for x in self.command])
-                self.logger.debug("Execute {!r} command with the following environment: {!r}".format(shell_command, self.env))
-                return subprocess.call(shell_command, env=self.env, shell=True, cwd=self.cwd)
+            shell_command = " ".join([shlex.quote(x) for x in self.command])
+            self.logger.debug("Execute {!r} command with the following environment: {!r}".format(shell_command, self.env))
+            return subprocess.call(shell_command, env=self.env, shell=True, cwd=self.cwd)
         finally:
             self.__delete_wrappers()
 
