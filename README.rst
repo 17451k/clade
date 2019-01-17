@@ -69,8 +69,7 @@ Optional dependencies:
 .. _Aspectator: https://github.com/17451k/aspectator
 .. _CIF releases: https://github.com/17451k/cif/releases
 
-Clade works on Linux and macOS.
-Partial support for Windows will be implemented soon.
+Clade works on Linux, macOS and partially on Windows.
 
 Installation
 ------------

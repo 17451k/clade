@@ -52,7 +52,9 @@ class Interceptor():
         self.conf = conf if conf else dict()
         self.logger = self.__setup_logger(debug)
 
-        if self.fallback:
+        if sys.platform == "win32":
+            self.debugger = self.__find_debugger()
+        elif self.fallback:
             self.wrapper = self.__find_wrapper()
             self.wrappers_dir = tempfile.mkdtemp()
             self.wrapper_postfix = ".clade"
@@ -74,6 +76,16 @@ class Interceptor():
         logger.setLevel(logging.DEBUG if debug else logging.INFO)
 
         return logger
+
+    def __find_debugger(self):
+        debugger = os.path.join(os.path.dirname(__file__), "libinterceptor", "debugger.exe")
+
+        if not os.path.exists(debugger):
+            raise RuntimeError("debugger is not found in {!r}".format(debugger))
+
+        self.logger.debug("Path to the debugger: {!r}".format(debugger))
+
+        return debugger
 
     def __find_libinterceptor(self):
         if sys.platform == "linux":
@@ -125,7 +137,7 @@ class Interceptor():
         return wrapper
 
     def __create_wrappers(self):
-        if not self.fallback:
+        if not self.fallback or not sys.platform == "win32":
             return
 
         self.__create_path_wrappers()
@@ -230,7 +242,12 @@ class Interceptor():
     def __setup_env(self):
         env = dict(os.environ)
 
-        if not self.fallback:
+        if sys.platform == "win32":
+            pass
+        elif self.fallback:
+            env["PATH"] = self.wrappers_dir + os.pathsep + os.environ.get("PATH", "")
+            self.logger.debug("Add directory with wrappers to PATH: {!r}".format(env["PATH"]))
+        else:
             if sys.platform == "darwin":
                 self.logger.debug("Set 'DYLD_INSERT_LIBRARIES' environment variable value")
                 env["DYLD_INSERT_LIBRARIES"] = self.libinterceptor
@@ -238,16 +255,12 @@ class Interceptor():
             elif sys.platform == "linux":
                 self.logger.debug("Set 'LD_PRELOAD' environment variable value")
                 env["LD_PRELOAD"] = self.libinterceptor
-        else:
-            env["PATH"] = self.wrappers_dir + os.pathsep + os.environ.get("PATH", "")
-            self.logger.debug("Add directory with wrappers to PATH: {!r}".format(env["PATH"]))
+
+                env["LD_LIBRARY_PATH"] = env.get("LD_LIBRARY_PATH", "") + ":" + LIB64 + ":" + LIB
+                self.logger.debug("Set LD_LIBRARY_PATH environment variable value as {!r}".format(env["LD_LIBRARY_PATH"]))
 
         self.logger.debug("Set 'CLADE_INTERCEPT' environment variable value")
         env["CLADE_INTERCEPT"] = self.output
-
-        if sys.platform == "linux":
-            env["LD_LIBRARY_PATH"] = env.get("LD_LIBRARY_PATH", "") + ":" + LIB64 + ":" + LIB
-            self.logger.debug("Set LD_LIBRARY_PATH environment variable value as {!r}".format(env["LD_LIBRARY_PATH"]))
 
         # Prepare environment variables for PID graph
         last_used_id = get_last_id(self.output)
@@ -268,9 +281,14 @@ class Interceptor():
         try:
             self.__create_wrappers()
 
-            shell_command = " ".join([shlex.quote(x) for x in self.command])
-            self.logger.debug("Execute {!r} command with the following environment: {!r}".format(shell_command, self.env))
-            return subprocess.call(shell_command, env=self.env, shell=True, cwd=self.cwd)
+            if sys.platform == "win32":
+                self.command.insert(0, self.debugger)
+                self.logger.debug("Execute {!r} command with the following environment: {!r}".format(self.command, self.env))
+                return subprocess.call(self.command, env=self.env, shell=False, cwd=self.cwd)
+            else:
+                shell_command = " ".join([shlex.quote(x) for x in self.command])
+                self.logger.debug("Execute {!r} command with the following environment: {!r}".format(shell_command, self.env))
+                return subprocess.call(shell_command, env=self.env, shell=True, cwd=self.cwd)
         finally:
             self.__delete_wrappers()
 
@@ -280,7 +298,7 @@ def parse_args(args):
 
     parser.add_argument("-o", "--output", help="a path to the FILE where intercepted commands will be saved", metavar='FILE', default="cmds.txt")
     parser.add_argument("-d", "--debug", help="enable debug logging messages", action="store_true")
-    parser.add_argument("-f", "--fallback", help="enable fallback intercepting mode", action="store_true")
+    parser.add_argument("-f", "--fallback", help="enable fallback intercepting mode (not supported on Windows)", action="store_true")
     parser.add_argument("-a", "--append", help="append intercepted commands to existing cmds.txt file", action="store_true")
     parser.add_argument("-c", "--config", help="a path to the JSON file with configuration", metavar='JSON', default=None)
     parser.add_argument(dest="command", nargs=argparse.REMAINDER, help="build command to run and intercept")

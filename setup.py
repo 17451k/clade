@@ -46,10 +46,14 @@ def build_target(target, build_dir, src_dir, options=None, quiet=False):
         raise RuntimeError("Can't build target {!r} - something went wrong".format(target))
 
 
-def build_all(build_dir):
-    build_target("all", build_dir, LIBINT_SRC)
+def build_wrapper(build_dir):
+    build_target("wrapper", build_dir, LIBINT_SRC)
 
     shutil.copy(os.path.join(build_dir, "wrapper"), LIBINT_SRC)
+
+
+def build_interceptor(build_dir):
+    build_target("interceptor", build_dir, LIBINT_SRC)
 
     for file in glob.glob(os.path.join(build_dir, "libinterceptor.*")):
         shutil.copy(file, LIBINT_SRC)
@@ -57,14 +61,14 @@ def build_all(build_dir):
 
 def build_multilib(build_dir):
     try:
-        build_libinterceptor64(os.path.join(build_dir, "libinterceptor64"))
-        build_libinterceptor32(os.path.join(build_dir, "libinterceptor32"))
+        build_interceptor64(os.path.join(build_dir, "libinterceptor64"))
+        build_interceptor32(os.path.join(build_dir, "libinterceptor32"))
     except RuntimeError:
         # Multilib build is not mandatory
         pass
 
 
-def build_libinterceptor64(build_dir):
+def build_interceptor64(build_dir):
     build_target("interceptor", build_dir, LIBINT_SRC, ["-DCMAKE_C_COMPILER_ARG1=-m64"], quiet=True)
 
     os.makedirs(LIB64, exist_ok=True)
@@ -72,7 +76,7 @@ def build_libinterceptor64(build_dir):
         shutil.copy(file, LIB64)
 
 
-def build_libinterceptor32(build_dir):
+def build_interceptor32(build_dir):
     build_target("interceptor", build_dir, LIBINT_SRC, ["-DCMAKE_C_COMPILER_ARG1=-m32"], quiet=True)
 
     os.makedirs(LIB, exist_ok=True)
@@ -80,21 +84,27 @@ def build_libinterceptor32(build_dir):
         shutil.copy(file, LIB)
 
 
+def build_debugger(build_dir):
+    build_target("debugger", build_dir, LIBINT_SRC, ["-DCMAKE_GENERATOR_PLATFORM=x64"])
+
+    shutil.copy(os.path.join(build_dir, "Release", "debugger.exe"), LIBINT_SRC)
+
+
 def build_libinterceptor():
     try:
         build_dir = tempfile.mkdtemp()
 
-        try:
-            if sys.platform == "win32":
-                pass
-            elif sys.platform == "linux":
-                build_all(build_dir)
-                build_multilib(build_dir)
-            else:
-                build_all(build_dir)
-
-        except FileNotFoundError as e:
-            raise OSError("cmake is not installed on your system - please fix it", e.args[0])
+        if sys.platform == "linux":
+            build_wrapper(build_dir)
+            build_interceptor(build_dir)
+            build_multilib(build_dir)
+        elif sys.platform == "darwin":
+            build_wrapper(build_dir)
+            build_interceptor(build_dir)
+        elif sys.platform == "win32":
+            build_debugger(build_dir)
+        else:
+            exit("Your platform {!r} is not supported yet.".format(sys.platform))
     finally:
         shutil.rmtree(build_dir)
 
@@ -174,7 +184,7 @@ setuptools.setup(
     },
     cmdclass={"build": CustomBuild, "develop": CustomDevelop, 'bdist_wheel': bdist_wheel},
     install_requires=["ujson", "graphviz", "ply", "pytest"],
-    classifiers=(
+    classifiers=[
         "Programming Language :: Python :: 3",
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
@@ -182,6 +192,8 @@ setuptools.setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: Implementation :: CPython',
         "License :: OSI Approved :: Apache Software License",
-        "Operating System :: Unix",
-    )
+        "Operating System :: POSIX :: Linux",
+        "Operating System :: MacOS :: MacOS X",
+        "Operating System :: Microsoft :: Windows",
+    ]
 )
