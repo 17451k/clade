@@ -23,7 +23,7 @@ from clade.wrapper import Wrapper
 from clade.extensions.utils import load_conf_file
 
 
-def intercept(command=[], cwd=os.getcwd(), output="cmds.txt", debug=False, append=False, conf=None, use_wrappers=True):
+def intercept(command=[], cwd=os.getcwd(), output="cmds.txt", append=False, conf=None, use_wrappers=True):
     if sys.platform in ["linux", "darwin"] and use_wrappers:
         cl = Wrapper
     elif sys.platform in ["linux", "darwin"] and not use_wrappers:
@@ -33,15 +33,14 @@ def intercept(command=[], cwd=os.getcwd(), output="cmds.txt", debug=False, appen
     else:
         sys.exit("Your plarform {!r} is not supported yet.".format(sys.platform))
 
-    i = cl(command=command, cwd=cwd, output=output, debug=debug, append=append, conf=conf)
+    i = cl(command=command, cwd=cwd, output=output, append=append, conf=conf)
     return i.execute()
 
 
-def intercept_main(args):
+def intercept_main(args=sys.argv[1:]):
     parser = argparse.ArgumentParser()
 
     parser.add_argument("-o", "--output", help="a path to the FILE where intercepted commands will be saved", metavar='FILE', default="cmds.txt")
-    parser.add_argument("-d", "--debug", help="enable debug logging messages", action="store_true")
     parser.add_argument("-w", "--wrappers", help="enable intercepting mode based on wrappers (not supported on Windows)", action="store_true")
     parser.add_argument("-a", "--append", help="append intercepted commands to existing cmds.txt file", action="store_true")
     parser.add_argument("-c", "--config", help="a path to the JSON file with configuration", metavar='JSON', default=None)
@@ -52,5 +51,5 @@ def intercept_main(args):
     if not args.command:
         sys.exit("Build command is missing")
 
-    sys.exit(intercept(command=args.command, output=args.output, debug=args.debug, append=args.append,
+    sys.exit(intercept(command=args.command, output=args.output, append=args.append,
                        conf=load_conf_file(args.config), use_wrappers=args.wrappers))

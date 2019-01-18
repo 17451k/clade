@@ -23,8 +23,8 @@ LIB64 = os.path.join(os.path.dirname(__file__), "intercept", "lib64")
 
 
 class Libinterceptor(Intercept):
-    def __init__(self, command=[], cwd=os.getcwd(), output="cmds.txt", debug=False, append=False, conf=None):
-        super().__init__(command, cwd, output, debug, append, conf)
+    def __init__(self, command=[], cwd=os.getcwd(), output="cmds.txt", append=False, conf=None):
+        super().__init__(command, cwd, output, append, conf)
 
         self.libinterceptor = self.__find_libinterceptor()
 
@@ -69,5 +69,6 @@ class Libinterceptor(Intercept):
 
         return libinterceptor
 
+    @Intercept.preprocess
     def execute(self):
         return super().execute()

@@ -14,14 +14,14 @@
 # limitations under the License.
 
 import abc
-import logging
 import os
 import shlex
 import subprocess
-import sys
 import tempfile
 
 from clade.cmds import get_last_id
+from clade.utils import get_logger
+from clade.server import PreprocessServer
 
 
 class Intercept(metaclass=abc.ABCMeta):
@@ -29,8 +29,8 @@ class Intercept(metaclass=abc.ABCMeta):
 
     Attributes:
         command: A list of strings representing build command to run and intercept
+        cwd: A path to the direcotry where build command should be executed
         output: A path to the file where intercepted commands will be saved
-        debug: A boolean enabling debug logging messages
         fallback: A boolean enabling fallback intercepting mode
         append: A boolean allowing to append intercepted commands to already existing file with commands
 
@@ -39,27 +39,16 @@ class Intercept(metaclass=abc.ABCMeta):
         RuntimeError: Clade installation is corrupted, or intercepting process failed
     """
 
-    def __init__(self, command=[], cwd=os.getcwd(), output="cmds.txt", debug=False, append=False, conf=None):
+    def __init__(self, command=[], cwd=os.getcwd(), output="cmds.txt", append=False, conf=None):
         self.command = command
         self.cwd = cwd
         self.output = os.path.abspath(output)
         self.append = append
         self.conf = conf if conf else dict()
-        self.logger = self.__setup_logger(debug)
+        self.logger = get_logger("Intercept", self.conf)
 
         if not self.append and os.path.exists(self.output):
             os.remove(self.output)
-
-    def __setup_logger(self, debug):
-        logger = logging.getLogger("clade-intercept")
-
-        handler = logging.StreamHandler(stream=sys.stdout)
-        handler.setFormatter(logging.Formatter("%(asctime)s clade Intercept: %(message)s", "%H:%M:%S"))
-
-        logger.addHandler(handler)
-        logger.setLevel(logging.DEBUG if debug else logging.INFO)
-
-        return logger
 
     def _setup_env(self):
         env = dict(os.environ)
@@ -75,6 +64,30 @@ class Intercept(metaclass=abc.ABCMeta):
         env["CLADE_PARENT_ID"] = "0"
 
         return env
+
+    @staticmethod
+    def preprocess(execute):
+        """Decorator for execute() method
+
+        It runs build command under socket server allowing preprocessing of intercepted build commands
+        before their execution by a suitable extension.
+        """
+        def execute_wrapper(self, *args, **kwargs):
+            if not self.conf.get("Intercept.preprocess"):
+                return execute(self, *args, **kwargs)
+
+            try:
+                server = PreprocessServer(self.conf, None)
+                self.logger.debug("Start preprocess server")
+                os.environ = server.setup_env()
+                server.start()
+
+                return execute(self, *args, **kwargs)
+            finally:
+                self.logger.debug("Terminate preprocess server")
+                server.terminate()
+
+        return execute_wrapper
 
     def execute(self):
         """Execute intercepting of build commands.

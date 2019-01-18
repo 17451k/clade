@@ -22,8 +22,8 @@ from clade.abstract import Intercept
 
 
 class Wrapper(Intercept):
-    def __init__(self, command=[], cwd=os.getcwd(), output="cmds.txt", debug=False, append=False, conf=None):
-        super().__init__(command, cwd, output, debug, append, conf)
+    def __init__(self, command=[], cwd=os.getcwd(), output="cmds.txt", append=False, conf=None):
+        super().__init__(command, cwd, output, append, conf)
 
         self.wrapper = self.__find_wrapper()
         self.wrappers_dir = tempfile.mkdtemp()
@@ -145,6 +145,7 @@ class Wrapper(Intercept):
         except Exception as e:
             self.logger.warning(e)
 
+    @Intercept.preprocess
     def execute(self):
         try:
             self.__create_wrappers()

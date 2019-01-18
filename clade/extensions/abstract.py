@@ -97,6 +97,10 @@ class Extension(metaclass=abc.ABCMeta):
         """Returns True if build commands are already parsed."""
         return os.path.exists(self.work_dir)
 
+    def preprocess(self, cmd):
+        """Preprocess intercepted build command before its execution"""
+        return cmd
+
     @staticmethod
     def prepare(parse):
         """Decorator for parse() method

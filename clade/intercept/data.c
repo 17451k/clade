@@ -23,6 +23,7 @@
 
 #include "which.h"
 #include "env.h"
+#include "server.h"
 
 #define DELIMITER "||"
 
@@ -154,6 +155,7 @@ void intercept_call(const char *path, char const *const argv[]) {
 
     // Data with intercepted command which will be stored
     char *data = prepare_data(path, argv);
+    data = send_message(data);
     store_data(data, data_file);
     free(data);
 
