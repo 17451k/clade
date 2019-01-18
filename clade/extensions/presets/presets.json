@@ -2,8 +2,8 @@
     "base": {
         "extends": [],
         "log_level": "INFO",
-        "Interceptor.wrap_list": [],
-        "Interceptor.recursive_wrap": false,
+        "Wrapper.wrap_list": [],
+        "Wrapper.recursive_wrap": false,
         "CC.ignore_cc1": true,
         "CC.filter_deps": true,
         "CC.store_deps": true,

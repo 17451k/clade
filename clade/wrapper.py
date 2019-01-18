@@ -78,14 +78,14 @@ class Wrapper(Intercept):
         self.logger.debug("{} path wrappers were created".format(counter))
 
     def __create_exe_wrappers(self):
-        wrap_list = self.conf.get("Interceptor.wrap_list", [])
+        wrap_list = self.conf.get("Wrapper.wrap_list", [])
         self.logger.debug("Wrap list: {!r}".format(wrap_list))
 
         for path in wrap_list:
             if os.path.isfile(path):
                 self.__create_exe_wrapper(path)
             elif os.path.isdir(path):
-                if self.conf.get("Interceptor.recursive_wrap"):
+                if self.conf.get("Wrapper.recursive_wrap"):
                     for root, _, filenames in os.walk(path):
                         for filename in filenames:
                             self.__create_exe_wrapper(os.path.join(root, filename))
@@ -93,7 +93,7 @@ class Wrapper(Intercept):
                     for file in os.listdir(path):
                         self.__create_exe_wrapper(os.path.join(path, file))
             else:
-                self.logger.error("{!r} file or directory from 'Interceptor.wrap_list' option does not exist".format(path))
+                self.logger.error("{!r} file or directory from 'Wrapper.wrap_list' option does not exist".format(path))
                 sys.exit(-1)
 
     def __create_exe_wrapper(self, path):
@@ -123,7 +123,7 @@ class Wrapper(Intercept):
             if os.path.isfile(path):
                 self.__delete_exe_wrapper(path)
             elif os.path.isdir(path):
-                if self.conf.get("Interceptor.recursive_wrap"):
+                if self.conf.get("Wrapper.recursive_wrap"):
                     for root, _, filenames in os.walk(path):
                         for filename in filenames:
                             self.__delete_exe_wrapper(os.path.join(root, filename))
