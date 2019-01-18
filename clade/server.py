@@ -36,18 +36,22 @@ class SocketServer(parent):
     class RequestHandler(socketserver.StreamRequestHandler):
         def handle(self):
             data = self.rfile.readline().strip().decode("utf-8")
-            print(data)
+
+            with open(self.output, "a") as clade_fh:
+                clade_fh.write(data + "\n")
 
             # for ext in self.extensions:
             #     data = ext.preprocess(data)
             # self.wfile.write(data)
 
-    def __init__(self, address, extensions):
+    def __init__(self, address, output, extensions):
         self.process = None
         # Variable to store file object of UNIX socket parent directory
         self.socket_fh = None
 
         rh = SocketServer.RequestHandler
+
+        rh.output = output
 
         # Request handler must have access to extensions
         rh.extensions = extensions
@@ -68,8 +72,9 @@ class SocketServer(parent):
 
 
 class PreprocessServer():
-    def __init__(self, conf, extensions):
+    def __init__(self, conf, output, extensions):
         self.conf = conf
+        self.output = output
         self.extensions = extensions
         self.logger = get_logger("Server", self.conf)
         self.server = self.__prepare()
@@ -82,6 +87,8 @@ class PreprocessServer():
             self.logger.debug("INET socket will be used")
             server = self.__prepare_inet()
 
+        self.__setup_env()
+
         return server
 
     def __prepare_unix(self):
@@ -90,7 +97,7 @@ class PreprocessServer():
         name = os.path.join(f.name, "clade.sock")
         self.conf["Server.address"] = name
 
-        server = SocketServer(name, self.extensions)
+        server = SocketServer(name, self.output, self.extensions)
 
         # Without this file object will be closed automatically after exiting from this function
         server.sock_fh = f
@@ -98,28 +105,25 @@ class PreprocessServer():
         return server
 
     def __prepare_inet(self):
-        server = SocketServer((self.conf["Server.host"], int(self.conf["Server.port"])), self.extensions)
+        self.conf["Server.host"] = self.conf.get("Server.host", "localhost")
+        self.conf["Server.port"] = self.conf.get("Server.port", "0")
+
+        server = SocketServer((self.conf["Server.host"], int(self.conf["Server.port"])), self.output, self.extensions)
 
         # If "Server.port" is 0, than dynamic port assignment is used and the value needs to be updated
         self.conf["Server.port"] = str(server.server_address[1])
 
         return server
 
-    def setup_env(self):
-        env = dict(os.environ)
-
+    def __setup_env(self):
         # Windows doesn't support UNIX sockets
         if sys.platform == 'linux' or sys.platform == 'darwin':
-            self.logger.debug("Set CLADE_UNIX_ADDRESS: {}".format(self.conf["Server.address"]))
-            env.update({'CLADE_UNIX_ADDRESS': self.conf["Server.address"]})
+            os.environ.update({'CLADE_UNIX_ADDRESS': self.conf["Server.address"]})
         else:
-            self.logger.debug("Set CLADE_INET_HOST: {}".format(self.conf["Server.host"]))
-            env.update({'CLADE_INET_HOST': self.conf["Server.host"]})
+            os.environ.update({'CLADE_INET_HOST': self.conf["Server.host"]})
+            os.environ.update({'CLADE_INET_PORT': self.conf["Server.port"]})
 
-            self.logger.debug("Set CLADE_INET_PORT: {}".format(self.conf["Server.port"]))
-            env.update({'CLADE_INET_PORT': self.conf["Server.port"]})
-
-        return env
+        os.environ.update({'CLADE_PREPROCESS': "true"})
 
     def start(self):
         # Create separate server process
