@@ -16,7 +16,7 @@
 import os
 import pytest
 
-from clade.intercept import Interceptor
+from clade.intercept import intercept
 from tests.test_intercept import test_project_make
 
 
@@ -25,9 +25,7 @@ def cmds_file():
     test_cmds_file = os.path.join(os.path.dirname(__file__), "test_project", "cmds.txt")
 
     if not os.path.isfile(test_cmds_file):
-        i = Interceptor(command=test_project_make, output=test_cmds_file, fallback=True)
-        i.execute()
-
+        intercept(command=test_project_make, output=test_cmds_file, use_wrappers=True)
     yield test_cmds_file
 
     os.remove(test_cmds_file)

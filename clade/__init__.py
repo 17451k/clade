@@ -16,7 +16,7 @@
 import os
 import sys
 
-from clade.intercept import Interceptor
+from clade.intercept import intercept
 from clade.extensions.abstract import Extension
 from clade.extensions.cdb import CDB
 from clade.extensions.functions import Functions
@@ -46,8 +46,8 @@ class Clade():
     TODO:
         Check that command was already intercepted
         Check that intercept() argument is list, not string
-        Fix logging
     """
+
     def __init__(self, work_dir="clade", cmds_file="cmds.txt", conf=None, preset="base"):
         self.work_dir = os.path.abspath(str(work_dir))
         self.cmds_file = os.path.abspath(cmds_file)
@@ -77,7 +77,7 @@ class Clade():
         self._CDB = None
         self._cdb = None
 
-    def intercept(self, command, cwd=os.getcwd(), append=False, fallback=False):
+    def intercept(self, command, cwd=os.getcwd(), append=False, use_wrappers=False):
         """Execute intercepting of build commands.
 
         Args:
@@ -89,8 +89,7 @@ class Clade():
             0 if everything went successful and error code otherwise
         """
 
-        i = Interceptor(command=command, cwd=cwd, output=self.cmds_file, append=append, fallback=fallback)
-        return i.execute()
+        return intercept(command=command, cwd=cwd, output=self.cmds_file, append=append, use_wrappers=use_wrappers)
 
     def parse_all(self, cmds_file=None):
         """Execute parse() method of all extensions available in Clade.
@@ -514,7 +513,8 @@ class Clade():
 
         return self._cdb
 
-def main(args=sys.argv[1:]):
+
+def parse_all_main(args=sys.argv[1:]):
     conf = parse_args(args)
 
     c = Clade(conf["work_dir"], conf["cmds_file"], conf, conf["preset"])

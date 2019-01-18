@@ -19,14 +19,13 @@ import setuptools
 import shutil
 import subprocess
 import sys
-import re
 import tempfile
 
 from distutils.command.build import build
 from setuptools.command.develop import develop
 
 
-LIBINT_SRC = os.path.abspath(os.path.join(os.path.dirname(__file__), "clade", "libinterceptor"))
+LIBINT_SRC = os.path.abspath(os.path.join(os.path.dirname(__file__), "clade", "intercept"))
 LIB = os.path.join(LIBINT_SRC, "lib")
 LIB64 = os.path.join(LIBINT_SRC, "lib64")
 
@@ -160,7 +159,7 @@ setuptools.setup(
     },
     entry_points={
         "console_scripts": [
-            "clade-intercept=clade.intercept:main",
+            "clade-intercept=clade.intercept:intercept_main",
             "clade-cmds-stats=clade.cmds:print_cmds_stats",
             "clade-cc=clade.extensions.cc:main",
             "clade-ld=clade.extensions.ld:main",
@@ -178,7 +177,7 @@ setuptools.setup(
             "clade-ar=clade.extensions.ar:main",
             "clade-as=clade.extensions.assembler:main",
             "clade-execute=clade.extensions.execute:main",
-            "clade-all=clade:main",
+            "clade-all=clade:parse_all_main",
             "clade=clade.extensions.cdb:main"
         ],
     },

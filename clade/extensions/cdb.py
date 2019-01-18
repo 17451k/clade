@@ -20,7 +20,7 @@ import sys
 import tempfile
 
 from clade.extensions.abstract import Extension
-from clade.intercept import Interceptor
+from clade.intercept import intercept
 
 
 class CDB(Extension):
@@ -73,7 +73,7 @@ def parse_args(args, work_dir):
     parser = argparse.ArgumentParser()
 
     parser.add_argument("-o", "--output", help="a path to the FILE where compilation database will be saved", metavar='FILE', default="compile_commands.json")
-    parser.add_argument("-f", "--fallback", help="enable fallback intercepting mode", action="store_true")
+    parser.add_argument("-f", "--wrappers", help="enable intercepting mode based on wrappers (not available on Windows)", action="store_true")
     parser.add_argument("-c", "--cmds_file", help="a path to the file with intercepted commands")
     parser.add_argument(dest="command", nargs=argparse.REMAINDER, help="build command to run")
 
@@ -93,8 +93,7 @@ def main(args=sys.argv[1:]):
     args = parse_args(args, work_dir)
 
     if args.command:
-        i = Interceptor(command=args.command, output=args.cmds_file, fallback=args.fallback)
-        i.execute()
+        intercept(command=args.command, output=args.cmds_file, use_wrappers=args.wrappers)
 
     c = CDB(work_dir, conf={"CDB.output": os.path.abspath(args.output)})
     c.parse(args.cmds_file)

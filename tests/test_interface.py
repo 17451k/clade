@@ -27,7 +27,7 @@ def test_intercept(tmpdir):
 
     c = Clade(cmds_file=output)
 
-    assert not c.intercept(command=test_project_make, fallback=True)
+    assert not c.intercept(command=test_project_make, use_wrappers=True)
     assert os.path.isfile(output)
     assert calculate_loc(output) > 1
 
@@ -93,6 +93,7 @@ def test_src_graph(tmpdir, cmds_file):
 
     with pytest.raises(RuntimeError):
         assert c.get_file_size("this_file_does_not_exist.c")
+
 
 def test_pid_graph(tmpdir, cmds_file):
     c = Clade(tmpdir, cmds_file)

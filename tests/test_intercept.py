@@ -16,7 +16,7 @@
 import os
 import pytest
 
-from clade.intercept import Interceptor, main
+from clade.intercept import intercept, intercept_main
 
 
 test_project = os.path.join(os.path.dirname(__file__), "test_project")
@@ -33,10 +33,7 @@ def calculate_loc(file):
 def test_no_fallback(tmpdir):
     output = os.path.join(str(tmpdir), "cmds.txt")
 
-    i = Interceptor(command=test_project_make, output=output, fallback=False)
-    i.execute()
-
-    assert not i.execute()
+    assert not intercept(command=test_project_make, output=output, use_wrappers=False)
     assert os.path.isfile(output)
 
     # Do not check size of output file since LD_PRELOAD may not work on certain systems
@@ -47,10 +44,7 @@ def test_no_fallback(tmpdir):
 def test_fallback(tmpdir):
     output = os.path.join(str(tmpdir), "cmds.txt")
 
-    i = Interceptor(command=test_project_make, output=output, fallback=True)
-    i.execute()
-
-    assert not i.execute()
+    assert not intercept(command=test_project_make, output=output, use_wrappers=True)
     assert os.path.isfile(output)
     assert calculate_loc(output) > 1
 
@@ -60,10 +54,7 @@ def test_fallback_with_exe_wrappers(tmpdir):
     conf = {"Interceptor.wrap_list": [os.path.dirname(__file__), __file__],
             "Interceptor.recursive_wrap": False}
 
-    i = Interceptor(command=test_project_make, output=output, fallback=True, conf=conf)
-    i.execute()
-
-    assert not i.execute()
+    assert not intercept(command=test_project_make, output=output, use_wrappers=True, conf=conf)
     assert os.path.isfile(output)
     assert calculate_loc(output) > 1
 
@@ -73,10 +64,7 @@ def test_fallback_with_exe_wrappers_recursive(tmpdir):
     conf = {"Interceptor.wrap_list": [os.path.dirname(__file__), __file__],
             "Interceptor.recursive_wrap": True}
 
-    i = Interceptor(command=test_project_make, output=output, fallback=True, conf=conf)
-    i.execute()
-
-    assert not i.execute()
+    assert not intercept(command=test_project_make, output=output, use_wrappers=True, conf=conf)
     assert os.path.isfile(output)
     assert calculate_loc(output) > 1
 
@@ -85,13 +73,13 @@ def test_main(tmpdir):
     output = os.path.join(str(tmpdir), "cmds.txt")
 
     with pytest.raises(SystemExit) as excinfo:
-        main(["-o", output] + test_project_make)
+        intercept_main(["-o", output] + test_project_make)
 
     assert "0" in str(excinfo.value)
 
 
 def test_main_no_args():
     with pytest.raises(SystemExit) as excinfo:
-        main([])
+        intercept_main([])
 
     assert "0" not in str(excinfo.value)
