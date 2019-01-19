@@ -77,7 +77,7 @@ class Intercept(metaclass=abc.ABCMeta):
                 return execute(self, *args, **kwargs)
 
             try:
-                server = PreprocessServer(self.conf, self.output, None)
+                server = PreprocessServer(self.conf, self.output)
                 self.logger.debug("Start preprocess server")
                 server.start()
 

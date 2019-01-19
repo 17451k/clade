@@ -24,7 +24,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-static void send_message_unix(char *msg, char *address) {
+static void send_data_unix(const char *msg, char *address) {
     int sockfd;
 
     struct sockaddr_un addr;
@@ -48,7 +48,7 @@ static void send_message_unix(char *msg, char *address) {
     while ((r = read(sockfd, buf, sizeof(buf)-1)) > 0) {}
 }
 
-static void send_message_inet(char *msg, char *host, char *port) {
+static void send_data_inet(const char *msg, char *host, char *port) {
     int sockfd;
 
     struct sockaddr_in addr;
@@ -77,20 +77,22 @@ static void send_message_inet(char *msg, char *host, char *port) {
     while ((r = read(sockfd, buf, sizeof(buf)-1)) > 0) {}
 }
 
-char *send_message(char *msg) {
+char *send_data(const char *msg) {
     char* host = getenv("CLADE_INET_HOST");
     char* port = getenv("CLADE_INET_PORT");
     char* address = getenv("CLADE_UNIX_ADDRESS");
 
     // Use UNIX sockets if address is not NULL
     if (address) {
-        send_message_unix(msg, address);
+        send_data_unix(msg, address);
     }
     // Else try to use TCP/IP sockets
     else if (host && port) {
-        send_message_inet(msg, host, port);
+        send_data_inet(msg, host, port);
     }
-
-    return msg;
+    else {
+        perror("Server adress is not specified");
+        exit(EXIT_FAILURE);
+    }
 }
 

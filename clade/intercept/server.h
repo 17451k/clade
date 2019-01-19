@@ -18,6 +18,6 @@
 #ifndef SERVER_H
 #define SERVER_H
 
-extern char *send_message(char *msg);
+extern void send_data(const char *msg);
 
 #endif /* SERVER_H */

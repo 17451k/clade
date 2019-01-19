@@ -99,7 +99,7 @@ class Extension(metaclass=abc.ABCMeta):
 
     def preprocess(self, cmd):
         """Preprocess intercepted build command before its execution"""
-        return cmd
+        return
 
     @staticmethod
     def prepare(parse):
@@ -191,6 +191,13 @@ class Extension(metaclass=abc.ABCMeta):
             file_name = os.path.join(folder, hashlib.md5(key.encode('utf-8')).hexdigest() + ".json")
 
             self.dump_data(to_dump, file_name, indent=0)
+
+    @staticmethod
+    def get_all_extensions():
+        """Get all extension lasses."""
+
+        Extension.__import_extension_modules()
+        return Extension.__get_all_subclasses(Extension)
 
     @staticmethod
     def __get_all_subclasses(cls):

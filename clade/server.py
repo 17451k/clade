@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import multiprocessing
+import threading
 import os
 import socket
 import socketserver
@@ -21,6 +22,8 @@ import sys
 import tempfile
 
 from clade.utils import get_logger
+from clade.extensions.abstract import Extension
+from clade.cmds import split_cmd, join_cmd
 
 if sys.platform == 'linux' or sys.platform == 'darwin':
     parent = socketserver.UnixStreamServer
@@ -36,15 +39,17 @@ class SocketServer(parent):
     class RequestHandler(socketserver.StreamRequestHandler):
         def handle(self):
             data = self.rfile.readline().strip().decode("utf-8")
+            cmd = split_cmd(data)
+
+            for ext in self.extensions:
+                ext.preprocess(cmd)
+
+            data = join_cmd(cmd)
 
             with open(self.output, "a") as clade_fh:
                 clade_fh.write(data + "\n")
 
-            # for ext in self.extensions:
-            #     data = ext.preprocess(data)
-            # self.wfile.write(data)
-
-    def __init__(self, address, output, extensions):
+    def __init__(self, address, output, conf):
         self.process = None
         # Variable to store file object of UNIX socket parent directory
         self.socket_fh = None
@@ -54,13 +59,19 @@ class SocketServer(parent):
         rh.output = output
 
         # Request handler must have access to extensions
+        extensions = []
+        for cls in Extension.get_all_extensions():
+            extensions.append(cls(conf.get("work_dir", "Clade"), conf))
         rh.extensions = extensions
 
         super().__init__(address, rh)
 
     def start(self):
-        self.process = multiprocessing.Process(target=self.serve_forever)
-
+        if sys.platform == "win32":
+            self.process = threading.Thread(target=self.serve_forever)
+        else:
+            self.process = multiprocessing.Process(target=self.serve_forever)
+        self.process.daemon = True
         self.process.start()
 
     def terminate(self):
@@ -68,14 +79,11 @@ class SocketServer(parent):
         if self.socket_fh:
             self.socket_fh.close()
 
-        self.process.terminate()
-
 
 class PreprocessServer():
-    def __init__(self, conf, output, extensions):
+    def __init__(self, conf, output):
         self.conf = conf
         self.output = output
-        self.extensions = extensions
         self.logger = get_logger("Server", self.conf)
         self.server = self.__prepare()
 
@@ -97,7 +105,7 @@ class PreprocessServer():
         name = os.path.join(f.name, "clade.sock")
         self.conf["Server.address"] = name
 
-        server = SocketServer(name, self.output, self.extensions)
+        server = SocketServer(name, self.output, self.conf)
 
         # Without this file object will be closed automatically after exiting from this function
         server.sock_fh = f
@@ -108,7 +116,7 @@ class PreprocessServer():
         self.conf["Server.host"] = self.conf.get("Server.host", "localhost")
         self.conf["Server.port"] = self.conf.get("Server.port", "0")
 
-        server = SocketServer((self.conf["Server.host"], int(self.conf["Server.port"])), self.output, self.extensions)
+        server = SocketServer((self.conf["Server.host"], int(self.conf["Server.port"])), self.output, self.conf)
 
         # If "Server.port" is 0, than dynamic port assignment is used and the value needs to be updated
         self.conf["Server.port"] = str(server.server_address[1])

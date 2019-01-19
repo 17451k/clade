@@ -157,7 +157,7 @@ void intercept_call(const char *path, char const *const argv[]) {
     char *data = prepare_data(path, argv);
 
     if (getenv("CLADE_PREPROCESS"))
-        send_message(data);
+        send_data(data);
     else
         store_data(data, data_file);
     free(data);

@@ -55,12 +55,22 @@ def iter_cmds(cmds_fp):
         cmds_fp: A file object.
     """
     for cmd_id, line in enumerate(cmds_fp):
-        cmd = dict()
+        cmd = split_cmd(line)
         cmd["id"] = str(cmd_id + 1)  # cmd_id should be line number in cmds_fp file
-        cmd["cwd"], cmd["pid"], cmd["which"], *cmd["command"] = line.strip().split(DELIMITER)
-        cmd["which"] = os.path.normpath(cmd["which"])
-
         yield cmd
+
+
+def split_cmd(line):
+    """Convert a single intercepted command into dictionary."""
+    cmd = dict()
+    cmd["cwd"], cmd["pid"], cmd["which"], *cmd["command"] = line.strip().split(DELIMITER)
+    return cmd
+
+
+def join_cmd(cmd):
+    """Convert a single intercepted command from dictionary to cmds.txt line."""
+    line = DELIMITER.join([cmd["cwd"], cmd["pid"], cmd["which"], *cmd["command"]])
+    return line
 
 
 def get_first_cmd(cmds_file):
