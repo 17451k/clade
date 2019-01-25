@@ -20,20 +20,21 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 #define WIN32_LEAN_AND_MEAN
 
 #include <windows.h>
+#include <shellapi.h>
 #include <psapi.h>
 #include <winternl.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
-
 // For socket client functionality need to link with Ws2_32.lib, Mswsock.lib, and Advapi32.lib
-#pragma comment (lib, "Ws2_32.lib")
-#pragma comment (lib, "Mswsock.lib")
-#pragma comment (lib, "AdvApi32.lib")
+#pragma comment(lib, "Ws2_32.lib")
+#pragma comment(lib, "Mswsock.lib")
+#pragma comment(lib, "AdvApi32.lib")
 
 #define DEFAULT_BUFLEN 1024
 
@@ -49,23 +50,25 @@ int curDirPathOffset = 0x24;
 
 // Function pointer declaration
 // NTAPI = Native Windows API
-typedef NTSTATUS (NTAPI *_NtQueryInformationProcess)(HANDLE, DWORD, PVOID, DWORD, PDWORD);
-
+typedef NTSTATUS(NTAPI *_NtQueryInformationProcess)(HANDLE, DWORD, PVOID, DWORD, PDWORD);
 
 // PEB - process environment block, low-level data stracture containing various information
 // Address of the PEB can be obtained using NTAPI function NtQueryInformationProcess
 // But the function itself is not public. Its address can be found in ntdll.dll.
-PVOID GetPebAddress(HANDLE ProcessHandle) {
+PVOID GetPebAddress(HANDLE ProcessHandle)
+{
     HINSTANCE hinstLib = LoadLibrary(TEXT("ntdll.dll"));
 
-    if (!hinstLib) {
+    if (!hinstLib)
+    {
         std::cerr << "Could not get handle to ntdll module: error code " << GetLastError() << std::endl;
         exit(GetLastError());
     }
 
-    _NtQueryInformationProcess NtQueryInformationProcess = (_NtQueryInformationProcess) GetProcAddress(hinstLib, "NtQueryInformationProcess");
+    _NtQueryInformationProcess NtQueryInformationProcess = (_NtQueryInformationProcess)GetProcAddress(hinstLib, "NtQueryInformationProcess");
 
-    if (!NtQueryInformationProcess) {
+    if (!NtQueryInformationProcess)
+    {
         std::cerr << "Could not get address of NtQueryInformationProcess function: error code " << GetLastError() << std::endl;
         exit(GetLastError());
     }
@@ -79,13 +82,14 @@ PVOID GetPebAddress(HANDLE ProcessHandle) {
     return pbi.PebBaseAddress;
 }
 
-
-PVOID GetUserProcParamsAddress(HANDLE hProcess) {
+PVOID GetUserProcParamsAddress(HANDLE hProcess)
+{
     PVOID pebAddress = GetPebAddress(hProcess);
     PCHAR procParamsAddress = (PCHAR)pebAddress + procParamsOffset;
     PVOID rtlUserProcParamsAddress;
 
-    if (!ReadProcessMemory(hProcess, procParamsAddress, &rtlUserProcParamsAddress, sizeof(PVOID), NULL)) {
+    if (!ReadProcessMemory(hProcess, procParamsAddress, &rtlUserProcParamsAddress, sizeof(PVOID), NULL))
+    {
         std::cerr << "Could not read the address of ProcessParameters: error code " << GetLastError() << std::endl;
         exit(GetLastError());
     }
@@ -93,15 +97,16 @@ PVOID GetUserProcParamsAddress(HANDLE hProcess) {
     return rtlUserProcParamsAddress;
 }
 
-
-UNICODE_STRING GetCmdLineStruct(HANDLE hProcess) {
+UNICODE_STRING GetCmdLineStruct(HANDLE hProcess)
+{
     PVOID rtlUserProcParamsAddress = GetUserProcParamsAddress(hProcess);
 
     UNICODE_STRING cmdLineStruct;
     PCHAR cmdLineAddress = (PCHAR)rtlUserProcParamsAddress + cmdLineOffset;
 
     // read the CommandLine UNICODE_STRING structure
-    if (!ReadProcessMemory(hProcess, cmdLineAddress, &cmdLineStruct, sizeof(cmdLineStruct), NULL)) {
+    if (!ReadProcessMemory(hProcess, cmdLineAddress, &cmdLineStruct, sizeof(cmdLineStruct), NULL))
+    {
         std::cerr << "Could not read CommandLine address: error code " << GetLastError() << std::endl;
         exit(GetLastError());
     }
@@ -109,39 +114,34 @@ UNICODE_STRING GetCmdLineStruct(HANDLE hProcess) {
     return cmdLineStruct;
 }
 
-
-char *GetCmdLine(HANDLE hProcess) {
+wchar_t *GetCmdLine(HANDLE hProcess)
+{
     UNICODE_STRING cmdLineStruct = GetCmdLineStruct(hProcess);
-    wchar_t *_cmdLine = new wchar_t[cmdLineStruct.Length];
+    size_t cmdLineLen = cmdLineStruct.Length / 2;
+    wchar_t *cmdLine = new wchar_t[cmdLineLen + 1];
 
     // read the command line
-    if (!ReadProcessMemory(hProcess, cmdLineStruct.Buffer, _cmdLine, cmdLineStruct.Length, NULL)) {
+    if (!ReadProcessMemory(hProcess, cmdLineStruct.Buffer, cmdLine, cmdLineStruct.Length, NULL))
+    {
         std::cerr << "Could not read the command line string: error code " << GetLastError() << std::endl;
         exit(GetLastError());
     }
 
-    // convert wchar_t* to char*
-    size_t cmdLineLen = cmdLineStruct.Length / 2;
-    size_t charsConverted;
-    char *cmdLine = new char[cmdLineLen + 1];
-
-    wcstombs_s(&charsConverted, cmdLine, cmdLineLen + 1, _cmdLine, cmdLineLen);
     cmdLine[cmdLineLen] = 0;
-
-    delete[] _cmdLine;
 
     return cmdLine;
 }
 
-
-UNICODE_STRING GetCurDirPathStruct(HANDLE hProcess) {
+UNICODE_STRING GetCurDirPathStruct(HANDLE hProcess)
+{
     PVOID rtlUserProcParamsAddress = GetUserProcParamsAddress(hProcess);
 
     UNICODE_STRING curDirPathStruct;
     PCHAR curDirPathAddress = (PCHAR)rtlUserProcParamsAddress + curDirPathOffset;
 
     // read the CommandLine UNICODE_STRING structure
-    if (!ReadProcessMemory(hProcess, curDirPathAddress, &curDirPathStruct, sizeof(curDirPathStruct), NULL)) {
+    if (!ReadProcessMemory(hProcess, curDirPathAddress, &curDirPathStruct, sizeof(curDirPathStruct), NULL))
+    {
         std::cerr << "Could not read CurrentDirectoryPath address: error code " << GetLastError() << std::endl;
         exit(GetLastError());
     }
@@ -149,38 +149,33 @@ UNICODE_STRING GetCurDirPathStruct(HANDLE hProcess) {
     return curDirPathStruct;
 }
 
-
-char *GetCurDirPath(HANDLE hProcess) {
+wchar_t *GetCurDirPath(HANDLE hProcess)
+{
     UNICODE_STRING curDirPathStruct = GetCurDirPathStruct(hProcess);
-    wchar_t *_curDirPath = new wchar_t[curDirPathStruct.Length];
+    size_t curDirPathLen = curDirPathStruct.Length / 2;
+    wchar_t *curDirPath = new wchar_t[curDirPathLen + 1];
 
     // read the command line
-    if (!ReadProcessMemory(hProcess, curDirPathStruct.Buffer, _curDirPath, curDirPathStruct.Length, NULL)) {
+    if (!ReadProcessMemory(hProcess, curDirPathStruct.Buffer, curDirPath, curDirPathStruct.Length, NULL))
+    {
         std::cerr << "Could not read the CurrentDirectoryPath string: error code " << GetLastError() << std::endl;
         exit(GetLastError());
     }
 
-    // convert wchar_t* to char*
-    size_t curDirPathLen = curDirPathStruct.Length / 2;
-    size_t charsConverted;
-    char *curDirPath = new char[curDirPathLen + 1];
-
-    wcstombs_s(&charsConverted, curDirPath, curDirPathLen + 1, _curDirPath, curDirPathLen);
     curDirPath[curDirPathLen] = 0;
-
-    delete[] _curDirPath;
 
     return curDirPath;
 }
 
-
-char *GetPathToProcExecutable(HANDLE hProcess) {
-    char *which = new char[MAX_PATH];
-    GetModuleFileNameExA(hProcess, NULL, which, MAX_PATH);
+wchar_t *GetPathToProcExecutable(HANDLE hProcess)
+{
+    wchar_t *which = new wchar_t[MAX_PATH];
+    GetModuleFileNameExW(hProcess, NULL, which, MAX_PATH);
     return which;
 }
 
-void send_data(const char* data) {
+void SendData(const wchar_t *wdata)
+{
     WSADATA wsaData;
     SOCKET ConnectSocket = INVALID_SOCKET;
     struct addrinfo *result = NULL,
@@ -190,49 +185,55 @@ void send_data(const char* data) {
     int r;
     int recvbuflen = DEFAULT_BUFLEN;
 
-    char* host = getenv("CLADE_INET_HOST");
-    char* port = getenv("CLADE_INET_PORT");
+    char *host = getenv("CLADE_INET_HOST");
+    char *port = getenv("CLADE_INET_PORT");
 
-    if (!host || !port) {
+    if (!host || !port)
+    {
         std::cerr << "Server adress is not specified" << std::endl;
         exit(EXIT_FAILURE);
     }
 
     // Initialize Winsock
-    r = WSAStartup(MAKEWORD(2,2), &wsaData);
-    if (r != 0) {
+    r = WSAStartup(MAKEWORD(2, 2), &wsaData);
+    if (r != 0)
+    {
         std::cerr << "WSAStartup failed: error code " << r << std::endl;
         exit(EXIT_FAILURE);
     }
 
-    ZeroMemory( &hints, sizeof(hints) );
+    ZeroMemory(&hints, sizeof(hints));
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
 
     // Resolve the server address and port
     r = getaddrinfo(host, port, &hints, &result);
-    if ( r != 0 ) {
+    if (r != 0)
+    {
         std::cerr << "getaddrinfo failed: error code " << r << std::endl;
         WSACleanup();
         exit(EXIT_FAILURE);
     }
 
     // Attempt to connect to an address until one succeeds
-    for(ptr=result; ptr != NULL ;ptr=ptr->ai_next) {
+    for (ptr = result; ptr != NULL; ptr = ptr->ai_next)
+    {
 
         // Create a SOCKET for connecting to server
         ConnectSocket = socket(ptr->ai_family, ptr->ai_socktype,
-            ptr->ai_protocol);
-        if (ConnectSocket == INVALID_SOCKET) {
+                               ptr->ai_protocol);
+        if (ConnectSocket == INVALID_SOCKET)
+        {
             std::cerr << "Socket failed: error code " << GetLastError() << std::endl;
             WSACleanup();
             exit(EXIT_FAILURE);
         }
 
         // Connect to server.
-        r = connect( ConnectSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
-        if (r == SOCKET_ERROR) {
+        r = connect(ConnectSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
+        if (r == SOCKET_ERROR)
+        {
             closesocket(ConnectSocket);
             ConnectSocket = INVALID_SOCKET;
             continue;
@@ -242,15 +243,25 @@ void send_data(const char* data) {
 
     freeaddrinfo(result);
 
-    if (ConnectSocket == INVALID_SOCKET) {
+    if (ConnectSocket == INVALID_SOCKET)
+    {
         std::cerr << "Unable to connect to server" << std::endl;
         WSACleanup();
         exit(EXIT_FAILURE);
     }
 
+    // convert wchar_t* to char*
+    size_t dataLen = wcslen(wdata);
+    size_t charsConverted;
+    char *data = new char[dataLen + 1];
+
+    wcstombs_s(&charsConverted, data, dataLen + 1, wdata, dataLen);
+    data[dataLen] = 0;
+
     // Send data
-    r = send( ConnectSocket, data, (int)strlen(data), 0 );
-    if (r == SOCKET_ERROR) {
+    r = send(ConnectSocket, data, (int)strlen(data), 0);
+    if (r == SOCKET_ERROR)
+    {
         std::cerr << "Send failed: error code " << GetLastError() << std::endl;
         closesocket(ConnectSocket);
         WSACleanup();
@@ -259,7 +270,8 @@ void send_data(const char* data) {
 
     // shutdown the connection since no more data will be sent
     r = shutdown(ConnectSocket, SD_SEND);
-    if (r == SOCKET_ERROR) {
+    if (r == SOCKET_ERROR)
+    {
         std::cerr << "Shutdown failed: error code " << GetLastError() << std::endl;
         closesocket(ConnectSocket);
         WSACleanup();
@@ -267,9 +279,10 @@ void send_data(const char* data) {
     }
 
     // Receive until the peer closes the connection
-    do {
+    do
+    {
         r = recv(ConnectSocket, recvbuf, recvbuflen, 0);
-    } while( r > 0 );
+    } while (r > 0);
 
     // cleanup
     closesocket(ConnectSocket);
@@ -278,28 +291,91 @@ void send_data(const char* data) {
     return;
 }
 
+bool IsFileExist(const wchar_t *fileName)
+{
+    return !!std::ifstream(fileName);
+}
 
-void HandleCreateProcess(CREATE_PROCESS_DEBUG_INFO const &createProcess) {
+const wchar_t *ReadCommandFile(const wchar_t *fileName)
+{
+    if (!IsFileExist(fileName))
+    {
+        std::cerr << "Can't open command file" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    std::wifstream ifs(fileName);
+    std::wstring content((std::istreambuf_iterator<wchar_t>(ifs)),
+                         (std::istreambuf_iterator<wchar_t>()));
+
+    std::replace(content.begin(), content.end(), '\n', ' ');
+
+    return content.c_str();
+}
+
+wchar_t *ProcessCommandFiles(const wchar_t *cmdLine)
+{
+    // TODO: support /link commands
+    std::wstring cmdLineS = cmdLine;
+
+    std::wcout << cmdLineS << std::endl;
+    // A command file is specified by an at sign (@) followed by a filename
+    size_t start = 0;
+    std::wcout << cmdLineS << std::endl;
+    while ((start = cmdLineS.find(L"@")) != std::string::npos)
+    {
+        size_t end = cmdLineS.find(L" ", start);
+
+        cmdLineS.replace(start, end - start, ReadCommandFile(cmdLineS.substr(start + 1, end - start).c_str()));
+        std::wcout << cmdLineS << std::endl;
+    }
+
+    return const_cast<wchar_t *>(cmdLineS.c_str());
+}
+
+void HandleCreateProcess(CREATE_PROCESS_DEBUG_INFO const &createProcess)
+{
     HANDLE hProcess = createProcess.hProcess;
 
-    char *cmdLine = GetCmdLine(hProcess);
-    char *curDirPath = GetCurDirPath(hProcess);
-    char *which = GetPathToProcExecutable(hProcess);
+    wchar_t *cmdLine = GetCmdLine(hProcess);
+    wchar_t *curDirPath = GetCurDirPath(hProcess);
+    wchar_t *which = GetPathToProcExecutable(hProcess);
 
-    char *data_file = getenv("CLADE_INTERCEPT");
+    wchar_t *data_file = _wgetenv(L"CLADE_INTERCEPT");
 
-    if (!data_file) {
+    if (!data_file)
+    {
         std::cerr << "Environment is not prepared: CLADE_INTERCEPT is not specified" << std::endl;
         exit(EXIT_FAILURE);
     }
 
-    std::ostringstream data;
-    data << curDirPath << "||0||" << which << "||" << cmdLine << std::endl;
+    std::wostringstream data;
+    data << curDirPath << L"||0||" << which;
 
-    if (getenv("CLADE_PREPROCESS"))
-        send_data(data.str().c_str());
-    else {
-        std::fstream cladeTxt;
+    wchar_t **cmdList;
+    int nArgs;
+
+    cmdLine = ProcessCommandFiles(cmdLine);
+    cmdList = CommandLineToArgvW(cmdLine, &nArgs);
+
+    if (!cmdList)
+    {
+        std::cerr << "CommandLineToArgvW failed: error code " << GetLastError() << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    for (int i = 0; i < nArgs; i++)
+    {
+        data << L"||" << cmdList[i];
+    }
+
+    data << std::endl;
+
+    if (_wgetenv(L"CLADE_PREPROCESS"))
+        SendData(data.str().c_str());
+    else
+    {
+        std::wfstream cladeTxt;
         cladeTxt.open(data_file, std::ios_base::app);
         cladeTxt << data.str();
         cladeTxt.close();
@@ -310,26 +386,30 @@ void HandleCreateProcess(CREATE_PROCESS_DEBUG_INFO const &createProcess) {
     delete[] which;
 
     // file handle should be closed, but process handle (hProcess) shouldn't
-    if(createProcess.hFile)
+    if (createProcess.hFile)
         CloseHandle(createProcess.hFile);
 }
 
-
-void EnterDebugLoop() {
+void EnterDebugLoop()
+{
     // Store ids of all currently debugging processes
     // Stop debugging once this array is empty
     std::vector<DWORD> processIds;
 
-    while (TRUE) {
+    while (TRUE)
+    {
         DEBUG_EVENT DebugEvent;
         WaitForDebugEvent(&DebugEvent, INFINITE);
 
-        if (DebugEvent.dwDebugEventCode == CREATE_PROCESS_DEBUG_EVENT) {
+        if (DebugEvent.dwDebugEventCode == CREATE_PROCESS_DEBUG_EVENT)
+        {
             processIds.push_back(DebugEvent.dwProcessId);
             HandleCreateProcess(DebugEvent.u.CreateProcessInfo);
         }
-        else if (DebugEvent.dwDebugEventCode == EXIT_PROCESS_DEBUG_EVENT) {
-            for (auto it = processIds.begin(); it != processIds.end(); ) {
+        else if (DebugEvent.dwDebugEventCode == EXIT_PROCESS_DEBUG_EVENT)
+        {
+            for (auto it = processIds.begin(); it != processIds.end();)
+            {
                 if (*it == DebugEvent.dwProcessId)
                     it = processIds.erase(it);
                 else
@@ -342,7 +422,8 @@ void EnterDebugLoop() {
 
         DWORD continueStatus = DBG_CONTINUE;
         // In case of exceptions ContinueDebugEvent should be called with DBG_EXCEPTION_NOT_HANDLED
-        if (DebugEvent.dwDebugEventCode == EXCEPTION_DEBUG_EVENT) {
+        if (DebugEvent.dwDebugEventCode == EXCEPTION_DEBUG_EVENT)
+        {
             continueStatus = DBG_EXCEPTION_NOT_HANDLED;
         }
 
@@ -350,22 +431,23 @@ void EnterDebugLoop() {
     }
 }
 
-
-void CreateProcessToDebug(int argc, char **argv) {
+void CreateProcessToDebug(int argc, wchar_t **argv)
+{
     // Make a single string from argv[] array
-    std::string cmdLine = "C:\\windows\\system32\\cmd.exe /c ";
-    for (int i = 0; i < argc; i++) {
+    std::wstring cmdLine = L"C:\\windows\\system32\\cmd.exe /c";
+    for (int i = 0; i < argc; i++)
+    {
         if (!cmdLine.empty())
             cmdLine += ' ';
 
-        if (strchr( argv[i], ' ' ))
+        if (wcschr(argv[i], ' '))
             cmdLine += '"' + argv[i] + '"';
         else
             cmdLine += argv[i];
     }
 
     // Some structs necessary to perform CreateProcess call
-    STARTUPINFOA si;
+    STARTUPINFOW si;
     PROCESS_INFORMATION pi;
 
     ZeroMemory(&si, sizeof(si));
@@ -374,18 +456,18 @@ void CreateProcessToDebug(int argc, char **argv) {
 
     // TODO: Check why handle inheritance is set to TRUE
     // Create new process
-    if(!CreateProcessA(NULL,                 // No module name (use command line)
-        const_cast<char *>(cmdLine.c_str()), // Command line
-        NULL,           // Process handle not inheritable
-        NULL,           // Thread handle not inheritable
-        TRUE,           // Set handle inheritance to TRUE
-        DEBUG_PROCESS,  // Process creation flags. DEBUG_PROCESS allows to debug created process and all its childs
-        NULL,           // Use parent's environment block
-        NULL,           // Use parent's starting directory
-        &si,            // Pointer to STARTUPINFO structure
-        &pi ))          // Pointer to PROCESS_INFORMATION structure
+    if (!CreateProcessW(NULL,                                   // No module name (use command line)
+                        const_cast<wchar_t *>(cmdLine.c_str()), // Command line
+                        NULL,                                   // Process handle not inheritable
+                        NULL,                                   // Thread handle not inheritable
+                        TRUE,                                   // Set handle inheritance to TRUE
+                        DEBUG_PROCESS,                          // Process creation flags. DEBUG_PROCESS allows to debug created process and all its childs
+                        NULL,                                   // Use parent's environment block
+                        NULL,                                   // Use parent's starting directory
+                        &si,                                    // Pointer to STARTUPINFO structure
+                        &pi))                                   // Pointer to PROCESS_INFORMATION structure
     {
-        std::cerr <<  "CreateProcess failed: error code " << GetLastError() << std::endl;
+        std::cerr << "CreateProcess failed: error code " << GetLastError() << std::endl;
         exit(EXIT_FAILURE);
     }
 
@@ -395,9 +477,10 @@ void CreateProcessToDebug(int argc, char **argv) {
     CloseHandle(pi.hThread);
 }
 
-
-int main(int argc, char **argv) {
-    if (argc <= 1) {
+int wmain(int argc, wchar_t **argv)
+{
+    if (argc <= 1)
+    {
         std::cerr << "Command to execute is missing" << std::endl;
         exit(EXIT_FAILURE);
     }
