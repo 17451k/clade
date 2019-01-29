@@ -21,6 +21,8 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <locale>
+#include <codecvt>
 
 #define WIN32_LEAN_AND_MEAN
 
@@ -296,41 +298,81 @@ bool IsFileExist(const wchar_t *fileName)
     return !!std::ifstream(fileName);
 }
 
-const wchar_t *ReadCommandFile(const wchar_t *fileName)
+wchar_t *ProcessCommandFiles(const wchar_t *_cmdLine)
 {
-    if (!IsFileExist(fileName))
-    {
-        std::cerr << "Can't open command file" << std::endl;
-        exit(EXIT_FAILURE);
-    }
+    std::wstring cmdLine = _cmdLine;
 
-    std::wifstream ifs(fileName);
-    std::wstring content((std::istreambuf_iterator<wchar_t>(ifs)),
-                         (std::istreambuf_iterator<wchar_t>()));
+    size_t beginning = 0;
 
-    std::replace(content.begin(), content.end(), '\n', ' ');
-
-    return content.c_str();
-}
-
-wchar_t *ProcessCommandFiles(const wchar_t *cmdLine)
-{
-    // TODO: support /link commands
-    std::wstring cmdLineS = cmdLine;
-
-    std::wcout << cmdLineS << std::endl;
     // A command file is specified by an at sign (@) followed by a filename
-    size_t start = 0;
-    std::wcout << cmdLineS << std::endl;
-    while ((start = cmdLineS.find(L"@")) != std::string::npos)
+    // There can be several command files in the command line (cmdLine variable)
+    // All of them must be read. and they content must be inserted in the command line string
+    while ((beginning = cmdLine.find(L"@", beginning)) != std::wstring::npos)
     {
-        size_t end = cmdLineS.find(L" ", start);
+        wchar_t *endSymbols = L" ";
 
-        cmdLineS.replace(start, end - start, ReadCommandFile(cmdLineS.substr(start + 1, end - start).c_str()));
-        std::wcout << cmdLineS << std::endl;
+        // Sometimes command files are escaped, like this: @"path/to the/file.rsp"
+        // Then last symbols should be '" '
+        if (cmdLine.at(beginning + 1) == '"')
+        {
+            endSymbols = L"\" ";
+        }
+
+        // There should be "cmdLine.find(endSymbols, beginning) - 1"
+        // but we have to support two cases, when ending symbols are " " and "\" ".
+        size_t end = cmdLine.find(endSymbols, beginning) + wcslen(endSymbols) - 2;
+
+        wchar_t *fileName = new wchar_t[cmdLine.length() + 1];
+        size_t fileNameBeginning = beginning + 1;
+        size_t fileNameLen = end - fileNameBeginning + 1;
+
+        if (cmdLine.at(beginning + 1) == '"')
+        {
+            fileNameBeginning = fileNameBeginning + 1;
+            fileNameLen = fileNameLen - 2;
+        }
+
+        std::wcscpy(fileName, cmdLine.substr(fileNameBeginning, fileNameLen).c_str());
+
+        // If file does not exist than it is not a command file
+        if (!IsFileExist(fileName))
+        {
+            beginning++;
+            continue;
+        }
+
+        // Read command file line by line
+        std::wifstream infile(fileName, std::ios::binary);
+        // apply BOM-sensitive UTF-16 facet
+        infile.imbue(std::locale(infile.getloc(),
+                                 new std::codecvt_utf16<wchar_t, 0x10ffff, std::consume_header>));
+        std::wstring replacement;
+
+        std::wstring line;
+        while (std::getline(infile, line))
+        {
+            // Special case: /link option  must always occur last
+            size_t link_beginning = line.find(L"/link");
+
+            if (link_beginning != std::wstring::npos)
+            {
+                cmdLine += L" " + line.substr(link_beginning, std::wstring::npos);
+                line = line.substr(0, link_beginning);
+            }
+
+            if (replacement.empty() || replacement.back() == ' ')
+                replacement += line;
+            else
+                replacement += L" " + line;
+        }
+
+        const wchar_t *commandFileContent = replacement.c_str();
+        cmdLine.replace(beginning, end - beginning + 1, commandFileContent);
     }
 
-    return const_cast<wchar_t *>(cmdLineS.c_str());
+    wchar_t *cmdLineRet = new wchar_t[cmdLine.length() + 1];
+    std::wcscpy(cmdLineRet, cmdLine.c_str());
+    return cmdLineRet;
 }
 
 void HandleCreateProcess(CREATE_PROCESS_DEBUG_INFO const &createProcess)
