@@ -22,12 +22,12 @@ import shutil
 import sys
 
 from clade.extensions.abstract import Extension
-from clade.extensions.opts import requires_value, preprocessor_deps_opts
+from clade.extensions.opts import requires_value
 from clade.cmds import iter_cmds_by_which, open_cmds_file
 
 
 class Common(Extension, metaclass=abc.ABCMeta):
-    """Parent class for CC, LD and Objcopy classes.
+    """Parent class for CC, LD, MV, AR, AS and Objcopy classes.
 
     Raises:
         RuntimeError: Command can't be parsed as its type is not supported.
@@ -51,10 +51,14 @@ class Common(Extension, metaclass=abc.ABCMeta):
 
         # Make a regex that matches if any of our regexes match.
         if cmd_filter or cmd_filter_in:
-            self.regex_in = re.compile("(" + ")|(".join(cmd_filter + cmd_filter_in) + ")")
+            self.regex_in = re.compile(
+                "(" + ")|(".join(cmd_filter + cmd_filter_in) + ")"
+            )
 
         if cmd_filter or cmd_filter_out:
-            self.regex_out = re.compile("(" + ")|(".join(cmd_filter + cmd_filter_out) + ")")
+            self.regex_out = re.compile(
+                "(" + ")|(".join(cmd_filter + cmd_filter_out) + ")"
+            )
 
     @Extension.prepare
     def parse(self, cmds_file, which_list):
@@ -109,50 +113,51 @@ class Common(Extension, metaclass=abc.ABCMeta):
         for i in range(cmd_workers_num):
             cmd_workers[i].join()
 
-    def parse_cmd(self, cmd, cmd_type):
-        """Parse single bulid command."""
-        self.debug("Parse: {}".format(cmd))
-        parsed_cmd = {
+    def _get_cmd_dict(self, cmd):
+        return {
             "id": cmd["id"],
             "in": [],
             "out": [],
             "opts": [],
             "cwd": cmd["cwd"],
-            "command": cmd["command"][0]
+            "command": cmd["command"][0],
         }
 
+    def parse_cmd(self, cmd, cmd_type):
+        """Parse single bulid command."""
+        self.debug("Parse: {}".format(cmd))
+        parsed_cmd = self._get_cmd_dict(cmd)
+
         if cmd_type not in requires_value:
-            raise RuntimeError("Command type '{}' is not supported".format(cmd_type))
+            raise RuntimeError(
+                "Command type '{}' is not supported".format(cmd_type)
+            )
 
         opts = iter(cmd["command"][1:])
 
         for opt in opts:
             # Options with values.
             if opt in requires_value[cmd_type]:
-                # Option value is specified by means of the following option.
+                # Value is the next option.
                 val = next(opts)
                 if opt == "-o":
                     parsed_cmd["out"].append(os.path.normpath(val))
                 else:
                     parsed_cmd["opts"].extend([opt, val])
-            # Options without values (or with values that are not separated by space).
+            # Options without values
+            # Or with values that are not separated by space
             elif re.search(r"^-", opt):
                 parsed_cmd["opts"].append(opt)
             # Input files.
             else:
                 parsed_cmd["in"].append(opt)
 
-        if cmd_type == "CC" and not parsed_cmd["out"] and "-c" in parsed_cmd["opts"]:
-            for cmd_in in parsed_cmd["in"]:
-                # Output file is located inside "cwd" directory, not near cmd_in
-                # For example, gcc -c work/1.c will produce 1.o file, not work/1.o
-                cmd_out = os.path.join(parsed_cmd["cwd"], os.path.basename(os.path.splitext(cmd_in)[0] + ".o"))
-                parsed_cmd["out"].append(cmd_out)
-
         return parsed_cmd
 
     def load_cmd_by_id(self, id):
-        return self.load_data(os.path.join(self.cmds_dir, "{}.json".format(id)))
+        return self.load_data(
+            os.path.join(self.cmds_dir, "{}.json".format(id))
+        )
 
     def dump_cmd_by_id(self, id, cmd):
         self.dump_opts_by_id(cmd["id"], cmd["opts"])
@@ -160,20 +165,25 @@ class Common(Extension, metaclass=abc.ABCMeta):
         self.dump_data(cmd, os.path.join(self.cmds_dir, "{}.json".format(id)))
 
     def load_opts_by_id(self, id):
-        return self.load_data(os.path.join(self.opts_dir, "{}.json".format(id)), raise_exception=False)
+        opts_file = os.path.join(self.opts_dir, "{}.json".format(id))
+        return self.load_data(opts_file, raise_exception=False)
 
     def dump_opts_by_id(self, id, opts):
         self.dump_data(opts, os.path.join(self.opts_dir, "{}.json".format(id)))
 
     def load_unparsed_by_id(self, id):
-        return self.load_data(os.path.join(self.unparsed_dir, "{}.json".format(id)), raise_exception=False)
+        unparsed_file = os.path.join(self.unparsed_dir, "{}.json".format(id))
+        return self.load_data(unparsed_file, raise_exception=False)
 
     def dump_unparsed_by_id(self, id, cmd):
-        self.dump_data(cmd, os.path.join(self.unparsed_dir, "{}.json".format(id)))
+        unparsed_file = os.path.join(self.unparsed_dir, "{}.json".format(id))
+        self.dump_data(cmd, unparsed_file)
 
     def __merge_all_cmds(self):
         """Merge all parsed commands into a single json file."""
-        cmd_jsons = glob.glob(os.path.join(self.work_dir, self.cmds_dir, "*[0-9].json"))
+        cmd_jsons = glob.glob(
+            os.path.join(self.work_dir, self.cmds_dir, "*[0-9].json")
+        )
 
         merged_cmds = []
 
@@ -194,7 +204,9 @@ class Common(Extension, metaclass=abc.ABCMeta):
         """Load all parsed commands."""
         cmds = self.load_data("cmds.json")
 
-        if filter_by_pid and self.conf.get("PidGraph.filter_cmds_by_pid", True):
+        if filter_by_pid and self.conf.get(
+            "PidGraph.filter_cmds_by_pid", True
+        ):
             cmds = self.extensions["PidGraph"].filter_cmds_by_pid(cmds)
 
         if with_opts:
@@ -205,16 +217,10 @@ class Common(Extension, metaclass=abc.ABCMeta):
         return cmds
 
     def is_bad(self, cmd):
-        for _ in (cmd_in for cmd_in in cmd["in"] if self.regex_in and self.regex_in.match(cmd_in)):
+        if any((True for cmd_in in cmd["in"] if self.regex_in and self.regex_in.match(cmd_in))):
             return True
 
-        for _ in (cmd_out for cmd_out in cmd["out"] if self.regex_out and self.regex_out.match(cmd_out)):
-            return True
-
-        if self.name == "CC" and self.conf.get("CC.filter_deps", True) and set(cmd["opts"]).intersection(preprocessor_deps_opts):
-            return True
-
-        if self.name == "CC" and self.conf.get("CC.ignore_cc1", True) and "-cc1" in cmd["opts"]:
+        if any((True for cmd_out in cmd["out"] if self.regex_out and self.regex_out.match(cmd_out))):
             return True
 
         return False

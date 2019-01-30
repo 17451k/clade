@@ -48,7 +48,7 @@ gcc_opts = [
     "-imultiarch",
     "-auxbase",
     "-dumpbase",
-    "-G"
+    "-G",
 ]
 
 clang_opts = [
@@ -394,17 +394,9 @@ ld_osx_opts = [
 ]
 
 # Warning: Input files may be separated from options by "--": -- | files ...
-as_gnu_opts = [
-    "--debug-prefix-map",
-    "--defsym",
-    "-I",
-    "-o",
-]
+as_gnu_opts = ["--debug-prefix-map", "--defsym", "-I", "-o"]
 
-as_osx_opts = [
-    "-arch",
-    "-o",
-]
+as_osx_opts = ["-arch", "-o"]
 
 objcopy_opts = [
     "--add-section",
@@ -443,11 +435,16 @@ objcopy_opts = [
     "-j",
 ]
 
+cl_opts = ["/D", "/link"]
+link_opts = ["/D", "/link"]
+
 requires_value = {
     "CC": set(gcc_opts + clang_opts),
     "LD": set(ld_gnu_opts + ld_osx_opts),
     "AS": set(as_gnu_opts + as_osx_opts),
     "Objcopy": set(objcopy_opts),
+    "CL": set(cl_opts),
+    "Link": set(link_opts),
 }
 
 # This options will be used in a regular expression

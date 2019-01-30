@@ -20,6 +20,7 @@ import sys
 
 from clade.extensions.common import Common
 from clade.extensions.utils import common_main
+from clade.extensions.opts import preprocessor_deps_opts
 
 
 class CC(Common):
@@ -40,6 +41,18 @@ class CC(Common):
         cmd_id = cmd["id"]
 
         parsed_cmd = super().parse_cmd(cmd, self.name)
+
+        if (not parsed_cmd["out"] and "-c" in parsed_cmd["opts"]):
+            for cmd_in in parsed_cmd["in"]:
+                # Output file is located inside "cwd" directory,
+                # not near cmd_in
+                # For example, gcc -c work/1.c will produce 1.o file,
+                # not work/1.o
+                cmd_out = os.path.join(
+                    parsed_cmd["cwd"],
+                    os.path.basename(os.path.splitext(cmd_in)[0] + ".o"),
+                )
+                parsed_cmd["out"].append(cmd_out)
 
         if self.is_bad(parsed_cmd):
             return
@@ -132,6 +145,20 @@ class CC(Common):
                 cmd["deps"] = self.load_deps_by_id(cmd["id"])
 
             yield cmd
+
+    def is_bad(self, cmd):
+        if super().is_bad(cmd):
+            return True
+
+        if self.conf.get("CC.filter_deps", True) and set(
+            cmd["opts"]
+        ).intersection(preprocessor_deps_opts):
+            return True
+
+        if self.conf.get("CC.ignore_cc1", True) and "-cc1" in cmd["opts"]:
+            return True
+
+        return False
 
 
 def main(args=sys.argv[1:]):

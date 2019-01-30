@@ -23,6 +23,8 @@
         "CC.which_list": ["^.*cc$", "^.*[mg]cc(-?\\d+(\\.\\d+){0,2})?$", "^.*clang(-?\\d+(\\.\\d+){0,2})?$"],
         "LD.which_list": ["^.*?ld$"],
         "MV.which_list": ["^.*?mv$"],
+        "CL.which_list": ["^.*?(cl)|(CL)\\.exe$"],
+        "Link.which_list": ["^.*?link\\.exe$"],
         "Objcopy.which_list": ["^.*?objcopy$"]
     },
     "base_print": {

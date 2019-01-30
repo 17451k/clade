@@ -18,15 +18,16 @@ import re
 
 from clade.extensions.common import Common
 from clade.extensions.opts import requires_value
+
 from clade.extensions.utils import common_main
 
 
-class CL(Common):
+class Link(Common):
     def __init__(self, work_dir, conf=None, preset="base"):
         super().__init__(work_dir, conf, preset)
 
     def parse(self, cmds_file):
-        super().parse(cmds_file, self.conf.get("CL.which_list", []))
+        super().parse(cmds_file, self.conf.get("Link.which_list", []))
 
     def parse_cmd(self, cmd):
         self.debug("Parse: {}".format(cmd))
@@ -43,13 +44,8 @@ class CL(Common):
             if opt in requires_value[self.name]:
                 val = next(opts)
                 parsed_cmd["opts"].extend([opt, val])
-
-                if opt == "/link":
-                    while True:
-                        val = next(opts)
-                        if not val:
-                            break
-                        parsed_cmd["opts"].append(val)
+            elif re.search(r"/OUT:", opt):
+                parsed_cmd["out"].append(re.sub(r"/OUT:", "", opt))
             elif re.search(r"^/", opt):
                 parsed_cmd["opts"].append(opt)
             else:
@@ -63,4 +59,4 @@ class CL(Common):
 
 
 def main(args=sys.argv[1:]):
-    common_main(CL, args)
+    common_main(Link, args)

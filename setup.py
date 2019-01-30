@@ -176,7 +176,8 @@ setuptools.setup(
             "clade-typedefs=clade.extensions.typedefs:main",
             "clade-ar=clade.extensions.ar:main",
             "clade-as=clade.extensions.assembler:main",
-            "clade-execute=clade.extensions.execute:main",
+            "clade-cl=clade.extensions.cl:main",
+            "clade-link=clade.extensions.link:main",
             "clade-all=clade:parse_all_main",
             "clade=clade.extensions.cdb:main"
         ],
