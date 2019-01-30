@@ -318,8 +318,7 @@ class Callgraph(Extension):
         """
         Prints an error message
         """
-        if not os.path.isdir(self.work_dir):
-            os.makedirs(self.work_dir)
+        os.makedirs(self.work_dir, exist_ok=True)
 
         with open(self.err_log, "a") as err_fh:
             err_fh.write("{}\n".format(msg))

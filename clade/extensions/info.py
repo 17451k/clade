@@ -168,6 +168,8 @@ class Info(Extension):
                 f.write("{}\n".format(opt))
 
     def __save_log(self, args, log):
+        os.makedirs(self.work_dir, exist_ok=True)
+
         with open(self.err_log, "a") as log_fh:
             log_fh.write(' '.join(args) + "\n\n")
             log_fh.writelines(log)
