@@ -435,8 +435,22 @@ objcopy_opts = [
     "-j",
 ]
 
-cl_opts = ["/D", "/link"]
-link_opts = ["/D", "/link"]
+cl_opts = [
+    "/analyze:log",
+    "/analyze:stacksize",
+    "/analyze:max_paths",
+    "/D",
+    "/F",
+    "/FI",
+    "/FU",
+    "/I",
+    "/link",
+    "/Tc",
+    "/Tp",
+    "/U",
+]
+
+link_opts = []
 
 requires_value = {
     "CC": set(gcc_opts + clang_opts),

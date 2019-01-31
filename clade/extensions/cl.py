@@ -20,6 +20,21 @@ from clade.extensions.common import Common
 from clade.extensions.opts import requires_value
 from clade.extensions.utils import common_main
 
+# TODO: Suppport /c option (Compile Without Linking)
+# Compiling with /c creates .obj files only.
+
+# TODO: Suppport /E and /EP options (Preprocess to stdout)
+
+# TODO: Suppport /FA and /Fa options (output assembler code, .cod or .asm)
+
+# TODO: Support /Fe option (Name of the output EXE file)
+# /Fe[pathname] /Fe: pathname
+
+# TODO: Suppport /Fi option (Name of the output preprocessed code, .i)
+# Option is used together with /P
+
+# TODO: Suppport /Fo option (Name of the object file name, .obj)
+
 
 class CL(Common):
     def __init__(self, work_dir, conf=None, preset="base"):
