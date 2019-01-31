@@ -26,6 +26,19 @@ from clade.extensions.opts import requires_value
 from clade.cmds import iter_cmds_by_which, open_cmds_file
 
 
+class CmdWorker(multiprocessing.Process):
+    def __init__(self, cmds_queue, ext):
+        super().__init__()
+        self.cmds_queue = cmds_queue
+        self.ext = ext
+
+    def run(self):
+        for cmd in iter(self.cmds_queue.get, None):
+            if self.ext.conf.get("Common.save_unparsed_cmds"):
+                self.ext.dump_unparsed_by_id(cmd["id"], cmd)
+            self.ext.parse_cmd(cmd)
+
+
 class Common(Extension, metaclass=abc.ABCMeta):
     """Parent class for CC, LD, MV, AR, AS and Objcopy classes.
 
@@ -64,18 +77,6 @@ class Common(Extension, metaclass=abc.ABCMeta):
     def parse(self, cmds_file, which_list):
         """Multiprocess parsing of build commands filtered by 'which' field."""
         self.log("Start parsing")
-
-        class CmdWorker(multiprocessing.Process):
-            def __init__(self, cmds_queue, ext):
-                super().__init__()
-                self.cmds_queue = cmds_queue
-                self.ext = ext
-
-            def run(self):
-                for cmd in iter(self.cmds_queue.get, None):
-                    if self.ext.conf.get("Common.save_unparsed_cmds"):
-                        self.ext.dump_unparsed_by_id(cmd["id"], cmd)
-                    self.ext.parse_cmd(cmd)
 
         cmds_queue = multiprocessing.Queue()
         cmd_workers = []
