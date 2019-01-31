@@ -13,15 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import sys
 import re
 
 from clade.extensions.common import Common
 from clade.extensions.opts import requires_value
 from clade.extensions.utils import common_main
-
-# TODO: Suppport /c option (Compile Without Linking)
-# Compiling with /c creates .obj files only.
 
 # TODO: Suppport /E and /EP options (Preprocess to stdout)
 
@@ -32,8 +30,6 @@ from clade.extensions.utils import common_main
 
 # TODO: Suppport /Fi option (Name of the output preprocessed code, .i)
 # Option is used together with /P
-
-# TODO: Suppport /Fo option (Name of the object file name, .obj)
 
 
 class CL(Common):
@@ -69,6 +65,39 @@ class CL(Common):
                 parsed_cmd["opts"].append(opt)
             else:
                 parsed_cmd["in"].append(opt)
+
+        if not parsed_cmd["out"] and "/c" in parsed_cmd["opts"]:
+            for cmd_in in parsed_cmd["in"]:
+                for opt in parsed_cmd["opts"]:
+                    if re.search(r"/Fo", opt):
+                        obj_path = re.sub(r"/Fo", "", opt)
+
+                        if not os.path.isabs(obj_path):
+                            obj_path = os.path.join(
+                                parsed_cmd["cwd"], obj_path
+                            )
+
+                        if os.path.isfile(obj_path):
+                            parsed_cmd["out"].append(obj_path)
+                        elif os.path.exists(obj_path):
+                            obj_name = os.path.basename(
+                                os.path.splitext(cmd_in)[0] + ".obj"
+                            )
+                            parsed_cmd["out"].append(
+                                os.path.join(obj_path, obj_name)
+                            )
+                        else:
+                            raise RuntimeError(
+                                "Can't determine output file of CL command"
+                            )
+
+                        break
+                else:
+                    obj_name = os.path.basename(
+                        os.path.splitext(cmd_in)[0] + ".obj"
+                    )
+                    cmd_out = os.path.join(parsed_cmd["cwd"], obj_name)
+                    parsed_cmd["out"].append(cmd_out)
 
         if self.is_bad(parsed_cmd):
             return
