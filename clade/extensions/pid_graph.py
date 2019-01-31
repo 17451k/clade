@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
 import os
 import sys
 
@@ -67,13 +68,11 @@ class PidGraph(Extension):
 
             for cmd in cmds:
                 cmd_node = "[{}] {}".format(cmd["id"], cmd["which"])
-                dot.node(cmd_node)
+                dot.node(cmd["id"], label=re.escape(cmd_node))
 
             for cmd in cmds:
-                cmd_node = "[{}] {}".format(cmd["id"], cmd["which"])
                 for parent_cmd in [x for x in cmds if x["id"] == cmd["pid"]]:
-                    parent_cmd_node = "[{}] {}".format(parent_cmd["id"], parent_cmd["which"])
-                    dot.edge(parent_cmd_node, cmd_node)
+                    dot.edge(parent_cmd["id"], cmd["id"])
 
         dot.render(self.graph_dot)
 

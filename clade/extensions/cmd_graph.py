@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import hashlib
+import re
 import os
 import sys
 
@@ -109,16 +111,21 @@ class CmdGraph(Extension):
             cmd = self.extensions[cmd_type].load_cmd_by_id(cmd_id)
 
             for cmd_out in normalize_paths(cmd["out"], cmd["cwd"], src):
+                # TODO: Replace hash by file_id
+                cmd_out_hash = hashlib.md5(cmd_out.encode('utf-8')).hexdigest()
+
                 if cmd_out not in added_nodes:
-                    dot.node(cmd_out)
+                    dot.node(cmd_out_hash, label=re.escape(cmd_out))
                     added_nodes[cmd_out] = 1
 
                 for cmd_in in normalize_paths(cmd["in"], cmd["cwd"], src):
+                    cmd_in_hash = hashlib.md5(cmd_in.encode('utf-8')).hexdigest()
+
                     if cmd_in not in added_nodes:
-                        dot.node(cmd_in)
+                        dot.node(cmd_in_hash, label=re.escape(cmd_in))
                         added_nodes[cmd_in] = 1
 
-                    dot.edge(cmd_in, cmd_out, label="{}({})".format(cmd_type, cmd_id))
+                    dot.edge(cmd_in_hash, cmd_out_hash, label="{}({})".format(cmd_type, cmd_id))
 
         dot.render(self.graph_dot)
 
