@@ -2,7 +2,7 @@
     "base": {
         "extends": [],
         "log_level": "INFO",
-        "Clade.build_cwd": null,
+        "Clade.build_cwd": "",
         "Wrapper.wrap_list": [],
         "Wrapper.recursive_wrap": false,
         "CC.ignore_cc1": true,
