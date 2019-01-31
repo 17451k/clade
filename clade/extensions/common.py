@@ -225,3 +225,8 @@ class Common(Extension, metaclass=abc.ABCMeta):
             return True
 
         return False
+
+
+# Since Windows has no fork, multiprocessing workers doesnt have access to imported extensions
+# WARNING: Do not put this code on top of the file, otherwise there will be import errors due to "circular importing"
+Extension._import_extension_modules()

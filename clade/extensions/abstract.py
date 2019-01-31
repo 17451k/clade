@@ -196,7 +196,7 @@ class Extension(metaclass=abc.ABCMeta):
     def get_all_extensions():
         """Get all extension lasses."""
 
-        Extension.__import_extension_modules()
+        Extension._import_extension_modules()
         return Extension.__get_all_subclasses(Extension)
 
     @staticmethod
@@ -212,7 +212,7 @@ class Extension(metaclass=abc.ABCMeta):
         return all_subclasses
 
     @staticmethod
-    def __import_extension_modules():
+    def _import_extension_modules():
         """Import all Python modules located in 'extensions' folder."""
         for root, _, filenames in os.walk(os.path.dirname(__file__)):
             for filename in fnmatch.filter(filenames, '*.py'):
@@ -227,7 +227,7 @@ class Extension(metaclass=abc.ABCMeta):
     def find_subclass(ext_name):
         """Find a sublclass of Interface class."""
 
-        Extension.__import_extension_modules()
+        Extension._import_extension_modules()
 
         for ext_class in Extension.__get_all_subclasses(Extension):
             if ext_name == ext_class.__name__:
