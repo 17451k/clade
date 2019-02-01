@@ -53,22 +53,24 @@ class CL(Common):
                 val = next(opts)
                 parsed_cmd["opts"].extend([opt, val])
 
-                if opt == "/link":
+                if opt == "/link" or opt == "-link":
                     while True:
                         val = next(opts)
                         if not val:
                             break
                         parsed_cmd["opts"].append(val)
-            elif re.search(r"^/", opt):
+            elif re.search(r"^(/|-)", opt):
                 parsed_cmd["opts"].append(opt)
             else:
                 parsed_cmd["in"].append(opt)
 
-        if not parsed_cmd["out"] and "/c" in parsed_cmd["opts"]:
+        if not parsed_cmd["out"] and (
+            "/c" in parsed_cmd["opts"] or "-c" in parsed_cmd["opts"]
+        ):
             for cmd_in in parsed_cmd["in"]:
                 for opt in parsed_cmd["opts"]:
-                    if re.search(r"/Fo", opt):
-                        obj_path = re.sub(r"/Fo", "", opt)
+                    if re.search(r"/Fo|-Fo", opt):
+                        obj_path = re.sub(r"/Fo|-Fo", "", opt)
 
                         if not os.path.isabs(obj_path):
                             obj_path = os.path.join(
@@ -130,7 +132,10 @@ class CL(Common):
         deps = list()
 
         for line in unparsed_deps.split("\r\n"):
-            m = re.search(r"(Note: including file:|Примечание: включение файла:)\s*(.*)", line)
+            m = re.search(
+                r"(Note: including file:|Примечание: включение файла:)\s*(.*)",
+                line,
+            )
             if m:
                 dep = os.path.normpath(m.group(2))
                 deps.append(dep)

@@ -437,17 +437,29 @@ objcopy_opts = [
 
 cl_opts = [
     "/analyze:log",
+    "-analyze:log",
     "/analyze:stacksize",
+    "-analyze:stacksize",
     "/analyze:max_paths",
+    "-analyze:max_paths",
     "/D",
+    "-D",
     "/F",
+    "-F",
     "/FI",
+    "-FI",
     "/FU",
+    "-FU",
     "/I",
+    "-I",
     "/link",
+    "-link",
     "/Tc",
+    "-Tc",
     "/Tp",
+    "-Tp",
     "/U",
+    "-U",
 ]
 
 link_opts = []

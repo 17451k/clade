@@ -44,9 +44,9 @@ class Link(Common):
             if opt in requires_value[self.name]:
                 val = next(opts)
                 parsed_cmd["opts"].extend([opt, val])
-            elif re.search(r"/OUT:", opt):
-                parsed_cmd["out"].append(re.sub(r"/OUT:", "", opt))
-            elif re.search(r"^/", opt):
+            elif re.search(r"(/|-)OUT:", opt):
+                parsed_cmd["out"].append(re.sub(r"(/|-)OUT:", "", opt))
+            elif re.search(r"^(/|-)", opt):
                 parsed_cmd["opts"].append(opt)
             else:
                 parsed_cmd["in"].append(opt)
