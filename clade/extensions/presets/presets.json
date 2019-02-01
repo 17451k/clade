@@ -10,8 +10,21 @@
         "CC.store_deps": true,
         "CC.with_system_header_files": true,
         "CL.store_deps": true,
-        "CmdGraph.requires": ["AR", "AS", "CC", "LD", "MV", "Objcopy"],
+        "CmdGraph.requires": [
+            "AR",
+            "AS",
+            "CC",
+            "LD",
+            "MV",
+            "Objcopy",
+            "CL",
+            "Link"
+        ],
         "CmdGraph.as_picture": false,
+        "SrcGraph.requires": [
+            "CC",
+            "CL"
+        ],
         "Common.filter": [],
         "Common.filter_in": [],
         "Common.filter_out": [],
@@ -20,24 +33,52 @@
         "Info.extra_CIF_opts": [],
         "PidGraph.as_picture": false,
         "PidGraph.filter_cmds_by_pid": true,
-        "AR.which_list": ["^.*?ar$"],
-        "AS.which_list": ["^.*?as$"],
-        "CC.which_list": ["^.*cc$", "^.*[mg]cc(-?\\d+(\\.\\d+){0,2})?$", "^.*clang(-?\\d+(\\.\\d+){0,2})?$"],
-        "LD.which_list": ["^.*?ld$"],
-        "MV.which_list": ["^.*?mv$"],
-        "CL.which_list": ["^.*?(cl)|(CL)\\.exe$"],
-        "Link.which_list": ["^.*?link\\.exe$"],
-        "Objcopy.which_list": ["^.*?objcopy$"]
+        "AR.which_list": [
+            "^.*?ar$"
+        ],
+        "AS.which_list": [
+            "^.*?as$"
+        ],
+        "CC.which_list": [
+            "^.*cc$",
+            "^.*[mg]cc(-?\\d+(\\.\\d+){0,2})?$",
+            "^.*clang(-?\\d+(\\.\\d+){0,2})?$"
+        ],
+        "LD.which_list": [
+            "^.*?ld$"
+        ],
+        "MV.which_list": [
+            "^.*?mv$"
+        ],
+        "Objcopy.which_list": [
+            "^.*?objcopy$"
+        ],
+        "CL.which_list": [
+            "^.*?(cl)|(CL)\\.exe$"
+        ],
+        "Link.which_list": [
+            "^.*?link\\.exe$"
+        ]
     },
     "base_print": {
-        "extends": ["base"],
+        "extends": [
+            "base"
+        ],
         "CmdGraph.as_picture": true,
         "PidGraph.as_picture": true,
         "SrcGraph.as_picture": true
     },
     "linux_kernel": {
-        "extends": ["base"],
-        "CmdGraph.requires": ["AR", "CC", "LD", "MV", "Objcopy"],
+        "extends": [
+            "base"
+        ],
+        "CmdGraph.requires": [
+            "AR",
+            "CC",
+            "LD",
+            "MV",
+            "Objcopy"
+        ],
         "Common.filter": [
             ".*?\\.tmp$"
         ],
@@ -60,7 +101,9 @@
         ]
     },
     "busybox_linux": {
-        "extends": ["base_print"],
+        "extends": [
+            "base_print"
+        ],
         "Common.filter": [],
         "Common.filter_in": [
             ".*?\\.tmp$",
@@ -78,7 +121,9 @@
         ]
     },
     "apache_linux": {
-        "extends": ["base_print"],
+        "extends": [
+            "base_print"
+        ],
         "Common.filter": [
             "/tmp/.*"
         ],

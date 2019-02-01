@@ -17,13 +17,24 @@ import os
 import sys
 
 from clade.extensions.abstract import Extension
-from clade.extensions.utils import common_main, normalize_path
+from clade.extensions.utils import (
+    common_main,
+    normalize_path,
+    merge_preset_to_conf,
+)
 
 
 class SrcGraph(Extension):
-    requires = ["CmdGraph", "CC"]
+    always_requires = ["CmdGraph"]
+    requires = always_requires + ["CC", "CL"]
 
     def __init__(self, work_dir, conf=None, preset="base"):
+        conf = conf if conf else dict()
+        conf = merge_preset_to_conf(preset, conf)
+
+        if "SrcGraph.requires" in conf:
+            self.requires = self.always_requires + conf["SrcGraph.requires"]
+
         super().__init__(work_dir, conf, preset)
 
         self.src_graph = dict()
@@ -59,6 +70,16 @@ class SrcGraph(Extension):
         self.src_graph.clear()
         self.log("Constructing finished")
 
+    def load_all_cmds(self):
+        for ext_name in [
+            x for x in self.extensions if x not in self.always_requires
+        ]:
+            for cmd in self.extensions[ext_name].load_all_cmds(
+                compile_only=True
+            ):
+                cmd["type"] = ext_name
+                yield cmd
+
     def __generate_src_graph(self, cmds_file):
         try:
             cmd_graph = self.extensions["CmdGraph"].load_cmd_graph()
@@ -67,20 +88,25 @@ class SrcGraph(Extension):
 
         src = self.get_build_cwd(cmds_file)
 
-        for cmd in self.extensions["CC"].load_all_cmds(compile_only=True):
+        for cmd in self.load_all_cmds():
             cmd_id = str(cmd["id"])
+            cmd_type = cmd["type"]
 
-            # used_by is a list of commands that use (possibly indirectly) output of the command with ID=cmd_id
+            # used_by is a list of commands that use (possibly indirectly)
+            # output of the command with ID=cmd_id
             used_by = self.__find_used_by(cmd_graph, cmd_id)
 
-            for src_file in self.extensions["CC"].load_deps_by_id(cmd_id):
+            for src_file in self.extensions[cmd_type].load_deps_by_id(cmd_id):
                 rel_in = normalize_path(src_file, cmd["cwd"], src)
 
                 if rel_in not in self.src_graph:
                     self.src_graph[rel_in] = self.__get_new_value()
-                    self.src_sizes[rel_in] = self.__estimate_loc_size(os.path.join(src, rel_in))
+                    self.src_sizes[rel_in] = self.__estimate_loc_size(
+                        os.path.join(src, rel_in)
+                    )
 
-                # compiled_in is a list of commands that compile 'rel_in' source file
+                # compiled_in is a list of commands
+                # that compile 'rel_in' source file
                 self.src_graph[rel_in]["compiled_in"].add(cmd_id)
                 self.src_graph[rel_in]["used_by"].update(used_by)
 
@@ -108,10 +134,7 @@ class SrcGraph(Extension):
 
     @staticmethod
     def __get_new_value():
-        return {
-            "compiled_in": set(),
-            "used_by": set()
-        }
+        return {"compiled_in": set(), "used_by": set()}
 
 
 def main(args=sys.argv[1:]):

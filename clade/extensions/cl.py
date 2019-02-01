@@ -19,7 +19,7 @@ import re
 import subprocess
 import sys
 
-from clade.extensions.common import Common
+from clade.extensions.compiler import Compiler
 from clade.extensions.opts import requires_value
 from clade.extensions.utils import common_main
 
@@ -31,9 +31,7 @@ from clade.extensions.utils import common_main
 # Option is used together with /P
 
 
-class CL(Common):
-    requires = Common.requires + ["Storage"]
-
+class CL(Compiler):
     def parse(self, cmds_file):
         super().parse(cmds_file, self.conf.get("CL.which_list", []))
 
@@ -109,7 +107,7 @@ class CL(Common):
         self.dump_cmd_by_id(cmd["id"], parsed_cmd)
 
         if self.conf.get("CL.store_deps"):
-            self.__store_src_files(deps, parsed_cmd["cwd"])
+            self.store_src_files(deps, parsed_cmd["cwd"])
 
     def __get_deps(self, cmd_id, cmd):
         """Get a list of CL command dependencies."""
@@ -141,18 +139,6 @@ class CL(Common):
                 deps.append(dep)
 
         return deps
-
-    def __store_src_files(self, deps, cwd):
-        for file in deps:
-            if not os.path.isabs(file):
-                file = os.path.join(cwd, file)
-            self.extensions["Storage"].add_file(file)
-
-    def load_deps_by_id(self, id):
-        return self.load_data(os.path.join("deps", "{}.json".format(id)))
-
-    def dump_deps_by_id(self, id, deps):
-        self.dump_data(deps, os.path.join("deps", "{}.json".format(id)))
 
 
 def main(args=sys.argv[1:]):
