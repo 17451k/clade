@@ -13,21 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import chardet
 import os
-import sys
 import re
+import subprocess
+import sys
 
 from clade.extensions.common import Common
 from clade.extensions.opts import requires_value
 from clade.extensions.utils import common_main
 
 # TODO: Suppport /E and /EP options (Preprocess to stdout)
-
 # TODO: Suppport /FA and /Fa options (output assembler code, .cod or .asm)
-
 # TODO: Support /Fe option (Name of the output EXE file)
 # /Fe[pathname] /Fe: pathname
-
 # TODO: Suppport /Fi option (Name of the output preprocessed code, .i)
 # Option is used together with /P
 
@@ -103,7 +102,44 @@ class CL(Common):
             return
 
         self.debug("Parsed command: {}".format(parsed_cmd))
+        deps = set(self.__get_deps(cmd["id"], cmd) + parsed_cmd["in"])
+        self.debug("Dependencies: {}".format(deps))
+        self.dump_deps_by_id(cmd["id"], deps)
         self.dump_cmd_by_id(cmd["id"], parsed_cmd)
+
+    def __get_deps(self, cmd_id, cmd):
+        """Get a list of CL command dependencies."""
+        unparsed_deps = self.__collect_deps(cmd_id, cmd)
+        return self.__parse_deps(unparsed_deps)
+
+    def __collect_deps(self, cmd_id, cmd):
+        output_bytes = subprocess.check_output(
+            cmd["command"] + ["/showIncludes"],
+            stderr=subprocess.PIPE,
+            cwd=cmd["cwd"],
+            shell=True,
+            universal_newlines=False,
+        )
+
+        encoding = chardet.detect(output_bytes)["encoding"]
+        return output_bytes.decode(encoding)
+
+    def __parse_deps(self, unparsed_deps):
+        deps = list()
+
+        for line in unparsed_deps.split("\r\n"):
+            m = re.search(r"(Note: including file:|Примечание: включение файла:)\s*(.*)", line)
+            if m:
+                dep = os.path.normpath(m.group(2))
+                deps.append(dep)
+
+        return deps
+
+    def load_deps_by_id(self, id):
+        return self.load_data(os.path.join("deps", "{}.json".format(id)))
+
+    def dump_deps_by_id(self, id, deps):
+        self.dump_data(deps, os.path.join("deps", "{}.json".format(id)))
 
 
 def main(args=sys.argv[1:]):
