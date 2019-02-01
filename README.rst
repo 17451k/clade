@@ -48,6 +48,7 @@ need to install some prerequisites beforehand:
 - cmake (>=3.3)
 
 *Linux only*:
+
 - make
 - C **and** C++ compiler (gcc, clang)
 - python3-dev (Ubuntu) or python3-devel (openSUSE) package
@@ -55,6 +56,7 @@ need to install some prerequisites beforehand:
   to intercept build commands of projects leveraging multilib capabilities
 
 *Windows only*:
+
 - Microsoft Visual C++ Build Tools
 
 Optional dependencies:
