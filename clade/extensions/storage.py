@@ -23,6 +23,8 @@ class Storage(Extension):
     def add_file(self, filename, storage_filename=None, cache=set()):
         """Add file to the storage."""
 
+        # Get rid from drive letter in path (like C:)
+        filename = os.path.splitdrive(filename)[1]
         dst = self.work_dir + os.sep + (storage_filename if storage_filename else filename)
 
         if dst in cache:

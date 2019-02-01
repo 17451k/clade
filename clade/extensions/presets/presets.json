@@ -9,6 +9,7 @@
         "CC.filter_deps": true,
         "CC.store_deps": true,
         "CC.with_system_header_files": true,
+        "CL.store_deps": true,
         "CmdGraph.requires": ["AR", "AS", "CC", "LD", "MV", "Objcopy"],
         "CmdGraph.as_picture": false,
         "Common.filter": [],

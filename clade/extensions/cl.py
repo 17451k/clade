@@ -32,8 +32,7 @@ from clade.extensions.utils import common_main
 
 
 class CL(Common):
-    def __init__(self, work_dir, conf=None, preset="base"):
-        super().__init__(work_dir, conf, preset)
+    requires = Common.requires + ["Storage"]
 
     def parse(self, cmds_file):
         super().parse(cmds_file, self.conf.get("CL.which_list", []))
@@ -107,6 +106,9 @@ class CL(Common):
         self.dump_deps_by_id(cmd["id"], deps)
         self.dump_cmd_by_id(cmd["id"], parsed_cmd)
 
+        if self.conf.get("CL.store_deps"):
+            self.__store_src_files(deps, parsed_cmd["cwd"])
+
     def __get_deps(self, cmd_id, cmd):
         """Get a list of CL command dependencies."""
         unparsed_deps = self.__collect_deps(cmd_id, cmd)
@@ -134,6 +136,12 @@ class CL(Common):
                 deps.append(dep)
 
         return deps
+
+    def __store_src_files(self, deps, cwd):
+        for file in deps:
+            if not os.path.isabs(file):
+                file = os.path.join(cwd, file)
+            self.extensions["Storage"].add_file(file)
 
     def load_deps_by_id(self, id):
         return self.load_data(os.path.join("deps", "{}.json".format(id)))
