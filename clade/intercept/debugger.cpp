@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <locale>
 #include <codecvt>
+#include <functional>
 
 #define WIN32_LEAN_AND_MEAN
 
@@ -351,6 +352,12 @@ wchar_t *ProcessCommandFiles(const wchar_t *_cmdLine)
         std::wstring line;
         while (std::getline(infile, line))
         {
+            // Remove \r characters from the end of the string
+            if (!line.empty() && *line.rbegin() == '\r')
+            {
+                line.erase(line.length() - 1, 1);
+            }
+
             // Special case: /link option  must always occur last
             size_t link_beginning = line.find(L"/link");
 
