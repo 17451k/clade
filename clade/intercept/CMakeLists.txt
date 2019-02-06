@@ -1,20 +1,5 @@
 cmake_minimum_required(VERSION 3.3)
 project(interceptor)
 
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
-add_library(data STATIC data.c)
-add_library(which STATIC which.c)
-add_library(env STATIC env.c)
-add_library(server STATIC server.c)
-target_link_libraries(data which env server)
-
-add_library(interceptor SHARED interceptor.c)
-target_link_libraries(interceptor ${CMAKE_DL_LIBS} which data env server)
-
-add_executable(wrapper wrapper.c)
-target_link_libraries(wrapper which data env server)
-
-add_executable(debugger debugger.cpp)
-
-set_target_properties(data which env interceptor wrapper PROPERTIES C_STANDARD 11)
+add_subdirectory(unix)
+add_subdirectory(windows)

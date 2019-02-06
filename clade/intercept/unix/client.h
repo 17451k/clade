@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-#ifndef SERVER_H
-#define SERVER_H
+#ifndef CLIENT_H
+#define CLIENT_H
 
 extern void send_data(const char *msg);
 
-#endif /* SERVER_H */
+#endif /* CLIENT_H */

@@ -70,13 +70,13 @@ def build_target(target, build_dir, src_dir, options=None, quiet=False):
 def build_wrapper(build_dir):
     build_target("wrapper", build_dir, LIBINT_SRC)
 
-    shutil.copy(os.path.join(build_dir, "wrapper"), LIBINT_SRC)
+    shutil.copy(os.path.join(build_dir, "unix", "wrapper"), LIBINT_SRC)
 
 
 def build_interceptor(build_dir):
     build_target("interceptor", build_dir, LIBINT_SRC)
 
-    for file in glob.glob(os.path.join(build_dir, "libinterceptor.*")):
+    for file in glob.glob(os.path.join(build_dir, "unix", "libinterceptor.*")):
         shutil.copy(file, LIBINT_SRC)
 
 
@@ -94,7 +94,7 @@ def build_interceptor64(build_dir):
     build_target("interceptor", build_dir, LIBINT_SRC, options, quiet=True)
 
     os.makedirs(LIB64, exist_ok=True)
-    for file in glob.glob(os.path.join(build_dir, "libinterceptor.*")):
+    for file in glob.glob(os.path.join(build_dir, "unix", "libinterceptor.*")):
         shutil.copy(file, LIB64)
 
 
@@ -103,7 +103,7 @@ def build_interceptor32(build_dir):
     build_target("interceptor", build_dir, LIBINT_SRC, options, quiet=True)
 
     os.makedirs(LIB, exist_ok=True)
-    for file in glob.glob(os.path.join(build_dir, "libinterceptor.*")):
+    for file in glob.glob(os.path.join(build_dir, "unix", "libinterceptor.*")):
         shutil.copy(file, LIB)
 
 
@@ -111,7 +111,8 @@ def build_debugger(build_dir):
     options = ["-DCMAKE_GENERATOR_PLATFORM=x64"]
     build_target("debugger", build_dir, LIBINT_SRC, options)
 
-    shutil.copy(os.path.join(build_dir, "Release", "debugger.exe"), LIBINT_SRC)
+    copy_from = os.path.join(build_dir, "windows", "Release", "debugger.exe")
+    shutil.copy(copy_from, LIBINT_SRC)
 
 
 def build_libinterceptor():

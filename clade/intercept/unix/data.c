@@ -23,7 +23,7 @@
 
 #include "which.h"
 #include "env.h"
-#include "server.h"
+#include "client.h"
 
 #define DELIMITER "||"
 
