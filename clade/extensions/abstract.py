@@ -21,6 +21,7 @@ import logging
 import os
 import shutil
 import sys
+import re
 import tempfile
 import ujson
 
@@ -217,10 +218,14 @@ class Extension(metaclass=abc.ABCMeta):
         for root, _, filenames in os.walk(os.path.dirname(__file__)):
             for filename in fnmatch.filter(filenames, '*.py'):
                 file = os.path.join(root, filename)
+                module_name = os.path.splitext(os.path.basename(file))[0]
 
-                if file != __file__:
+                for module in sys.modules:
+                    if re.search(r"clade.*?{}$".format(module_name), module):
+                        break
+                else:
                     sys.path.insert(0, os.path.dirname(file))
-                    __import__(os.path.splitext(os.path.basename(file))[0])
+                    __import__(module_name)
                     sys.path.pop(0)
 
     @staticmethod
