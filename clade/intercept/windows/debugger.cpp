@@ -197,6 +197,9 @@ wchar_t *ProcessCommandFiles(const wchar_t *_cmdLine)
         // but we have to support two cases, when ending symbols are " " and "\" ".
         size_t end = cmdLine.find(endSymbols, beginning) + wcslen(endSymbols) - 2;
 
+        if (end > wcslen(_cmdLine))
+            end = wcslen(_cmdLine) - wcslen(endSymbols) + 1;
+
         wchar_t *fileName = new wchar_t[cmdLine.length() + 1];
         size_t fileNameBeginning = beginning + 1;
         size_t fileNameLen = end - fileNameBeginning + 1;
