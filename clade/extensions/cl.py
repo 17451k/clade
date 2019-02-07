@@ -96,7 +96,7 @@ class CL(Compiler):
         if not parsed_cmd["out"]:
             for cmd_in in parsed_cmd["in"]:
                 exe_name = os.path.basename(
-                    os.path.splitext(cmd_in)[0] + ".exe"
+                    os.path.splitext(cmd_in)[0] + ".obj"
                 )
                 cmd_out = os.path.join(parsed_cmd["cwd"], exe_name)
                 parsed_cmd["out"].append(cmd_out)
