@@ -131,7 +131,12 @@ class Extension(metaclass=abc.ABCMeta):
         pass
 
     def get_build_cwd(self, cmds_file):
-        return self.conf.get("Clade.build_cwd", clade.cmds.get_build_cwd(cmds_file))
+        build_cwd = self.conf.get("Clade.build_cwd")
+
+        if not build_cwd:
+            build_cwd = clade.cmds.get_build_cwd(cmds_file)
+
+        return build_cwd
 
     def load_data(self, file_name, raise_exception=True):
         """Load json file by name."""
