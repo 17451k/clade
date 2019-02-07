@@ -50,7 +50,7 @@ class Common(Extension, metaclass=abc.ABCMeta):
         super().__init__(work_dir, conf, preset)
 
         self.cmds_dir = "cmds"
-        self.opts_dir = "opts"
+        self.io_dir = "io"
 
         cmd_filter = self.conf.get("Common.filter", [])
         cmd_filter_in = self.conf.get("Common.filter_in", [])
@@ -116,9 +116,8 @@ class Common(Extension, metaclass=abc.ABCMeta):
             "id": cmd["id"],
             "in": [],
             "out": [],
-            "opts": [],
             "cwd": cmd["cwd"],
-            "command": cmd["command"][0],
+            "command": cmd["command"],
         }
 
     def parse_cmd(self, cmd, cmd_type):
@@ -140,14 +139,8 @@ class Common(Extension, metaclass=abc.ABCMeta):
                 val = next(opts)
                 if opt == "-o":
                     parsed_cmd["out"].append(os.path.normpath(val))
-                else:
-                    parsed_cmd["opts"].extend([opt, val])
-            # Options without values
-            # Or with values that are not separated by space
-            elif re.search(r"^-", opt):
-                parsed_cmd["opts"].append(opt)
-            # Input files.
-            else:
+            # Input files are not options and not values of other options
+            elif not re.search(r"^-", opt):
                 parsed_cmd["in"].append(opt)
 
         return parsed_cmd
@@ -158,16 +151,17 @@ class Common(Extension, metaclass=abc.ABCMeta):
         )
 
     def dump_cmd_by_id(self, id, cmd):
-        self.dump_opts_by_id(cmd["id"], cmd["opts"])
-        del cmd["opts"]
+        self.dump_io_by_id(
+            cmd["id"], {i: cmd[i] for i in cmd if i in ["in", "out", "cwd"]}
+        )
         self.dump_data(cmd, os.path.join(self.cmds_dir, "{}.json".format(id)))
 
-    def load_opts_by_id(self, id):
-        opts_file = os.path.join(self.opts_dir, "{}.json".format(id))
-        return self.load_data(opts_file, raise_exception=False)
+    def load_io_by_id(self, id):
+        io_file = os.path.join(self.io_dir, "{}.json".format(id))
+        return self.load_data(io_file, raise_exception=False)
 
-    def dump_opts_by_id(self, id, opts):
-        self.dump_data(opts, os.path.join(self.opts_dir, "{}.json".format(id)))
+    def dump_io_by_id(self, id, io):
+        self.dump_data(io, os.path.join(self.io_dir, "{}.json".format(id)))
 
     def __merge_all_cmds(self):
         """Merge all parsed commands into a single json file."""
@@ -181,16 +175,12 @@ class Common(Extension, metaclass=abc.ABCMeta):
             parsed_cmd = self.load_data(cmd_json)
             merged_cmds.append(parsed_cmd)
 
-        for cmd in merged_cmds:
-            if self.conf.get("Common.with_opts", True):
-                cmd["opts"] = self.load_opts_by_id(cmd["id"])
-
         if not merged_cmds:
             self.warning("No commands were parsed")
 
         self.dump_data(merged_cmds, "cmds.json")
 
-    def load_all_cmds(self, with_opts=True, filter_by_pid=True):
+    def load_all_cmds(self, filter_by_pid=True):
         """Load all parsed commands."""
         cmds = self.load_data("cmds.json")
 
@@ -199,18 +189,25 @@ class Common(Extension, metaclass=abc.ABCMeta):
         ):
             cmds = self.extensions["PidGraph"].filter_cmds_by_pid(cmds)
 
-        if with_opts:
-            for cmd in cmds:
-                if "opts" not in cmd:
-                    cmd["opts"] = self.load_opts_by_id(cmd["id"])
-
         return cmds
 
     def is_bad(self, cmd):
-        if any((True for cmd_in in cmd["in"] if self.regex_in and self.regex_in.match(cmd_in))):
+        if any(
+            (
+                True
+                for cmd_in in cmd["in"]
+                if self.regex_in and self.regex_in.match(cmd_in)
+            )
+        ):
             return True
 
-        if any((True for cmd_out in cmd["out"] if self.regex_out and self.regex_out.match(cmd_out))):
+        if any(
+            (
+                True
+                for cmd_out in cmd["out"]
+                if self.regex_out and self.regex_out.match(cmd_out)
+            )
+        ):
             return True
 
         return False

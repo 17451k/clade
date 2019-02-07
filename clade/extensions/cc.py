@@ -34,7 +34,7 @@ class CC(Compiler):
 
         parsed_cmd = super().parse_cmd(cmd, self.name)
 
-        if (not parsed_cmd["out"] and "-c" in parsed_cmd["opts"]):
+        if not parsed_cmd["out"] and "-c" in parsed_cmd["command"]:
             for cmd_in in parsed_cmd["in"]:
                 # Output file is located inside "cwd" directory,
                 # not near cmd_in
@@ -74,12 +74,16 @@ class CC(Compiler):
         else:
             additional_opts = ["-Wp,-MMD,{}".format(deps_file), "-MM"]
 
-        opts = cmd["opts"] + additional_opts
-        command = [cmd["command"]] + opts + cmd["in"]
+        command = cmd["command"] + additional_opts
 
         # Do not execute a command that does not contain any input files
         if "-" not in command and cmd["in"]:
-            subprocess.call(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, cwd=cmd["cwd"])
+            subprocess.call(
+                command,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                cwd=cmd["cwd"],
+            )
 
         return deps_file
 
@@ -87,21 +91,23 @@ class CC(Compiler):
         deps = []
 
         if os.path.isfile(deps_file):
-            with open(deps_file, encoding='utf8') as fp:
-                match = re.match(r'[^:]+:(.+)', fp.readline())
+            with open(deps_file, encoding="utf8") as fp:
+                match = re.match(r"[^:]+:(.+)", fp.readline())
                 if match:
                     first_dep_line = match.group(1)
                 else:
-                    raise RuntimeError('Dependencies file has unsupported format')
+                    raise RuntimeError(
+                        "Dependencies file has unsupported format"
+                    )
 
                 for dep_line in [first_dep_line] + fp.readlines():
-                    if ':' in dep_line:
+                    if ":" in dep_line:
                         break
-                    dep_line = dep_line.lstrip(' ')
-                    dep_line = dep_line.rstrip(' \\\n')
+                    dep_line = dep_line.lstrip(" ")
+                    dep_line = dep_line.rstrip(" \\\n")
                     if not dep_line:
                         continue
-                    deps.extend(dep_line.split(' '))
+                    deps.extend(dep_line.split(" "))
 
             os.remove(deps_file)
 
@@ -112,11 +118,11 @@ class CC(Compiler):
             return True
 
         if self.conf.get("CC.filter_deps", True) and set(
-            cmd["opts"]
+            cmd["command"]
         ).intersection(preprocessor_deps_opts):
             return True
 
-        if self.conf.get("CC.ignore_cc1", True) and "-cc1" in cmd["opts"]:
+        if self.conf.get("CC.ignore_cc1", True) and "-cc1" in cmd["command"]:
             return True
 
         return False

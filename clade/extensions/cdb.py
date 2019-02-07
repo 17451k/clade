@@ -35,7 +35,9 @@ class CDB(Extension):
 
         self.cdb = []
         # DO NOT put CDB.output option to the presets file
-        self.cdb_file = self.conf.get("CDB.output", os.path.join(self.work_dir, "compile_commands.json"))
+        self.cdb_file = self.conf.get(
+            "CDB.output", os.path.join(self.work_dir, "compile_commands.json")
+        )
 
     @Extension.prepare
     def parse(self, cmds_file):
@@ -49,18 +51,20 @@ class CDB(Extension):
                 if file_ext not in self.extensions["CC"].file_extensions:
                     continue
 
-                arguments = [cmd["command"]] + cmd["opts"] + [cmd_in]
+                command = cmd["command"]
                 if cmd["out"]:
                     if "-c" in cmd["opts"]:
-                        arguments.extend(["-o", cmd["out"][i]])
+                        command.extend(["-o", cmd["out"][i]])
                     else:
-                        arguments.extend(["-o", cmd["out"][0]])
+                        command.extend(["-o", cmd["out"][0]])
 
-                self.cdb.append({
-                    "directory": cmd["cwd"],
-                    "arguments": arguments,
-                    "file": cmd_in
-                })
+                self.cdb.append(
+                    {
+                        "directory": cmd["cwd"],
+                        "command": command,
+                        "file": cmd_in,
+                    }
+                )
 
         self.dump_data(self.cdb, self.cdb_file)
 
@@ -72,10 +76,27 @@ class CDB(Extension):
 def parse_args(args, work_dir):
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-o", "--output", help="a path to the FILE where compilation database will be saved", metavar='FILE', default="compile_commands.json")
-    parser.add_argument("-f", "--wrappers", help="enable intercepting mode based on wrappers (not available on Windows)", action="store_true")
-    parser.add_argument("-c", "--cmds_file", help="a path to the file with intercepted commands")
-    parser.add_argument(dest="command", nargs=argparse.REMAINDER, help="build command to run")
+    parser.add_argument(
+        "-o",
+        "--output",
+        help="a path to the FILE where compilation database will be saved",
+        metavar="FILE",
+        default="compile_commands.json",
+    )
+    parser.add_argument(
+        "-f",
+        "--wrappers",
+        help="enable intercepting mode based on wrappers (not available on Windows)",
+        action="store_true",
+    )
+    parser.add_argument(
+        "-c",
+        "--cmds_file",
+        help="a path to the file with intercepted commands",
+    )
+    parser.add_argument(
+        dest="command", nargs=argparse.REMAINDER, help="build command to run"
+    )
 
     args = parser.parse_args(args)
 
@@ -93,7 +114,11 @@ def main(args=sys.argv[1:]):
     args = parse_args(args, work_dir)
 
     if args.command:
-        intercept(command=args.command, output=args.cmds_file, use_wrappers=args.wrappers)
+        intercept(
+            command=args.command,
+            output=args.cmds_file,
+            use_wrappers=args.wrappers,
+        )
 
     c = CDB(work_dir, conf={"CDB.output": os.path.abspath(args.output)})
     c.parse(args.cmds_file)

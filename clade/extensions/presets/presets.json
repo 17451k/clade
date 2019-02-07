@@ -28,7 +28,6 @@
         "Common.filter": [],
         "Common.filter_in": [],
         "Common.filter_out": [],
-        "Common.with_opts": true,
         "Info.extra_CIF_opts": [],
         "PidGraph.as_picture": false,
         "PidGraph.filter_cmds_by_pid": true,

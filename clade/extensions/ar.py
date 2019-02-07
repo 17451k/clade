@@ -28,9 +28,8 @@ class AR(Common):
             "id": cmd["id"],
             "in": cmd["command"][3:],
             "out": [cmd["command"][2]],
-            "opts": [cmd["command"][1]],
             "cwd": cmd["cwd"],
-            "command": cmd["command"][0]
+            "command": cmd["command"],
         }
 
         if self.is_bad(parsed_cmd):

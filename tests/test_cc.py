@@ -33,19 +33,15 @@ def test_cc_load_deps_by_id(tmpdir, cmds_file):
             assert cmd_in in deps
 
 
-@pytest.mark.parametrize("with_opts", [True, False])
 @pytest.mark.parametrize("with_deps", [True, False])
-def test_cc_load_all_cmds(tmpdir, cmds_file, with_opts, with_deps):
-    conf = {"Common.with_opts": with_opts}
-
-    c = CC(tmpdir, conf)
+def test_cc_load_all_cmds(tmpdir, cmds_file, with_deps):
+    c = CC(tmpdir)
     c.parse(cmds_file)
 
-    cmds = list(c.load_all_cmds(with_opts=with_opts, with_deps=with_deps))
+    cmds = list(c.load_all_cmds(with_deps=with_deps))
     assert len(cmds) > 1
 
     for cmd in cmds:
-        assert ("opts" in cmd) == with_opts
         assert ("deps" in cmd) == with_deps
 
         cmd_by_id = c.load_cmd_by_id(cmd["id"])
@@ -53,9 +49,6 @@ def test_cc_load_all_cmds(tmpdir, cmds_file, with_opts, with_deps):
         assert cmd_by_id["id"] == cmd["id"]
         assert cmd_by_id["in"] == cmd["in"]
         assert cmd_by_id["out"] == cmd["out"]
-
-        if with_opts:
-            cmd["opts"] == c.load_opts_by_id(cmd["id"])
 
         if with_deps:
             cmd["deps"] == c.load_deps_by_id(cmd["id"])
@@ -106,8 +99,8 @@ def test_cc_ignore_cc1(tmpdir, cmds_file, ignore_cc1):
 
     found_cc1 = False
 
-    for cmd in c.load_all_cmds(with_opts=True):
-        if"-cc1" in cmd["opts"]:
+    for cmd in c.load_all_cmds():
+        if"-cc1" in cmd["command"]:
             found_cc1 = True
 
     assert ignore_cc1 != found_cc1
@@ -124,8 +117,8 @@ def test_cc_filter_deps(tmpdir, cmds_file, filter_deps):
 
     found_deps_opt = False
 
-    for cmd in c.load_all_cmds(with_opts=True):
-        if set(preprocessor_deps_opts).intersection(cmd["opts"]):
+    for cmd in c.load_all_cmds():
+        if set(preprocessor_deps_opts).intersection(cmd["command"]):
             found_deps_opt = True
 
     assert filter_deps != found_deps_opt

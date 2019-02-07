@@ -108,7 +108,7 @@ class Variables(Callgraph):
                 files = ('unknown',)
 
             if len(files) > 1:
-                    self._error("Multiple matches for use in vars: {} in {}".format(func, context_file))
+                self._error("Multiple matches for use in vars: {} in {}".format(func, context_file))
 
             for possible_file in files:
                 if func not in self.used_in_vars:

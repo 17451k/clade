@@ -49,24 +49,20 @@ class CL(Compiler):
         for opt in opts:
             if opt in requires_value[self.name]:
                 val = next(opts)
-                parsed_cmd["opts"].extend([opt, val])
 
                 if opt == "/link" or opt == "-link":
                     while True:
                         val = next(opts)
                         if not val:
                             break
-                        parsed_cmd["opts"].append(val)
-            elif re.search(r"^(/|-)", opt):
-                parsed_cmd["opts"].append(opt)
-            else:
+            elif not re.search(r"^(/|-)", opt):
                 parsed_cmd["in"].append(opt)
 
         if not parsed_cmd["out"] and (
-            "/c" in parsed_cmd["opts"] or "-c" in parsed_cmd["opts"]
+            "/c" in parsed_cmd["command"] or "-c" in parsed_cmd["command"]
         ):
             for cmd_in in parsed_cmd["in"]:
-                for opt in parsed_cmd["opts"]:
+                for opt in parsed_cmd["command"]:
                     if re.search(r"/Fo|-Fo", opt):
                         obj_path = re.sub(r"/Fo|-Fo", "", opt)
 

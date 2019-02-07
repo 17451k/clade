@@ -30,16 +30,15 @@ class MV(Common):
             "id": cmd["id"],
             "in": [],
             "out": [],
-            "opts": [],
             "cwd": cmd["cwd"],
-            "command": cmd["command"][0]
+            "command": cmd["command"],
         }
 
         # We assume that 'MV' options always have such the form:
         #     [-opt]... in_file out_file
         for opt in cmd["command"][1:]:
             if re.search(r"^-", opt):
-                parsed_cmd["opts"].append(opt)
+                continue
             elif not parsed_cmd["in"]:
                 parsed_cmd["in"].append(os.path.normpath(opt))
             else:
