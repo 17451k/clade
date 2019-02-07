@@ -145,7 +145,6 @@ class Extension(metaclass=abc.ABCMeta):
             if raise_exception:
                 raise FileNotFoundError(message)
 
-            self.warning(message)
             return dict()
 
         self.debug("Load {}".format(file_name))
