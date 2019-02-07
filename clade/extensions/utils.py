@@ -34,10 +34,7 @@ def normalize_path(path, cwd, src):
     if sys.platform == "win32":
         abs_path = get_actual_filename(abs_path)
 
-    if os.path.exists(abs_path):
-        return normalize_abs_path(abs_path, src)
-    else:
-        return path
+    return normalize_abs_path(abs_path, src)
 
 
 def normalize_abs_path(path, cwd, cache=dict()):

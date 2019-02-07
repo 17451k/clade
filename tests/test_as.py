@@ -33,4 +33,4 @@ def test_as(tmpdir, cmds_file):
     assert len(cmds) >= 1
     assert len(target_cmd["in"]) == 1
     assert len(target_cmd["out"]) == 1
-    assert len(target_cmd["opts"]) == 2
+    assert len(target_cmd["command"]) == 6

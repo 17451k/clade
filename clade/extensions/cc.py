@@ -74,7 +74,16 @@ class CC(Compiler):
         else:
             additional_opts = ["-Wp,-MMD,{}".format(deps_file), "-MM"]
 
-        command = cmd["command"] + additional_opts
+        command = []
+
+        opts = iter(cmd["command"])
+        for opt in opts:
+            if opt == "-o":
+                next(opts)
+            else:
+                command.append(opt)
+
+        command += additional_opts
 
         # Do not execute a command that does not contain any input files
         if "-" not in command and cmd["in"]:

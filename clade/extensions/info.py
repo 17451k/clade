@@ -36,7 +36,7 @@ def unwrap_normalize(*args, **kwargs):
 
 
 class Info(Extension):
-    requires = ["CL"]
+    requires = ["CC"]
 
     def __init__(self, work_dir, conf=None, preset="base"):
         if not conf:
@@ -78,16 +78,14 @@ class Info(Extension):
 
         self.log("Start CIF")
 
-        cmds = self.extensions["CL"].load_all_cmds(compile_only=True)
+        cmds = self.extensions["CC"].load_all_cmds(compile_only=True)
 
         if not cmds:
             raise RuntimeError("There is no parsed CC commands")
 
-        for cmd in cmds:
-            self._run_cif(cmd, cmds_file)
-        # with concurrent.futures.ProcessPoolExecutor(max_workers=os.cpu_count()) as p:
-        #     for cmd in cmds:
-        #         p.submit(unwrap, self, cmd, cmds_file)
+        with concurrent.futures.ProcessPoolExecutor(max_workers=os.cpu_count()) as p:
+            for cmd in cmds:
+                p.submit(unwrap, self, cmd, cmds_file)
 
         self.log("CIF finished")
 
@@ -134,7 +132,7 @@ class Info(Extension):
 
             cif_args.append("--")
 
-            opts = self.extensions["CL"].load_opts_by_id(cmd["id"])
+            opts = self.extensions["CC"].load_opts_by_id(cmd["id"])
             opts.extend(self.conf.get("Info.extra_CIF_opts", []))
             opts = [re.sub(r'\"', r'\\"', opt) for opt in opts]
             cif_args.extend(filter_opts(opts, cif_unsupported_opts[:] + opts_to_filter[:]))
@@ -210,9 +208,9 @@ class Info(Extension):
 
         src = self.get_build_cwd(cmds_file)
 
-        # with concurrent.futures.ProcessPoolExecutor(max_workers=os.cpu_count()) as p:
-        #     for file in [f for f in self.files if f != self.init_global]:
-        #         p.submit(unwrap_normalize, self, file, src)
+        with concurrent.futures.ProcessPoolExecutor(max_workers=os.cpu_count()) as p:
+            for file in [f for f in self.files if f != self.init_global]:
+                p.submit(unwrap_normalize, self, file, src)
 
         self.log("Normalizing finished")
 

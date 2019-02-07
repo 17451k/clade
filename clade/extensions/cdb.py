@@ -53,7 +53,7 @@ class CDB(Extension):
 
                 command = cmd["command"]
                 if cmd["out"]:
-                    if "-c" in cmd["opts"]:
+                    if "-c" in cmd["command"]:
                         command.extend(["-o", cmd["out"][i]])
                     else:
                         command.extend(["-o", cmd["out"][0]])
@@ -84,7 +84,7 @@ def parse_args(args, work_dir):
         default="compile_commands.json",
     )
     parser.add_argument(
-        "-f",
+        "-w",
         "--wrappers",
         help="enable intercepting mode based on wrappers (not available on Windows)",
         action="store_true",
