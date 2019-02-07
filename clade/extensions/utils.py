@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import argparse
+import glob
 import os
 import sys
 import ujson
@@ -26,12 +27,20 @@ def normalize_paths(paths, cwd, src):
 
 def normalize_path(path, cwd, src):
     if not os.path.isabs(path):
-        path = os.path.join(cwd, path)
+        abs_path = os.path.join(cwd, path)
+    else:
+        abs_path = path
 
-    return normalize_relative_path(path, src)
+    if sys.platform == "win32":
+        abs_path = get_actual_filename(abs_path)
+
+    if os.path.exists(abs_path):
+        return normalize_abs_path(abs_path, src)
+    else:
+        return path
 
 
-def normalize_relative_path(path, cwd, cache=dict()):
+def normalize_abs_path(path, cwd, cache=dict()):
     # Cache variable considerably speeds up normalizing.
     # Cache size is quite small even for extra large files.
 
@@ -42,15 +51,38 @@ def normalize_relative_path(path, cwd, cache=dict()):
         return cache[cwd][path]
 
     if os.path.commonprefix([path, cwd]) == cwd:
-        cache[cwd][path] = os.path.relpath(path, start=cwd)
+        npath = os.path.relpath(path, start=cwd)
     else:
-        cache[cwd][path] = os.path.normpath(path)
+        npath = os.path.normpath(path)
+
+    if sys.platform == "win32":
+        npath = npath.replace("\\", "/")
+        # drive, tail = os.path.splitdrive(npath)
+        # if drive:
+        #     npath = drive[:-1] + tail
+
+    cache[cwd][path] = npath
 
     return cache[cwd][path]
 
 
+def get_actual_filename(path):
+    dirs = path.split("\\")
+    # disk letter
+    test_path = [dirs[0].upper()]
+    for d in dirs[1:]:
+        test_path += ["%s[%s]" % (d[:-1], d[-1])]
+    res = glob.glob("\\".join(test_path))
+    if not res:
+        # File not found
+        return path
+    return res[0]
+
+
 def merge_preset_to_conf(preset_name, conf):
-    preset_file = os.path.join(os.path.dirname(__file__), "presets", "presets.json")
+    preset_file = os.path.join(
+        os.path.dirname(__file__), "presets", "presets.json"
+    )
 
     with open(preset_file, "r") as f:
         presets = ujson.load(f)
@@ -85,11 +117,36 @@ def load_conf_file(file_name):
 def parse_args(args):
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-w", "--work_dir", help="a path to the DIR where processed commands will be saved", metavar='DIR', default="clade")
-    parser.add_argument("-l", "--log_level", help="set logging level (ERROR, INFO, or DEBUG)", default="INFO")
-    parser.add_argument("-c", "--config", help="a path to the JSON file with configuration", metavar='JSON', default=None)
-    parser.add_argument("-p", "--preset", help="a name of the preset configuration", metavar='JSON', default="base")
-    parser.add_argument(dest="cmds_file", help="a path to the file with intercepted commands")
+    parser.add_argument(
+        "-w",
+        "--work_dir",
+        help="a path to the DIR where processed commands will be saved",
+        metavar="DIR",
+        default="clade",
+    )
+    parser.add_argument(
+        "-l",
+        "--log_level",
+        help="set logging level (ERROR, INFO, or DEBUG)",
+        default="INFO",
+    )
+    parser.add_argument(
+        "-c",
+        "--config",
+        help="a path to the JSON file with configuration",
+        metavar="JSON",
+        default=None,
+    )
+    parser.add_argument(
+        "-p",
+        "--preset",
+        help="a name of the preset configuration",
+        metavar="JSON",
+        default="base",
+    )
+    parser.add_argument(
+        dest="cmds_file", help="a path to the file with intercepted commands"
+    )
 
     args = parser.parse_args(args)
 
