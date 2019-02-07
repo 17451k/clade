@@ -43,8 +43,8 @@ class Link(Common):
         for opt in opts:
             if opt in requires_value[self.name]:
                 next(opts)
-            elif re.search(r"(/|-)OUT:", opt):
-                parsed_cmd["out"].append(re.sub(r"(/|-)OUT:", "", opt))
+            elif re.search(r"(/|-)out:", opt, re.IGNORECASE):
+                parsed_cmd["out"].append(re.sub(r"(/|-)OUT:", "", opt, flags=re.I))
             elif not re.search(r"^(/|-)", opt):
                 parsed_cmd["in"].append(opt)
 
