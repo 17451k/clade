@@ -113,17 +113,6 @@ def test_cc_ignore_cc1(tmpdir, cmds_file, ignore_cc1):
     assert ignore_cc1 != found_cc1
 
 
-@pytest.mark.parametrize("save_unparsed_cmds", [True, False])
-def test_cc_save_unparsed_cmds(tmpdir, cmds_file, save_unparsed_cmds):
-    conf = {"Common.save_unparsed_cmds": save_unparsed_cmds}
-
-    c = CC(tmpdir, conf)
-    c.parse(cmds_file)
-
-    for cmd in c.load_all_cmds():
-        assert (c.load_unparsed_by_id(cmd["id"]) != dict()) == save_unparsed_cmds
-
-
 @pytest.mark.parametrize("filter_deps", [True, False])
 def test_cc_filter_deps(tmpdir, cmds_file, filter_deps):
     conf = {

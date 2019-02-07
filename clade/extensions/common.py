@@ -34,8 +34,6 @@ class CmdWorker(multiprocessing.Process):
 
     def run(self):
         for cmd in iter(self.cmds_queue.get, None):
-            if self.ext.conf.get("Common.save_unparsed_cmds"):
-                self.ext.dump_unparsed_by_id(cmd["id"], cmd)
             self.ext.parse_cmd(cmd)
 
 
@@ -53,7 +51,6 @@ class Common(Extension, metaclass=abc.ABCMeta):
 
         self.cmds_dir = "cmds"
         self.opts_dir = "opts"
-        self.unparsed_dir = "unparsed"
 
         cmd_filter = self.conf.get("Common.filter", [])
         cmd_filter_in = self.conf.get("Common.filter_in", [])
@@ -171,14 +168,6 @@ class Common(Extension, metaclass=abc.ABCMeta):
 
     def dump_opts_by_id(self, id, opts):
         self.dump_data(opts, os.path.join(self.opts_dir, "{}.json".format(id)))
-
-    def load_unparsed_by_id(self, id):
-        unparsed_file = os.path.join(self.unparsed_dir, "{}.json".format(id))
-        return self.load_data(unparsed_file, raise_exception=False)
-
-    def dump_unparsed_by_id(self, id, cmd):
-        unparsed_file = os.path.join(self.unparsed_dir, "{}.json".format(id))
-        self.dump_data(cmd, unparsed_file)
 
     def __merge_all_cmds(self):
         """Merge all parsed commands into a single json file."""

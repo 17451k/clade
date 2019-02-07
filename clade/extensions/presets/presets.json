@@ -28,7 +28,6 @@
         "Common.filter": [],
         "Common.filter_in": [],
         "Common.filter_out": [],
-        "Common.save_unparsed_cmds": true,
         "Common.with_opts": true,
         "Info.extra_CIF_opts": [],
         "PidGraph.as_picture": false,
