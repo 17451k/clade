@@ -101,7 +101,7 @@ class SrcGraph(Extension):
                 if norm_in not in self.src_graph:
                     self.src_graph[norm_in] = self.__get_new_value()
                     self.src_sizes[norm_in] = self.__estimate_loc_size(
-                        os.path.join(src, src_file)
+                        os.path.join(cmd["cwd"], src_file)
                     )
 
                 # compiled_in is a list of commands
