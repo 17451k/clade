@@ -13,17 +13,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+
 from clade.extensions.src_graph import SrcGraph
+
+test_file = os.path.abspath("tests/test_project/main.c")
 
 
 def test_src_graph(tmpdir, cmds_file):
     conf = {"CmdGraph.requires": ["CC", "MV"]}
-    test_file = "tests/test_project/main.c"
 
     c = SrcGraph(tmpdir, conf)
     c.parse(cmds_file)
 
     src_graph = c.load_src_graph()
+
     assert src_graph
     assert len(src_graph[test_file]["compiled_in"]) == 3
     assert len(src_graph[test_file]["used_by"]) == 2
@@ -44,4 +48,4 @@ def test_src_graph_empty_conf(tmpdir, cmds_file):
 
     src_graph = c.load_src_graph()
     assert src_graph
-    assert len(src_graph["tests/test_project/main.c"]["used_by"]) >= 1
+    assert len(src_graph[test_file]["used_by"]) >= 1

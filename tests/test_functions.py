@@ -13,11 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+
 from clade.extensions.functions import Functions
 
-zero_c = "tests/test_project/zero.c"
-zero_h = "tests/test_project/zero.h"
-main_c = "tests/test_project/main.c"
+zero_c = os.path.abspath("tests/test_project/zero.c")
+zero_h = os.path.abspath("tests/test_project/zero.h")
+main_c = os.path.abspath("tests/test_project/main.c")
 
 
 def funcs_is_ok(c):
