@@ -52,7 +52,7 @@
             "^.*?objcopy$"
         ],
         "CL.which_list": [
-            "^.*?(cl)|(CL)\\.exe$"
+            "^.*?(cl|CL)\\.exe$"
         ],
         "Link.which_list": [
             "^.*?link\\.exe$"
