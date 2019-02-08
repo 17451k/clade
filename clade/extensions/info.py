@@ -24,7 +24,7 @@ import sys
 
 from clade.extensions.abstract import Extension
 from clade.extensions.opts import cif_unsupported_opts, filter_opts
-from clade.extensions.utils import common_main, normalize_path
+from clade.extensions.utils import common_main
 
 
 def unwrap(*args, **kwargs):
@@ -36,7 +36,8 @@ def unwrap_normalize(*args, **kwargs):
 
 
 class Info(Extension):
-    requires = ["CC"]
+    always_requires = ["SrcGraph", "Path"]
+    requires = always_requires + ["CC", "CL"]
 
     def __init__(self, work_dir, conf=None, preset="base"):
         if not conf:
@@ -44,6 +45,9 @@ class Info(Extension):
 
         # Without this option it will be difficult to link data coming from Info and by CC extensions
         conf["CC.with_system_header_files"] = True
+
+        if "SrcGraph.requires" in conf:
+            self.requires = self.always_requires + conf["SrcGraph.requires"]
 
         super().__init__(work_dir, conf, preset)
 
@@ -78,7 +82,7 @@ class Info(Extension):
 
         self.log("Start CIF")
 
-        cmds = self.extensions["CC"].load_all_cmds(compile_only=True)
+        cmds = self.extensions["SrcGraph"].load_all_cmds()
 
         if not cmds:
             raise RuntimeError("There is no parsed CC commands")
@@ -107,15 +111,12 @@ class Info(Extension):
         if not opts_to_filter:
             opts_to_filter = []
 
-        src = self.get_build_cwd(cmds_file)
-
         for cmd_in in cmd["in"]:
             cif_out = os.path.join(self.temp_dir, str(os.getpid()), cmd_in.lstrip(os.sep) + ".o")
             os.makedirs(os.path.dirname(cif_out), exist_ok=True)
             os.makedirs(self.work_dir, exist_ok=True)
 
-            var_c_file = cmd_in
-            var_c_file = normalize_path(var_c_file, cmd["cwd"], src)
+            var_c_file = self.extensions["Path"].get_rel_path(cmd_in, cmd["cwd"])
 
             os.environ["CIF_INFO_DIR"] = self.work_dir
             os.environ["VAR_C_FILE"] = var_c_file
@@ -132,7 +133,7 @@ class Info(Extension):
 
             cif_args.append("--")
 
-            opts = self.extensions["CC"].load_opts_by_id(cmd["id"])
+            opts = self.extensions[cmd["type"]].load_opts_by_id(cmd["id"])
             opts.extend(self.conf.get("Info.extra_CIF_opts", []))
             opts = [re.sub(r'\"', r'\\"', opt) for opt in opts]
             cif_args.extend(filter_opts(opts, cif_unsupported_opts[:] + opts_to_filter[:]))
@@ -175,7 +176,7 @@ class Info(Extension):
             log_fh.writelines(log)
             log_fh.write("\n\n")
 
-    def _normilize_file(self, file, src=""):
+    def _normilize_file(self, file):
         if not os.path.isfile(file):
             return
 
@@ -193,7 +194,7 @@ class Info(Extension):
 
                         if m:
                             cwd, path, rest = m.groups()
-                            path = normalize_path(path, cwd, src)
+                            path = self.extensions["Path"].normalize_rel_path(path, cwd)
                             temp_fh.write("{} {}\n".format(path, rest))
                         else:
                             temp_fh.write(line)
@@ -206,11 +207,9 @@ class Info(Extension):
     def __normalize_cif_output(self, cmds_file):
         self.log("Normalizing CIF output")
 
-        src = self.get_build_cwd(cmds_file)
-
         with concurrent.futures.ProcessPoolExecutor(max_workers=os.cpu_count()) as p:
             for file in [f for f in self.files if f != self.init_global]:
-                p.submit(unwrap_normalize, self, file, src)
+                p.submit(unwrap_normalize, self, file)
 
         self.log("Normalizing finished")
 

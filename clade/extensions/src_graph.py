@@ -85,8 +85,6 @@ class SrcGraph(Extension):
         except FileNotFoundError:
             return
 
-        src = self.get_build_cwd(cmds_file)
-
         for cmd in self.load_all_cmds():
             cmd_id = str(cmd["id"])
             cmd_type = cmd["type"]
@@ -96,7 +94,7 @@ class SrcGraph(Extension):
             used_by = self.__find_used_by(cmd_graph, cmd_id)
 
             for src_file in self.extensions[cmd_type].load_deps_by_id(cmd_id):
-                norm_in = self.extensions["Path"].normalize_rel_path(src_file, cmd["cwd"])
+                norm_in = self.extensions["Path"].get_rel_path(src_file, cmd["cwd"])
 
                 if norm_in not in self.src_graph:
                     self.src_graph[norm_in] = self.__get_new_value()

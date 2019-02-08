@@ -19,7 +19,7 @@ import pytest
 from clade import Clade
 from tests.test_intercept import test_project_make, calculate_loc
 
-main_c = "tests/test_project/main.c"
+main_c = os.path.abspath("tests/test_project/main.c")
 
 
 def test_intercept(tmpdir):

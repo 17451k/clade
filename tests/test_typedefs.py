@@ -13,9 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+
 from clade.extensions.typedefs import Typedefs
 
-zero_c = "tests/test_project/zero.c"
+zero_c = os.path.abspath("tests/test_project/zero.c")
 
 
 def test_typedefs(tmpdir, cmds_file):

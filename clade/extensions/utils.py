@@ -14,66 +14,9 @@
 # limitations under the License.
 
 import argparse
-import glob
 import os
 import sys
 import ujson
-
-
-def normalize_paths(paths, cwd, src):
-    for path in paths:
-        yield normalize_path(path, cwd, src)
-
-
-def normalize_path(path, cwd, src):
-    if not os.path.isabs(path):
-        abs_path = os.path.join(cwd, path)
-    else:
-        abs_path = path
-
-    if sys.platform == "win32":
-        abs_path = get_actual_filename(abs_path)
-
-    return normalize_abs_path(abs_path, src)
-
-
-def normalize_abs_path(path, cwd, cache=dict()):
-    # Cache variable considerably speeds up normalizing.
-    # Cache size is quite small even for extra large files.
-
-    if cwd not in cache:
-        cache[cwd] = dict()
-
-    if path in cache[cwd]:
-        return cache[cwd][path]
-
-    if os.path.commonprefix([path, cwd]) == cwd:
-        npath = os.path.relpath(path, start=cwd)
-    else:
-        npath = os.path.normpath(path)
-
-    if sys.platform == "win32":
-        npath = npath.replace("\\", "/")
-        # drive, tail = os.path.splitdrive(npath)
-        # if drive:
-        #     npath = drive[:-1] + tail
-
-    cache[cwd][path] = npath
-
-    return cache[cwd][path]
-
-
-def get_actual_filename(path):
-    dirs = path.split("\\")
-    # disk letter
-    test_path = [dirs[0].upper()]
-    for d in dirs[1:]:
-        test_path += ["%s[%s]" % (d[:-1], d[-1])]
-    res = glob.glob("\\".join(test_path))
-    if not res:
-        # File not found
-        return path
-    return res[0]
 
 
 def merge_preset_to_conf(preset_name, conf):

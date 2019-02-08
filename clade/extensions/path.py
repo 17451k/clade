@@ -22,7 +22,7 @@ from clade.extensions.abstract import Extension
 
 
 class Path(Extension):
-    def __init__(self, work_dir, conf=None, preset='base'):
+    def __init__(self, work_dir, conf=None, preset="base"):
         super().__init__(work_dir, conf=conf, preset=preset)
 
         self.paths = dict()
@@ -32,10 +32,24 @@ class Path(Extension):
         build_cwd = self.get_build_cwd(cmds_file)
         self.normalize_abs_path(build_cwd)
 
-    def get_path(self, path):
+    def get_rel_paths(self, paths, cwd):
+        # TODO: check that paths is a list, not a string
+        npaths = []
+
+        for path in paths:
+            npaths.append(self.get_rel_path(path, cwd))
+
+        return npaths
+
+    def get_rel_path(self, path, cwd):
         if not self.paths:
             self.paths = self.load_paths()
-        return self.paths[path.lower]
+        return self.paths[cwd.lower() + " " + path.lower()]
+
+    def get_abs_path(self, path):
+        if not self.paths:
+            self.paths = self.load_paths()
+        return self.paths[path.lower()]
 
     def dump_paths(self):
         os.makedirs(os.path.dirname(self.paths_file), exist_ok=True)
@@ -58,18 +72,24 @@ class Path(Extension):
 
     def normalize_rel_paths(self, paths, cwd):
         # TODO: check that paths is a list, not a string
+        npaths = []
+
         for path in paths:
-            yield self.normalize_rel_path(path, cwd)
+            npaths.append(self.normalize_rel_path(path, cwd))
+
+        return npaths
 
     def normalize_rel_path(self, path, cwd, cache=dict()):
         # cache variable considerably speeds up normalizing.
         # cache size is quite small even for extra large files.
 
-        if cwd not in cache:
-            cache[cwd] = dict()
+        key = cwd.lower() + " " + path.lower()
 
-        if path in cache[cwd]:
-            return cache[cwd][path]
+        if key in cache:
+            # I am not shure why it is necessary
+            # But sometimes cache variable is preserved through different launches
+            self.paths[key] = cache[key]
+            return cache[key]
 
         if not os.path.isabs(path):
             abs_path = os.path.join(cwd, path)
@@ -77,8 +97,8 @@ class Path(Extension):
             abs_path = path
 
         npath = self.normalize_abs_path(abs_path)
-        cache[cwd][path] = npath
-        self.paths[path.lower()] = npath
+        cache[key] = npath
+        self.paths[key] = npath
         return npath
 
     def normalize_abs_path(self, path, cache=dict()):

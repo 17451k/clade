@@ -17,7 +17,7 @@ from clade.extensions.info import Info
 
 
 def test_info(tmpdir, cmds_file):
-    conf = {"CC.filter_deps": False, "Info.extra CIF opts": ["-hello"]}
+    conf = {"CC.filter_deps": False, "Info.extra_CIF_pts": ["-hello"]}
 
     c = Info(tmpdir, conf)
     c.parse(cmds_file)

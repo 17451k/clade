@@ -13,9 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+
 from clade.extensions.macros import Macros
 
-zero_c = "tests/test_project/zero.c"
+zero_c = os.path.abspath("tests/test_project/zero.c")
 
 
 def test_macros(tmpdir, cmds_file):
