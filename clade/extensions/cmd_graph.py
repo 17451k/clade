@@ -21,11 +21,11 @@ import sys
 from graphviz import Digraph
 
 from clade.extensions.abstract import Extension
-from clade.extensions.utils import common_main, normalize_paths, merge_preset_to_conf
+from clade.extensions.utils import common_main, merge_preset_to_conf
 
 
 class CmdGraph(Extension):
-    always_requires = ["PidGraph"]
+    always_requires = ["PidGraph", "Path"]
     requires = always_requires + ["CC", "LD", "AR"]
 
     def __init__(self, work_dir, conf=None, preset="base"):
@@ -68,11 +68,11 @@ class CmdGraph(Extension):
         self.log("Start command graph constructing")
 
         cmds = self.load_all_cmds()
-        src = self.get_build_cwd(cmds_file)
 
         for cmd in sorted(cmds, key=lambda x: int(x["id"])):
-            self.__add_to_graph(cmd, src)
+            self.__add_to_graph(cmd)
 
+        self.extensions["Path"].dump_paths()
         self.dump_data(self.graph, self.graph_file)
 
         if self.graph:
@@ -84,23 +84,27 @@ class CmdGraph(Extension):
         self.graph.clear()
         self.log("Constructing finished")
 
-    def __add_to_graph(self, cmd, src, out_dict=dict()):
+    def __add_to_graph(self, cmd, out_dict=dict()):
         out_id = str(cmd["id"])
         if out_id not in self.graph:
             self.graph[out_id] = self.__get_new_value(cmd["type"])
 
-        for cmd_in in (i for i in normalize_paths(cmd["in"], cmd["cwd"], src) if i in out_dict):
+        for cmd_in in (i for i in self.extensions["Path"].normalize_rel_paths(cmd["in"], cmd["cwd"]) if i in out_dict):
             in_id = out_dict[cmd_in]
             self.graph[in_id]["used_by"].add(out_id)
             self.graph[out_id]["using"].add(in_id)
 
         # Rewrite out_dict[cmd_out] values to keep the latest used command id
-        for cmd_out in normalize_paths(cmd["out"], cmd["cwd"], src):
+        for cmd_out in self.extensions["Path"].normalize_rel_paths(cmd["out"], cmd["cwd"]):
             out_dict[cmd_out] = out_id
 
-    def __print_source_graph(self, cmds_file):
-        src = self.get_build_cwd(cmds_file)
+        if hasattr(self.extensions[cmd["type"]], "load_deps_by_id"):
+            for src_file in self.extensions[cmd["type"]].load_deps_by_id(cmd["id"]):
+                self.extensions["Path"].normalize_rel_path(src_file, cmd["cwd"])
 
+        self.extensions["Path"].normalize_abs_path(cmd["cwd"])
+
+    def __print_source_graph(self, cmds_file):
         dot = Digraph(graph_attr={'rankdir': 'LR'}, node_attr={'shape': 'rectangle'})
 
         added_nodes = dict()
@@ -110,7 +114,7 @@ class CmdGraph(Extension):
             cmd_type = graph[cmd_id]["type"]
             cmd = self.extensions[cmd_type].load_cmd_by_id(cmd_id)
 
-            for cmd_out in normalize_paths(cmd["out"], cmd["cwd"], src):
+            for cmd_out in self.extensions["Path"].normalize_rel_paths(cmd["out"], cmd["cwd"]):
                 # TODO: Replace hash by file_id
                 cmd_out_hash = hashlib.md5(cmd_out.encode('utf-8')).hexdigest()
 
@@ -118,7 +122,7 @@ class CmdGraph(Extension):
                     dot.node(cmd_out_hash, label=re.escape(cmd_out))
                     added_nodes[cmd_out] = 1
 
-                for cmd_in in normalize_paths(cmd["in"], cmd["cwd"], src):
+                for cmd_in in self.extensions["Path"].normalize_rel_paths(cmd["in"], cmd["cwd"]):
                     cmd_in_hash = hashlib.md5(cmd_in.encode('utf-8')).hexdigest()
 
                     if cmd_in not in added_nodes:
