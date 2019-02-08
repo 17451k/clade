@@ -50,6 +50,7 @@ class Common(Extension, metaclass=abc.ABCMeta):
         super().__init__(work_dir, conf, preset)
 
         self.cmds_dir = "cmds"
+        self.opts_dir = "opts"
         self.io_dir = "io"
 
         cmd_filter = self.conf.get("Common.filter", [])
@@ -116,6 +117,7 @@ class Common(Extension, metaclass=abc.ABCMeta):
             "id": cmd["id"],
             "in": [],
             "out": [],
+            "opts": [],
             "cwd": cmd["cwd"],
             "command": cmd["command"],
         }
@@ -139,8 +141,14 @@ class Common(Extension, metaclass=abc.ABCMeta):
                 val = next(opts)
                 if opt == "-o":
                     parsed_cmd["out"].append(os.path.normpath(val))
+                else:
+                    parsed_cmd["opts"].extend([opt, val])
+            # Options without values
+            # Or with values that are not separated by space
+            elif re.search(r"^-", opt):
+                parsed_cmd["opts"].append(opt)
             # Input files are not options and not values of other options
-            elif not re.search(r"^-", opt):
+            else:
                 parsed_cmd["in"].append(opt)
 
         return parsed_cmd
@@ -154,6 +162,8 @@ class Common(Extension, metaclass=abc.ABCMeta):
         self.dump_io_by_id(
             cmd["id"], {i: cmd[i] for i in cmd if i in ["in", "out", "cwd"]}
         )
+        self.dump_opts_by_id(cmd["id"], cmd["opts"])
+        del cmd["opts"]
         self.dump_data(cmd, os.path.join(self.cmds_dir, "{}.json".format(id)))
 
     def load_io_by_id(self, id):
@@ -162,6 +172,13 @@ class Common(Extension, metaclass=abc.ABCMeta):
 
     def dump_io_by_id(self, id, io):
         self.dump_data(io, os.path.join(self.io_dir, "{}.json".format(id)))
+
+    def load_opts_by_id(self, id):
+        opts_file = os.path.join(self.opts_dir, "{}.json".format(id))
+        return self.load_data(opts_file, raise_exception=False)
+
+    def dump_opts_by_id(self, id, opts):
+        self.dump_data(opts, os.path.join(self.opts_dir, "{}.json".format(id)))
 
     def __merge_all_cmds(self):
         """Merge all parsed commands into a single json file."""
@@ -180,7 +197,7 @@ class Common(Extension, metaclass=abc.ABCMeta):
 
         self.dump_data(merged_cmds, "cmds.json")
 
-    def load_all_cmds(self, filter_by_pid=True):
+    def load_all_cmds(self, with_opts=True, filter_by_pid=True):
         """Load all parsed commands."""
         cmds = self.load_data("cmds.json")
 
@@ -188,6 +205,11 @@ class Common(Extension, metaclass=abc.ABCMeta):
             "PidGraph.filter_cmds_by_pid", True
         ):
             cmds = self.extensions["PidGraph"].filter_cmds_by_pid(cmds)
+
+        if with_opts:
+            for cmd in cmds:
+                if "opts" not in cmd:
+                    cmd["opts"] = self.load_opts_by_id(cmd["id"])
 
         return cmds
 

@@ -47,8 +47,8 @@ class Compiler(Common):
 
         return True
 
-    def load_all_cmds(self, filter_by_pid=True, with_deps=False, compile_only=False):
-        cmds = super().load_all_cmds(filter_by_pid=filter_by_pid)
+    def load_all_cmds(self, filter_by_pid=True, with_opts=True, with_deps=False, compile_only=False):
+        cmds = super().load_all_cmds(with_opts=with_opts, filter_by_pid=filter_by_pid)
 
         # compile only - ignore linker commands, like gcc func.o main.o -o main
         for cmd in cmds:

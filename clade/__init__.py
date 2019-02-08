@@ -162,15 +162,18 @@ class Clade():
 
         return self.cmd_graph[cmd_id]["type"]
 
-    def get_cmd(self, cmd_id, with_deps=False):
+    def get_cmd(self, cmd_id, with_opts=True, with_deps=False):
         """Get command by its identifier."""
         cmd_type = self.get_cmd_type(cmd_id)
 
-        if with_deps and cmd_type != "CC":
-            raise RuntimeError("Only CC commands have dependencies")
+        if with_deps and cmd_type not in ["CC", "CL"]:
+            raise RuntimeError("Only compiler commands have dependencies")
 
         ext_obj = self.CmdGraph.get_ext_obj(cmd_type)
         cmd = ext_obj.load_cmd_by_id(cmd_id)
+
+        if with_opts:
+            cmd["opts"] = self.get_cmd_opts(cmd_id)
 
         if with_deps:
             cmd["deps"] = self.get_cc_deps(cmd_id)

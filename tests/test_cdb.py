@@ -29,7 +29,7 @@ def test_cdb(tmpdir, cmds_file):
 
     for cmd in cdb:
         assert "directory" in cmd
-        assert "command" in cmd
+        assert "arguments" in cmd
         assert "file" in cmd
 
 

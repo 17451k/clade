@@ -51,17 +51,17 @@ class CDB(Extension):
                 if file_ext not in self.extensions["CC"].file_extensions:
                     continue
 
-                command = cmd["command"]
+                arguments = [cmd["command"]] + cmd["opts"] + [cmd_in]
                 if cmd["out"]:
-                    if "-c" in cmd["command"]:
-                        command.extend(["-o", cmd["out"][i]])
+                    if "-c" in cmd["opts"]:
+                        arguments.extend(["-o", cmd["out"][i]])
                     else:
-                        command.extend(["-o", cmd["out"][0]])
+                        arguments.extend(["-o", cmd["out"][0]])
 
                 self.cdb.append(
                     {
                         "directory": cmd["cwd"],
-                        "command": command,
+                        "arguments": arguments,
                         "file": cmd_in,
                     }
                 )

@@ -24,4 +24,5 @@ def test_ar(tmpdir, cmds_file):
     assert len(cmds) == 1
     assert len(cmds[0]["in"]) == 2
     assert len(cmds[0]["out"]) == 1
+    assert len(cmds[0]["opts"]) == 1
     assert len(cmds[0]["command"]) == 5

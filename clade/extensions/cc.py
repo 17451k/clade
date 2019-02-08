@@ -34,7 +34,7 @@ class CC(Compiler):
 
         parsed_cmd = super().parse_cmd(cmd, self.name)
 
-        if not parsed_cmd["out"] and "-c" in parsed_cmd["command"]:
+        if not parsed_cmd["out"] and "-c" in parsed_cmd["opts"]:
             for cmd_in in parsed_cmd["in"]:
                 # Output file is located inside "cwd" directory,
                 # not near cmd_in
@@ -74,16 +74,8 @@ class CC(Compiler):
         else:
             additional_opts = ["-Wp,-MMD,{}".format(deps_file), "-MM"]
 
-        command = []
-
-        opts = iter(cmd["command"])
-        for opt in opts:
-            if opt == "-o":
-                next(opts)
-            else:
-                command.append(opt)
-
-        command += additional_opts
+        opts = cmd["opts"] + additional_opts
+        command = [cmd["command"][0]] + opts + cmd["in"]
 
         # Do not execute a command that does not contain any input files
         if "-" not in command and cmd["in"]:
@@ -127,11 +119,11 @@ class CC(Compiler):
             return True
 
         if self.conf.get("CC.filter_deps", True) and set(
-            cmd["command"]
+            cmd["opts"]
         ).intersection(preprocessor_deps_opts):
             return True
 
-        if self.conf.get("CC.ignore_cc1", True) and "-cc1" in cmd["command"]:
+        if self.conf.get("CC.ignore_cc1", True) and "-cc1" in cmd["opts"]:
             return True
 
         return False

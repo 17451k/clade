@@ -51,6 +51,9 @@ def test_cmd_graph(tmpdir, cmds_file):
     for cmd_id in c.cmd_ids:
         assert c.get_cmd(cmd_id)
 
+        for with_opts in (True, False):
+            assert ("opts" in c.get_cmd(cmd_id, with_opts=with_opts)) == with_opts
+
         assert "command" in c.get_cmd(cmd_id)
 
         if c.get_cmd_type(cmd_id) == "CC":

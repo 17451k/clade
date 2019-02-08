@@ -30,6 +30,7 @@ class MV(Common):
             "id": cmd["id"],
             "in": [],
             "out": [],
+            "opts": [],
             "cwd": cmd["cwd"],
             "command": cmd["command"],
         }
@@ -38,7 +39,7 @@ class MV(Common):
         #     [-opt]... in_file out_file
         for opt in cmd["command"][1:]:
             if re.search(r"^-", opt):
-                continue
+                parsed_cmd["opts"].append(opt)
             elif not parsed_cmd["in"]:
                 parsed_cmd["in"].append(os.path.normpath(opt))
             else:
