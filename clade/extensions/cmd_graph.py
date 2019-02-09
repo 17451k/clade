@@ -107,7 +107,6 @@ class CmdGraph(Extension):
             self.graph[out_id]["using"].add(in_id)
 
         # Rewrite out_dict[cmd_out] values to keep the latest used command id
-        print("ADD:  ", cmd["cwd"], cmd["out"])
         for cmd_out in self.extensions["Path"].get_rel_paths(cmd["out"], cmd["cwd"]):
             out_dict[cmd_out] = out_id
 
