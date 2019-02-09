@@ -204,6 +204,8 @@ class Info(Extension):
         os.remove(file)
         os.rename(file + ".temp", file)
 
+        self.extensions["Path"].dump_paths()
+
     def __normalize_cif_output(self, cmds_file):
         self.log("Normalizing CIF output")
 
