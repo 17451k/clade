@@ -42,21 +42,34 @@ class Path(Extension):
         return npaths
 
     def get_rel_path(self, path, cwd):
-        if not self.paths:
+        key = cwd.lower() + " " + path.lower()
+        npath = self.paths.get(key)
+
+        if npath:
+            return npath
+        else:
             self.paths = self.load_paths()
-        return self.paths[cwd.lower() + " " + path.lower()]
+            return self.paths[key]
 
     def get_abs_path(self, path):
-        if not self.paths:
+        key = path.lower()
+        npath = self.paths.get(key)
+
+        if npath:
+            return npath
+        else:
             self.paths = self.load_paths()
-        return self.paths[path.lower()]
+            return self.paths[key]
 
     def dump_paths(self):
         os.makedirs(os.path.dirname(self.paths_file), exist_ok=True)
 
+        paths = self.load_paths()
+        paths.update(self.paths)
+
         with open(self.paths_file, "a") as paths_fh:
-            for path in self.paths:
-                paths_fh.write("{}: {}\n".format(path, self.paths[path]))
+            for path in paths:
+                paths_fh.write("{}: {}\n".format(path, paths[path]))
 
     def load_paths(self):
         paths = dict()
