@@ -337,9 +337,9 @@ class Clade():
         """
         self._Storage.add_file(file, storage_filename=storage_filename)
 
-    def get_path_from_storage(self, path):
+    def get_storage_path(self, path):
         """Get path to the file or directory from the storage."""
-        return os.path.join(self.storage_dir, path.lstrip(os.path.sep))
+        return self._Storage.get_storage_path(path)
 
     @property
     def Callgraph(self):

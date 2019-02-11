@@ -53,5 +53,9 @@ class Storage(Extension):
     def get_storage_dir(self):
         return self.work_dir
 
+    def get_storage_path(self, path):
+        """Get path to the file or directory from the storage."""
+        return os.path.join(self.work_dir, path.lstrip(os.path.sep))
+
     def parse(self, cmd_file):
         super().parse(cmd_file)
