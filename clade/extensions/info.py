@@ -36,7 +36,7 @@ def unwrap_normalize(*args, **kwargs):
 
 
 class Info(Extension):
-    always_requires = ["SrcGraph", "Path"]
+    always_requires = ["SrcGraph", "Path", "Storage"]
     requires = always_requires + ["CC", "CL"]
 
     def __init__(self, work_dir, conf=None, preset="base"):
@@ -87,9 +87,13 @@ class Info(Extension):
         if not cmds:
             raise RuntimeError("There is no parsed CC commands")
 
-        with concurrent.futures.ProcessPoolExecutor(max_workers=os.cpu_count()) as p:
+        if os.environ.get("CLADE_DEBUG"):
             for cmd in cmds:
-                p.submit(unwrap, self, cmd, cmds_file)
+                self._run_cif(cmd, cmds_file)
+        else:
+            with concurrent.futures.ProcessPoolExecutor(max_workers=os.cpu_count()) as p:
+                for cmd in cmds:
+                    p.submit(unwrap, self, cmd, cmds_file)
 
         self.log("CIF finished")
 
@@ -109,14 +113,14 @@ class Info(Extension):
             return
 
         for cmd_in in cmd["in"]:
+            cmd_in = self.extensions["Path"].get_rel_path(cmd_in, cmd["cwd"])
+            cmd_in = self.extensions["Storage"].get_storage_path(cmd_in)
+
             cif_out = os.path.join(self.temp_dir, str(os.getpid()), cmd_in.lstrip(os.sep) + ".o")
             os.makedirs(os.path.dirname(cif_out), exist_ok=True)
             os.makedirs(self.work_dir, exist_ok=True)
 
-            var_c_file = self.extensions["Path"].get_rel_path(cmd_in, cmd["cwd"])
-
             os.environ["CIF_INFO_DIR"] = self.work_dir
-            os.environ["VAR_C_FILE"] = var_c_file
             os.environ["C_FILE"] = cmd_in
             os.environ["CIF_CMD_CWD"] = cmd['cwd']
 
@@ -128,16 +132,22 @@ class Info(Extension):
                         "--stage", "instrumentation",
                         "--out", cif_out]
 
-            cif_args.append("--")
-
             opts = self.extensions[cmd["type"]].load_opts_by_id(cmd["id"])
             opts = filter_opts(opts)
-            opts.extend(self.conf.get("Info.extra_CIF_opts", []))
-            opts = [re.sub(r'\"', r'\\"', opt) for opt in opts]
-            cif_args.extend(opts)
+
+            if opts:
+                cif_args.append("--")
+                opts.extend(self.conf.get("Info.extra_CIF_opts", []))
+                opts = [re.sub(r'\"', r'\\"', opt) for opt in opts]
+                cif_args.extend(opts)
+
+            cwd = self.extensions["Path"].get_abs_path(cmd["cwd"])
+            cwd = self.extensions["Storage"].get_storage_path(cwd)
+            os.makedirs(cwd, exist_ok=True)
 
             try:
-                subprocess.check_output(cif_args, stderr=subprocess.STDOUT, cwd=cmd["cwd"], universal_newlines=True)
+                self.debug(cif_args)
+                subprocess.check_output(cif_args, stderr=subprocess.STDOUT, cwd=cwd, universal_newlines=True)
             except subprocess.CalledProcessError as e:
                 self.__save_log(cif_args, e.output)
 
@@ -167,6 +177,7 @@ class Info(Extension):
             return
 
         regexp = re.compile(r'(\S*) (\S*) (.*)')
+        storage = self.extensions["Storage"].get_storage_dir()
 
         seen = set()
         with codecs.open(file, "r", encoding='utf8', errors='ignore') as fh:
@@ -181,6 +192,7 @@ class Info(Extension):
                         if m:
                             cwd, path, rest = m.groups()
                             path = self.extensions["Path"].normalize_rel_path(path, cwd)
+                            path = re.sub(storage, "", path)
                             temp_fh.write("{} {}\n".format(path, rest))
                         else:
                             temp_fh.write(line)
