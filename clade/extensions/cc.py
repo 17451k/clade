@@ -63,7 +63,7 @@ class CC(Compiler):
         self.dump_deps_by_id(cmd_id, deps)
         self.dump_cmd_by_id(cmd_id, parsed_cmd)
 
-        if self.conf.get("CC.store_deps"):
+        if self.conf.get("Compiler.store_deps"):
             self.store_src_files(deps, parsed_cmd["cwd"])
 
     def __get_deps(self, cmd_id, cmd):

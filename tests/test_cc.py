@@ -61,7 +61,7 @@ def test_cc_load_all_cmds(tmpdir, cmds_file, with_opts, with_deps):
 
 @pytest.mark.parametrize("store_deps", [True, False])
 def test_cc_store_deps(tmpdir, cmds_file, store_deps):
-    conf = {"CC.store_deps": store_deps}
+    conf = {"Compiler.store_deps": store_deps}
 
     c = CC(tmpdir, conf)
     c.parse(cmds_file)

@@ -7,9 +7,8 @@
         "Wrapper.recursive_wrap": false,
         "CC.ignore_cc1": true,
         "CC.filter_deps": true,
-        "CC.store_deps": true,
         "CC.with_system_header_files": true,
-        "CL.store_deps": true,
+        "Compiler.store_deps": true,
         "Compiler.preprocess_cmds": true,
         "CmdGraph.requires": [
             "AR",

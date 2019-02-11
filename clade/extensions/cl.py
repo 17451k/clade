@@ -119,7 +119,7 @@ class CL(Compiler):
             self.debug("Preprocessed files: {}".format(pre))
             self.store_src_files(pre, parsed_cmd["cwd"])
 
-        if self.conf.get("CL.store_deps"):
+        if self.conf.get("Compiler.store_deps"):
             self.store_src_files(deps, parsed_cmd["cwd"])
 
     def __get_deps(self, cmd_id, cmd):
