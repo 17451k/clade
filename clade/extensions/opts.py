@@ -475,60 +475,26 @@ requires_value = {
 
 # This options will be used in a regular expression
 # So you can write "-mindirect-branch" instead of "-mindirect-branch=thunk-extern"
-cif_unsupported_opts = preprocessor_deps_opts + [
-    "-cc1",
-    "-triple",
-    "-Wdeprecated-objc-isa-usage",
-    "-main-file-name",
-    "-mrelocation-model",
-    "-pic-level",
-    "-mthread-model",
-    "-mdisable-fp-elim",
-    "-fno-strict-return",
-    "-masm-verbose",
-    "-munwind-tables",
-    "-target-cpu",
-    "-target-linker-version",
-    "-coverage-notes-file",
-    "-resource-dir",
-    "-fdebug-compilation-dir",
-    "-ferror-limit",
-    "-fmessage-length",
-    "-stack-protector",
-    "-fblocks",
-    "-fobjc-runtime",
-    "-fencode-extended-block-signature",
-    "-fmax-type-align",
-    "-fcolor-diagnostics",
-    "-vectorize-loops",
-    "-vectorize-slp",
-    "-Eonly",
-    "-Werror",
-    "-imultiarch",
-    "-auxbase",
-    "-quiet",
-    "-DIPATH",
-    "-mabi",
-    "-march",
-    "-mtune",
+cif_supported_opts = [
+    "-D",
+    "-include",
+    "-I"
 ]
 
 
-def filter_opts(opts, opts_to_filter):
-    if not opts_to_filter:
-        return opts
-
-    filtered_opts = []
+def filter_opts(opts):
+    if not cif_supported_opts:
+        return []
 
     # Make a regex that matches if any of the regexes match.
-    regex = re.compile("(" + ")|(".join(opts_to_filter) + ")")
+    regex = re.compile("(" + ")|(".join(cif_supported_opts) + ")")
 
+    filtered_opts = []
     opts = iter(opts)
     for opt in opts:
         if regex.match(opt):
+            filtered_opts.append(opt)
             if opt in requires_value["CC"]:
-                next(opts)
-            continue
-        filtered_opts.append(opt)
+                filtered_opts.append(opt)(next(opts))
 
     return filtered_opts
