@@ -9,7 +9,7 @@
         "CC.filter_deps": true,
         "CC.with_system_header_files": true,
         "Compiler.store_deps": true,
-        "Compiler.preprocess_cmds": true,
+        "Compiler.preprocess_cmds": false,
         "CmdGraph.requires": [
             "AR",
             "AS",

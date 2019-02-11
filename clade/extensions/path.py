@@ -116,6 +116,7 @@ class Path(Extension):
 
     def normalize_abs_path(self, path, cache=dict()):
         if path in cache:
+            self.paths[path.lower()] = cache[path]
             return cache[path]
 
         npath = os.path.normpath(path)

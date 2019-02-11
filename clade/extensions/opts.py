@@ -495,6 +495,6 @@ def filter_opts(opts):
         if regex.match(opt):
             filtered_opts.append(opt)
             if opt in requires_value["CC"]:
-                filtered_opts.append(opt)(next(opts))
+                filtered_opts.append(next(opts))
 
     return filtered_opts

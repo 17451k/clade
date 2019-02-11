@@ -114,9 +114,9 @@ class Info(Extension):
             return
 
         for cmd_in in cmd["in"]:
-            cmd_in = self.extensions["Path"].get_rel_path(cmd_in, cmd["cwd"])
-            cif_in = self.extensions[cmd["type"]].get_preprocessed_file_by_path(cmd_in)
-            cmd_in = self.extensions["Storage"].get_storage_path(cmd_in)
+            norm_cmd_in = self.extensions["Path"].get_rel_path(cmd_in, cmd["cwd"])
+            cif_in = self.extensions[cmd["type"]].get_preprocessed_file_by_path(norm_cmd_in)
+            cmd_in = self.extensions["Storage"].get_storage_path(norm_cmd_in)
 
             if not self.conf.get("Compiler.preprocess_cmds"):
                 cif_in = cmd_in
@@ -129,7 +129,7 @@ class Info(Extension):
             os.makedirs(self.work_dir, exist_ok=True)
 
             os.environ["CIF_INFO_DIR"] = self.work_dir
-            os.environ["C_FILE"] = cmd_in
+            os.environ["C_FILE"] = norm_cmd_in
             os.environ["CIF_CMD_CWD"] = cmd['cwd']
 
             cif_args = ["cif",
