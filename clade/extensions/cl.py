@@ -114,6 +114,11 @@ class CL(Compiler):
         self.dump_deps_by_id(cmd["id"], deps)
         self.dump_cmd_by_id(cmd["id"], parsed_cmd)
 
+        if self.conf.get("Compiler.preprocess_cmds"):
+            pre = self.__preprocess_cmd(parsed_cmd)
+            self.debug("Preprocessed files: {}".format(pre))
+            self.store_src_files(pre, parsed_cmd["cwd"])
+
         if self.conf.get("CL.store_deps"):
             self.store_src_files(deps, parsed_cmd["cwd"])
 
@@ -147,6 +152,33 @@ class CL(Compiler):
                 deps.append(dep)
 
         return deps
+
+    def __preprocess_cmd(self, cmd):
+        pre = []
+
+        r = subprocess.check_call(
+            cmd["command"] + ["/P"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            cwd=cmd["cwd"],
+            shell=True,
+            universal_newlines=False,
+        )
+
+        if r:
+            return pre
+
+        for cmd_in in cmd["in"]:
+            # pre_to - the path where we want to move the preprocessor output
+            pre_to = os.path.splitext(cmd_in)[0] + ".i"
+            # pre_from - the path to the preprocessor output file
+            pre_from = os.path.join(cmd["cwd"], os.path.basename(pre_to))
+            # Move .i file to be near source file
+            os.rename(pre_from, pre_to)
+
+            pre.append(pre_to)
+
+        return pre
 
 
 def main(args=sys.argv[1:]):

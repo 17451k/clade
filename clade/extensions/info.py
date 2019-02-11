@@ -87,13 +87,14 @@ class Info(Extension):
         if not cmds:
             raise RuntimeError("There is no parsed CC commands")
 
+        # TODO: remove later
         if os.environ.get("CLADE_DEBUG"):
             for cmd in cmds:
-                self._run_cif(cmd, cmds_file)
+                self._run_cif(cmd)
         else:
             with concurrent.futures.ProcessPoolExecutor(max_workers=os.cpu_count()) as p:
                 for cmd in cmds:
-                    p.submit(unwrap, self, cmd, cmds_file)
+                    p.submit(unwrap, self, cmd)
 
         self.log("CIF finished")
 
@@ -108,13 +109,20 @@ class Info(Extension):
             self._normilize_file(self.unsupported_opts_file)
         self.log("Finish")
 
-    def _run_cif(self, cmd, cmds_file):
+    def _run_cif(self, cmd):
         if self.__is_cmd_bad_for_cif(cmd):
             return
 
         for cmd_in in cmd["in"]:
             cmd_in = self.extensions["Path"].get_rel_path(cmd_in, cmd["cwd"])
+            cif_in = self.extensions[cmd["type"]].get_preprocessed_file_by_path(cmd_in)
             cmd_in = self.extensions["Storage"].get_storage_path(cmd_in)
+
+            if not self.conf.get("Compiler.preprocess_cmds"):
+                cif_in = cmd_in
+
+            if not os.path.exists(cif_in):
+                continue
 
             cif_out = os.path.join(self.temp_dir, str(os.getpid()), cmd_in.lstrip(os.sep) + ".o")
             os.makedirs(os.path.dirname(cif_out), exist_ok=True)
@@ -126,20 +134,21 @@ class Info(Extension):
 
             cif_args = ["cif",
                         "--debug", "ALL",
-                        "--in", cmd_in,
+                        "--in", cif_in,
                         "--aspect", self.aspect,
                         "--back-end", "src",
                         "--stage", "instrumentation",
                         "--out", cif_out]
 
-            opts = self.extensions[cmd["type"]].load_opts_by_id(cmd["id"])
-            opts = filter_opts(opts)
+            if not self.conf.get("Compiler.preprocess_cmds"):
+                opts = self.extensions[cmd["type"]].load_opts_by_id(cmd["id"])
+                opts = filter_opts(opts)
 
-            if opts:
-                cif_args.append("--")
-                opts.extend(self.conf.get("Info.extra_CIF_opts", []))
-                opts = [re.sub(r'\"', r'\\"', opt) for opt in opts]
-                cif_args.extend(opts)
+                if opts:
+                    cif_args.append("--")
+                    opts.extend(self.conf.get("Info.extra_CIF_opts", []))
+                    opts = [re.sub(r'\"', r'\\"', opt) for opt in opts]
+                    cif_args.extend(opts)
 
             cwd = self.extensions["Path"].get_abs_path(cmd["cwd"])
             cwd = self.extensions["Storage"].get_storage_path(cwd)

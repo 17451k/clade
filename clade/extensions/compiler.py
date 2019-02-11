@@ -59,3 +59,30 @@ class Compiler(Common):
                 cmd["deps"] = self.load_deps_by_id(cmd["id"])
 
             yield cmd
+
+    def get_all_preprocessed_files(self):
+        pre_files = []
+
+        for cmd in self.load_all_cmds(compile_only=True):
+            pre_files.extend(self.get_preprocessed_files_by_id(cmd["id"]))
+
+        return pre_files
+
+    def get_preprocessed_files_by_id(self, id):
+        cmd = self.load_cmd_by_id(id)
+
+        pre_files = []
+
+        for cmd_in in cmd["in"]:
+            pre_file = self.get_preprocessed_file_by_path(cmd_in)
+
+            if os.path.exists(pre_file):
+                pre_files.append(pre_file)
+
+        return pre_files
+
+    def get_preprocessed_file_by_path(self, path):
+        pre_file = os.path.splitext(path)[0] + ".i"
+        pre_file = self.extensions["Storage"].get_storage_path(pre_file)
+
+        return pre_file

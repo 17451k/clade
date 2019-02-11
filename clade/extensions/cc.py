@@ -51,6 +51,11 @@ class CC(Compiler):
 
         self.debug("Parsed command: {}".format(parsed_cmd))
 
+        if self.conf.get("Compiler.preprocess_cmds"):
+            pre = self.__preprocess_cmd(parsed_cmd)
+            self.debug("Preprocessed files: {}".format(pre))
+            self.store_src_files(pre, parsed_cmd["cwd"])
+
         # BUG: gcc do not print proper dependencies for commands with several input file
         # For example, there is no "file.c" in dependencies for command "gcc func.c main.c -o main"
         deps = set(self.__get_deps(cmd_id, parsed_cmd) + parsed_cmd["in"])
@@ -127,6 +132,24 @@ class CC(Compiler):
             return True
 
         return False
+
+    def __preprocess_cmd(self, cmd):
+        pre = []
+
+        if not self.is_a_compilation_command(cmd):
+            return pre
+
+        for cmd_in in cmd["in"]:
+            pre_file = os.path.splitext(cmd_in)[0] + ".i"
+            opts = cmd["opts"] + ["-E"]
+            command = [cmd["command"][0]] + opts + [cmd_in] + ["-o", pre_file]
+
+            r = subprocess.check_call(command, cwd=cmd["cwd"], stderr=subprocess.DEVNULL)
+
+            if not r:
+                pre.append(pre_file)
+
+        return pre
 
 
 def main(args=sys.argv[1:]):
