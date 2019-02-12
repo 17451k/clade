@@ -115,14 +115,7 @@ class Info(Extension):
 
         for cmd_in in cmd["in"]:
             norm_cmd_in = self.extensions["Path"].get_rel_path(cmd_in, cmd["cwd"])
-            cif_in = self.extensions[cmd["type"]].get_preprocessed_file_by_path(norm_cmd_in)
             cmd_in = self.extensions["Storage"].get_storage_path(norm_cmd_in)
-
-            if not self.conf.get("Compiler.preprocess_cmds"):
-                cif_in = cmd_in
-
-            if not os.path.exists(cif_in):
-                continue
 
             cif_out = os.path.join(self.temp_dir, str(os.getpid()), cmd_in.lstrip(os.sep) + ".o")
             os.makedirs(os.path.dirname(cif_out), exist_ok=True)
@@ -134,7 +127,7 @@ class Info(Extension):
 
             cif_args = ["cif",
                         "--debug", "ALL",
-                        "--in", cif_in,
+                        "--in", cmd_in,
                         "--aspect", self.aspect,
                         "--back-end", "src",
                         "--stage", "instrumentation",
