@@ -114,3 +114,7 @@ ENV/
 
 # macOS
 .DS_STORE
+
+# cProfile
+prof
+*.prof
