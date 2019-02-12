@@ -11,8 +11,13 @@
     :target: https://pypi.org/project/clade
     :alt: PyPi package version
 
-Clade
-=====
+
+.. contents::
+    :local:
+
+============
+Introduction
+============
 
 Clade is a tool for intercepting build commands (stuff like compilation,
 linking, mv, rm, and all other commands that are executed during build).
@@ -35,8 +40,9 @@ However, all other functionality available in Clade IS dependent.
 Currently only C projects are supported, but other languages and additional
 functionality can be supported through the built-in *extension mechanism*.
 
+=============
 Prerequisites
--------------
+=============
 
 An important part of Clade - a build commands intercepting library -
 is written in C and it needs to be compiled before use.
@@ -50,7 +56,7 @@ need to install some prerequisites beforehand:
 *Linux only*:
 
 - make
-- C **and** C++ compiler (gcc, clang)
+- C **and** C++ compiler (gcc or clang)
 - python3-dev (Ubuntu) or python3-devel (openSUSE) package
 - gcc-multilib (Ubuntu) or gcc-32bit (openSUSE) package
   to intercept build commands of projects leveraging multilib capabilities
@@ -73,38 +79,48 @@ Optional dependencies:
 
 Clade works on Linux, macOS and partially on Windows.
 
+============
 Installation
-------------
+============
 
-To install the latest stable version just run the following command:
+To install the latest stable version just run the following command
+(you may need to replace pip by pip3):
 
 .. code-block:: bash
 
-    $ pip3 install clade
+    $ pip install clade
 
 For development purposes you may install Clade in "editable" mode
 directly from the repository (clone it on your computer beforehand):
 
 .. code-block:: bash
 
-    $ pip3 install -e .
+    $ pip install -e .
 
 You can check that Clade works as expected on your machine by running
-the test suite from the repository:
+the test suite from the repository (doesn't work on Windows yet):
 
 .. code-block:: bash
 
     $ pytest
 
+==========
 How to use
-----------
+==========
 
 All functionality is available both as command-line scripts and
 as Python modules that you can import and use, so the following
 examples will include both use cases.
 
 Build command intercepting
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------
+
+
+Clade implements several different methods to intercept build commands.
+
+
+Library injection
+~~~~~~~~~~~~~~~~~
 
 Clade can intercept the *exec* calls issued by the build tool for each build
 command.
@@ -148,28 +164,62 @@ steps, you can still create one single *cmds.txt* file using
 As a result, build commands of the second make command will be appended
 to the *cmds.txt* file created previously.
 
-There is an alternative *fallback* intercepting method that is based on
-*wrappers*. It can be used when LD_PRELOAD is unavailable:
-
-.. code-block:: bash
-
-    $ clade-intercept -f make
-
-Unfortunately, for now *wrappers* can't intercept commands that are executed
-bypassing the PATH environment variable: for example, *gcc* command can be
-intercepted, but calling directly to */usr/bin/gcc* cannot. We have plans
-to implement some workarounds to mitigate this issue.
-
 You can intercept build commands from a python script:
 
 .. code-block:: python
 
     from clade import Clade
     c = Clade(cmds_file="cmds.txt")
-    c.intercept(command=["make"], append=False, fallback=False)
+    c.intercept(command=["make"], append=False)
+
+Wrappers
+~~~~~~~~
+
+There is an alternative intercepting method that is based on
+*wrappers*. It can be used when LD_PRELOAD is unavailable:
+
+.. code-block:: bash
+
+    $ clade-intercept -f make
+
+Clade scans PATH environment variable to detect available
+executable files.
+Then it creates a temporary directory and creates
+wrappers for all this executables.
+Each wrapper simply logs arguments with which it was called and
+then executes original executable.
+To ensure that wrapper will be called instead of the original command
+Clade adds this temporary directory to the PATH.
+
+This method can't intercept commands that are executed
+bypassing the PATH environment variable: for example, *gcc* command can be
+intercepted, but calling directly to */usr/bin/gcc* cannot.
+If you need to intercept such commands you may use "Wrapper.wrap_list"
+configuration option (read about configuration in the configuration_ section).
+Files specified in "Wrapper.wrap_list" will be temporarily replaced
+by wrappers (in some cases it may require administrative privileges).
+It is possible to specify directories in "Wrapper.wrap_list":
+in that case all executable files in them will be replaced by wrappers.
+
+You can intercept build commands with wrappers from a python script:
+
+.. code-block:: python
+
+    from clade import Clade
+
+    conf = {"Wrapper.wrap_list": ["/usr/bin/gcc", "~/.local/bin"]
+    c = Clade(cmds_file="cmds.txt")
+    c.intercept(command=["make"], use_wrappers=True, conf=conf)
+
+
+Windows debugging API
+~~~~~~~~~~~~~~~~~~~~~
+
+To be written.
+
 
 Content of *cmds.txt* file
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------
 
 Let's look at the simple makefile:
 
@@ -242,7 +292,7 @@ Due to this you do not need to rebuild your project every time you want
 to use it - you can just use previously generated *cmds.txt* file.
 
 Parsing of intercepted commands
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------
 
 Once build commands are intercepted they can be parsed to search for input
 and output files, and options. Currently there are *extensions* in Clade
@@ -380,7 +430,7 @@ can also be used through Python interface:
         ...
 
 Pid graph
-~~~~~~~~~
+---------
 
 Each intercepted command, except for the first one, is executed by another,
 parent command. For example, *gcc* internally executes
@@ -467,7 +517,7 @@ Note: *pid graph* can be used with any project
 (not only with ones written in C).
 
 Command graph
-~~~~~~~~~~~~~
+-------------
 
 Clade can connect commands by their input and output files.
 This information is stored in the *command graph* and can be obtained using
@@ -547,7 +597,7 @@ the configuration options:
     :alt: An example of the command graph
 
 Source graph
-~~~~~~~~~~~~
+------------
 
 For a given source file Clade can show in which commands this file
 is compiled, and in which commands it is indirectly used.
@@ -611,7 +661,7 @@ number of the lines of code.
     src_graph = c.src_graph
 
 Call graph
-~~~~~~~~~~
+----------
 
 Clade can generate function *call graph* for a given project written in C.
 This requires CIF installed on your computer, and path to its bin directory
@@ -740,7 +790,7 @@ function signature and type (global or static).
     ...
 
 Compilation database
-~~~~~~~~~~~~~~~~~~~~
+--------------------
 
 Command line tool for generating compilation database has a different
 interface, compared to most other command line tools available in Clade.
@@ -776,13 +826,14 @@ Other options are available through --help option.
 
     # Intercept build commands
     # This step can be skipped if build commands are already intercepted
-    c.intercept(command=["make"], append=False, fallback=False)
+    c.intercept(command=["make"], append=False, use_wrappers=False)
 
     # Get compilation database
     compilation_database = c.compilation_database
 
+=============
 Configuration
--------------
+=============
 
 There is a bunch of options that can be changed to alter the behaviour
 of various tools available in Clade. If you execute these tools from the
@@ -821,7 +872,7 @@ can be used through Python interface:
     c = Clade(work_dir="clade", cmds_file="cmds.txt", conf=conf)
 
 which list
-~~~~~~~~~~
+----------
 
 Let's highlight some notable configuration options and let's start with
 options for extensions that parse intercepted commands to search for input
@@ -852,7 +903,7 @@ by the name of the extension, so, for example, "LD.which_list" will be the
 option to change the list of regexes for *LD* extension.
 
 Visualization options
-~~~~~~~~~~~~~~~~~~~~~
+---------------------
 
 Currently there are two small options to visualize *pid graph* and *cmd graph*
 using Graphviz:
@@ -868,7 +919,7 @@ If they are set, then next to *pid_graph.json* and *cmd_graph.json* files
 respectively pdf files containing Graphviz output will appear.
 
 List of commands to parse
-~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------
 
 If you want to generate *command graph*, or *source graph*, or *call graph*,
 then you need to specify which commands to parse via "CmdGraph.requires"
@@ -882,7 +933,7 @@ the value of this option will be:
     }
 
 Presets
-~~~~~~~
+-------
 
 There is predefined set of options for the following projects that can be used
 in addition to user-defined configuration:
@@ -907,11 +958,12 @@ or
 
     c = Clade(work_dir="clade", cmds_file="cmds.txt", preset="linux_kernel")
 
+===============
 Troubleshooting
----------------
+===============
 
 File with intercepted commands is empty
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------------------
 
 Access control mechanisms on different operating systems might disable
 library injection that is used by Clade to intercept build commands:
@@ -920,20 +972,21 @@ library injection that is used by Clade to intercept build commands:
 - System Integrity Protection on macOS;
 - Mandatory Integrity Control on Windows (disables similar mechanisms)
 
-A solution is to use *fallback* intercepting mechanism that is based on
+A solution is to use another intercepting mechanism that is based on
 *wrappers*.
 
 File with intercepted commands is not complete
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------------
 
 Sometimes some commands are intercepted, so file *cmds.txt* is present and not
 empty, but other commands are clearly missing.
 Such behaviour should be reported so the issue can be fixed, but until then
-you can try to use *fallback* intercepting mechanism that is based on
+you can try to use another intercepting mechanism that is based on
 *wrappers*.
 
 Wrong ELF class
-~~~~~~~~~~~~~~~
+---------------
+
 Build command intercepting may result in the following error:
 
 ::
@@ -948,7 +1001,7 @@ and **reinstall Clade**. *libinterceptor* library will be recompiled and your
 issue will be fixed.
 
 Not all intercepted compilation commands are parsed
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------------------------------
 
 The reason is because *CC* extension that parse intercepted commands cannot
 identify a command as a compilation command. You can help it by specifying
@@ -971,12 +1024,12 @@ How to set configuration option is described in *Configuration* section of
 this readme.
 
 Compilation database miss some commands
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------------------
 
 Same as above.
 
 Command graph is not connected properly
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------------------
 
 Most certainly it is due to the fact that some type of commands is unparsed.
 If there is an extension in Clade that can parse them, then you will need
@@ -993,8 +1046,9 @@ Otherwise such extension should be developed.
 Similar problems with the *source graph* and the *call graph* can be fixed
 via the same option, since they use the *command graph* internally.
 
+===============
 Acknowledgments
----------------
+===============
 
 Clade is inspired by the Bear_ project created by `László Nagy`_.
 
