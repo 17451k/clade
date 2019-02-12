@@ -109,10 +109,11 @@ class CL(Compiler):
             return
 
         self.debug("Parsed command: {}".format(parsed_cmd))
+        self.dump_cmd_by_id(cmd["id"], parsed_cmd)
+
         deps = set(self.__get_deps(cmd["id"], cmd) + parsed_cmd["in"])
         self.debug("Dependencies: {}".format(deps))
         self.dump_deps_by_id(cmd["id"], deps)
-        self.dump_cmd_by_id(cmd["id"], parsed_cmd)
 
         if self.conf.get("Compiler.preprocess_cmds"):
             pre = self.__preprocess_cmd(parsed_cmd)
@@ -128,16 +129,20 @@ class CL(Compiler):
         return self.__parse_deps(unparsed_deps)
 
     def __collect_deps(self, cmd_id, cmd):
-        output_bytes = subprocess.check_output(
-            cmd["command"] + ["/showIncludes"],
-            stderr=subprocess.PIPE,
-            cwd=cmd["cwd"],
-            shell=True,
-            universal_newlines=False,
-        )
+        try:
+            output_bytes = subprocess.check_output(
+                cmd["command"] + ["/showIncludes"],
+                stderr=subprocess.PIPE,
+                cwd=cmd["cwd"],
+                shell=True,
+                universal_newlines=False,
+            )
 
-        encoding = chardet.detect(output_bytes)["encoding"]
-        return output_bytes.decode(encoding)
+            encoding = chardet.detect(output_bytes)["encoding"]
+            return output_bytes.decode(encoding)
+        except subprocess.CalledProcessError:
+            self.warning("Couldn't get dependencies for {!r}".format(cmd))
+            return ""
 
     def __parse_deps(self, unparsed_deps):
         deps = list()
