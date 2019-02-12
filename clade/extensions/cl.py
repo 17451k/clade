@@ -53,7 +53,7 @@ class CL(Compiler):
 
                 if opt == "/link" or opt == "-link":
                     while True:
-                        val = next(opts)
+                        val = next(opts, None)
                         if not val:
                             break
                         parsed_cmd["opts"].append(val)
