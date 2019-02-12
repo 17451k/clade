@@ -161,3 +161,14 @@ def test_cc_empty_which_list(tmpdir, cmds_file):
     c.parse(cmds_file)
 
     assert len(list(c.load_all_cmds())) == 0
+
+
+def test_cc_preprocess(tmpdir, cmds_file):
+    conf = {
+        "Compiler.preprocess_cmds": True
+    }
+
+    c = CC(tmpdir, conf)
+    c.parse(cmds_file)
+
+    assert c.get_all_preprocessed_files()

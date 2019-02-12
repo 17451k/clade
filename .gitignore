@@ -5,6 +5,7 @@ wrapper
 debugger.exe
 parser.out
 parsetab.py
+*.i
 
 # VS Code
 .vscode

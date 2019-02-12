@@ -74,15 +74,21 @@ class Compiler(Common):
         pre_files = []
 
         for cmd_in in cmd["in"]:
-            pre_file = self.get_preprocessed_file_by_path(cmd_in)
+            pre_file = self.get_preprocessed_file_by_path(cmd_in, cmd["cwd"])
+            print(pre_file)
 
             if os.path.exists(pre_file):
                 pre_files.append(pre_file)
 
         return pre_files
 
-    def get_preprocessed_file_by_path(self, path):
-        pre_file = os.path.splitext(path)[0] + ".i"
+    def get_preprocessed_file_by_path(self, path, cwd):
+        if os.path.isabs(path):
+            abs_path = path
+        else:
+            abs_path = os.path.join(cwd, path)
+
+        pre_file = os.path.splitext(abs_path)[0] + ".i"
         pre_file = self.extensions["Storage"].get_storage_path(pre_file)
 
         return pre_file
