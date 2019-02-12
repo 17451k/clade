@@ -29,9 +29,6 @@ class Debugger(Intercept):
         # self.conf["Intercept.preprocess"] = self.conf.get("Intercept.preprocess", True)
         self.debugger = self.__find_debugger()
 
-    def _setup_env(self):
-        return super()._setup_env()
-
     def __find_debugger(self):
         debugger = os.path.join(os.path.dirname(__file__), "intercept", "debugger.exe")
 
@@ -46,4 +43,4 @@ class Debugger(Intercept):
     def execute(self):
         self.command.insert(0, self.debugger)
         self.logger.debug("Execute {!r} command".format(self.command))
-        return subprocess.call(self.command, env=self._setup_env(), shell=False, cwd=self.cwd)
+        return subprocess.call(self.command, env=self.env, shell=False, cwd=self.cwd)

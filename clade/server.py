@@ -16,7 +16,6 @@
 import multiprocessing
 import threading
 import os
-import socket
 import socketserver
 import sys
 import tempfile
@@ -25,7 +24,7 @@ from clade.utils import get_logger
 from clade.extensions.abstract import Extension
 from clade.cmds import split_cmd, join_cmd
 
-if sys.platform == 'linux' or sys.platform == 'darwin':
+if sys.platform == "linux" or sys.platform == "darwin":
     parent = socketserver.UnixStreamServer
 else:
     parent = socketserver.TCPServer
@@ -80,22 +79,21 @@ class SocketServer(parent):
             self.socket_fh.close()
 
 
-class PreprocessServer():
+class PreprocessServer:
     def __init__(self, conf, output):
         self.conf = conf
         self.output = output
         self.logger = get_logger("Server", self.conf)
         self.server = self.__prepare()
+        self.env = self.__setup_env()
 
     def __prepare(self):
-        if sys.platform == 'linux' or sys.platform == 'darwin':
+        if sys.platform == "linux" or sys.platform == "darwin":
             self.logger.debug("UNIX socket will be used")
             server = self.__prepare_unix()
         else:
             self.logger.debug("INET socket will be used")
             server = self.__prepare_inet()
-
-        self.__setup_env()
 
         return server
 
@@ -116,7 +114,11 @@ class PreprocessServer():
         self.conf["Server.host"] = self.conf.get("Server.host", "localhost")
         self.conf["Server.port"] = self.conf.get("Server.port", "0")
 
-        server = SocketServer((self.conf["Server.host"], int(self.conf["Server.port"])), self.output, self.conf)
+        server = SocketServer(
+            (self.conf["Server.host"], int(self.conf["Server.port"])),
+            self.output,
+            self.conf,
+        )
 
         # If "Server.port" is 0, than dynamic port assignment is used and the value needs to be updated
         self.conf["Server.port"] = str(server.server_address[1])
@@ -124,14 +126,17 @@ class PreprocessServer():
         return server
 
     def __setup_env(self):
+        env = os.environ.copy()
         # Windows doesn't support UNIX sockets
-        if sys.platform == 'linux' or sys.platform == 'darwin':
-            os.environ.update({'CLADE_UNIX_ADDRESS': self.conf["Server.address"]})
+        if sys.platform == "linux" or sys.platform == "darwin":
+            env.update({"CLADE_UNIX_ADDRESS": self.conf["Server.address"]})
         else:
-            os.environ.update({'CLADE_INET_HOST': self.conf["Server.host"]})
-            os.environ.update({'CLADE_INET_PORT': self.conf["Server.port"]})
+            env.update({"CLADE_INET_HOST": self.conf["Server.host"]})
+            env.update({"CLADE_INET_PORT": self.conf["Server.port"]})
 
-        os.environ.update({'CLADE_PREPROCESS': "true"})
+        env.update({"CLADE_PREPROCESS": "true"})
+
+        return env
 
     def start(self):
         # Create separate server process
@@ -139,16 +144,3 @@ class PreprocessServer():
 
     def terminate(self):
         self.server.terminate()
-
-    def __send_message(self, message):
-        if sys.platform == 'linux' or sys.platform == 'darwin':
-            sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            sock.connect(self.conf["Server.address"])
-        else:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect((self.conf["Server.host"], int(self.conf["Server.port"])))
-
-        sock.sendall(bytes("{}\n".format(message), "utf-8"))
-
-        # Wait until the server finishes all internal extensions
-        sock.recv(1024)

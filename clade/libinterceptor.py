@@ -23,21 +23,18 @@ LIB64 = os.path.join(os.path.dirname(__file__), "intercept", "lib64")
 
 
 class Libinterceptor(Intercept):
-    def __init__(self, command=[], cwd=os.getcwd(), output="cmds.txt", append=False, conf=None):
-        super().__init__(command, cwd, output, append, conf)
-
-        self.libinterceptor = self.__find_libinterceptor()
-
     def _setup_env(self):
         env = super()._setup_env()
 
+        libinterceptor = self.__find_libinterceptor()
+
         if sys.platform == "darwin":
             self.logger.debug("Set 'DYLD_INSERT_LIBRARIES' environment variable value")
-            env["DYLD_INSERT_LIBRARIES"] = self.libinterceptor
+            env["DYLD_INSERT_LIBRARIES"] = libinterceptor
             env["DYLD_FORCE_FLAT_NAMESPACE"] = "1"
         elif sys.platform == "linux":
             self.logger.debug("Set 'LD_PRELOAD' environment variable value")
-            env["LD_PRELOAD"] = self.libinterceptor
+            env["LD_PRELOAD"] = libinterceptor
 
             env["LD_LIBRARY_PATH"] = env.get("LD_LIBRARY_PATH", "") + ":" + LIB64 + ":" + LIB
             self.logger.debug("Set LD_LIBRARY_PATH environment variable value as {!r}".format(env["LD_LIBRARY_PATH"]))

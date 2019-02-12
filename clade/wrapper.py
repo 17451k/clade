@@ -23,17 +23,18 @@ from clade.abstract import Intercept
 
 class Wrapper(Intercept):
     def __init__(self, command=[], cwd=os.getcwd(), output="cmds.txt", append=False, conf=None):
+        self.wrappers_dir = tempfile.mkdtemp()
+
         super().__init__(command, cwd, output, append, conf)
 
         self.wrapper = self.__find_wrapper()
-        self.wrappers_dir = tempfile.mkdtemp()
         self.wrapper_postfix = ".clade"
 
     def _setup_env(self):
         env = super()._setup_env()
 
         env["PATH"] = self.wrappers_dir + os.pathsep + os.environ.get("PATH", "")
-        self.logger.debug("Add directory with wrappers to PATH: {!r}".format(env["PATH"]))
+        self.logger.debug("Add directory with wrappers to PATH: {!r}".format(self.wrappers_dir))
 
         return env
 
@@ -117,7 +118,7 @@ class Wrapper(Intercept):
             shutil.rmtree(self.wrappers_dir)
 
         self.logger.debug("Delete all other wrapper files")
-        wrap_list = self.conf.get("Interceptor.wrap_list", [])
+        wrap_list = self.conf.get("Wrapper.wrap_list", [])
 
         for path in wrap_list:
             if os.path.isfile(path):

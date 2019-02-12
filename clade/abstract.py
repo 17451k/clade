@@ -46,6 +46,7 @@ class Intercept(metaclass=abc.ABCMeta):
         self.append = append
         self.conf = conf if conf else dict()
         self.logger = get_logger("Intercept", self.conf)
+        self.env = self._setup_env()
 
         if not self.append and os.path.exists(self.output):
             os.remove(self.output)
@@ -78,6 +79,12 @@ class Intercept(metaclass=abc.ABCMeta):
 
             try:
                 server = PreprocessServer(self.conf, self.output)
+
+                # self.env.update(server.env) would be wrong
+                server_env = server.env.copy()
+                server_env.update(self.env)
+                self.env = server_env
+
                 self.logger.debug("Start preprocess server")
                 server.start()
 
@@ -97,4 +104,4 @@ class Intercept(metaclass=abc.ABCMeta):
 
         shell_command = " ".join([shlex.quote(x) for x in self.command])
         self.logger.debug("Execute {!r} command".format(shell_command))
-        return subprocess.call(shell_command, env=self._setup_env(), shell=True, cwd=self.cwd)
+        return subprocess.call(shell_command, env=self.env, shell=True, cwd=self.cwd)

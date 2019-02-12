@@ -15,6 +15,8 @@
 
 import os
 import pytest
+import shutil
+import sys
 
 from clade.intercept import intercept, intercept_main
 
@@ -34,11 +36,24 @@ def test_no_fallback(tmpdir):
     output = os.path.join(str(tmpdir), "cmds.txt")
 
     assert not intercept(command=test_project_make, output=output, use_wrappers=False)
-    assert os.path.isfile(output)
 
-    # Do not check size of output file since LD_PRELOAD may not work on certain systems
+    # LD_PRELOAD may not work on certain systems
     # Due to SELinux or System Integrity Protection
-    # assert calculate_loc(output) > 1
+
+    if sys.platform != "darwin":
+        assert os.path.isfile(output)
+        assert calculate_loc(output) > 1
+
+
+def test_no_fallback_with_server(tmpdir):
+    output = os.path.join(str(tmpdir), "cmds.txt")
+    conf = {"Intercept.preprocess": True}
+
+    assert not intercept(command=test_project_make, output=output, use_wrappers=False, conf=conf)
+
+    if sys.platform != "darwin":
+        assert os.path.isfile(output)
+        assert calculate_loc(output) > 1
 
 
 def test_fallback(tmpdir):
@@ -51,7 +66,8 @@ def test_fallback(tmpdir):
 
 def test_fallback_with_exe_wrappers(tmpdir):
     output = os.path.join(str(tmpdir), "cmds.txt")
-    conf = {"Wrapper.wrap_list": [os.path.dirname(__file__), __file__],
+    cc_path = shutil.which("cc")
+    conf = {"Wrapper.wrap_list": [cc_path, os.path.dirname(cc_path)],
             "Wrapper.recursive_wrap": False}
 
     assert not intercept(command=test_project_make, output=output, use_wrappers=True, conf=conf)
@@ -63,6 +79,15 @@ def test_fallback_with_exe_wrappers_recursive(tmpdir):
     output = os.path.join(str(tmpdir), "cmds.txt")
     conf = {"Wrapper.wrap_list": [os.path.dirname(__file__), __file__],
             "Wrapper.recursive_wrap": True}
+
+    assert not intercept(command=test_project_make, output=output, use_wrappers=True, conf=conf)
+    assert os.path.isfile(output)
+    assert calculate_loc(output) > 1
+
+
+def test_fallback_with_unix_server(tmpdir):
+    output = os.path.join(str(tmpdir), "cmds.txt")
+    conf = {"Intercept.preprocess": True}
 
     assert not intercept(command=test_project_make, output=output, use_wrappers=True, conf=conf)
     assert os.path.isfile(output)
