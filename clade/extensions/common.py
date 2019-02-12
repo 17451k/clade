@@ -237,5 +237,5 @@ class Common(Extension, metaclass=abc.ABCMeta):
 
 # Since Windows has no fork, multiprocessing workers doesnt have access to imported extensions
 # WARNING: Do not put this code on top of the file, otherwise there will be import errors due to "circular importing"
-if "clade.extensions.compiler" not in sys.modules:
+if "clade.extensions.compiler" not in sys.modules and sys.platform == "win32":
     Extension._import_extension_modules()

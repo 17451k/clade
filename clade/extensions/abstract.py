@@ -21,7 +21,6 @@ import logging
 import os
 import shutil
 import sys
-import re
 import tempfile
 import ujson
 
@@ -85,7 +84,13 @@ class Extension(metaclass=abc.ABCMeta):
                 self.extensions[ext_name] = self.already_initialised[ext_name]
                 continue
 
-            ext_class = Extension.find_subclass(ext_name)
+            # If subclass is found then there is no need to import extension modules
+            try:
+                ext_class = Extension.find_subclass(ext_name)
+            except NotImplementedError:
+                Extension._import_extension_modules()
+                ext_class = Extension.find_subclass(ext_name)
+
             self.extensions[ext_name] = ext_class(work_dir, self.conf)
 
     def parse_prerequisites(self, cmds_file):
@@ -208,36 +213,30 @@ class Extension(metaclass=abc.ABCMeta):
     def __get_all_subclasses(cls):
         """Get all sublclasses of a given class."""
 
-        all_subclasses = []
-
         for subclass in cls.__subclasses__():
-            all_subclasses.append(subclass)
-            all_subclasses.extend(Extension.__get_all_subclasses(subclass))
-
-        return all_subclasses
+            yield subclass
+            yield from Extension.__get_all_subclasses(subclass)
 
     @staticmethod
     def _import_extension_modules():
+        clade_modules = [x for x in sys.modules if x.startswith("clade")]
+
         """Import all Python modules located in 'extensions' folder."""
         for root, _, filenames in os.walk(os.path.dirname(__file__)):
             for filename in fnmatch.filter(filenames, '*.py'):
-                file = os.path.join(root, filename)
-                module_name = os.path.splitext(os.path.basename(file))[0]
+                module_name = os.path.splitext(os.path.basename(filename))[0]
 
-                for module in sys.modules:
-                    if re.search(r"clade.*?{}$".format(module_name), module):
+                for module in clade_modules:
+                    if module.endswith(module_name):
                         break
                 else:
-                    sys.path.insert(0, os.path.dirname(file))
+                    sys.path.insert(0, root)
                     __import__(module_name)
                     sys.path.pop(0)
 
     @staticmethod
     def find_subclass(ext_name):
         """Find a sublclass of Interface class."""
-
-        Extension._import_extension_modules()
-
         for ext_class in Extension.__get_all_subclasses(Extension):
             if ext_name == ext_class.__name__:
                 return ext_class
