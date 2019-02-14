@@ -96,7 +96,8 @@
             "scripts/(?!mod/.*empty\\.o)",
             ".*?\\.cmd$",
             "vmlinux"
-        ]
+        ],
+        "Info.extra_CIF_opts": ["-Dvector_size(x)="]
     },
     "busybox_linux": {
         "extends": [
