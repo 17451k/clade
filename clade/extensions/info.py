@@ -158,7 +158,7 @@ class Info(Extension):
             os.environ["C_FILE"] = norm_cmd_in
             os.environ["CIF_CMD_CWD"] = cmd["cwd"]
 
-            cif_args = ["cif",
+            cif_args = [self.conf.get("Info.cif", "cif"),
                         "--debug", "ALL",
                         "--in", cmd_in,
                         "--aspect", self.aspect,
@@ -166,7 +166,12 @@ class Info(Extension):
                         "--stage", "instrumentation",
                         "--out", cif_out]
 
-            if not self.conf.get("Compiler.preprocess_cmds"):
+            if self.conf.get("Info.aspectator"):
+                cif_args.extend(["--aspectator", self.conf.get("Info.aspectator")])
+
+            if not self.conf.get("Compiler.preprocess_cmds") or not self.conf.get(
+                "Info.use_preprocessed_files"
+            ):
                 opts = self.extensions[cmd["type"]].load_opts_by_id(cmd["id"])
                 opts = filter_opts(opts, self.extensions["Storage"].get_storage_path)
 
