@@ -53,27 +53,45 @@ class Info(Extension):
 
         self.aspect = os.path.join(os.path.dirname(__file__), "info", "info.aspect")
 
-        self.execution = os.path.join(self.work_dir, "execution.txt")  # Info about function definitions
-        self.call = os.path.join(self.work_dir, "call.txt")  # Info about function calls
-        self.decl = os.path.join(self.work_dir, "declare_func.txt")  # Info about function declarations
-        self.callp = os.path.join(self.work_dir, "callp.txt")  # Info about function calls via a function pointer
-        self.use_func = os.path.join(self.work_dir, "use_func.txt")  # Info about using function names in pointers (in function context only)
-        self.use_var = os.path.join(self.work_dir, "use_var.txt")  # Info about using global variables in function context
-        self.init_global = os.path.join(self.work_dir, "init_global.txt")  # Info about init values of global variables
-        self.define = os.path.join(self.work_dir, "define.txt")  # Info about macro functions
-        self.expand = os.path.join(self.work_dir, "expand.txt")  # Info about macros
-        self.exported = os.path.join(self.work_dir, "exported.txt")  # Info about exported functions (Linux kernel only)
-        self.typedefs = os.path.join(self.work_dir, "typedefs.txt")  # Info about typedefs
+        # Info about function definitions
+        self.execution = os.path.join(self.work_dir, "execution.txt")
+        # Info about function calls
+        self.call = os.path.join(self.work_dir, "call.txt")
+        # Info about function declarations
+        self.decl = os.path.join(self.work_dir, "declare_func.txt")
+        # Info about function calls via a function pointer
+        self.callp = os.path.join(self.work_dir, "callp.txt")
+        # Info about using function names in pointers (in function context only)
+        self.use_func = os.path.join(self.work_dir, "use_func.txt")
+        # Info about using global variables in function context
+        self.use_var = os.path.join(self.work_dir, "use_var.txt")
+        # Info about init values of global variables
+        self.init_global = os.path.join(self.work_dir, "init_global.txt")
+        # Info about macro functions
+        self.define = os.path.join(self.work_dir, "define.txt")
+        # Info about macros
+        self.expand = os.path.join(self.work_dir, "expand.txt")
+        # Info about exported functions (Linux kernel only)
+        self.exported = os.path.join(self.work_dir, "exported.txt")
+        # Info about typedefs
+        self.typedefs = os.path.join(self.work_dir, "typedefs.txt")
 
-        self.files = [self.execution, self.call, self.decl,
-                      self.callp, self.use_func, self.use_var,
-                      self.init_global, self.define,
-                      self.expand, self.exported,
-                      self.typedefs]
+        self.files = [
+            self.execution,
+            self.call,
+            self.decl,
+            self.callp,
+            self.use_func,
+            self.use_var,
+            self.init_global,
+            self.define,
+            self.expand,
+            self.exported,
+            self.typedefs,
+        ]
 
-        self.unsupported_opts_regex = re.compile(r"unrecognized command line option [‘«\"](.*?)[’»\"]")
-        self.unsupported_opts_file = os.path.join(self.work_dir, "unsupported_opts.log")
-        self.err_log = os.path.join(self.work_dir, "err.log")  # Path to file containing CIF error log
+        # Path to file containing CIF error log
+        self.err_log = os.path.join(self.work_dir, "err.log")
 
     @Extension.prepare
     def parse(self, cmds_file):
@@ -92,7 +110,9 @@ class Info(Extension):
             for cmd in cmds:
                 self._run_cif(cmd)
         else:
-            with concurrent.futures.ProcessPoolExecutor(max_workers=os.cpu_count()) as p:
+            with concurrent.futures.ProcessPoolExecutor(
+                max_workers=os.cpu_count()
+            ) as p:
                 for cmd in cmds:
                     p.submit(unwrap, self, cmd)
 
@@ -102,11 +122,11 @@ class Info(Extension):
             shutil.rmtree(self.temp_dir)
 
         if not [file for file in self.files if os.path.exists(file)]:
-            raise RuntimeError("CIF failed on every command. Log: {}".format(self.err_log))
+            raise RuntimeError(
+                "CIF failed on every command. Log: {}".format(self.err_log)
+            )
 
         self.__normalize_cif_output(cmds_file)
-        if os.path.exists(self.unsupported_opts_file):
-            self._normilize_file(self.unsupported_opts_file)
         self.log("Finish")
 
     def _run_cif(self, cmd):
@@ -115,15 +135,28 @@ class Info(Extension):
 
         for cmd_in in cmd["in"]:
             norm_cmd_in = self.extensions["Path"].get_rel_path(cmd_in, cmd["cwd"])
+            cif_in = self.extensions[cmd["type"]].get_preprocessed_file_by_path(
+                norm_cmd_in
+            )
             cmd_in = self.extensions["Storage"].get_storage_path(norm_cmd_in)
 
-            cif_out = os.path.join(self.temp_dir, str(os.getpid()), cmd_in.lstrip(os.sep) + ".o")
+            if not self.conf.get("Compiler.preprocess_cmds") or not self.conf.get(
+                "Info.use_preprocessed_files"
+            ):
+                cif_in = cmd_in
+
+            if not os.path.exists(cif_in):
+                continue
+
+            cif_out = os.path.join(
+                self.temp_dir, str(os.getpid()), cmd_in.lstrip(os.sep) + ".o"
+            )
             os.makedirs(os.path.dirname(cif_out), exist_ok=True)
             os.makedirs(self.work_dir, exist_ok=True)
 
             os.environ["CIF_INFO_DIR"] = self.work_dir
             os.environ["C_FILE"] = norm_cmd_in
-            os.environ["CIF_CMD_CWD"] = cmd['cwd']
+            os.environ["CIF_CMD_CWD"] = cmd["cwd"]
 
             cif_args = ["cif",
                         "--debug", "ALL",
@@ -140,7 +173,7 @@ class Info(Extension):
                 if opts:
                     cif_args.append("--")
                     opts.extend(self.conf.get("Info.extra_CIF_opts", []))
-                    opts = [re.sub(r'\"', r'\\"', opt) for opt in opts]
+                    opts = [re.sub(r"\"", r'\\"', opt) for opt in opts]
                     cif_args.extend(opts)
 
             cwd = self.extensions["Path"].get_abs_path(cmd["cwd"])
@@ -149,7 +182,9 @@ class Info(Extension):
 
             try:
                 self.debug(cif_args)
-                subprocess.check_output(cif_args, stderr=subprocess.STDOUT, cwd=cwd, universal_newlines=True)
+                subprocess.check_output(
+                    cif_args, stderr=subprocess.STDOUT, cwd=cwd, universal_newlines=True
+                )
             except subprocess.CalledProcessError as e:
                 self.__save_log(cif_args, e.output)
 
@@ -160,7 +195,7 @@ class Info(Extension):
         for cif_in in cmd["in"]:
             if cif_in == "-" or cif_in == "/dev/null":
                 return True
-            elif re.search(r'\.(s|S)$', cif_in):
+            elif re.search(r"\.(s|S)$", cif_in):
                 # Assember files are not supported
                 return True
 
@@ -170,7 +205,7 @@ class Info(Extension):
         os.makedirs(self.work_dir, exist_ok=True)
 
         with open(self.err_log, "a") as log_fh:
-            log_fh.write(' '.join(args) + "\n\n")
+            log_fh.write(" ".join(args) + "\n\n")
             log_fh.writelines(log)
             log_fh.write("\n\n")
 
@@ -178,15 +213,15 @@ class Info(Extension):
         if not os.path.isfile(file):
             return
 
-        regexp = re.compile(r'(\S*) (\S*) (.*)')
+        regexp = re.compile(r"(\S*) (\S*) (.*)")
         storage = self.extensions["Storage"].get_storage_dir()
 
         seen = set()
-        with codecs.open(file, "r", encoding='utf8', errors='ignore') as fh:
+        with codecs.open(file, "r", encoding="utf8", errors="ignore") as fh:
             with open(file + ".temp", "w") as temp_fh:
                 for line in fh:
                     # Storing hash of string instead of string itself reduces memory usage by 30-40%
-                    h = hashlib.md5(line.encode('utf-8')).hexdigest()
+                    h = hashlib.md5(line.encode("utf-8")).hexdigest()
                     if h not in seen:
                         seen.add(h)
                         m = regexp.match(line)

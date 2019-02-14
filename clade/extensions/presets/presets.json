@@ -97,7 +97,8 @@
             ".*?\\.cmd$",
             "vmlinux"
         ],
-        "Info.extra_CIF_opts": ["-Dvector_size(x)="]
+        "Info.extra_CIF_opts": ["-Dvector_size(x)="],
+        "Info.use_preprocessed_files": false
     },
     "busybox_linux": {
         "extends": [
