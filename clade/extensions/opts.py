@@ -16,6 +16,7 @@
 # These are options like "-include header.h" with space betwen option and value
 # Options with values that are not separated by space should not be included here
 
+import os
 import re
 
 gcc_opts = [
@@ -475,26 +476,41 @@ requires_value = {
 
 # This options will be used in a regular expression
 # So you can write "-mindirect-branch" instead of "-mindirect-branch=thunk-extern"
-cif_supported_opts = [
-    "-D",
-    "-include",
-    "-I"
-]
+cif_include_opts = ["-include", "-I", "-iquote", "-isystem", "-idirafter"]
+cif_supported_opts = ["-D", "-U"] + cif_include_opts
+
+i_regex = re.compile("(" + "|".join(cif_include_opts) + ")=?(.*)")
+s_regex = re.compile("|".join(cif_supported_opts))
 
 
-def filter_opts(opts):
+def filter_opts(opts, get_storage_path):
     if not cif_supported_opts:
         return []
-
-    # Make a regex that matches if any of the regexes match.
-    regex = re.compile("(" + ")|(".join(cif_supported_opts) + ")")
 
     filtered_opts = []
     opts = iter(opts)
     for opt in opts:
-        if regex.match(opt):
-            filtered_opts.append(opt)
-            if opt in requires_value["CC"]:
-                filtered_opts.append(next(opts))
+        if not s_regex.match(opt):
+            continue
+
+        m = i_regex.match(opt)
+
+        if m:
+            path = m.group(2)
+
+            if path:
+                if os.path.isabs(path):
+                    opt = opt.replace(path, get_storage_path(path))
+
+                filtered_opts.append(opt)
+            elif opt in requires_value["CC"]:
+                filtered_opts.append(opt)
+                path = next(opts)
+
+                if os.path.isabs(path):
+                    new_path = get_storage_path(path)
+                    filtered_opts.append(new_path)
+            else:
+                raise RuntimeError("Can't process CIF options")
 
     return filtered_opts

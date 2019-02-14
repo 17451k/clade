@@ -135,7 +135,7 @@ class Info(Extension):
 
             if not self.conf.get("Compiler.preprocess_cmds"):
                 opts = self.extensions[cmd["type"]].load_opts_by_id(cmd["id"])
-                opts = filter_opts(opts)
+                opts = filter_opts(opts, self.extensions["Storage"].get_storage_path)
 
                 if opts:
                     cif_args.append("--")
