@@ -495,22 +495,30 @@ def filter_opts(opts, get_storage_path):
 
         m = i_regex.match(opt)
 
-        if m:
-            path = m.group(2)
+        if not m:
+            filtered_opts.append(opt)
 
-            if path:
-                if os.path.isabs(path):
-                    opt = opt.replace(path, get_storage_path(path))
+            if opt in requires_value["CC"]:
+                filtered_opts.append(next(opts))
 
-                filtered_opts.append(opt)
-            elif opt in requires_value["CC"]:
-                filtered_opts.append(opt)
-                path = next(opts)
+            continue
 
-                if os.path.isabs(path):
-                    new_path = get_storage_path(path)
-                    filtered_opts.append(new_path)
-            else:
-                raise RuntimeError("Can't process CIF options")
+        path = m.group(2)
+
+        if path:
+            if os.path.isabs(path):
+                opt = opt.replace(path, get_storage_path(path))
+
+            filtered_opts.append(opt)
+        elif opt in requires_value["CC"]:
+            filtered_opts.append(opt)
+            path = next(opts)
+
+            if os.path.isabs(path):
+                path = get_storage_path(path)
+
+            filtered_opts.append(path)
+        else:
+            raise RuntimeError("Can't process CIF options")
 
     return filtered_opts
