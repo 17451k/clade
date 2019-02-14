@@ -136,7 +136,7 @@ class Info(Extension):
         for cmd_in in cmd["in"]:
             norm_cmd_in = self.extensions["Path"].get_rel_path(cmd_in, cmd["cwd"])
             cif_in = self.extensions[cmd["type"]].get_preprocessed_file_by_path(
-                norm_cmd_in
+                norm_cmd_in, cmd["cwd"]
             )
             cmd_in = self.extensions["Storage"].get_storage_path(norm_cmd_in)
 
