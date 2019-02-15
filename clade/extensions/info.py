@@ -160,7 +160,7 @@ class Info(Extension):
 
             cif_args = [self.conf.get("Info.cif", "cif"),
                         "--debug", "ALL",
-                        "--in", cmd_in,
+                        "--in", cif_in,
                         "--aspect", self.aspect,
                         "--back-end", "src",
                         "--stage", "instrumentation",
