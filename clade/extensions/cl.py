@@ -120,6 +120,9 @@ class CL(Compiler):
             self.debug("Preprocessed files: {}".format(pre))
             self.store_src_files(pre, parsed_cmd["cwd"])
 
+            for file in pre:
+                os.remove(file)
+
         if self.conf.get("Compiler.store_deps"):
             self.store_src_files(deps, parsed_cmd["cwd"])
 
