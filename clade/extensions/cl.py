@@ -142,6 +142,8 @@ class CL(Compiler):
             )
 
             encoding = chardet.detect(output_bytes)["encoding"]
+            if not encoding:
+                return ""
             return output_bytes.decode(encoding)
         except subprocess.CalledProcessError:
             self.warning("Couldn't get dependencies for {!r}".format(cmd))
@@ -164,16 +166,22 @@ class CL(Compiler):
     def __preprocess_cmd(self, cmd):
         pre = []
 
-        r = subprocess.check_call(
-            cmd["command"] + ["/P"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            cwd=cmd["cwd"],
-            shell=True,
-            universal_newlines=False,
-        )
-
-        if r:
+        try:
+            command = (
+                cmd["command"]
+                + ["/P"]
+                + self.conf.get("Compiler.extra_preprocessor_opts", [])
+            )
+            subprocess.check_call(
+                command,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                cwd=cmd["cwd"],
+                shell=True,
+                universal_newlines=False,
+            )
+        except subprocess.CalledProcessError:
+            self.warning("Couldn't preprocess {!r}".format(cmd))
             return pre
 
         for cmd_in in cmd["in"]:

@@ -147,10 +147,18 @@ class CC(Compiler):
                 cmd_in = os.path.join(cmd["cwd"], cmd_in)
 
             pre_file = os.path.splitext(cmd_in)[0] + ".i"
-            opts = cmd["opts"] + ["-E"]
-            command = [cmd["command"][0]] + opts + [cmd_in] + ["-o", pre_file]
+            command = (
+                [cmd["command"][0]]
+                + cmd["opts"]
+                + ["-E"]
+                + [cmd_in]
+                + ["-o", pre_file]
+                + self.conf.get("Compiler.extra_preprocessor_opts", [])
+            )
 
-            r = subprocess.check_call(command, cwd=cmd["cwd"], stderr=subprocess.DEVNULL)
+            r = subprocess.check_call(
+                command, cwd=cmd["cwd"], stderr=subprocess.DEVNULL
+            )
 
             if not r:
                 pre.append(pre_file)

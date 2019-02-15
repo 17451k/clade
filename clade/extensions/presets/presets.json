@@ -10,6 +10,7 @@
         "CC.with_system_header_files": true,
         "Compiler.store_deps": true,
         "Compiler.preprocess_cmds": false,
+        "Compiler.extra_preprocessor_opts": [],
         "CmdGraph.requires": [
             "AR",
             "AS",
