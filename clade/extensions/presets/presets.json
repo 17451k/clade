@@ -29,6 +29,9 @@
         "Common.filter_in": [],
         "Common.filter_out": [],
         "Info.extra_CIF_opts": [],
+        "Info.use_preprocessed_files": false,
+        "Info.cif": "cif",
+        "Info.aspectator": null,
         "PidGraph.as_picture": false,
         "PidGraph.filter_cmds_by_pid": true,
         "AR.which_list": [
@@ -39,6 +42,7 @@
         ],
         "CC.which_list": [
             "^.*cc$",
+            "^.*cc1$",
             "^.*[mg]cc(-?\\d+(\\.\\d+){0,2})?$",
             "^.*clang(-?\\d+(\\.\\d+){0,2})?$"
         ],
@@ -97,10 +101,7 @@
             ".*?\\.cmd$",
             "vmlinux"
         ],
-        "Info.extra_CIF_opts": ["-Dvector_size(x)="],
-        "Info.use_preprocessed_files": false,
-        "Info.cif": "cif",
-        "Info.aspectator": null
+        "Info.extra_CIF_opts": ["-Dvector_size(x)="]
     },
     "busybox_linux": {
         "extends": [
