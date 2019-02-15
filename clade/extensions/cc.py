@@ -143,7 +143,7 @@ class CC(Compiler):
             return pre
 
         for cmd_in in cmd["in"]:
-            if not os.path.abspath(cmd_in):
+            if not os.path.isabs(cmd_in):
                 cmd_in = os.path.join(cmd["cwd"], cmd_in)
 
             pre_file = os.path.splitext(cmd_in)[0] + ".i"
