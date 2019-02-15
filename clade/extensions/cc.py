@@ -140,6 +140,9 @@ class CC(Compiler):
             return pre
 
         for cmd_in in cmd["in"]:
+            if not os.path.abspath(cmd_in):
+                cmd_in = os.path.join(cmd["cwd"], cmd_in)
+
             pre_file = os.path.splitext(cmd_in)[0] + ".i"
             opts = cmd["opts"] + ["-E"]
             command = [cmd["command"][0]] + opts + [cmd_in] + ["-o", pre_file]

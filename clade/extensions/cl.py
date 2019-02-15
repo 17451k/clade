@@ -174,14 +174,10 @@ class CL(Compiler):
             return pre
 
         for cmd_in in cmd["in"]:
-            # pre_to - the path where we want to move the preprocessor output
-            pre_to = os.path.splitext(cmd_in)[0] + ".i"
-            # pre_from - the path to the preprocessor output file
-            pre_from = os.path.join(cmd["cwd"], os.path.basename(pre_to))
-            # Move .i file to be near source file
-            os.rename(pre_from, pre_to)
+            i_name = os.path.basename(os.path.splitext(cmd_in)[0] + ".i")
+            pre_file = os.path.join(cmd["cwd"], i_name)
 
-            pre.append(pre_to)
+            pre.append(pre_file)
 
         return pre
 
