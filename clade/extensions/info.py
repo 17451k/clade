@@ -175,12 +175,15 @@ class Info(Extension):
             ):
                 opts = self.extensions[cmd["type"]].load_opts_by_id(cmd["id"])
                 opts = filter_opts(opts, self.extensions["Storage"].get_storage_path)
+            else:
+                opts = []
 
-                if opts:
-                    cif_args.append("--")
-                    opts.extend(self.conf.get("Info.extra_CIF_opts", []))
-                    opts = [re.sub(r"\"", r'\\"', opt) for opt in opts]
-                    cif_args.extend(opts)
+            opts.extend(self.conf.get("Info.extra_CIF_opts", []))
+            opts = [re.sub(r"\"", r'\\"', opt) for opt in opts]
+
+            if opts:
+                cif_args.append("--")
+                cif_args.extend(opts)
 
             cwd = self.extensions["Path"].get_abs_path(cmd["cwd"])
             cwd = self.extensions["Storage"].get_storage_path(cwd)
