@@ -90,7 +90,8 @@ class Info(Extension):
             self.typedefs,
         ]
 
-        # Path to file containing CIF error log
+        # Path to files containing CIF log
+        self.cif_log = os.path.join(self.work_dir, "cif.log")
         self.err_log = os.path.join(self.work_dir, "err.log")
 
     @Extension.prepare
@@ -187,11 +188,13 @@ class Info(Extension):
 
             try:
                 self.debug(cif_args)
-                subprocess.check_output(
+                output = subprocess.check_output(
                     cif_args, stderr=subprocess.STDOUT, cwd=cwd, universal_newlines=True
                 )
-            except subprocess.CalledProcessError as e:
-                self.__save_log(cif_args, e.output)
+            except subprocess.CalledProcessError:
+                self.__save_log(cif_args, output, self.err_log)
+            finally:
+                self.__save_log(cif_args, output, self.cif_log)
 
     def __is_cmd_bad_for_cif(self, cmd):
         if cmd["in"] == []:
@@ -206,10 +209,10 @@ class Info(Extension):
 
         return False
 
-    def __save_log(self, args, log):
+    def __save_log(self, args, log, file):
         os.makedirs(self.work_dir, exist_ok=True)
 
-        with open(self.err_log, "a") as log_fh:
+        with open(file, "a") as log_fh:
             log_fh.write(" ".join(args) + "\n\n")
             log_fh.writelines(log)
             log_fh.write("\n\n")
