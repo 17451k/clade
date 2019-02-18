@@ -159,7 +159,7 @@ class CL(Compiler):
                 line,
             )
             if m:
-                dep = os.path.normpath(m.group(2))
+                dep = os.path.normpath(m.group(2)).strip()
                 deps.append(dep)
 
         return deps
@@ -190,15 +190,22 @@ class CL(Compiler):
             os.remove(pre_file)
 
     def __normalize_paths(self, c_file, cwd):
-        with open(c_file, "r") as c_file_fh, open(
-            c_file + ".new", "w"
+        rawdata = open(c_file, 'rb').read()
+        encoding = chardet.detect(rawdata)["encoding"]
+
+        with open(c_file, "r", encoding=encoding) as c_file_fh, open(
+            c_file + ".new", "w", encoding="utf-8"
         ) as c_file_new_fh:
             for line in c_file_fh:
                 m = re.match(r"#line \d* \"(.*?)\"", line)
 
                 if m:
                     inc_file = m.group(1)
+
                     norm_inc_file = os.path.normpath(inc_file)
+                    norm_inc_file = norm_inc_file.strip()
+                    norm_inc_file = norm_inc_file.replace("\\", "\\\\")
+
                     line = line.replace(inc_file, norm_inc_file)
 
                 c_file_new_fh.write(line)

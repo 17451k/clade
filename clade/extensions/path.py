@@ -99,6 +99,8 @@ class Path(Extension):
         # cache variable considerably speeds up normalizing.
         # cache size is quite small even for extra large files.
 
+        cwd = cwd.strip()
+        path = path.strip()
         key = cwd.lower() + " " + path.lower()
 
         if key in cache:
@@ -118,9 +120,12 @@ class Path(Extension):
         return npath
 
     def normalize_abs_path(self, path, cache=dict()):
-        if path in cache:
-            self.paths[path.lower()] = cache[path]
-            return cache[path]
+        path = path.strip()
+        key = path.lower()
+
+        if key in cache:
+            self.paths[key] = cache[key]
+            return cache[key]
 
         npath = os.path.normpath(path)
 
@@ -131,8 +136,8 @@ class Path(Extension):
             if drive:
                 npath = "/" + drive[:-1] + tail
 
-        cache[path] = npath
-        self.paths[path.lower()] = npath
+        cache[key] = npath
+        self.paths[key] = npath
         return npath
 
     def __get_actual_filename(self, path):

@@ -266,7 +266,7 @@ class Info(Extension):
                             path = self.extensions["Path"].normalize_rel_path(
                                 path, cwd
                             )
-                            path = re.sub(storage, "", path)
+                            path = path.replace(storage, "")
                             temp_fh.write("{} {}\n".format(path, rest))
                         else:
                             temp_fh.write(line)
@@ -294,13 +294,12 @@ class Info(Extension):
             cif_in + ".new", "w"
         ) as cif_in_new_fh:
             for line in cif_in_fh:
-                line = line.replace("\\\\", "\\")
                 m = re.match(r"#line \d* \"(.*?)\"", line)
 
                 if m:
                     inc_file = m.group(1)
                     norm_inc_file = self.extensions["Path"].get_rel_path(
-                        inc_file, cwd
+                        inc_file.replace("\\\\", "\\"), cwd
                     )
                     line = line.replace(inc_file, norm_inc_file)
 
