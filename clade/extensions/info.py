@@ -123,9 +123,10 @@ class Info(Extension):
             shutil.rmtree(self.temp_dir)
 
         if not [file for file in self.files if os.path.exists(file)]:
-            raise RuntimeError(
+            self.error(
                 "CIF failed on every command. Log: {}".format(self.err_log)
             )
+            sys.exit(-1)
 
         self.__normalize_cif_output(cmds_file)
         self.log("Finish")
