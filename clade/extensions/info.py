@@ -143,30 +143,35 @@ class Info(Extension):
         if self.__is_cmd_bad_for_cif(cmd):
             return
 
+        tmp_dir = os.path.join(self.temp_dir, str(os.getpid()))
+        os.makedirs(tmp_dir, exist_ok=True)
+
+        # If True then  CIF will be executed on preprocessed .i file
+        use_pre = self.conf.get("Compiler.preprocess_cmds") and self.conf.get(
+            "Info.use_preprocessed_files"
+        )
+
         for cmd_in in cmd["in"]:
             norm_cmd_in = self.extensions["Path"].get_rel_path(
                 cmd_in, cmd["cwd"]
             )
-            cif_in = self.extensions[
-                cmd["type"]
-            ].get_preprocessed_file_by_path(norm_cmd_in, cmd["cwd"])
+
             cmd_in = self.extensions["Storage"].get_storage_path(norm_cmd_in)
 
-            if not self.conf.get(
-                "Compiler.preprocess_cmds"
-            ) or not self.conf.get("Info.use_preprocessed_files"):
-                cif_in = cmd_in
+            if use_pre:
+                cif_in = self.extensions[cmd["type"]].get_pre_file_by_path(
+                    norm_cmd_in, cmd["cwd"]
+                )
             else:
-                # Replace Windows-style paths in line directives by Storage paths
-                self.__replace_paths(cif_in, cmd["cwd"])
+                cif_in = cmd_in
 
             if not os.path.exists(cif_in):
                 continue
 
             cif_out = os.path.join(
-                self.temp_dir, str(os.getpid()), cmd_in.lstrip(os.sep) + ".o"
+                tmp_dir, os.path.basename(cmd_in.lstrip(os.sep)) + ".o"
             )
-            os.makedirs(os.path.dirname(cif_out), exist_ok=True)
+
             os.makedirs(self.work_dir, exist_ok=True)
 
             os.environ["CIF_INFO_DIR"] = self.work_dir
@@ -188,15 +193,13 @@ class Info(Extension):
                     ["--aspectator", self.conf.get("Info.aspectator")]
                 )
 
-            if not self.conf.get(
-                "Compiler.preprocess_cmds"
-            ) or not self.conf.get("Info.use_preprocessed_files"):
+            if use_pre:
+                opts = []
+            else:
                 opts = self.extensions[cmd["type"]].load_opts_by_id(cmd["id"])
                 opts = filter_opts(
                     opts, self.extensions["Storage"].get_storage_path
                 )
-            else:
-                opts = []
 
             opts.extend(self.conf.get("Info.extra_CIF_opts", []))
             opts = [re.sub(r"\"", r'\\"', opt) for opt in opts]
@@ -288,25 +291,6 @@ class Info(Extension):
                 p.submit(unwrap_normalize, self, file)
 
         self.log("Normalizing finished")
-
-    def __replace_paths(self, cif_in, cwd):
-        with open(cif_in, "r") as cif_in_fh, open(
-            cif_in + ".new", "w"
-        ) as cif_in_new_fh:
-            for line in cif_in_fh:
-                m = re.match(r"#line \d* \"(.*?)\"", line)
-
-                if m:
-                    inc_file = m.group(1)
-                    norm_inc_file = self.extensions["Path"].get_rel_path(
-                        inc_file.replace("\\\\", "\\"), cwd
-                    )
-                    line = line.replace(inc_file, norm_inc_file)
-
-                cif_in_new_fh.write(line)
-
-        os.remove(cif_in)
-        os.rename(cif_in + ".new", cif_in)
 
     def iter_definitions(self):
         return self.__iter_file(self.execution)

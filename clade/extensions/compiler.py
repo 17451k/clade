@@ -60,21 +60,21 @@ class Compiler(Common):
 
             yield cmd
 
-    def get_all_preprocessed_files(self):
+    def get_all_pre_files(self):
         pre_files = []
 
         for cmd in self.load_all_cmds(compile_only=True):
-            pre_files.extend(self.get_preprocessed_files_by_id(cmd["id"]))
+            pre_files.extend(self.get_pre_files_by_id(cmd["id"]))
 
         return pre_files
 
-    def get_preprocessed_files_by_id(self, id):
+    def get_pre_files_by_id(self, id):
         cmd = self.load_cmd_by_id(id)
 
         pre_files = []
 
         for cmd_in in cmd["in"]:
-            pre_file = self.get_preprocessed_file_by_path(cmd_in, cmd["cwd"])
+            pre_file = self.get_pre_file_by_path(cmd_in, cmd["cwd"])
             print(pre_file)
 
             if os.path.exists(pre_file):
@@ -82,7 +82,7 @@ class Compiler(Common):
 
         return pre_files
 
-    def get_preprocessed_file_by_path(self, path, cwd):
+    def get_pre_file_by_path(self, path, cwd):
         if os.path.isabs(path):
             abs_path = path
         else:

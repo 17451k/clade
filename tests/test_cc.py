@@ -171,4 +171,4 @@ def test_cc_preprocess(tmpdir, cmds_file):
     c = CC(tmpdir, conf)
     c.parse(cmds_file)
 
-    assert c.get_all_preprocessed_files()
+    assert c.get_all_pre_files()
