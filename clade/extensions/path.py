@@ -13,8 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
+import filelock
 import glob
+import os
 import sys
 import re
 
@@ -64,12 +65,14 @@ class Path(Extension):
     def dump_paths(self):
         os.makedirs(os.path.dirname(self.paths_file), exist_ok=True)
 
-        paths = self.load_paths()
-        paths.update(self.paths)
+        lock = filelock.FileLock(self.paths_file + ".lock")
+        with lock:
+            paths = self.load_paths()
+            paths.update(self.paths)
 
-        with open(self.paths_file, "a") as paths_fh:
-            for path in paths:
-                paths_fh.write("{}: {}\n".format(path, paths[path]))
+            with open(self.paths_file, "w") as paths_fh:
+                for path in paths:
+                    paths_fh.write("{}: {}\n".format(path, paths[path]))
 
     def load_paths(self):
         paths = dict()

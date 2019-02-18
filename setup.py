@@ -219,7 +219,7 @@ setuptools.setup(
         "develop": CustomDevelop,
         "bdist_wheel": bdist_wheel,
     },
-    install_requires=["ujson", "chardet", "graphviz", "ply"],
+    install_requires=["ujson", "chardet", "graphviz", "ply", "filelock"],
     extras_require={"dev": ["pytest", "pytest-profiling"]},
     classifiers=[
         "Programming Language :: Python :: 3",
