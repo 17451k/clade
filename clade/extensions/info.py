@@ -146,6 +146,9 @@ class Info(Extension):
                 "Info.use_preprocessed_files"
             ):
                 cif_in = cmd_in
+            else:
+                # Replace Windows-style paths in line directives by Storage paths
+                self.__replace_paths(cif_in, cmd["cwd"])
 
             if not os.path.exists(cif_in):
                 continue
@@ -261,6 +264,19 @@ class Info(Extension):
                 p.submit(unwrap_normalize, self, file)
 
         self.log("Normalizing finished")
+
+    def __replace_paths(self, cif_in, cwd):
+        with open(cif_in, "r") as cif_in_fh, open(cif_in + ".new", "w") as cif_in_new_fh:
+            for line in cif_in_fh:
+                line = line.replace("\\\\", "\\")
+                m = re.match(r"#line \d* \"(.*?)\"", line)
+
+                if m:
+                    inc_file = m.group(1)
+                    norm_inc_file = self.extensions["Path"].get_rel_path(inc_file, cwd)
+                    line = line.replace(inc_file, norm_inc_file)
+
+                cif_in_new_fh.write(line)
 
     def iter_definitions(self):
         return self.__iter_file(self.execution)
