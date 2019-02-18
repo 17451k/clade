@@ -102,11 +102,5 @@ def parse_args(args):
 def common_main(cl, args):
     conf = parse_args(args)
 
-    try:
-        c = cl(conf["work_dir"], conf=conf)
-        c.parse(conf["cmds_file"])
-    except Exception as e:
-        if e.args:
-            raise SystemExit(e)
-        else:
-            raise SystemExit
+    c = cl(conf["work_dir"], conf=conf)
+    c.parse(conf["cmds_file"])
