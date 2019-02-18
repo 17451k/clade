@@ -115,14 +115,6 @@ class CL(Compiler):
         self.debug("Dependencies: {}".format(deps))
         self.dump_deps_by_id(cmd["id"], deps)
 
-        if self.conf.get("Compiler.preprocess_cmds"):
-            pre = self.__preprocess_cmd(parsed_cmd)
-            self.debug("Preprocessed files: {}".format(pre))
-            self.store_src_files(pre, parsed_cmd["cwd"])
-
-            for file in pre:
-                os.remove(file)
-
         if self.conf.get("Compiler.store_deps"):
             self.store_src_files(deps, parsed_cmd["cwd"])
 
@@ -133,21 +125,30 @@ class CL(Compiler):
 
     def __collect_deps(self, cmd_id, cmd):
         try:
+            deps_cmd = (
+                cmd["command"]
+                + ["/showIncludes", "/P"]
+                + self.conf.get("Compiler.extra_preprocessor_opts", [])
+            )
             output_bytes = subprocess.check_output(
-                cmd["command"] + ["/showIncludes"],
-                stderr=subprocess.PIPE,
+                deps_cmd,
+                stderr=subprocess.STDOUT,
                 cwd=cmd["cwd"],
                 shell=True,
                 universal_newlines=False,
             )
-
-            encoding = chardet.detect(output_bytes)["encoding"]
-            if not encoding:
-                return ""
-            return output_bytes.decode(encoding)
         except subprocess.CalledProcessError:
-            self.warning("Couldn't get dependencies for {!r}".format(cmd))
+            self.warning("Couldn't get dependencies")
+            self.warning("CWD: {!r}".format(cmd["cwd"]))
+            self.warning("Command: {!r}".format(" ".join(deps_cmd)))
             return ""
+
+        self.__preprocess_cmd(cmd)
+
+        encoding = chardet.detect(output_bytes)["encoding"]
+        if not encoding:
+            return ""
+        return output_bytes.decode(encoding)
 
     def __parse_deps(self, unparsed_deps):
         deps = list()
@@ -166,24 +167,6 @@ class CL(Compiler):
     def __preprocess_cmd(self, cmd):
         pre = []
 
-        try:
-            command = (
-                cmd["command"]
-                + ["/P"]
-                + self.conf.get("Compiler.extra_preprocessor_opts", [])
-            )
-            subprocess.check_call(
-                command,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                cwd=cmd["cwd"],
-                shell=True,
-                universal_newlines=False,
-            )
-        except subprocess.CalledProcessError:
-            self.warning("Couldn't preprocess {!r}".format(cmd))
-            return pre
-
         for cmd_in in cmd["in"]:
             # pre_to - the path where we want to move the preprocessor output
             pre_to = os.path.splitext(cmd_in)[0] + ".i"
@@ -195,9 +178,33 @@ class CL(Compiler):
             if not os.path.exists(pre_to):
                 os.rename(pre_from, pre_to)
 
+            # Normalize paths in line directives
+            self.__normalize_paths(pre_to, cmd["cwd"])
             pre.append(pre_to)
 
-        return pre
+        if self.conf.get("Compiler.preprocess_cmds"):
+            self.debug("Preprocessed files: {}".format(pre))
+            self.store_src_files(pre, cmd["cwd"])
+
+        for pre_file in pre:
+            os.remove(pre_file)
+
+    def __normalize_paths(self, c_file, cwd):
+        with open(c_file, "r") as c_file_fh, open(
+            c_file + ".new", "w"
+        ) as c_file_new_fh:
+            for line in c_file_fh:
+                m = re.match(r"#line \d* \"(.*?)\"", line)
+
+                if m:
+                    inc_file = m.group(1)
+                    norm_inc_file = os.path.normpath(inc_file)
+                    line = line.replace(inc_file, norm_inc_file)
+
+                c_file_new_fh.write(line)
+
+        os.remove(c_file)
+        os.rename(c_file + ".new", c_file)
 
 
 def main(args=sys.argv[1:]):
