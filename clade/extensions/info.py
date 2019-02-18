@@ -51,7 +51,9 @@ class Info(Extension):
 
         super().__init__(work_dir, conf, preset)
 
-        self.aspect = os.path.join(os.path.dirname(__file__), "info", "info.aspect")
+        self.aspect = os.path.join(
+            os.path.dirname(__file__), "info", "info.aspect"
+        )
 
         # Info about function definitions
         self.execution = os.path.join(self.work_dir, "execution.txt")
@@ -104,7 +106,7 @@ class Info(Extension):
         cmds = self.extensions["SrcGraph"].load_all_cmds()
 
         if not cmds:
-            raise RuntimeError("There is no parsed CC commands")
+            raise RuntimeError("There are no parsed compiler commands")
 
         # TODO: remove later
         if os.environ.get("CLADE_DEBUG"):
@@ -122,11 +124,14 @@ class Info(Extension):
         if os.path.exists(self.temp_dir):
             shutil.rmtree(self.temp_dir)
 
-        if not [file for file in self.files if os.path.exists(file)]:
-            self.error(
+        if not self.cif_log:
+            raise RuntimeError(
+                "Something is wrong with every compilation command"
+            )
+        elif not [file for file in self.files if os.path.exists(file)]:
+            raise RuntimeError(
                 "CIF failed on every command. Log: {}".format(self.err_log)
             )
-            sys.exit(-1)
 
         self.__normalize_cif_output(cmds_file)
         self.log("Finish")
@@ -136,15 +141,17 @@ class Info(Extension):
             return
 
         for cmd_in in cmd["in"]:
-            norm_cmd_in = self.extensions["Path"].get_rel_path(cmd_in, cmd["cwd"])
-            cif_in = self.extensions[cmd["type"]].get_preprocessed_file_by_path(
-                norm_cmd_in, cmd["cwd"]
+            norm_cmd_in = self.extensions["Path"].get_rel_path(
+                cmd_in, cmd["cwd"]
             )
+            cif_in = self.extensions[
+                cmd["type"]
+            ].get_preprocessed_file_by_path(norm_cmd_in, cmd["cwd"])
             cmd_in = self.extensions["Storage"].get_storage_path(norm_cmd_in)
 
-            if not self.conf.get("Compiler.preprocess_cmds") or not self.conf.get(
-                "Info.use_preprocessed_files"
-            ):
+            if not self.conf.get(
+                "Compiler.preprocess_cmds"
+            ) or not self.conf.get("Info.use_preprocessed_files"):
                 cif_in = cmd_in
             else:
                 # Replace Windows-style paths in line directives by Storage paths
@@ -163,22 +170,34 @@ class Info(Extension):
             os.environ["C_FILE"] = norm_cmd_in
             os.environ["CIF_CMD_CWD"] = cmd["cwd"]
 
-            cif_args = [self.conf.get("Info.cif", "cif"),
-                        "--debug", "ALL",
-                        "--in", cif_in,
-                        "--aspect", self.aspect,
-                        "--back-end", "src",
-                        "--stage", "instrumentation",
-                        "--out", cif_out]
+            cif_args = [
+                self.conf.get("Info.cif", "cif"),
+                "--debug",
+                "ALL",
+                "--in",
+                cif_in,
+                "--aspect",
+                self.aspect,
+                "--back-end",
+                "src",
+                "--stage",
+                "instrumentation",
+                "--out",
+                cif_out,
+            ]
 
             if self.conf.get("Info.aspectator"):
-                cif_args.extend(["--aspectator", self.conf.get("Info.aspectator")])
+                cif_args.extend(
+                    ["--aspectator", self.conf.get("Info.aspectator")]
+                )
 
-            if not self.conf.get("Compiler.preprocess_cmds") or not self.conf.get(
-                "Info.use_preprocessed_files"
-            ):
+            if not self.conf.get(
+                "Compiler.preprocess_cmds"
+            ) or not self.conf.get("Info.use_preprocessed_files"):
                 opts = self.extensions[cmd["type"]].load_opts_by_id(cmd["id"])
-                opts = filter_opts(opts, self.extensions["Storage"].get_storage_path)
+                opts = filter_opts(
+                    opts, self.extensions["Storage"].get_storage_path
+                )
             else:
                 opts = []
 
@@ -196,7 +215,10 @@ class Info(Extension):
             try:
                 self.debug(cif_args)
                 output = subprocess.check_output(
-                    cif_args, stderr=subprocess.STDOUT, cwd=cwd, universal_newlines=True
+                    cif_args,
+                    stderr=subprocess.STDOUT,
+                    cwd=cwd,
+                    universal_newlines=True,
                 )
             except subprocess.CalledProcessError:
                 self.__save_log(cif_args, output, self.err_log)
@@ -243,7 +265,9 @@ class Info(Extension):
 
                         if m:
                             cwd, path, rest = m.groups()
-                            path = self.extensions["Path"].normalize_rel_path(path, cwd)
+                            path = self.extensions["Path"].normalize_rel_path(
+                                path, cwd
+                            )
                             path = re.sub(storage, "", path)
                             temp_fh.write("{} {}\n".format(path, rest))
                         else:
@@ -259,21 +283,27 @@ class Info(Extension):
     def __normalize_cif_output(self, cmds_file):
         self.log("Normalizing CIF output")
 
-        with concurrent.futures.ProcessPoolExecutor(max_workers=os.cpu_count()) as p:
+        with concurrent.futures.ProcessPoolExecutor(
+            max_workers=os.cpu_count()
+        ) as p:
             for file in [f for f in self.files if f != self.init_global]:
                 p.submit(unwrap_normalize, self, file)
 
         self.log("Normalizing finished")
 
     def __replace_paths(self, cif_in, cwd):
-        with open(cif_in, "r") as cif_in_fh, open(cif_in + ".new", "w") as cif_in_new_fh:
+        with open(cif_in, "r") as cif_in_fh, open(
+            cif_in + ".new", "w"
+        ) as cif_in_new_fh:
             for line in cif_in_fh:
                 line = line.replace("\\\\", "\\")
                 m = re.match(r"#line \d* \"(.*?)\"", line)
 
                 if m:
                     inc_file = m.group(1)
-                    norm_inc_file = self.extensions["Path"].get_rel_path(inc_file, cwd)
+                    norm_inc_file = self.extensions["Path"].get_rel_path(
+                        inc_file, cwd
+                    )
                     line = line.replace(inc_file, norm_inc_file)
 
                 cif_in_new_fh.write(line)
