@@ -111,7 +111,7 @@ class CL(Compiler):
         self.debug("Parsed command: {}".format(parsed_cmd))
         self.dump_cmd_by_id(cmd["id"], parsed_cmd)
 
-        deps = set(self.__get_deps(cmd["id"], cmd) + parsed_cmd["in"])
+        deps = set(self.__get_deps(cmd["id"], parsed_cmd) + parsed_cmd["in"])
         self.debug("Dependencies: {}".format(deps))
         self.dump_deps_by_id(cmd["id"], deps)
 
