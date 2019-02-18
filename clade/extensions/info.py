@@ -119,12 +119,10 @@ class Info(Extension):
                 for cmd in cmds:
                     p.submit(unwrap, self, cmd)
 
-        self.log("CIF finished")
-
         if os.path.exists(self.temp_dir):
             shutil.rmtree(self.temp_dir)
 
-        if not self.cif_log:
+        if not os.path.exists(self.cif_log):
             raise RuntimeError(
                 "Something is wrong with every compilation command"
             )
@@ -132,6 +130,11 @@ class Info(Extension):
             raise RuntimeError(
                 "CIF failed on every command. Log: {}".format(self.err_log)
             )
+
+        if not os.path.exists(self.err_log):
+            self.log("CIF finished without errors")
+        else:
+            self.log("CIF finished with errors. Log: {}".format(self.err_log))
 
         self.__normalize_cif_output(cmds_file)
         self.log("Finish")
