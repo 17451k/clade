@@ -220,8 +220,8 @@ class Info(Extension):
                     cwd=cwd,
                     universal_newlines=True,
                 )
-            except subprocess.CalledProcessError:
-                self.__save_log(cif_args, output, self.err_log)
+            except subprocess.CalledProcessError as e:
+                self.__save_log(cif_args, e.output, self.err_log)
             finally:
                 self.__save_log(cif_args, output, self.cif_log)
 
