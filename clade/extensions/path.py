@@ -103,6 +103,9 @@ class Path(Extension):
         path = path.strip()
         key = cwd.lower() + " " + path.lower()
 
+        if key in self.paths:
+            return self.paths[key]
+
         if key in cache:
             # I am not shure why it is necessary
             # But sometimes cache variable is preserved through different launches
@@ -122,6 +125,9 @@ class Path(Extension):
     def normalize_abs_path(self, path, cache=dict()):
         path = path.strip()
         key = path.lower()
+
+        if key in self.paths:
+            return self.paths[key]
 
         if key in cache:
             self.paths[key] = cache[key]
