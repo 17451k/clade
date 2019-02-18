@@ -175,18 +175,12 @@ class Info(Extension):
 
             cif_args = [
                 self.conf.get("Info.cif", "cif"),
-                "--debug",
-                "ALL",
-                "--in",
-                cif_in,
-                "--aspect",
-                self.aspect,
-                "--back-end",
-                "src",
-                "--stage",
-                "instrumentation",
-                "--out",
-                cif_out,
+                "--debug", "ALL",
+                "--in", cif_in,
+                "--aspect", self.aspect,
+                "--back-end", "src",
+                "--stage", "instrumentation",
+                "--out", cif_out
             ]
 
             if self.conf.get("Info.aspectator"):
@@ -311,6 +305,9 @@ class Info(Extension):
                     line = line.replace(inc_file, norm_inc_file)
 
                 cif_in_new_fh.write(line)
+
+        os.remove(cif_in)
+        os.rename(cif_in + ".new", cif_in)
 
     def iter_definitions(self):
         return self.__iter_file(self.execution)
