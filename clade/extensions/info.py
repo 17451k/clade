@@ -223,10 +223,11 @@ class Info(Extension):
                     cwd=cwd,
                     universal_newlines=True,
                 )
+                self.__save_log(cif_args, output, self.cif_log)
             except subprocess.CalledProcessError as e:
                 self.__save_log(cif_args, e.output, self.err_log)
-            finally:
-                self.__save_log(cif_args, output, self.cif_log)
+                self.__save_log(cif_args, e.output, self.cif_log)
+                return
 
     def __is_cmd_bad_for_cif(self, cmd):
         if cmd["in"] == []:
