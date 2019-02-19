@@ -23,6 +23,7 @@ gcc_opts = [
     "-x",
     "-o",
     "-aux-info",
+    "-auxbase-strip",
     "-D",
     "-U",
     "-include",
