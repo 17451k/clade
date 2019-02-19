@@ -57,7 +57,8 @@ class CC(Compiler):
             self.store_src_files(pre, parsed_cmd["cwd"])
 
             for file in pre:
-                os.remove(file)
+                if os.path.exists(file):
+                    os.remove(file)
 
         # BUG: gcc do not print proper dependencies for commands with several input file
         # For example, there is no "file.c" in dependencies for command "gcc func.c main.c -o main"
