@@ -68,13 +68,13 @@ class Functions(Callgraph):
     def __process_definitions(self):
         self.log("Processing function definitions")
 
-        regex = re.compile(r"(\S*) (\S*) signature='([^']*)' (\S*) (\S*)")
+        regex = re.compile(r"(.*?) (\S*) signature='([^']*)' (\S*) (\S*)")
 
         for line in self.extensions["Info"].iter_definitions():
             m = regex.match(line)
 
             if not m:
-                raise RuntimeError("CIF output has unexpected format")
+                raise SyntaxError("CIF output has unexpected format. Line: {!r}".format(line))
 
             src_file, func, signature, def_line, func_type = m.groups()
 
@@ -97,7 +97,7 @@ class Functions(Callgraph):
     def __process_declarations(self):
         self.log("Processing declarations")
 
-        regex = re.compile(r"(\S*) (\S*) signature='([^']*)' (\S*) (\S*)")
+        regex = re.compile(r"(.*?) (\S*) signature='([^']*)' (\S*) (\S*)")
 
         def get_unknown_val(decl_file, decl_val):
             return {
@@ -111,7 +111,7 @@ class Functions(Callgraph):
             m = regex.match(line)
 
             if not m:
-                raise RuntimeError("CIF output has unexpected format")
+                raise SyntaxError("CIF output has unexpected format. Line: {!r}".format(line))
 
             decl_file, decl_name, decl_signature, decl_line, decl_type = m.groups()
 
@@ -146,13 +146,13 @@ class Functions(Callgraph):
     def __process_exported(self):
         self.log("Processing exported functions")
 
-        regex = re.compile(r"(\S*) (\S*)")
+        regex = re.compile(r"(.*?) (\S*)")
 
         for line in self.extensions["Info"].iter_exported():
             m = regex.match(line)
 
             if not m:
-                raise RuntimeError("CIF output has unexpected format")
+                raise SyntaxError("CIF output has unexpected format. Line: {!r}".format(line))
 
             src_file, func = m.groups()
 

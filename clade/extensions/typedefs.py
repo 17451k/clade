@@ -39,14 +39,14 @@ class Typedefs(Extension):
     def __process_typedefs(self):
         self.log("Processing typedefs")
 
-        regex = re.compile(r'(\S*) typedef (.*)')
+        regex = re.compile(r'(.*?) typedef (.*)')
         typedefs = self.typedefs
 
         for line in self.extensions["Info"].iter_typedefs():
             m = regex.match(line)
 
             if not m:
-                raise RuntimeError("CIF output has unexpected format")
+                raise SyntaxError("CIF output has unexpected format. Line: {!r}".format(line))
 
             scope_file, declaration = m.groups()
 

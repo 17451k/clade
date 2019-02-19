@@ -76,7 +76,7 @@ class Callgraph(Extension):
     def __process_calls(self):
         self.log("Processing calls")
 
-        regex = re.compile(r'(\S*) (\S*) (\S*) (\S*) (\S*) (.*)')
+        regex = re.compile(r'(.*?) (\S*) (\S*) (\S*) (\S*) (.*)')
 
         is_builtin = re.compile(r'(__builtin)|(__compiletime)')
         is_bad = re.compile(r'__bad')
@@ -87,7 +87,7 @@ class Callgraph(Extension):
             m = regex.match(line)
 
             if not m:
-                raise RuntimeError("CIF output has unexpected format")
+                raise SyntaxError("CIF output has unexpected format. Line: {!r}".format(line))
 
             context_file, context_func, func, call_line, call_type, args = m.groups()
 
@@ -180,13 +180,13 @@ class Callgraph(Extension):
     def __process_calls_by_pointers(self):
         self.log("Processing calls by pointers")
 
-        regex = re.compile(r'(\S*) (\S*) (\S*) (\S*)')
+        regex = re.compile(r'(.*?) (\S*) (\S*) (\S*)')
 
         for line in self.extensions["Info"].iter_calls_by_pointers():
             m = regex.match(line)
 
             if not m:
-                raise RuntimeError("CIF output has unexpected format")
+                raise SyntaxError("CIF output has unexpected format. Line: {!r}".format(line))
 
             context_file, context_func, func_ptr, call_line = m.groups()
 
