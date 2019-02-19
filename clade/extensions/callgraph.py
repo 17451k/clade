@@ -76,7 +76,7 @@ class Callgraph(Extension):
     def __process_calls(self):
         self.log("Processing calls")
 
-        regex = re.compile(r'(.*?) (\S*) (\S*) (\S*) (\S*) (.*)')
+        regex = re.compile(r'\"(.*?)\" (\S*) (\S*) (\S*) (\S*) (.*)')
 
         is_builtin = re.compile(r'(__builtin)|(__compiletime)')
         is_bad = re.compile(r'__bad')
@@ -180,7 +180,7 @@ class Callgraph(Extension):
     def __process_calls_by_pointers(self):
         self.log("Processing calls by pointers")
 
-        regex = re.compile(r'(.*?) (\S*) (\S*) (\S*)')
+        regex = re.compile(r'\"(.*?)\" (\S*) (\S*) (\S*)')
 
         for line in self.extensions["Info"].iter_calls_by_pointers():
             m = regex.match(line)

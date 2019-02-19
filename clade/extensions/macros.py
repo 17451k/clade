@@ -47,7 +47,7 @@ class Macros(Extension):
     def __process_macros_definitions(self):
         self.log("Processing macros definitions")
 
-        regex = re.compile(r"(.*?) (\S*) (\S*)")
+        regex = re.compile(r"\"(.*?)\" (\S*) (\S*)")
 
         for line in self.extensions["Info"].iter_macros_definitions():
             m = regex.match(line)
@@ -67,7 +67,7 @@ class Macros(Extension):
     def __process_macros_expansions(self):
         self.log("Processing macros expansions")
 
-        regex = re.compile(r'(.*?) (\S*)(.*)')
+        regex = re.compile(r'\"(.*?)\" (\S*)(.*)')
         regex2 = re.compile(r' actual_arg\d+=(.*)')
 
         for line in self.extensions["Info"].iter_macros_expansions():

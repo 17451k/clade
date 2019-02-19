@@ -68,7 +68,7 @@ class Functions(Callgraph):
     def __process_definitions(self):
         self.log("Processing function definitions")
 
-        regex = re.compile(r"(.*?) (\S*) signature='([^']*)' (\S*) (\S*)")
+        regex = re.compile(r"\"(.*?)\" (\S*) signature='([^']*)' (\S*) (\S*)")
 
         for line in self.extensions["Info"].iter_definitions():
             m = regex.match(line)
@@ -97,7 +97,7 @@ class Functions(Callgraph):
     def __process_declarations(self):
         self.log("Processing declarations")
 
-        regex = re.compile(r"(.*?) (\S*) signature='([^']*)' (\S*) (\S*)")
+        regex = re.compile(r"\"(.*?)\" (\S*) signature='([^']*)' (\S*) (\S*)")
 
         def get_unknown_val(decl_file, decl_val):
             return {
@@ -146,7 +146,7 @@ class Functions(Callgraph):
     def __process_exported(self):
         self.log("Processing exported functions")
 
-        regex = re.compile(r"(.*?) (\S*)")
+        regex = re.compile(r"\"(.*?)\" (\S*)")
 
         for line in self.extensions["Info"].iter_exported():
             m = regex.match(line)

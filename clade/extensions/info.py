@@ -176,8 +176,7 @@ class Info(Extension):
 
             os.environ["CIF_INFO_DIR"] = self.work_dir
             os.environ["C_FILE"] = norm_cmd_in
-            os.environ["CIF_CMD_ID"] = cmd["id"]
-            os.environ["CIF_CMD_TYPE"] = cmd["type"]
+            os.environ["CIF_CMD_CWD"] = cmd["cwd"]
 
             cif_args = [
                 self.conf.get("Info.cif", "cif"),
@@ -252,11 +251,10 @@ class Info(Extension):
         if not os.path.isfile(file):
             return
 
-        regexp = re.compile(r"(.*?) (\d*) (\S*) (.*)")
+        regexp = re.compile(r"\"(.*?)\" \"(.*?)\" (.*)")
         storage = self.extensions["Storage"].get_storage_dir()
 
         seen = set()
-        cmd_ids = dict()
         with codecs.open(file, "r", encoding="utf8", errors="ignore") as fh:
             with open(file + ".temp", "w") as temp_fh:
                 for line in fh:
@@ -267,14 +265,7 @@ class Info(Extension):
                         m = regexp.match(line)
 
                         if m:
-                            path, cmd_id, cmd_type, rest = m.groups()
-
-                            key = cmd_id + cmd_type
-                            if key in cmd_ids:
-                                cwd = cmd_ids[key]
-                            else:
-                                cwd = self.extensions[cmd_type].load_cmd_by_id(cmd_id)["cwd"]
-                                cmd_ids[key] = cwd
+                            cwd, path, rest = m.groups()
 
                             path = self.extensions["Path"].normalize_rel_path(
                                 path, cwd
@@ -284,7 +275,7 @@ class Info(Extension):
                                 self.warning("Normalized path looks weird: {!r}".format(path))
 
                             path = path.replace(storage, "")
-                            temp_fh.write("{} {}\n".format(path, rest))
+                            temp_fh.write("\"{}\" {}\n".format(path, rest))
                         else:
                             temp_fh.write(line)
 

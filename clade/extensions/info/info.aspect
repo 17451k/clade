@@ -20,63 +20,63 @@ around: define(likely(x)) { (x) }
 around: define(unlikely(x)) { (x) }
 
 info: execution(static $ $(..)) {
-	$fprintf<"$env<CIF_INFO_DIR>/execution.txt","%s %s %s %s signature='%s' %s static\n",$path,$env<CIF_CMD_ID>,$env<CIF_CMD_TYPE>,$func_name,$signature,$decl_line>
+	$fprintf<"$env<CIF_INFO_DIR>/execution.txt","\"%s\" \"%s\" %s signature='%s' %s static\n",$env<CIF_CMD_CWD>,$path,$func_name,$signature,$decl_line>
 }
 
 info: execution($ $(..)) {
-	$fprintf<"$env<CIF_INFO_DIR>/execution.txt","%s %s %s %s signature='%s' %s global\n",$path,$env<CIF_CMD_ID>,$env<CIF_CMD_TYPE>,$func_name,$signature,$decl_line>
+	$fprintf<"$env<CIF_INFO_DIR>/execution.txt","\"%s\" \"%s\" %s signature='%s' %s global\n",$env<CIF_CMD_CWD>,$path,$func_name,$signature,$decl_line>
 }
 
 info: declare_func(static $ $(..)) {
-	$fprintf<"$env<CIF_INFO_DIR>/declare_func.txt","%s %s %s %s signature='%s' %s static\n",$path,$env<CIF_CMD_ID>,$env<CIF_CMD_TYPE>,$func_name,$signature,$decl_line>
+	$fprintf<"$env<CIF_INFO_DIR>/declare_func.txt","\"%s\" \"%s\" %s signature='%s' %s static\n",$env<CIF_CMD_CWD>,$path,$func_name,$signature,$decl_line>
 }
 
 info: declare_func($ $(..)) {
-	$fprintf<"$env<CIF_INFO_DIR>/declare_func.txt","%s %s %s %s signature='%s' %s global\n",$path,$env<CIF_CMD_ID>,$env<CIF_CMD_TYPE>,$func_name,$signature,$decl_line>
+	$fprintf<"$env<CIF_INFO_DIR>/declare_func.txt","\"%s\" \"%s\" %s signature='%s' %s global\n",$env<CIF_CMD_CWD>,$path,$func_name,$signature,$decl_line>
 }
 
 info: expand(__EXPORT_SYMBOL(sym, sec)) {
-	$fprintf<"$env<CIF_INFO_DIR>/exported.txt","%s %s %s %s\n",$path,$env<CIF_CMD_ID>,$env<CIF_CMD_TYPE>,$arg_val1>
+	$fprintf<"$env<CIF_INFO_DIR>/exported.txt","\"%s\" \"%s\" %s\n",$env<CIF_CMD_CWD>,$path,$arg_val1>
 }
 
 info: expand(___EXPORT_SYMBOL(sym, sec)) {
-	$fprintf<"$env<CIF_INFO_DIR>/exported.txt","%s %s %s %s\n",$path,$env<CIF_CMD_ID>,$env<CIF_CMD_TYPE>,$arg_val1>
+	$fprintf<"$env<CIF_INFO_DIR>/exported.txt","\"%s\" \"%s\" %s\n",$env<CIF_CMD_CWD>,$path,$arg_val1>
 }
 
 info: expand($) {
-	$fprintf<"$env<CIF_INFO_DIR>/expand.txt","%s %s %s %s\n",$path,$env<CIF_CMD_ID>,$env<CIF_CMD_TYPE>,$macro_name>
+	$fprintf<"$env<CIF_INFO_DIR>/expand.txt","\"%s\" \"%s\" %s\n",$env<CIF_CMD_CWD>,$path,$macro_name>
 }
 
 info: expand($(..)) {
-	$fprintf<"$env<CIF_INFO_DIR>/expand.txt","%s %s %s %s %s\n",$path,$env<CIF_CMD_ID>,$env<CIF_CMD_TYPE>,$macro_name,$actual_args>
+	$fprintf<"$env<CIF_INFO_DIR>/expand.txt","\"%s\" \"%s\" %s %s\n",$env<CIF_CMD_CWD>,$path,$macro_name,$actual_args>
 }
 
 info: define($) {
-	$fprintf<"$env<CIF_INFO_DIR>/define.txt","%s %s %s %s %s\n",$path,$env<CIF_CMD_ID>,$env<CIF_CMD_TYPE>,$macro_name,$line>
+	$fprintf<"$env<CIF_INFO_DIR>/define.txt","\"%s\" \"%s\" %s %s\n",$env<CIF_CMD_CWD>,$path,$macro_name,$line>
 }
 
 info: define($(..)) {
-	$fprintf<"$env<CIF_INFO_DIR>/define.txt","%s %s %s %s %s\n",$path,$env<CIF_CMD_ID>,$env<CIF_CMD_TYPE>,$macro_name,$line>
+	$fprintf<"$env<CIF_INFO_DIR>/define.txt","\"%s\" \"%s\" %s %s\n",$env<CIF_CMD_CWD>,$path,$macro_name,$line>
 }
 
 info: call(static $ $(..)) {
-	$fprintf<"$env<CIF_INFO_DIR>/call.txt","%s %s %s %s %s %s static %s\n",$func_context_path,$env<CIF_CMD_ID>,$env<CIF_CMD_TYPE>,$func_context_name,$func_name,$call_line,$actual_arg_func_names>
+	$fprintf<"$env<CIF_INFO_DIR>/call.txt","\"%s\" \"%s\" %s %s %s static %s\n",$env<CIF_CMD_CWD>,$func_context_path,$func_context_name,$func_name,$call_line,$actual_arg_func_names>
 }
 
 info: call($ $(..)) {
-	$fprintf<"$env<CIF_INFO_DIR>/call.txt","%s %s %s %s %s %s global %s\n",$func_context_path,$env<CIF_CMD_ID>,$env<CIF_CMD_TYPE>,$func_context_name,$func_name,$call_line,$actual_arg_func_names>
+	$fprintf<"$env<CIF_INFO_DIR>/call.txt","\"%s\" \"%s\" %s %s %s global %s\n",$env<CIF_CMD_CWD>,$func_context_path,$func_context_name,$func_name,$call_line,$actual_arg_func_names>
 }
 
 info: callp($ $(..)) {
-	$fprintf<"$env<CIF_INFO_DIR>/callp.txt","%s %s %s %s %s %s\n",$func_context_path,$env<CIF_CMD_ID>,$env<CIF_CMD_TYPE>,$func_context_name,$func_ptr_name,$call_line>
+	$fprintf<"$env<CIF_INFO_DIR>/callp.txt","\"%s\" \"%s\" %s %s %s\n",$env<CIF_CMD_CWD>,$func_context_path,$func_context_name,$func_ptr_name,$call_line>
 }
 
 info: use_func($ $(..)) {
-	$fprintf<"$env<CIF_INFO_DIR>/use_func.txt","%s %s %s %s %s %s\n",$func_context_path,$env<CIF_CMD_ID>,$env<CIF_CMD_TYPE>,$func_context_name,$func_name,$use_line>
+	$fprintf<"$env<CIF_INFO_DIR>/use_func.txt","\"%s\" \"%s\" %s %s %s\n",$env<CIF_CMD_CWD>,$func_context_path,$func_context_name,$func_name,$use_line>
 }
 
 info: use_var($ $) {
-	$fprintf<"$env<CIF_INFO_DIR>/use_var.txt","%s %s %s %s %s %s\n",$func_context_path,$env<CIF_CMD_ID>,$env<CIF_CMD_TYPE>,$func_context_name,$var_name,$use_line>
+	$fprintf<"$env<CIF_INFO_DIR>/use_var.txt","\"%s\" \"%s\" %s %s %s\n",$env<CIF_CMD_CWD>,$func_context_path,$func_context_name,$var_name,$use_line>
 }
 
 info: init_global(static $ $){
@@ -88,5 +88,5 @@ info: init_global($ $){
 }
 
 info: introduce($ $) {
-	$fprintf<"$env<CIF_INFO_DIR>/typedefs.txt","%s %s %s %s\n",$env<C_FILE>,$env<CIF_CMD_ID>,$env<CIF_CMD_TYPE>,$signature>
+	$fprintf<"$env<CIF_INFO_DIR>/typedefs.txt","\"%s\" \"%s\" %s\n",$env<CIF_CMD_CWD>,$env<C_FILE>,$signature>
 }
