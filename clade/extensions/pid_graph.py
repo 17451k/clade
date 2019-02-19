@@ -19,7 +19,7 @@ import sys
 
 from graphviz import Digraph
 
-from clade.cmds import iter_cmds, open_cmds_file
+from clade.cmds import iter_cmds, open_cmds_file, get_last_id
 from clade.extensions.abstract import Extension
 from clade.extensions.utils import common_main
 
@@ -40,7 +40,7 @@ class PidGraph(Extension):
 
     @Extension.prepare
     def parse(self, cmds_file):
-        self.log("Start pid graph constructing")
+        self.log("Processing {} commands".format(get_last_id(cmds_file)))
 
         with open_cmds_file(cmds_file) as cmds_fp:
             for cmd in iter_cmds(cmds_fp):
@@ -58,7 +58,6 @@ class PidGraph(Extension):
 
         self.graph.clear()
         self.pid_by_id.clear()
-        self.log("Constructing finished")
 
     def __print_pid_graph(self, cmds_file, reduced=False):
         dot = Digraph(graph_attr={'rankdir': 'LR'}, node_attr={'shape': 'rectangle'})

@@ -15,7 +15,6 @@
 
 import abc
 import glob
-import multiprocessing
 import os
 import re
 import shutil
@@ -26,15 +25,8 @@ from clade.extensions.opts import requires_value
 from clade.cmds import iter_cmds_by_which, open_cmds_file
 
 
-class CmdWorker(multiprocessing.Process):
-    def __init__(self, cmds_queue, ext):
-        super().__init__()
-        self.cmds_queue = cmds_queue
-        self.ext = ext
-
-    def run(self):
-        for cmd in iter(self.cmds_queue.get, None):
-            self.ext.parse_cmd(cmd)
+def unwrap(self, cmd):
+    return self.parse_cmd(cmd)
 
 
 class Common(Extension, metaclass=abc.ABCMeta):
@@ -74,34 +66,14 @@ class Common(Extension, metaclass=abc.ABCMeta):
     @Extension.prepare
     def parse(self, cmds_file, which_list):
         """Multiprocess parsing of build commands filtered by 'which' field."""
-        self.log("Start parsing")
-
-        cmds_queue = multiprocessing.Queue()
-        cmd_workers = []
-        cmd_workers_num = os.cpu_count()
-
-        for _ in range(cmd_workers_num):
-            cmd_worker = CmdWorker(cmds_queue, self)
-            cmd_workers.append(cmd_worker)
-            cmd_worker.start()
-
-        try:
-            with open_cmds_file(cmds_file) as cmds_fp:
-                for cmd in iter_cmds_by_which(cmds_fp, which_list):
-                    cmds_queue.put(cmd)
-        except RuntimeError as e:
-            self.__terminate_workers(cmds_queue, cmd_workers, cmd_workers_num)
-            self.error(e)
-            sys.exit(-1)
-
-        self.__terminate_workers(cmds_queue, cmd_workers, cmd_workers_num)
+        with open_cmds_file(cmds_file) as cmds_fp:
+            cmds = iter_cmds_by_which(cmds_fp, which_list)
+            self.parse_cmds_in_parallel(cmds, unwrap)
 
         self.__merge_all_cmds()
 
         if os.path.exists(self.temp_dir):
             shutil.rmtree(self.temp_dir)
-
-        self.log("Parsing finished")
 
     def __terminate_workers(self, cmds_queue, cmd_workers, cmd_workers_num):
         # Terminate all workers.
@@ -193,13 +165,14 @@ class Common(Extension, metaclass=abc.ABCMeta):
             merged_cmds.append(parsed_cmd)
 
         if not merged_cmds:
-            self.warning("No commands were parsed")
+            self.debug("No commands were parsed")
+            return
 
         self.dump_data(merged_cmds, "cmds.json")
 
     def load_all_cmds(self, with_opts=True, filter_by_pid=True):
         """Load all parsed commands."""
-        cmds = self.load_data("cmds.json")
+        cmds = self.load_data("cmds.json", raise_exception=False)
 
         if filter_by_pid and self.conf.get(
             "PidGraph.filter_cmds_by_pid", True

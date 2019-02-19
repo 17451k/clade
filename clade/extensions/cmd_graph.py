@@ -77,9 +77,9 @@ class CmdGraph(Extension):
 
     @Extension.prepare
     def parse(self, cmds_file):
-        self.log("Start command graph constructing")
-
         cmds = self.load_all_cmds()
+        self.log("Processing {} commands".format(len(cmds)))
+
         self.normalize_all_paths(cmds)
 
         for cmd in sorted(cmds, key=lambda x: int(x["id"])):
@@ -94,7 +94,6 @@ class CmdGraph(Extension):
             self.warning("Command graph is empty")
 
         self.graph.clear()
-        self.log("Constructing finished")
 
     def __add_to_graph(self, cmd, out_dict=dict()):
         out_id = str(cmd["id"])

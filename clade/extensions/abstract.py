@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import abc
+import concurrent.futures
 import fnmatch
 import glob
 import hashlib
@@ -201,6 +202,47 @@ class Extension(metaclass=abc.ABCMeta):
             file_name = os.path.join(folder, hashlib.md5(key.encode('utf-8')).hexdigest() + ".json")
 
             self.dump_data(to_dump, file_name, indent=0)
+
+    def parse_cmds_in_parallel(self, cmds, unwrap):
+        if os.environ.get("CLADE_DEBUG"):
+            for cmd in cmds:
+                unwrap(self, cmd)
+            return
+
+        if self.conf.get("cpu_count"):
+            max_workers = self.conf.get("cpu_count")
+        else:
+            max_workers = os.cpu_count()
+
+        with concurrent.futures.ProcessPoolExecutor(
+            max_workers=max_workers
+        ) as p:
+            futures = []
+            for cmd in cmds:
+                f = p.submit(unwrap, self, cmd)
+                futures.append(f)
+
+            total_cmds = len(futures)
+            if total_cmds:
+                self.log("Parsing {} commands".format(total_cmds))
+
+                # Track progress
+                while True:
+                    finished_cmds = len([x for x in futures if x.done()])
+                    msg = "\t {} of {} commands are processed".format(
+                        finished_cmds, total_cmds
+                    )
+                    print(msg, end="\r")
+
+                    if finished_cmds == total_cmds:
+                        print(" " * len(msg.expandtabs()), end="\r")
+
+                        for f in futures:
+                            try:
+                                f.result()
+                            except Exception as e:
+                                raise RuntimeError("Something happened in the child process: {}".format(e))
+                        break
 
     @staticmethod
     def get_all_extensions():

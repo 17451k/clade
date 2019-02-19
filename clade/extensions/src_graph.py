@@ -53,9 +53,10 @@ class SrcGraph(Extension):
 
     @Extension.prepare
     def parse(self, cmds_file):
-        self.log("Start source graph constructing")
+        self.log("Processing {} commands".format(len(list(self.load_all_cmds()))))
 
-        self.__generate_src_graph(cmds_file)
+        cmds_iter = self.load_all_cmds()
+        self.__generate_src_graph(cmds_iter)
         self.dump_data(self.src_graph, self.src_graph_file)
         self.dump_data(self.src_sizes, self.src_sizes_file)
         self.dump_data_by_key(self.src_graph, self.src_graph_folder)
@@ -64,7 +65,6 @@ class SrcGraph(Extension):
             self.warning("Source graph is empty")
 
         self.src_graph.clear()
-        self.log("Constructing finished")
 
     def load_all_cmds(self):
         for ext_name in [
@@ -76,13 +76,13 @@ class SrcGraph(Extension):
                 cmd["type"] = ext_name
                 yield cmd
 
-    def __generate_src_graph(self, cmds_file):
+    def __generate_src_graph(self, cmds):
         try:
             cmd_graph = self.extensions["CmdGraph"].load_cmd_graph()
         except FileNotFoundError:
             return
 
-        for cmd in self.load_all_cmds():
+        for cmd in cmds:
             cmd_id = str(cmd["id"])
             cmd_type = cmd["type"]
 
@@ -97,7 +97,7 @@ class SrcGraph(Extension):
 
                 if norm_in not in self.src_graph:
                     self.src_graph[norm_in] = self.__get_new_value()
-                    self.src_sizes[norm_in] = self.__estimate_loc_size(
+                    self.src_sizes[norm_in] = self.__get_file_len(
                         os.path.join(cmd["cwd"], src_file)
                     )
 
@@ -115,7 +115,8 @@ class SrcGraph(Extension):
 
         return used_by
 
-    def __estimate_loc_size(self, file):
+    def __get_file_len(self, file):
+        """Count number of lines in the file."""
         try:
             with open(file, "rb") as f:
                 for i, _ in enumerate(f):

@@ -46,7 +46,7 @@ class Storage(Extension):
             os.makedirs(os.path.dirname(dst), exist_ok=True)
             shutil.copyfile(filename, dst)
         except FileNotFoundError as e:
-            self.warning(e)
+            self.debug(e)
         except shutil.SameFileError:
             pass
 

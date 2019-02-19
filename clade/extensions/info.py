@@ -27,14 +27,6 @@ from clade.extensions.opts import filter_opts
 from clade.extensions.utils import common_main
 
 
-def unwrap(*args, **kwargs):
-    return Info._run_cif(*args, **kwargs)
-
-
-def unwrap_normalize(*args, **kwargs):
-    return Info._normilize_file(*args, **kwargs)
-
-
 class Info(Extension):
     always_requires = ["SrcGraph", "Path", "Storage"]
     requires = always_requires + ["CC", "CL"]
@@ -98,7 +90,7 @@ class Info(Extension):
 
     @Extension.prepare
     def parse(self, cmds_file):
-        if not shutil.which("cif"):
+        if not shutil.which(self.conf.get("Info.cif", "cif")):
             raise RuntimeError("Can't find CIF in PATH")
 
         self.log("Start CIF")
@@ -108,16 +100,7 @@ class Info(Extension):
         if not cmds:
             raise RuntimeError("There are no parsed compiler commands")
 
-        # TODO: remove later
-        if os.environ.get("CLADE_DEBUG"):
-            for cmd in cmds:
-                self._run_cif(cmd)
-        else:
-            with concurrent.futures.ProcessPoolExecutor(
-                max_workers=os.cpu_count()
-            ) as p:
-                for cmd in cmds:
-                    p.submit(unwrap, self, cmd)
+        self.parse_cmds_in_parallel(cmds, Info._run_cif)
 
         if os.path.exists(self.temp_dir):
             shutil.rmtree(self.temp_dir)
@@ -137,7 +120,6 @@ class Info(Extension):
             self.log("CIF finished with errors. Log: {}".format(self.err_log))
 
         self.__normalize_cif_output(cmds_file)
-        self.log("Finish")
 
     def _run_cif(self, cmd):
         if self.__is_cmd_bad_for_cif(cmd):
@@ -272,10 +254,14 @@ class Info(Extension):
                             )
 
                             if "\\/" in path:
-                                self.warning("Normalized path looks weird: {!r}".format(path))
+                                self.warning(
+                                    "Normalized path looks weird: {!r}".format(
+                                        path
+                                    )
+                                )
 
                             path = path.replace(storage, "")
-                            temp_fh.write("\"{}\" {}\n".format(path, rest))
+                            temp_fh.write('"{}" {}\n'.format(path, rest))
                         else:
                             temp_fh.write(line)
 
@@ -293,7 +279,7 @@ class Info(Extension):
             max_workers=os.cpu_count()
         ) as p:
             for file in [f for f in self.files if f != self.init_global]:
-                p.submit(unwrap_normalize, self, file)
+                p.submit(Info._normilize_file, self, file)
 
         self.log("Normalizing finished")
 
