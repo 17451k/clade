@@ -207,7 +207,7 @@ class Callgraph(Extension):
         is_builtin = re.compile(r'(__builtin)|(__compiletime)')
 
         for file_line in self.extensions["Info"].iter_functions_usages():
-            m = re.match(r'(\S*) (\S*) (\S*) (\S*)', file_line)
+            m = re.match(r'\"(.*?)\" (\S*) (\S*) (\S*)', file_line)
             if m:
                 context_file, context_func, func, line = m.groups()
 
