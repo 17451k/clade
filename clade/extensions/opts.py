@@ -477,7 +477,7 @@ requires_value = {
 
 # This options will be used in a regular expression
 # So you can write "-mindirect-branch" instead of "-mindirect-branch=thunk-extern"
-cif_include_opts = ["-include", "-I", "-iquote", "-isystem", "-idirafter"]
+cif_include_opts = ["-include", "-I", "-iquote", "-isystem", "-idirafter", "-imacros"]
 cif_supported_opts = ["-D", "-U"] + cif_include_opts
 
 i_regex = re.compile("(" + "|".join(cif_include_opts) + ")=?(.*)")
