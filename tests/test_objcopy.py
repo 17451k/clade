@@ -25,7 +25,7 @@ def test_objcopy(tmpdir, cmds_file):
     c = Objcopy(tmpdir)
     c.parse(cmds_file)
 
-    cmds = c.load_all_cmds()
+    cmds = c.load_all_cmds(with_opts=True, with_raw=True)
     assert len(cmds) == 2
     for cmd in cmds:
         assert len(cmd["in"]) == 1

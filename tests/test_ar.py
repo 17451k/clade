@@ -20,7 +20,7 @@ def test_ar(tmpdir, cmds_file):
     c = AR(tmpdir)
     c.parse(cmds_file)
 
-    cmds = c.load_all_cmds()
+    cmds = c.load_all_cmds(with_opts=True, with_raw=True)
     assert len(cmds) == 1
     assert len(cmds[0]["in"]) == 2
     assert len(cmds[0]["out"]) == 1

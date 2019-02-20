@@ -15,6 +15,7 @@
 
 import codecs
 import concurrent.futures
+import gc
 import hashlib
 import os
 import re
@@ -95,7 +96,7 @@ class Info(Extension):
 
         self.log("Start CIF")
 
-        cmds = self.extensions["SrcGraph"].load_all_cmds()
+        cmds = list(self.extensions["SrcGraph"].load_all_cmds())
 
         if not cmds:
             raise RuntimeError("There are no parsed compiler commands")
@@ -207,6 +208,9 @@ class Info(Extension):
                 self.__save_log(cif_args, e.output, self.err_log)
                 self.__save_log(cif_args, e.output, self.cif_log)
                 return
+
+        # Force garbage collector to work
+        gc.collect()
 
     def __is_cmd_bad_for_cif(self, cmd):
         if cmd["in"] == []:

@@ -162,7 +162,7 @@ class Clade():
 
         return self.cmd_graph[cmd_id]["type"]
 
-    def get_cmd(self, cmd_id, with_opts=True, with_deps=False):
+    def get_cmd(self, cmd_id, with_opts=True, with_raw=True, with_deps=False):
         """Get command by its identifier."""
         cmd_type = self.get_cmd_type(cmd_id)
 
@@ -175,6 +175,9 @@ class Clade():
         if with_opts:
             cmd["opts"] = self.get_cmd_opts(cmd_id)
 
+        if with_raw:
+            cmd["command"] = self.get_cmd_raw(cmd_id)
+
         if with_deps:
             cmd["deps"] = self.get_cc_deps(cmd_id)
 
@@ -186,6 +189,13 @@ class Clade():
         ext_obj = self.CmdGraph.get_ext_obj(cmd_type)
 
         return ext_obj.load_opts_by_id(cmd_id)
+
+    def get_cmd_raw(self, cmd_id):
+        """Get raw intercepted command by its identifier."""
+        cmd_type = self.get_cmd_type(cmd_id)
+        ext_obj = self.CmdGraph.get_ext_obj(cmd_type)
+
+        return ext_obj.load_raw_by_id(cmd_id)
 
     def get_cc_deps(self, cmd_id):
         """Get list of dependencies of a CC command by its identifier."""

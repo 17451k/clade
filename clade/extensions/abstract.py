@@ -251,6 +251,9 @@ class Extension(metaclass=abc.ABCMeta):
                     futures.append(f)
 
                 while True:
+                    if not futures:
+                        break
+
                     done_futures = [x for x in futures if x.done()]
 
                     # Remove all futures that are already completed
@@ -273,11 +276,6 @@ class Extension(metaclass=abc.ABCMeta):
                         except Exception as e:
                             raise RuntimeError("Something happened in the child process: {}".format(e))
 
-                    if not futures:
-                        if total_cmds:
-                            print(" " * len(msg.expandtabs()), end="\r")
-                        break
-
                     # Submit next chunk if the current one is almost processed
                     finished_chunk_cmds = len([x for x in chunk_futures if x.done()])
                     if finished_chunk_cmds > (chunk_size - chunk_size // 10):
@@ -287,6 +285,8 @@ class Extension(metaclass=abc.ABCMeta):
                     # skip sleep only for very small projects
                     if not total_cmds or total_cmds > 10:
                         time.sleep(0.1)
+
+            print(" " * 79, end="\r")
 
     @staticmethod
     def get_all_extensions():

@@ -22,7 +22,7 @@ def test_ld(tmpdir, cmds_file):
     c = LD(tmpdir)
     c.parse(cmds_file)
 
-    cmds = c.load_all_cmds()
+    cmds = c.load_all_cmds(with_opts=True, with_raw=True)
 
     target_cmd = dict()
 

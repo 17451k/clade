@@ -41,9 +41,9 @@ class Common(Extension, metaclass=abc.ABCMeta):
     def __init__(self, work_dir, conf=None, preset="base"):
         super().__init__(work_dir, conf, preset)
 
-        self.cmds_dir = "cmds"
+        self.raw_dir = "raw"
         self.opts_dir = "opts"
-        self.io_dir = "io"
+        self.cmds_dir = "cmds"
 
         cmd_filter = self.conf.get("Common.filter", [])
         cmd_filter_in = self.conf.get("Common.filter_in", [])
@@ -132,19 +132,19 @@ class Common(Extension, metaclass=abc.ABCMeta):
         )
 
     def dump_cmd_by_id(self, id, cmd):
-        self.dump_io_by_id(
-            cmd["id"], {i: cmd[i] for i in cmd if i in ["in", "out", "cwd"]}
-        )
         self.dump_opts_by_id(cmd["id"], cmd["opts"])
         del cmd["opts"]
+        self.dump_raw_by_id(cmd["id"], cmd["command"])
+        del cmd["command"]
+
         self.dump_data(cmd, os.path.join(self.cmds_dir, "{}.json".format(id)))
 
-    def load_io_by_id(self, id):
-        io_file = os.path.join(self.io_dir, "{}.json".format(id))
-        return self.load_data(io_file, raise_exception=False)
+    def load_raw_by_id(self, id):
+        raw_file = os.path.join(self.raw_dir, "{}.json".format(id))
+        return self.load_data(raw_file, raise_exception=False)
 
-    def dump_io_by_id(self, id, io):
-        self.dump_data(io, os.path.join(self.io_dir, "{}.json".format(id)))
+    def dump_raw_by_id(self, id, raw_command):
+        self.dump_data(raw_command, os.path.join(self.raw_dir, "{}.json".format(id)))
 
     def load_opts_by_id(self, id):
         opts_file = os.path.join(self.opts_dir, "{}.json".format(id))
@@ -171,7 +171,7 @@ class Common(Extension, metaclass=abc.ABCMeta):
 
         self.dump_data(merged_cmds, "cmds.json")
 
-    def load_all_cmds(self, with_opts=True, filter_by_pid=True):
+    def load_all_cmds(self, with_opts=False, with_raw=False, filter_by_pid=True):
         """Load all parsed commands."""
         cmds = self.load_data("cmds.json", raise_exception=False)
 
@@ -184,6 +184,11 @@ class Common(Extension, metaclass=abc.ABCMeta):
             for cmd in cmds:
                 if "opts" not in cmd:
                     cmd["opts"] = self.load_opts_by_id(cmd["id"])
+
+        if with_raw:
+            for cmd in cmds:
+                if "command" not in cmd:
+                    cmd["command"] = self.load_raw_by_id(cmd["id"])
 
         return cmds
 
