@@ -22,7 +22,7 @@ import sys
 
 from clade.extensions.abstract import Extension
 from clade.extensions.opts import requires_value
-from clade.cmds import iter_cmds_by_which, open_cmds_file
+from clade.cmds import iter_cmds_by_which, number_of_cmds_by_which
 
 
 def unwrap(self, cmd):
@@ -66,9 +66,10 @@ class Common(Extension, metaclass=abc.ABCMeta):
     @Extension.prepare
     def parse(self, cmds_file, which_list):
         """Multiprocess parsing of build commands filtered by 'which' field."""
-        with open_cmds_file(cmds_file) as cmds_fp:
-            cmds = iter_cmds_by_which(cmds_fp, which_list)
-            self.parse_cmds_in_parallel(cmds, unwrap)
+
+        total_cmds = number_of_cmds_by_which(cmds_file, which_list)
+        cmds = iter_cmds_by_which(cmds_file, which_list)
+        self.parse_cmds_in_parallel(cmds, unwrap, total_cmds=total_cmds)
 
         self.__merge_all_cmds()
 

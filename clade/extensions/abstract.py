@@ -18,11 +18,13 @@ import concurrent.futures
 import fnmatch
 import glob
 import hashlib
+import itertools
 import logging
 import os
 import shutil
 import sys
 import tempfile
+import time
 import ujson
 
 import clade.cmds
@@ -203,7 +205,18 @@ class Extension(metaclass=abc.ABCMeta):
 
             self.dump_data(to_dump, file_name, indent=0)
 
-    def parse_cmds_in_parallel(self, cmds, unwrap):
+    def __get_cmd_chunk(self, cmds, chunk_size=1000):
+        cmds_it = iter(cmds)
+
+        while True:
+            piece = list(itertools.islice(cmds_it, chunk_size))
+
+            if piece:
+                yield piece
+            else:
+                return
+
+    def parse_cmds_in_parallel(self, cmds, unwrap, total_cmds=None):
         if os.environ.get("CLADE_DEBUG"):
             for cmd in cmds:
                 unwrap(self, cmd)
@@ -214,35 +227,67 @@ class Extension(metaclass=abc.ABCMeta):
         else:
             max_workers = os.cpu_count()
 
+        # cmds is eather list, tuple or generator
+        if type(cmds) is list or type(cmds) is tuple:
+            total_cmds = len(cmds)
+
+        # Print progress only of we know total number of commands
+        if total_cmds:
+            self.log("Parsing {} commands".format(total_cmds))
+
         with concurrent.futures.ProcessPoolExecutor(
             max_workers=max_workers
         ) as p:
+            chunk_size = 2000
             futures = []
-            for cmd in cmds:
-                f = p.submit(unwrap, self, cmd)
-                futures.append(f)
+            finished_cmds = 0
 
-            total_cmds = len(futures)
-            if total_cmds:
-                self.log("Parsing {} commands".format(total_cmds))
+            # Submit commands to executor in chunks
+            for cmd_chunk in self.__get_cmd_chunk(cmds, chunk_size=chunk_size):
+                chunk_futures = []
 
-                # Track progress
+                for cmd in cmd_chunk:
+                    f = p.submit(unwrap, self, cmd)
+                    chunk_futures.append(f)
+                    futures.append(f)
+
                 while True:
-                    finished_cmds = len([x for x in futures if x.done()])
-                    msg = "\t {} of {} commands are processed".format(
-                        finished_cmds, total_cmds
-                    )
-                    print(msg, end="\r")
+                    done_futures = [x for x in futures if x.done()]
 
-                    if finished_cmds == total_cmds:
-                        print(" " * len(msg.expandtabs()), end="\r")
+                    # Track progress
+                    if total_cmds:
+                        finished_cmds += len(done_futures)
 
-                        for f in futures:
-                            try:
-                                f.result()
-                            except Exception as e:
-                                raise RuntimeError("Something happened in the child process: {}".format(e))
+                        msg = "\t {} of {} commands are processed".format(
+                            finished_cmds, total_cmds
+                        )
+                        print(msg, end="\r")
+
+                        if not futures:
+                            print(" " * len(msg.expandtabs()), end="\r")
+
+                    # Check return value of all finished futures
+                    for f in done_futures:
+                        try:
+                            f.result()
+                        except Exception as e:
+                            raise RuntimeError("Something happened in the child process: {}".format(e))
+
+                    # Remove all futures that are already completed
+                    # to reduce memory usage
+                    futures = [x for x in futures if not x.done()]
+
+                    if not futures:
                         break
+
+                    # Submit next chunk if the current one is almost processed
+                    finished_chunk_cmds = len([x for x in chunk_futures if x.done()])
+                    if finished_chunk_cmds > (chunk_size - chunk_size // 10):
+                        break
+
+                    # Save a little bit of CPU time
+                    if total_cmds and total_cmds > chunk_size:
+                        time.sleep(0.1)
 
     @staticmethod
     def get_all_extensions():

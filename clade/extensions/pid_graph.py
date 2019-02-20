@@ -19,7 +19,7 @@ import sys
 
 from graphviz import Digraph
 
-from clade.cmds import iter_cmds, open_cmds_file, get_last_id
+from clade.cmds import iter_cmds, get_last_id
 from clade.extensions.abstract import Extension
 from clade.extensions.utils import common_main
 
@@ -40,13 +40,12 @@ class PidGraph(Extension):
 
     @Extension.prepare
     def parse(self, cmds_file):
-        self.log("Processing {} commands".format(get_last_id(cmds_file)))
+        self.log("Parsing {} commands".format(get_last_id(cmds_file)))
 
-        with open_cmds_file(cmds_file) as cmds_fp:
-            for cmd in iter_cmds(cmds_fp):
-                self.pid_by_id[cmd["id"]] = cmd["pid"]
+        for cmd in iter_cmds(cmds_file):
+            self.pid_by_id[cmd["id"]] = cmd["pid"]
 
-                self.graph[cmd["id"]] = [cmd["pid"]] + self.graph.get(cmd["pid"], [])
+            self.graph[cmd["id"]] = [cmd["pid"]] + self.graph.get(cmd["pid"], [])
 
         self.dump_data(self.graph, self.graph_file)
         self.dump_data(self.pid_by_id, self.pid_by_id_file)
@@ -62,16 +61,15 @@ class PidGraph(Extension):
     def __print_pid_graph(self, cmds_file, reduced=False):
         dot = Digraph(graph_attr={'rankdir': 'LR'}, node_attr={'shape': 'rectangle'})
 
-        with open_cmds_file(cmds_file) as cmds_fp:
-            cmds = list(iter_cmds(cmds_fp))
+        cmds = list(iter_cmds(cmds_file))
 
-            for cmd in cmds:
-                cmd_node = "[{}] {}".format(cmd["id"], cmd["which"])
-                dot.node(cmd["id"], label=re.escape(cmd_node))
+        for cmd in cmds:
+            cmd_node = "[{}] {}".format(cmd["id"], cmd["which"])
+            dot.node(cmd["id"], label=re.escape(cmd_node))
 
-            for cmd in cmds:
-                for parent_cmd in [x for x in cmds if x["id"] == cmd["pid"]]:
-                    dot.edge(parent_cmd["id"], cmd["id"])
+        for cmd in cmds:
+            for parent_cmd in [x for x in cmds if x["id"] == cmd["pid"]]:
+                dot.edge(parent_cmd["id"], cmd["id"])
 
         dot.render(self.graph_dot)
 

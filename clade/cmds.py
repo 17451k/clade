@@ -34,30 +34,47 @@ def open_cmds_file(cmds_file):
     return open(cmds_file)
 
 
-def iter_cmds_by_which(cmds_fp, which_list):
+def iter_cmds_by_which(cmds_file, which_list):
     """Get an iterator over all intercepted commands filtered by 'which' field.
 
     Args:
-        cmds_fp: A file object.
+        cmds_file: Path to the txt file with intercepted commands.
         which_list: A list of strings to filter command by 'which' field.
     """
-    for cmd in iter_cmds(cmds_fp):
+    for cmd in iter_cmds(cmds_file):
         for which in which_list:
             if re.search(which, cmd["which"]):
                 yield cmd
                 break
 
 
-def iter_cmds(cmds_fp):
+def number_of_cmds_by_which(cmds_file, which_list):
+    """Retun number of all intercepted commands filtered by 'which' field.
+
+    Args:
+        cmds_file: Path to the txt file with intercepted commands.
+        which_list: A list of strings to filter command by 'which' field.
+    """
+
+    i = 0
+
+    for _ in iter_cmds_by_which(cmds_file, which_list):
+        i += 1
+
+    return i
+
+
+def iter_cmds(cmds_file):
     """Get an iterator over all intercepted commands.
 
     Args:
-        cmds_fp: A file object.
+        cmds_file: Path to the txt file with intercepted commands.
     """
-    for cmd_id, line in enumerate(cmds_fp):
-        cmd = split_cmd(line)
-        cmd["id"] = str(cmd_id + 1)  # cmd_id should be line number in cmds_fp file
-        yield cmd
+    with open_cmds_file(cmds_file) as cmds_fp:
+        for cmd_id, line in enumerate(cmds_fp):
+            cmd = split_cmd(line)
+            cmd["id"] = str(cmd_id + 1)  # cmd_id should be line number in cmds_fp file
+            yield cmd
 
 
 def split_cmd(line):
@@ -75,7 +92,7 @@ def join_cmd(cmd):
 
 def get_first_cmd(cmds_file):
     """Get first intercepted command."""
-    return next(iter_cmds(open_cmds_file(cmds_file)))
+    return next(iter_cmds(cmds_file))
 
 
 def get_build_cwd(cmds_file):
@@ -86,7 +103,7 @@ def get_build_cwd(cmds_file):
 
 def get_last_cmd(cmds_file):
     """Get last intercepted command."""
-    iterable = iter_cmds(open_cmds_file(cmds_file))
+    iterable = iter_cmds(cmds_file)
 
     last_cmd = next(iterable)
     for last_cmd in iterable:
@@ -113,12 +130,11 @@ def get_all_cmds(cmds_file):
 def get_stats(cmds_file):
     """Get statistics of intercepted commands number."""
     stats = dict()
-    with open_cmds_file(cmds_file) as cmds_fp:
-        for cmd in iter_cmds(cmds_fp):
-            if cmd["which"] in stats:
-                stats[cmd["which"]] += 1
-            else:
-                stats[cmd["which"]] = 1
+    for cmd in iter_cmds(cmds_file):
+        if cmd["which"] in stats:
+            stats[cmd["which"]] += 1
+        else:
+            stats[cmd["which"]] = 1
 
     return stats
 

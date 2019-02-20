@@ -78,7 +78,7 @@ class CmdGraph(Extension):
     @Extension.prepare
     def parse(self, cmds_file):
         cmds = self.load_all_cmds()
-        self.log("Processing {} commands".format(len(cmds)))
+        self.log("Parsing {} commands".format(len(cmds)))
 
         self.normalize_all_paths(cmds)
 

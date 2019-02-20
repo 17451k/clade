@@ -31,13 +31,11 @@ def test_bad_open(cmds_file):
 
 
 def test_iter(cmds_file):
-    with open_cmds_file(cmds_file) as cmds_fp:
-        assert len(list(iter_cmds(cmds_fp))) >= number_of_cmds
+    assert len(list(iter_cmds(cmds_file))) >= number_of_cmds
 
 
 def test_iter_by_which(cmds_file):
-    with open_cmds_file(cmds_file) as cmds_fp:
-        assert len(list(iter_cmds_by_which(cmds_fp, [gcc_which]))) >= number_of_gcc_cmds
+    assert len(list(iter_cmds_by_which(cmds_file, [gcc_which]))) >= number_of_gcc_cmds
 
 
 def test_get_build_cmd(cmds_file):

@@ -53,7 +53,7 @@ class SrcGraph(Extension):
 
     @Extension.prepare
     def parse(self, cmds_file):
-        self.log("Processing {} commands".format(len(list(self.load_all_cmds()))))
+        self.log("Parsing {} commands".format(len(list(self.load_all_cmds()))))
 
         cmds_iter = self.load_all_cmds()
         self.__generate_src_graph(cmds_iter)
