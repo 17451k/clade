@@ -14,7 +14,6 @@
 # limitations under the License.
 
 import abc
-import concurrent.futures
 import fnmatch
 import glob
 import hashlib
@@ -26,6 +25,8 @@ import sys
 import tempfile
 import time
 import ujson
+
+from concurrent.futures import ProcessPoolExecutor
 
 import clade.cmds
 from clade.extensions.utils import merge_preset_to_conf
@@ -235,9 +236,7 @@ class Extension(metaclass=abc.ABCMeta):
         if total_cmds:
             self.log("Parsing {} commands".format(total_cmds))
 
-        with concurrent.futures.ProcessPoolExecutor(
-            max_workers=max_workers
-        ) as p:
+        with ProcessPoolExecutor(max_workers=max_workers) as p:
             chunk_size = 2000
             futures = []
             finished_cmds = 0
@@ -254,6 +253,10 @@ class Extension(metaclass=abc.ABCMeta):
                 while True:
                     done_futures = [x for x in futures if x.done()]
 
+                    # Remove all futures that are already completed
+                    # to reduce memory usage
+                    futures = [x for x in futures if not x.done()]
+
                     # Track progress
                     if total_cmds:
                         finished_cmds += len(done_futures)
@@ -263,9 +266,6 @@ class Extension(metaclass=abc.ABCMeta):
                         )
                         print(msg, end="\r")
 
-                        if not futures:
-                            print(" " * len(msg.expandtabs()), end="\r")
-
                     # Check return value of all finished futures
                     for f in done_futures:
                         try:
@@ -273,11 +273,9 @@ class Extension(metaclass=abc.ABCMeta):
                         except Exception as e:
                             raise RuntimeError("Something happened in the child process: {}".format(e))
 
-                    # Remove all futures that are already completed
-                    # to reduce memory usage
-                    futures = [x for x in futures if not x.done()]
-
                     if not futures:
+                        if total_cmds:
+                            print(" " * len(msg.expandtabs()), end="\r")
                         break
 
                     # Submit next chunk if the current one is almost processed
@@ -286,7 +284,8 @@ class Extension(metaclass=abc.ABCMeta):
                         break
 
                     # Save a little bit of CPU time
-                    if total_cmds and total_cmds > chunk_size:
+                    # skip sleep only for very small projects
+                    if not total_cmds or total_cmds > 10:
                         time.sleep(0.1)
 
     @staticmethod
