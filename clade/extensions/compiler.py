@@ -75,7 +75,6 @@ class Compiler(Common):
 
         for cmd_in in cmd["in"]:
             pre_file = self.get_pre_file_by_path(cmd_in, cmd["cwd"])
-            print(pre_file)
 
             if os.path.exists(pre_file):
                 pre_files.append(pre_file)
