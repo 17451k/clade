@@ -28,6 +28,7 @@ from clade.extensions.src_graph import SrcGraph
 from clade.extensions.storage import Storage
 from clade.extensions.typedefs import Typedefs
 from clade.extensions.variables import Variables
+from clade.extensions.path import Path
 from clade.extensions.utils import parse_args
 
 
@@ -76,6 +77,8 @@ class Clade():
 
         self._CDB = None
         self._cdb = None
+
+        self._Path = None
 
     def intercept(self, command, cwd=os.getcwd(), append=False, use_wrappers=False):
         """Execute intercepting of build commands.
@@ -162,7 +165,7 @@ class Clade():
 
         return self.cmd_graph[cmd_id]["type"]
 
-    def get_cmd(self, cmd_id, with_opts=True, with_raw=True, with_deps=False):
+    def get_cmd(self, cmd_id, with_opts=False, with_raw=False, with_deps=False):
         """Get command by its identifier."""
         cmd_type = self.get_cmd_type(cmd_id)
 
@@ -179,7 +182,9 @@ class Clade():
             cmd["command"] = self.get_cmd_raw(cmd_id)
 
         if with_deps:
-            cmd["deps"] = self.get_cc_deps(cmd_id)
+            cmd["deps"] = self.get_cmd_deps(cmd_id)
+
+        cmd = self.__normalize_cmd(cmd)
 
         return cmd
 
@@ -197,20 +202,23 @@ class Clade():
 
         return ext_obj.load_raw_by_id(cmd_id)
 
-    def get_cc_deps(self, cmd_id):
-        """Get list of dependencies of a CC command by its identifier."""
+    def get_cmd_deps(self, cmd_id):
+        """Get list of dependencies of a compiler command by its identifier."""
         cmd_type = self.get_cmd_type(cmd_id)
 
-        if cmd_type != "CC":
-            raise RuntimeError("Only CC commands have dependencies")
+        if cmd_type not in ["CC", "CL"]:
+            raise RuntimeError("Only compiler commands have dependencies")
 
         cc_obj = self.CmdGraph.get_ext_obj(cmd_type)
 
-        return cc_obj.load_deps_by_id(cmd_id)
+        deps = cc_obj.load_deps_by_id(cmd_id)
+        cwd = cc_obj.load_cmd_by_id(cmd_id)["cwd"]
+        return self.__normalize_deps(deps, cwd)
 
     def get_all_cmds_by_type(self, cmd_type):
         """Get list of all parsed commands filtered by their type."""
-        return self.CmdGraph.load_all_cmds_by_type(cmd_type)
+        cmds = self.CmdGraph.load_all_cmds_by_type(cmd_type)
+        return [self.__normalize_cmd(cmd) for cmd in cmds]
 
     def get_root_cmds(self, cmd_id):
         """Get list of identifiers of all root commands from a command graph of a given command identifier."""
@@ -522,6 +530,31 @@ class Clade():
             self._cdb = self.CDB.load_cdb()
 
         return self._cdb
+
+    @property
+    def Path(self):
+        """Object of "Path" extension."""
+        if not self._Path:
+            self._Path = Path(self.work_dir, self.conf, self.preset)
+
+        return self._Path
+
+    def __normalize_cmd(self, cmd):
+        if "cwd" in cmd and "in" in cmd:
+            cmd["in"] = [self.Path.get_rel_path(cmd_in, cmd["cwd"]) for cmd_in in cmd["in"]]
+
+        if "cwd" in cmd and "out" in cmd:
+            cmd["out"] = [self.Path.get_rel_path(cmd_out, cmd["cwd"]) for cmd_out in cmd["out"]]
+
+        # deps are normalized separately
+
+        if "cwd" in cmd:
+            cmd["cwd"] = self.Path.get_abs_path(cmd["cwd"])
+
+        return cmd
+
+    def __normalize_deps(self, deps, cwd):
+        return [self.Path.get_rel_path(d, cwd) for d in deps]
 
 
 def parse_all_main(args=sys.argv[1:]):

@@ -54,7 +54,7 @@ def test_cmd_graph(tmpdir, cmds_file):
         for with_opts in (True, False):
             assert ("opts" in c.get_cmd(cmd_id, with_opts=with_opts)) == with_opts
 
-        assert "command" in c.get_cmd(cmd_id)
+        assert "command" in c.get_cmd(cmd_id, with_raw=True)
 
         if c.get_cmd_type(cmd_id) == "CC":
             for with_deps in (True, False):
@@ -64,7 +64,7 @@ def test_cmd_graph(tmpdir, cmds_file):
                 c.get_cmd(cmd_id, with_deps=True)
 
             with pytest.raises(RuntimeError):
-                c.get_cc_deps(cmd_id)
+                c.get_cmd_deps(cmd_id)
 
     for cmd_id in c.cmd_ids:
         root_cmds = c.get_root_cmds(cmd_id)
