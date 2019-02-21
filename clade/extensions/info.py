@@ -203,10 +203,10 @@ class Info(Extension):
                     cwd=cwd,
                     universal_newlines=True,
                 )
-                self.__save_log(cif_args, output, self.cif_log)
+                self.__save_log(cmd["id"], cwd, cif_args, output, self.cif_log)
             except subprocess.CalledProcessError as e:
-                self.__save_log(cif_args, e.output, self.err_log)
-                self.__save_log(cif_args, e.output, self.cif_log)
+                self.__save_log(cmd["id"], cwd, cif_args, e.output, self.err_log)
+                self.__save_log(cmd["id"], cwd, cif_args, e.output, self.cif_log)
                 return
 
         # Force garbage collector to work
@@ -225,11 +225,13 @@ class Info(Extension):
 
         return False
 
-    def __save_log(self, args, log, file):
+    def __save_log(self, cmd_id, cwd, args, log, file):
         os.makedirs(self.work_dir, exist_ok=True)
 
         with open(file, "a") as log_fh:
-            log_fh.write(" ".join(args) + "\n\n")
+            log_fh.write("COMMAND_ID: {}\n".format(cmd_id))
+            log_fh.write("CWD: {}\n".format(cwd))
+            log_fh.write("CIF ARGS: " + " ".join(args) + "\n\n")
             log_fh.writelines(log)
             log_fh.write("\n\n")
 
