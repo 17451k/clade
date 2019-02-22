@@ -149,14 +149,14 @@ class Clade():
     @property
     def cmds(self):
         """List of all parsed commands."""
-        return self.CmdGraph.load_all_cmds()
+        cmds = self.CmdGraph.load_all_cmds()
+        return [self.__normalize_cmd(cmd) for cmd in cmds]
 
     @property
     def compilation_cmds(self):
         """List of all parsed compillation commands (C projects only)."""
-        cc_obj = self.CmdGraph.get_ext_obj("CC")
-
-        return cc_obj.load_all_cmds(compile_only=True)
+        cmds = self.SrcGraph.load_all_cmds()
+        return [self.__normalize_cmd(cmd) for cmd in cmds]
 
     def get_cmd_type(self, cmd_id):
         """Get type of a command by its identifier."""
