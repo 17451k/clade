@@ -413,7 +413,7 @@ class Clade():
     def functions_by_file(self):
         """Dictionary with definition of C functions."""
         if not self._functions_by_file:
-            self._functions_by_file = self.Functions.load_functions()
+            self._functions_by_file = self.Functions.load_functions_by_file()
 
         return self._functions_by_file
 
