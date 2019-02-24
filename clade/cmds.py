@@ -86,7 +86,7 @@ def split_cmd(line):
 
 def join_cmd(cmd):
     """Convert a single intercepted command from dictionary to cmds.txt line."""
-    line = DELIMITER.join([cmd["cwd"], cmd["pid"], cmd["which"], *cmd["command"]])
+    line = DELIMITER.join([cmd["cwd"], cmd["pid"], cmd["which"]] + cmd["command"])
     return line
 
 
