@@ -25,7 +25,7 @@ main_c = os.path.abspath("tests/test_project/main.c")
 def funcs_is_ok(c):
     funcs = c.load_functions()
 
-    assert funcs["main"][main_c]["declarations"] is None
+    assert not funcs["main"][main_c]["declarations"]
     assert funcs["main"][main_c]["line"] == "8"
     assert funcs["main"][main_c]["signature"] == "int main(void);"
     assert funcs["main"][main_c]["type"] == "global"

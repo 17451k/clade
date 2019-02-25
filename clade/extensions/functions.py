@@ -86,7 +86,7 @@ class Functions(Callgraph):
                 "type": func_type,
                 "line": def_line,
                 "signature": signature,
-                "declarations": None
+                "declarations": dict()
             }
 
             if func in self.funcs:
@@ -131,9 +131,6 @@ class Functions(Callgraph):
             for src_file in self.funcs[decl_name]:
                 if src_file not in self.src_graph:
                     self._error("Not in source graph: {}".format(src_file))
-
-                if not self.funcs[decl_name][src_file]["declarations"]:
-                    self.funcs[decl_name][src_file]["declarations"] = dict()
 
                 if src_file == decl_file or self._t_unit_is_common(src_file, decl_file):
                     self.funcs[decl_name][src_file]["declarations"][decl_file] = decl_val
