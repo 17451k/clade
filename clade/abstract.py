@@ -58,7 +58,11 @@ class Intercept(metaclass=abc.ABCMeta):
         env["CLADE_INTERCEPT"] = self.output
 
         # Prepare environment variables for PID graph
-        last_used_id = get_last_id(self.output)
+        if self.append:
+            last_used_id = get_last_id(self.output)
+        else:
+            last_used_id = "0"
+
         f = tempfile.NamedTemporaryFile(delete=False)
         f.write(last_used_id.encode())
         env["CLADE_ID_FILE"] = f.name
