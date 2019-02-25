@@ -147,6 +147,17 @@ def package_files(package_directory):
                 )
             )
 
+    # Add files created on the build step
+    paths.extend(
+        [
+            os.path.join("intercept", "libinterceptor.so"),
+            os.path.join("intercept", "lib", "libinterceptor.so"),
+            os.path.join("intercept", "lib64", "libinterceptor.so"),
+            os.path.join("intercept", "wrapper"),
+            os.path.join("intercept", "debugger.exe"),
+        ]
+    )
+
     return paths
 
 
@@ -180,7 +191,7 @@ except ImportError:
 
 setuptools.setup(
     name="clade",
-    version="2.2.dev1",
+    version="2.2.dev2",
     author="Ilya Shchepetkov",
     author_email="ilya.shchepetkov@yandex.ru",
     url="https://github.com/17451k/clade",
