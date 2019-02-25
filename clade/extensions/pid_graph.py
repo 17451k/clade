@@ -34,8 +34,6 @@ class PidGraph(Extension):
         self.pid_by_id = dict()
         self.pid_by_id_file = "pid_by_id.json"
 
-        self.rejected_ids_file = "rejected_ids.json"
-
         self.graph_dot = os.path.join(self.work_dir, "pid_graph.dot")
 
     @Extension.prepare
@@ -49,7 +47,6 @@ class PidGraph(Extension):
 
         self.dump_data(self.graph, self.graph_file)
         self.dump_data(self.pid_by_id, self.pid_by_id_file)
-        self.dump_data([], self.rejected_ids_file)
 
         if self.graph:
             if self.conf.get("PidGraph.as_picture"):
@@ -84,26 +81,14 @@ class PidGraph(Extension):
 
         parsed_ids = set()
         filtered_cmds = []
-        rejected_ids = self.load_rejected_ids()
 
         for cmd in sorted(cmds, key=lambda x: int(x["id"])):
-            if not (set(graph[cmd["id"]]) & parsed_ids) and cmd["id"] not in rejected_ids:
+            if not (set(graph[cmd["id"]]) & parsed_ids):
                 filtered_cmds.append(cmd)
-            else:
-                rejected_ids.add(cmd["id"])
 
             parsed_ids.add(cmd["id"])
 
-        self.update_rejected_ids(rejected_ids)
-
         return filtered_cmds
-
-    def load_rejected_ids(self):
-        return set(self.load_data(self.rejected_ids_file, raise_exception=False))
-
-    def update_rejected_ids(self, rejected_ids):
-        new_rejected_ids = self.load_rejected_ids().union(rejected_ids)
-        self.dump_data(new_rejected_ids, self.rejected_ids_file)
 
 
 def main(args=sys.argv[1:]):
