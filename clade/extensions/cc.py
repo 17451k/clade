@@ -132,7 +132,9 @@ class CC(Compiler):
         ).intersection(preprocessor_deps_opts):
             return True
 
-        if self.conf.get("CC.ignore_cc1", True) and "-cc1" in cmd["opts"]:
+        if self.conf.get("CC.ignore_cc1", True) and (
+            "-cc1" in cmd["opts"] or cmd["command"][0].endswith("cc1")
+        ):
             return True
 
         return False
