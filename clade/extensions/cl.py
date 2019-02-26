@@ -75,18 +75,14 @@ class CL(Compiler):
                                 parsed_cmd["cwd"], obj_path
                             )
 
-                        if os.path.isfile(obj_path):
+                        if obj_path.endswith(".obj"):
                             parsed_cmd["out"].append(obj_path)
-                        elif os.path.exists(obj_path):
+                        else:
                             obj_name = os.path.basename(
                                 os.path.splitext(cmd_in)[0] + ".obj"
                             )
                             parsed_cmd["out"].append(
                                 os.path.join(obj_path, obj_name)
-                            )
-                        else:
-                            raise RuntimeError(
-                                "Can't determine output file of CL command"
                             )
 
                         break
