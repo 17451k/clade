@@ -59,15 +59,16 @@ def parse_args(args):
 
     parser.add_argument(
         "-w",
-        "--work_dir",
+        "--work-dir",
         help="a path to the DIR where processed commands will be saved",
         metavar="DIR",
         default="clade",
     )
     parser.add_argument(
         "-l",
-        "--log_level",
+        "--log-level",
         help="set logging level (ERROR, INFO, or DEBUG)",
+        metavar="LEVEL",
         default="INFO",
     )
     parser.add_argument(
@@ -81,8 +82,20 @@ def parse_args(args):
         "-p",
         "--preset",
         help="a name of the preset configuration",
-        metavar="JSON",
+        metavar="NAME",
         default="base",
+    )
+    parser.add_argument(
+        "-f",
+        "--force",
+        help="force all Clade extensions to run even if their working directories are not empty",
+        action="store_true"
+    )
+    parser.add_argument(
+        "-fc",
+        "--force-current",
+        help="force the current Clade extension to run even if its working directory is not empty",
+        action="store_true"
     )
     parser.add_argument(
         dest="cmds_file", help="a path to the file with intercepted commands"
@@ -94,6 +107,8 @@ def parse_args(args):
     conf["work_dir"] = conf.get("work_dir", args.work_dir)
     conf["log_level"] = conf.get("log_level", args.log_level)
     conf["cmds_file"] = conf.get("cmds_file", args.cmds_file)
+    conf["force"] = conf.get("force", args.force)
+    conf["force_current"] = conf.get("force_current", args.force_current)
     conf["preset"] = args.preset
 
     return merge_preset_to_conf(args.preset, conf)

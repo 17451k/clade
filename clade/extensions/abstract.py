@@ -67,6 +67,14 @@ class Extension(metaclass=abc.ABCMeta):
 
         logger.setLevel(self.conf.get("log_level", "INFO"))
 
+        if self.conf.get("force") and os.path.exists(self.work_dir):
+            self.debug("Removing working directory: {!r}".format(self.work_dir))
+            shutil.rmtree(self.work_dir)
+        elif self.conf.get("force_current") and os.path.exists(self.work_dir):
+            self.debug("Removing working directory: {!r}".format(self.work_dir))
+            shutil.rmtree(self.work_dir)
+            self.conf["force_current"] = False
+
         self.already_initialised = dict()
         self.already_initialised[self.name] = self
         self.init_extensions(work_dir)

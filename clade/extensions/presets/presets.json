@@ -2,6 +2,8 @@
     "base": {
         "extends": [],
         "log_level": "INFO",
+        "force": false,
+        "force_current": false,
         "cpu_count": null,
         "Clade.build_cwd": "",
         "Wrapper.wrap_list": [],
