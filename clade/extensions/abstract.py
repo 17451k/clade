@@ -219,6 +219,9 @@ class Extension(metaclass=abc.ABCMeta):
 
     def parse_cmds_in_parallel(self, cmds, unwrap, total_cmds=None):
         if os.environ.get("CLADE_DEBUG"):
+            if total_cmds:
+                self.log("Parsing {} commands".format(total_cmds))
+
             for cmd in cmds:
                 unwrap(self, cmd)
             return
