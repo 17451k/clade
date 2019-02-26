@@ -235,7 +235,7 @@ class Info(Extension):
             log_fh.writelines(log)
             log_fh.write("\n\n")
 
-    def _normilize_file(self, file):
+    def _normalize_file(self, file):
         if not os.path.isfile(file):
             return
 
@@ -276,8 +276,6 @@ class Info(Extension):
         os.remove(file)
         os.rename(file + ".temp", file)
 
-        self.extensions["Path"].dump_paths()
-
     def __normalize_cif_output(self, cmds_file):
         self.log("Normalizing CIF output")
 
@@ -285,7 +283,7 @@ class Info(Extension):
             max_workers=os.cpu_count()
         ) as p:
             for file in [f for f in self.files if f != self.init_global]:
-                p.submit(Info._normilize_file, self, file)
+                p.submit(Info._normalize_file, self, file)
 
         self.log("Normalizing finished")
 
