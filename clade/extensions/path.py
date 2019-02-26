@@ -13,11 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import filelock
 import glob
 import os
 import sys
-import re
 
 from clade.extensions.abstract import Extension
 
@@ -27,7 +25,7 @@ class Path(Extension):
         super().__init__(work_dir, conf=conf, preset=preset)
 
         self.paths = dict()
-        self.paths_file = os.path.join(self.work_dir, "paths.txt")
+        self.paths_file = "paths.json"
 
     def parse(self, cmds_file):
         build_cwd = self.get_build_cwd(cmds_file)
@@ -63,28 +61,10 @@ class Path(Extension):
             return self.paths[key]
 
     def dump_paths(self):
-        os.makedirs(os.path.dirname(self.paths_file), exist_ok=True)
-
-        lock = filelock.FileLock(self.paths_file + ".lock")
-        with lock:
-            paths = self.load_paths()
-            paths.update(self.paths)
-
-            with open(self.paths_file, "w") as paths_fh:
-                for path in paths:
-                    paths_fh.write("{}: {}\n".format(path, paths[path]))
+        self.dump_data(self.paths, self.paths_file)
 
     def load_paths(self):
-        paths = dict()
-
-        if os.path.exists(self.paths_file):
-            with open(self.paths_file, "r") as paths_fh:
-                for line in paths_fh:
-                    m = re.search(r"(.*): (.*)", line)
-                    if m:
-                        paths[m.group(1)] = m.group(2)
-
-        return paths
+        return self.load_data(self.paths_file, raise_exception=False)
 
     def normalize_rel_paths(self, paths, cwd):
         # TODO: check that paths is a list, not a string
