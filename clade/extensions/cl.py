@@ -122,30 +122,42 @@ class CL(Compiler):
 
     def __get_deps(self, cmd_id, cmd):
         """Get a list of CL command dependencies."""
-        unparsed_deps = self.__collect_deps(cmd_id, cmd)
-        return self.__parse_deps(unparsed_deps)
+        deps_file = self.__collect_deps(cmd_id, cmd)
+        return self.__parse_deps(deps_file)
 
     def __collect_deps(self, cmd_id, cmd):
-        try:
-            deps_cmd = (
-                cmd["command"]
-                + ["/showIncludes", "/P"]
-                + self.conf.get("Compiler.extra_preprocessor_opts", [])
-            )
-            output_bytes = subprocess.check_output(
+        deps_file = os.path.join(self.temp_dir, "{}-deps.txt".format(cmd_id))
+
+        deps_cmd = (
+            cmd["command"]
+            + ["/showIncludes", "/P"]
+            + self.conf.get("Compiler.extra_preprocessor_opts", [])
+        )
+
+        with open(deps_file, "wb") as deps_fh:
+            proc = subprocess.Popen(
                 deps_cmd,
-                stderr=subprocess.STDOUT,
+                stdout=subprocess.DEVNULL,
+                stderr=deps_fh,
                 cwd=cmd["cwd"],
                 shell=True,
-                universal_newlines=False,
             )
-        except subprocess.CalledProcessError:
-            self.warning("Couldn't get dependencies")
-            self.warning("CWD: {!r}".format(cmd["cwd"]))
-            self.warning("Command: {!r}".format(" ".join(deps_cmd)))
-            return ""
+            proc.communicate()
 
-        self.__preprocess_cmd(cmd)
+            if not proc.returncode:
+                self.__preprocess_cmd(cmd)
+
+        return deps_file
+
+    def __parse_deps(self, deps_file):
+        deps = list()
+        output_bytes = None
+
+        if os.path.exists(deps_file):
+            with open(deps_file, "rb") as deps_fh:
+                output_bytes = deps_fh.read()
+
+            os.remove(deps_file)
 
         if self.conf.get("CL.deps_encoding"):
             encoding = self.conf.get("CL.deps_encoding")
@@ -153,13 +165,9 @@ class CL(Compiler):
             encoding = chardet.detect(output_bytes)["encoding"]
 
         if not encoding:
-            return ""
-        return output_bytes.decode(encoding)
+            return deps
 
-    def __parse_deps(self, unparsed_deps):
-        deps = list()
-
-        for line in unparsed_deps.split("\r\n"):
+        for line in output_bytes.decode(encoding):
             m = re.search(
                 r"(Note: including file:|Примечание: включение файла:)\s*(.*)",
                 line,
@@ -198,8 +206,8 @@ class CL(Compiler):
     def __normalize_paths(self, c_file, cwd):
         rawdata = open(c_file, 'rb').read()
 
-        if self.conf.get("CL.deps_encoding"):
-            encoding = self.conf.get("CL.deps_encoding")
+        if self.conf.get("CL.pre_encoding"):
+            encoding = self.conf.get("CL.pre_encoding")
         else:
             encoding = chardet.detect(rawdata)["encoding"]
 
