@@ -77,22 +77,16 @@ class Path(Extension):
 
         return npaths
 
-    def normalize_rel_path(self, path, cwd, cache=dict()):
-        # cache variable considerably speeds up normalizing.
-        # cache size is quite small even for extra large files.
-
+    def normalize_rel_path(self, path, cwd):
         cwd = cwd.strip()
         path = path.strip()
         key = cwd.lower() + " " + path.lower()
 
+        if not self.paths:
+            self.paths = self.load_paths()
+
         if key in self.paths:
             return self.paths[key]
-
-        if key in cache:
-            # I am not shure why it is necessary
-            # But sometimes cache variable is preserved through different launches
-            self.paths[key] = cache[key]
-            return cache[key]
 
         if not os.path.isabs(path):
             abs_path = os.path.join(cwd, path)
@@ -100,20 +94,18 @@ class Path(Extension):
             abs_path = path
 
         npath = self.normalize_abs_path(abs_path)
-        cache[key] = npath
         self.paths[key] = npath
         return npath
 
-    def normalize_abs_path(self, path, cache=dict()):
+    def normalize_abs_path(self, path):
         path = path.strip()
         key = path.lower()
 
+        if not self.paths:
+            self.paths = self.load_paths()
+
         if key in self.paths:
             return self.paths[key]
-
-        if key in cache:
-            self.paths[key] = cache[key]
-            return cache[key]
 
         npath = os.path.normpath(path)
 
@@ -124,7 +116,6 @@ class Path(Extension):
             if drive:
                 npath = "/" + drive[:-1] + tail
 
-        cache[key] = npath
         self.paths[key] = npath
         return npath
 
