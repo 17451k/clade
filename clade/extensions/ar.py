@@ -20,6 +20,8 @@ from clade.extensions.utils import common_main
 
 
 class AR(Common):
+    __version__ = "1"
+
     def parse(self, cmds_file):
         super().parse(cmds_file, self.conf.get("AR.which_list", []))
 

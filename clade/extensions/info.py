@@ -32,6 +32,8 @@ class Info(Extension):
     always_requires = ["SrcGraph", "Path", "Storage"]
     requires = always_requires + ["CC", "CL"]
 
+    __version__ = "1"
+
     def __init__(self, work_dir, conf=None, preset="base"):
         if not conf:
             conf = dict()

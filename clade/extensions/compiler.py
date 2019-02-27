@@ -29,6 +29,8 @@ class Compiler(Common):
         ".s", ".S", ".asm"  # Assembly
     ]
 
+    __version__ = "1"
+
     def store_src_files(self, deps, cwd):
         for file in deps:
             if not os.path.isabs(file):

@@ -53,6 +53,8 @@ class Extension(metaclass=abc.ABCMeta):
         FileNotFoundError: Cant find file with the build commands
     """
 
+    __version__ = "1"
+
     def __init__(self, work_dir, conf=None, preset="base"):
         self.name = self.__class__.__name__
         self.work_dir = os.path.join(os.path.abspath(str(work_dir)), self.name)
@@ -79,6 +81,11 @@ class Extension(metaclass=abc.ABCMeta):
         self.already_initialised[self.name] = self
         self.init_extensions(work_dir)
 
+        self.meta = {"version": self.get_ext_version()}
+        self.meta_file = ".meta.json"
+        self.check_version()
+
+        self.debug("Extension version: {}".format(self.meta["version"]))
         self.debug("Working directory: {}".format(self.work_dir))
 
     def init_extensions(self, work_dir):
@@ -137,6 +144,9 @@ class Extension(metaclass=abc.ABCMeta):
 
             if os.path.exists(self.temp_dir):
                 shutil.rmtree(self.temp_dir)
+
+            if os.path.exists(self.work_dir):
+                self.dump_meta()
 
             return retval
 
@@ -213,6 +223,29 @@ class Extension(metaclass=abc.ABCMeta):
             file_name = os.path.join(folder, hashlib.md5(key.encode('utf-8')).hexdigest() + ".json")
 
             self.dump_data(to_dump, file_name, indent=0)
+
+    def get_ext_version(self):
+        version = self.__version__
+
+        for parent in Extension.__get_all_parents(self.__class__):
+            if hasattr(parent, "__version__"):
+                version = parent.__version__ + "." + version
+
+        return version
+
+    def check_version(self):
+        stored_meta = self.load_meta()
+
+        if stored_meta:
+            if self.meta["version"] != stored_meta["version"]:
+                self.error("Working directory was created by an older version of Clade and can't be used.")
+                raise RuntimeError
+
+    def load_meta(self):
+        return self.load_data(self.meta_file, raise_exception=False)
+
+    def dump_meta(self):
+        self.dump_data(self.meta, self.meta_file)
 
     def __get_cmd_chunk(self, cmds, chunk_size=1000):
         cmds_it = iter(cmds)
@@ -313,6 +346,14 @@ class Extension(metaclass=abc.ABCMeta):
         for subclass in cls.__subclasses__():
             yield subclass
             yield from Extension.__get_all_subclasses(subclass)
+
+    @staticmethod
+    def __get_all_parents(cls):
+        """Get all sublclasses of a given class."""
+
+        for parent in cls.__bases__:
+            yield parent
+            yield from Extension.__get_all_parents(parent)
 
     @staticmethod
     def _import_extension_modules():

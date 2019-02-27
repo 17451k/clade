@@ -24,6 +24,8 @@ from clade.extensions.utils import common_main
 class Functions(Callgraph):
     requires = ["SrcGraph", "Info"]
 
+    __version__ = "1"
+
     def __init__(self, work_dir, conf=None, preset="base"):
         super().__init__(work_dir, conf, preset)
 

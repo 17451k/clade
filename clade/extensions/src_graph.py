@@ -21,6 +21,8 @@ from clade.extensions.utils import common_main, merge_preset_to_conf
 
 
 class SrcGraph(Extension):
+    __version__ = "1"
+
     always_requires = ["CmdGraph", "Path"]
     requires = always_requires + ["CC", "CL"]
 

@@ -26,6 +26,8 @@ from clade.intercept import intercept
 class CDB(Extension):
     requires = ["CC"]
 
+    __version__ = "1"
+
     def __init__(self, work_dir, conf=None, preset="base"):
         if not conf:
             conf = dict()

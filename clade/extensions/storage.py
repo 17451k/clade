@@ -22,6 +22,8 @@ from clade.extensions.abstract import Extension
 class Storage(Extension):
     requires = ["Path"]
 
+    __version__ = "1"
+
     def add_file(self, filename, storage_filename=None, cache=set()):
         """Add file to the storage."""
 

@@ -26,6 +26,8 @@ from clade.extensions.opts import preprocessor_deps_opts
 class CC(Compiler):
     """Class for parsing CC build commands."""
 
+    __version__ = "1"
+
     def parse(self, cmds_file):
         super().parse(cmds_file, self.conf.get("CC.which_list", []))
 
