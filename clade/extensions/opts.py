@@ -464,15 +464,13 @@ cl_opts = [
     "-U",
 ]
 
-link_opts = []
-
 requires_value = {
     "CC": set(gcc_opts + clang_opts),
     "LD": set(ld_gnu_opts + ld_osx_opts),
     "AS": set(as_gnu_opts + as_osx_opts),
     "Objcopy": set(objcopy_opts),
     "CL": set(cl_opts),
-    "Link": set(link_opts),
+    "Link": set(),
 }
 
 cif_include_opts = [
@@ -483,7 +481,21 @@ cif_include_opts = [
     "-idirafter",
     "-imacros",
 ]
-cif_supported_opts = ["-D", "-U", "-nostdinc"] + cif_include_opts
+
+gcc_optimization_opts = [
+    "-O",
+    "-O1",
+    "-O2",
+    "-O3",
+    "-O0",
+    "-Os",
+    "-Ofast",
+    "-Og",
+]
+
+cif_supported_opts = (
+    ["-D", "-U", "-nostdinc"] + gcc_optimization_opts + cif_include_opts
+)
 
 i_regex = re.compile("(" + "|".join(cif_include_opts) + ")=?(.*)")
 s_regex = re.compile("|".join(cif_supported_opts))
