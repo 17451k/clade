@@ -127,8 +127,11 @@ class CmdGraph(Extension):
             cmd_type = graph[cmd_id]["type"]
             cmd = self.extensions[cmd_type].load_cmd_by_id(cmd_id)
 
-            for cmd_out in self.extensions["Path"].get_rel_paths(
-                cmd["out"], cmd["cwd"]
+            if cmd_type in ["CC", "CL"]:
+                cmd["opts"] = self.extensions[cmd_type].load_opts_by_id(cmd_id)
+
+            for i, cmd_out in enumerate(self.extensions["Path"].get_rel_paths(
+                cmd["out"], cmd["cwd"])
             ):
                 # TODO: Replace hash by file_id
                 cmd_out_hash = hashlib.md5(cmd_out.encode("utf-8")).hexdigest()
@@ -137,8 +140,14 @@ class CmdGraph(Extension):
                     dot.node(cmd_out_hash, label=re.escape(cmd_out))
                     added_nodes[cmd_out] = 1
 
+                # Properly print compiler commands with "-c" option
+                if cmd_type in ["CC", "CL"] and ("-c" in cmd["opts"] or "/c" in cmd["opts"]):
+                    cmd_ins = [cmd["in"][i]]
+                else:
+                    cmd_ins = cmd["in"]
+
                 for cmd_in in self.extensions["Path"].get_rel_paths(
-                    cmd["in"], cmd["cwd"]
+                    cmd_ins, cmd["cwd"]
                 ):
                     cmd_in_hash = hashlib.md5(cmd_in.encode("utf-8")).hexdigest()
 
