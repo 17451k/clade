@@ -327,8 +327,7 @@ class Extension(metaclass=abc.ABCMeta):
 
                     # Save a little bit of CPU time
                     # skip sleep only for very small projects
-                    if not total_cmds or total_cmds > 10:
-                        time.sleep(0.1)
+                    time.sleep(0.1)
 
             print(" " * 79, end="\r")
 
