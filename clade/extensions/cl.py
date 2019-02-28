@@ -122,15 +122,19 @@ class CL(Compiler):
 
     def __get_deps(self, cmd_id, cmd):
         """Get a list of CL command dependencies."""
-        deps_file = self.__collect_deps(cmd_id, cmd)
-        return self.__parse_deps(deps_file)
+        deps = []
+        for cmd_in in cmd["in"]:
+            deps_file = self.__collect_deps(cmd_id, cmd, cmd_in)
+            deps.extend(self.__parse_deps(deps_file))
 
-    def __collect_deps(self, cmd_id, cmd):
+        return deps
+
+    def __collect_deps(self, cmd_id, cmd, cmd_in):
         deps_file = os.path.join(self.temp_dir, "{}-deps.txt".format(cmd_id))
 
         deps_cmd = (
-            cmd["command"]
-            + ["/showIncludes", "/P"]
+            [cmd["command"][0]] + cmd["opts"]
+            + ["/showIncludes", "/P"] + [cmd_in]
             + self.conf.get("Compiler.extra_preprocessor_opts", [])
         )
 
@@ -145,7 +149,7 @@ class CL(Compiler):
             proc.communicate()
 
             if not proc.returncode:
-                self.__preprocess_cmd(cmd)
+                self.__preprocess_cmd(cmd, cmd_in)
 
         return deps_file
 
@@ -167,7 +171,7 @@ class CL(Compiler):
         if not encoding:
             return deps
 
-        for line in output_bytes.decode(encoding):
+        for line in output_bytes.decode(encoding).split(os.linesep):
             m = re.search(
                 r"(Note: including file:|Примечание: включение файла:)\s*(.*)",
                 line,
@@ -178,30 +182,25 @@ class CL(Compiler):
 
         return deps
 
-    def __preprocess_cmd(self, cmd):
-        pre = []
+    def __preprocess_cmd(self, cmd, cmd_in):
+        # pre_to - the path where we want to move the preprocessor output
+        pre_to = os.path.splitext(cmd_in)[0] + ".i"
+        pre_to = os.path.join(cmd["cwd"], pre_to)
+        # pre_from - the path to the preprocessor output file
+        i_name = os.path.basename(os.path.splitext(cmd_in)[0] + ".i")
+        pre_from = os.path.join(cmd["cwd"], i_name)
+        # Move .i file to be near source file
+        if not os.path.exists(pre_to):
+            os.rename(pre_from, pre_to)
 
-        for cmd_in in cmd["in"]:
-            # pre_to - the path where we want to move the preprocessor output
-            pre_to = os.path.splitext(cmd_in)[0] + ".i"
-            pre_to = os.path.join(cmd["cwd"], pre_to)
-            # pre_from - the path to the preprocessor output file
-            i_name = os.path.basename(os.path.splitext(cmd_in)[0] + ".i")
-            pre_from = os.path.join(cmd["cwd"], i_name)
-            # Move .i file to be near source file
-            if not os.path.exists(pre_to):
-                os.rename(pre_from, pre_to)
-
-            # Normalize paths in line directives
-            self.__normalize_paths(pre_to, cmd["cwd"])
-            pre.append(pre_to)
+        # Normalize paths in line directives
+        self.__normalize_paths(pre_to, cmd["cwd"])
 
         if self.conf.get("Compiler.preprocess_cmds"):
-            self.debug("Preprocessed files: {}".format(pre))
-            self.store_src_files(pre, cmd["cwd"])
+            self.debug("Preprocessed file: {}".format(pre_to))
+            self.store_src_files([pre_to], cmd["cwd"])
 
-        for pre_file in pre:
-            os.remove(pre_file)
+        os.remove(pre_to)
 
     def __normalize_paths(self, c_file, cwd):
         rawdata = open(c_file, 'rb').read()
