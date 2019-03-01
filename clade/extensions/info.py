@@ -28,6 +28,11 @@ from clade.extensions.opts import filter_opts
 from clade.extensions.utils import common_main
 
 
+# multiprocessing form Python 3.4 can't pickle Info._normalize_file directly
+def unwrap(self, file):
+    self._normalize_file(file)
+
+
 class Info(Extension):
     always_requires = ["SrcGraph", "Path", "Storage"]
     requires = always_requires + ["CC", "CL"]
@@ -285,7 +290,7 @@ class Info(Extension):
             max_workers=os.cpu_count()
         ) as p:
             for file in [f for f in self.files if f != self.init_global]:
-                p.submit(Info._normalize_file, self, file)
+                p.submit(unwrap, self, file)
 
         self.log("Normalizing finished")
 
