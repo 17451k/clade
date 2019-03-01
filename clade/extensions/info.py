@@ -28,7 +28,7 @@ from clade.extensions.opts import filter_opts
 from clade.extensions.utils import common_main
 
 
-# multiprocessing form Python 3.4 can't pickle Info._normalize_file directly
+# multiprocessing from Python 3.4 can't pickle Info._normalize_file directly
 def unwrap(self, file):
     self._normalize_file(file)
 
