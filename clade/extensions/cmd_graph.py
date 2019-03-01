@@ -43,6 +43,7 @@ class CmdGraph(Extension):
         self.graph_file = "cmd_graph.json"
 
         self.graph_dot = os.path.join(self.work_dir, "cmd_graph.dot")
+        self.graph_with_files_dot = os.path.join(self.work_dir, "cmd_graph_with_files.dot")
 
     def load_cmd_graph(self):
         """Load command graph."""
@@ -93,7 +94,8 @@ class CmdGraph(Extension):
 
         if self.graph:
             if self.conf.get("CmdGraph.as_picture"):
-                self.__print_source_graph(cmds_file)
+                self.__print_cmd_graph()
+                self.__print_cmd_graph_with_files()
         else:
             self.warning("Command graph is empty")
 
@@ -117,7 +119,22 @@ class CmdGraph(Extension):
         for cmd_out in self.extensions["Path"].get_rel_paths(cmd["out"], cmd["cwd"]):
             out_dict[cmd_out] = out_id
 
-    def __print_source_graph(self, cmds_file):
+    def __print_cmd_graph(self):
+        dot = Digraph(graph_attr={'rankdir': 'LR'}, node_attr={'shape': 'rectangle'})
+
+        for cmd_id in self.graph:
+            cmd_type = self.graph[cmd_id]["type"]
+            cmd = self.extensions[cmd_type].load_cmd_by_id(cmd_id)
+
+            cmd_node = "[{}] {}".format(cmd["id"], cmd_type)
+            dot.node(cmd["id"], label=re.escape(cmd_node))
+
+            for using_id in self.graph[cmd_id]["using"]:
+                dot.edge(using_id, cmd_id)
+
+        dot.render(self.graph_dot)
+
+    def __print_cmd_graph_with_files(self):
         dot = Digraph(graph_attr={"rankdir": "LR"}, node_attr={"shape": "rectangle"})
 
         added_nodes = dict()
@@ -161,7 +178,7 @@ class CmdGraph(Extension):
                         label="{}({})".format(cmd_type, cmd_id),
                     )
 
-        dot.render(self.graph_dot)
+        dot.render(self.graph_with_files_dot)
 
     @staticmethod
     def __get_new_value(cmd_type):

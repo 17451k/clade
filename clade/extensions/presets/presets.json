@@ -73,8 +73,7 @@
             "base"
         ],
         "CmdGraph.as_picture": true,
-        "PidGraph.as_picture": true,
-        "SrcGraph.as_picture": true
+        "PidGraph.as_picture": true
     },
     "linux_kernel": {
         "extends": [
