@@ -13,11 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-try:
-    import cchardet as chardet
-except ImportError:
-    import chardet
-
+import cchardet
 import os
 import re
 import subprocess
@@ -166,7 +162,7 @@ class CL(Compiler):
         if self.conf.get("CL.deps_encoding"):
             encoding = self.conf.get("CL.deps_encoding")
         else:
-            encoding = chardet.detect(output_bytes)["encoding"]
+            encoding = cchardet.detect(output_bytes)["encoding"]
 
         if not encoding:
             return deps
@@ -208,7 +204,7 @@ class CL(Compiler):
         if self.conf.get("CL.pre_encoding"):
             encoding = self.conf.get("CL.pre_encoding")
         else:
-            encoding = chardet.detect(rawdata)["encoding"]
+            encoding = cchardet.detect(rawdata)["encoding"]
 
         with open(c_file, "r", encoding=encoding) as c_file_fh, open(
             c_file + ".new", "w", encoding="utf-8"
