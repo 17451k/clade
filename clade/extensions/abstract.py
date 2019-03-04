@@ -81,9 +81,12 @@ class Extension(metaclass=abc.ABCMeta):
         self.already_initialised[self.name] = self
         self.init_extensions(work_dir)
 
-        self.meta = {"version": self.get_ext_version()}
+        self.meta = {
+            "version": self.get_ext_version(),
+            "corrupted": False
+        }
         self.meta_file = ".meta.json"
-        self.check_version()
+        self.check_meta()
 
         self.debug("Extension version: {}".format(self.meta["version"]))
         self.debug("Working directory: {}".format(self.work_dir))
@@ -140,15 +143,17 @@ class Extension(metaclass=abc.ABCMeta):
 
             self.temp_dir = tempfile.mkdtemp()
             self.parse_prerequisites(args[0])
-            retval = parse(self, *args, **kwargs)
+            try:
+                return parse(self, *args, **kwargs)
+            except Exception:
+                self.meta["corrupted"] = True
+                raise
+            finally:
+                if os.path.exists(self.temp_dir):
+                    shutil.rmtree(self.temp_dir)
 
-            if os.path.exists(self.temp_dir):
-                shutil.rmtree(self.temp_dir)
-
-            if os.path.exists(self.work_dir):
-                self.dump_meta()
-
-            return retval
+                if os.path.exists(self.work_dir):
+                    self.dump_meta()
 
         return parse_wrapper
 
@@ -233,12 +238,15 @@ class Extension(metaclass=abc.ABCMeta):
 
         return version
 
-    def check_version(self):
+    def check_meta(self):
         stored_meta = self.load_meta()
 
         if stored_meta:
             if self.meta["version"] != stored_meta["version"]:
                 self.error("Working directory was created by an older version of Clade and can't be used.")
+                raise RuntimeError
+            elif self.meta["corrupted"]:
+                self.error("Working directory is corrupted and can't be used.")
                 raise RuntimeError
 
     def load_meta(self):
