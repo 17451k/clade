@@ -112,12 +112,14 @@ def get_last_cmd(cmds_file):
     return last_cmd
 
 
-def get_last_id(cmds_file):
+def get_last_id(cmds_file, raise_exception=False):
     """Get last used id."""
     try:
         last_cmd = get_last_cmd(cmds_file)
         return last_cmd["id"]
     except RuntimeError:
+        if raise_exception:
+            raise
         return "0"
 
 

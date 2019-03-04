@@ -40,7 +40,7 @@ class PidGraph(Extension):
 
     @Extension.prepare
     def parse(self, cmds_file):
-        self.log("Parsing {} commands".format(get_last_id(cmds_file)))
+        self.log("Parsing {} commands".format(get_last_id(cmds_file, raise_exception=True)))
 
         for cmd in iter_cmds(cmds_file):
             self.pid_by_id[cmd["id"]] = cmd["pid"]
