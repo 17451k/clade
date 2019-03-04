@@ -74,10 +74,15 @@ class CC(Compiler):
 
     def __get_deps(self, cmd_id, cmd):
         """Get a list of CC command dependencies."""
-        deps_file = self.__collect_deps(cmd_id, cmd)
-        return self.__parse_deps(deps_file)
+        deps = []
 
-    def __collect_deps(self, cmd_id, cmd):
+        for cmd_in in cmd["in"]:
+            deps_file = self.__collect_deps(cmd_id, cmd, cmd_in)
+            deps.extend(self.__parse_deps(deps_file))
+
+        return deps
+
+    def __collect_deps(self, cmd_id, cmd, cmd_in):
         deps_file = os.path.join(self.temp_dir, "{}-deps.txt".format(cmd_id))
 
         if self.conf.get("CC.with_system_header_files"):
@@ -86,7 +91,7 @@ class CC(Compiler):
             additional_opts = ["-Wp,-MMD,{}".format(deps_file), "-MM"]
 
         opts = cmd["opts"] + additional_opts
-        command = [cmd["command"][0]] + opts + cmd["in"]
+        command = [cmd["command"][0]] + opts + [cmd_in]
 
         # Do not execute a command that does not contain any input files
         if "-" not in command and cmd["in"]:
