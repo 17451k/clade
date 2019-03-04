@@ -117,7 +117,7 @@ class Info(Extension):
             raise RuntimeError(
                 "Something is wrong with every compilation command"
             )
-        elif not [file for file in self.files if os.path.exists(file)]:
+        elif not [file for file in self.files if os.path.exists(file)] and os.path.exists(self.err_log):
             raise RuntimeError(
                 "CIF failed on every command. Log: {}".format(self.err_log)
             )
