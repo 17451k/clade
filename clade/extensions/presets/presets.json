@@ -96,14 +96,14 @@
             "kernel/.*?bounds.*?",
             "arch/x86/tools/relocs",
             "arch/x86/kernel/asm-offsets.c",
-            ".*\\.mod\\.c",
-            ".*?\\.tmp\\w+\\.s",
-            ".*\\.S"
+            "\\.mod\\.c",
+            "\\.tmp\\w+\\.s",
+            "\\.S"
         ],
         "Common.filter_out": [
             "/dev/null",
             "scripts/(?!mod/.*empty\\.o)",
-            ".*?\\.cmd$",
+            "\\.cmd$",
             "vmlinux"
         ],
         "Info.extra_CIF_opts": ["-Dvector_size(x)="]
@@ -114,17 +114,17 @@
         ],
         "Common.filter": [],
         "Common.filter_in": [
-            ".*?\\.tmp$",
+            "\\.tmp$",
             "tmp\\.\\w+\\.c$",
-            "^tmp.*?\\.c$",
+            "tmp.*?\\.c$",
             "/tmp/\\w+.o",
             "-",
             "/dev/null",
-            ".*?built-in\\.o$"
+            "built-in\\.o$"
         ],
         "Common.filter_out": [
             "/dev/null",
-            ".*?\\.cmd$",
+            "\\.cmd$",
             "tmp\\.\\w+"
         ]
     },
@@ -136,16 +136,16 @@
             "/tmp/.*"
         ],
         "Common.filter_in": [
-            ".*?\\.tmp$",
+            "\\.tmp$",
             "tmp\\.\\w+\\.c$",
-            "^tmp.*?\\.c$",
+            "tmp.*?\\.c$",
             "-",
             "/dev/null",
-            ".*?built-in\\.o$"
+            "built-in\\.o$"
         ],
         "Common.filter_out": [
             "/dev/null",
-            ".*?\\.cmd$",
+            "\\.cmd$",
             "tmp\\.\\w+"
         ]
     }

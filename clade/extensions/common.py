@@ -223,20 +223,22 @@ class Common(Extension, metaclass=abc.ABCMeta):
         return cmds
 
     def is_bad(self, cmd):
+        cmd_ins = [os.path.join(cmd["cwd"], cmd_in) for cmd_in in cmd["in"]]
         if any(
             (
                 True
-                for cmd_in in cmd["in"]
-                if self.regex_in and self.regex_in.match(cmd_in)
+                for cmd_in in cmd_ins
+                if self.regex_in and self.regex_in.search(cmd_in)
             )
         ):
             return True
 
+        cmd_outs = [os.path.join(cmd["cwd"], cmd_out) for cmd_out in cmd["out"]]
         if any(
             (
                 True
-                for cmd_out in cmd["out"]
-                if self.regex_out and self.regex_out.match(cmd_out)
+                for cmd_out in cmd_outs
+                if self.regex_out and self.regex_out.search(cmd_out)
             )
         ):
             return True
