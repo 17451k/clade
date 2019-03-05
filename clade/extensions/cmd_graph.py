@@ -159,6 +159,8 @@ class CmdGraph(Extension):
 
                 # Properly print compiler commands with "-c" option
                 if cmd_type in ["CC", "CL"] and ("-c" in cmd["opts"] or "/c" in cmd["opts"]):
+                    if not cmd["in"]:
+                        continue
                     cmd_ins = [cmd["in"][i]]
                 else:
                     cmd_ins = cmd["in"]
