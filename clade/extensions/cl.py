@@ -104,6 +104,7 @@ class CL(Compiler):
                 parsed_cmd["out"].append(cmd_out)
 
         if self.is_bad(parsed_cmd):
+            self.dump_bad_cmd_by_id(cmd["id"], parsed_cmd)
             return
 
         deps = set(self.__get_deps(cmd["id"], parsed_cmd) + parsed_cmd["in"])

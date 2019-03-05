@@ -78,10 +78,14 @@ class PidGraph(Extension):
     def load_pid_by_id(self):
         return self.load_data(self.pid_by_id_file)
 
-    def filter_cmds_by_pid(self, cmds):
+    def filter_cmds_by_pid(self, cmds, parsed_ids=None):
         graph = self.load_pid_graph()
 
-        parsed_ids = set()
+        if not parsed_ids:
+            parsed_ids = set()
+        else:
+            parsed_ids = set(parsed_ids)
+
         filtered_cmds = []
 
         for cmd in sorted(cmds, key=lambda x: int(x["id"])):

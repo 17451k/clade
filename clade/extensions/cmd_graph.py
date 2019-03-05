@@ -51,15 +51,17 @@ class CmdGraph(Extension):
 
     def load_all_cmds(self, with_opts=False, with_raw=False, filter_by_pid=False):
         cmds = list()
+        bad_ids = list()
         for ext_name in [x for x in self.extensions if x not in self.always_requires]:
             for cmd in self.extensions[ext_name].load_all_cmds(
                 with_opts=with_opts, with_raw=with_raw, filter_by_pid=False
             ):
                 cmd["type"] = ext_name
                 cmds.append(cmd)
+            bad_ids.extend(self.extensions[ext_name].get_bad_ids())
 
         if self.conf.get("PidGraph.filter_cmds_by_pid", True) or filter_by_pid:
-            cmds = self.extensions["PidGraph"].filter_cmds_by_pid(cmds)
+            cmds = self.extensions["PidGraph"].filter_cmds_by_pid(cmds, parsed_ids=bad_ids)
 
         return cmds
 

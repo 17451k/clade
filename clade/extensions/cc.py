@@ -49,6 +49,7 @@ class CC(Compiler):
                 parsed_cmd["out"].append(cmd_out)
 
         if self.is_bad(parsed_cmd):
+            self.dump_bad_cmd_by_id(cmd_id, parsed_cmd)
             return
 
         self.debug("Parsed command: {}".format(parsed_cmd))

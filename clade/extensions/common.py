@@ -46,6 +46,7 @@ class Common(Extension, metaclass=abc.ABCMeta):
         self.raw_dir = "raw"
         self.opts_dir = "opts"
         self.cmds_dir = "cmds"
+        self.bad_dir = "bad"
 
         cmd_filter = self.conf.get("Common.filter", [])
         cmd_filter_in = self.conf.get("Common.filter_in", [])
@@ -146,7 +147,9 @@ class Common(Extension, metaclass=abc.ABCMeta):
         return self.load_data(raw_file, raise_exception=False)
 
     def dump_raw_by_id(self, id, raw_command):
-        self.dump_data(raw_command, os.path.join(self.raw_dir, "{}.json".format(id)))
+        self.dump_data(
+            raw_command, os.path.join(self.raw_dir, "{}.json".format(id))
+        )
 
     def load_opts_by_id(self, id):
         opts_file = os.path.join(self.opts_dir, "{}.json".format(id))
@@ -154,6 +157,28 @@ class Common(Extension, metaclass=abc.ABCMeta):
 
     def dump_opts_by_id(self, id, opts):
         self.dump_data(opts, os.path.join(self.opts_dir, "{}.json".format(id)))
+
+    def dump_bad_cmd_by_id(self, id, cmd):
+        self.dump_opts_by_id(cmd["id"], cmd["opts"])
+        del cmd["opts"]
+        self.dump_raw_by_id(cmd["id"], cmd["command"])
+        del cmd["command"]
+
+        self.dump_data(cmd, os.path.join(self.bad_dir, "{}.json".format(id)))
+
+    def load_bad_cmd_by_id(self, id):
+        # Warning: bad commands do not have dependencies
+        return self.load_data(os.path.join(self.bad_dir, "{}.json".format(id)))
+
+    def get_bad_ids(self):
+        cmd_jsons = glob.glob(
+            os.path.join(self.work_dir, self.bad_dir, "*[0-9].json")
+        )
+
+        return [
+            os.path.splitext(os.path.basename(cmd_json))[0]
+            for cmd_json in cmd_jsons
+        ]
 
     def __merge_all_cmds(self):
         """Merge all parsed commands into a single json file."""
@@ -173,14 +198,17 @@ class Common(Extension, metaclass=abc.ABCMeta):
 
         self.dump_data(merged_cmds, "cmds.json")
 
-    def load_all_cmds(self, with_opts=False, with_raw=False, filter_by_pid=True):
+    def load_all_cmds(
+        self, with_opts=False, with_raw=False, filter_by_pid=True
+    ):
         """Load all parsed commands."""
         cmds = self.load_data("cmds.json", raise_exception=False)
 
         if filter_by_pid and self.conf.get(
             "PidGraph.filter_cmds_by_pid", True
         ):
-            cmds = self.extensions["PidGraph"].filter_cmds_by_pid(cmds)
+            bad_ids = self.get_bad_ids()
+            cmds = self.extensions["PidGraph"].filter_cmds_by_pid(cmds, parsed_ids=bad_ids)
 
         if with_opts:
             for cmd in cmds:
