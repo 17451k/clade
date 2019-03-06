@@ -312,8 +312,8 @@ class Extension(metaclass=abc.ABCMeta):
                     # to reduce memory usage
                     futures = [x for x in futures if not x.done()]
 
-                    # Track progress
-                    if total_cmds:
+                    # Track progress (only if stdout is not redirected)
+                    if total_cmds and sys.stdout.isatty():
                         finished_cmds += len(done_futures)
 
                         msg = "\t [{:.0f}%] {} of {} commands are parsed".format(
