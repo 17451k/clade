@@ -90,7 +90,7 @@
             ".*?\\.tmp$"
         ],
         "Common.filter_in": [
-            "-",
+            "^-$",
             "/dev/null",
             "scripts/(?!mod/empty\\.c)",
             "kernel/.*?bounds.*?",
@@ -118,7 +118,7 @@
             "tmp\\.\\w+\\.c$",
             "tmp.*?\\.c$",
             "/tmp/\\w+.o",
-            "-",
+            "^-$",
             "/dev/null",
             "built-in\\.o$"
         ],
@@ -139,7 +139,7 @@
             "\\.tmp$",
             "tmp\\.\\w+\\.c$",
             "tmp.*?\\.c$",
-            "-",
+            "^-$",
             "/dev/null",
             "built-in\\.o$"
         ],
