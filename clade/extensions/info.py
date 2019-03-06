@@ -101,8 +101,6 @@ class Info(Extension):
         if not shutil.which(self.conf.get("Info.cif", "cif")):
             raise RuntimeError("Can't find CIF in PATH")
 
-        self.log("Start CIF")
-
         cmds = list(self.extensions["SrcGraph"].load_all_cmds())
 
         if not cmds:

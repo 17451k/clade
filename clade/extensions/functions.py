@@ -42,19 +42,19 @@ class Functions(Callgraph):
     def parse(self, cmds_file):
         self.src_graph = self.extensions["SrcGraph"].load_src_graph()
 
+        self.log("Parsing function definitions and declarations")
         self.__process_definitions()
         self.__process_declarations()
         self.__process_exported()
         self.__group_functions_by_file()
         self._clean_error_log()
 
-        self.log("Dump parsed data")
         self.dump_data(self.funcs, self.funcs_file)
         self.dump_data(self.funcs_by_file, self.funcs_by_file_file)
         self.dump_data_by_key(self.funcs_by_file, self.funcs_by_file_folder)
         self.funcs.clear()
         self.funcs_by_file.clear()
-        self.log("Finish")
+        self.log("Parsing finished")
 
     def load_functions(self):
         """Load information about functions."""
@@ -68,8 +68,6 @@ class Functions(Callgraph):
             return self.load_data(self.funcs_by_file_file)
 
     def __process_definitions(self):
-        self.log("Processing function definitions")
-
         regex = re.compile(r"\"(.*?)\" (\S*) signature='([^']*)' (\S*) (\S*)")
 
         for line in self.extensions["Info"].iter_definitions():
@@ -97,8 +95,6 @@ class Functions(Callgraph):
                 self.funcs[func] = {src_file: val}
 
     def __process_declarations(self):
-        self.log("Processing declarations")
-
         regex = re.compile(r"\"(.*?)\" (\S*) signature='([^']*)' (\S*) (\S*)")
 
         def get_unknown_val(decl_file, decl_val):
@@ -143,8 +139,6 @@ class Functions(Callgraph):
                         self.funcs[decl_name]["unknown"] = get_unknown_val(decl_file, decl_val)
 
     def __process_exported(self):
-        self.log("Processing exported functions")
-
         regex = re.compile(r"\"(.*?)\" (\S*)")
 
         for line in self.extensions["Info"].iter_exported():
@@ -163,8 +157,6 @@ class Functions(Callgraph):
             self.funcs[func][src_file]["type"] = "exported"
 
     def __group_functions_by_file(self):
-        self.log("Split functions by file")
-
         for func in self.funcs:
             for file in self.funcs[func]:
                 if file in self.funcs_by_file:

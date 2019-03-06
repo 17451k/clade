@@ -46,6 +46,8 @@ class Callgraph(Extension):
 
     @Extension.prepare
     def parse(self, cmds_file):
+        self.log("Generating callgraph")
+
         self.src_graph = self.extensions["SrcGraph"].load_src_graph()
         self.funcs = self.extensions["Functions"].load_functions()
 
@@ -54,14 +56,13 @@ class Callgraph(Extension):
         self.__process_functions_usages()
         self._clean_error_log()
 
-        self.log("Dump parsed data")
         self.dump_data_by_key(self.callgraph, self.callgraph_folder)
         self.dump_data(self.callgraph, self.callgraph_file)
         self.dump_data(self.calls_by_ptr, self.calls_by_ptr_file)
         self.dump_data(self.used_in, self.used_in_file)
         self.callgraph.clear()
         self.used_in.clear()
-        self.log("Finish")
+        self.log("Generating finished")
 
     def load_callgraph(self, files=None):
         if files:
@@ -76,8 +77,6 @@ class Callgraph(Extension):
         return self.load_data(self.used_in_file)
 
     def __process_calls(self):
-        self.log("Processing calls")
-
         regex = re.compile(r'\"(.*?)\" (\S*) (\S*) (\S*) (\S*) (.*)')
 
         is_builtin = re.compile(r'(__builtin)|(__compiletime)')
@@ -180,8 +179,6 @@ class Callgraph(Extension):
                 desc['type'] = self.funcs[func][path].get('type')
 
     def __process_calls_by_pointers(self):
-        self.log("Processing calls by pointers")
-
         regex = re.compile(r'\"(.*?)\" (\S*) (\S*) (\S*)')
 
         for line in self.extensions["Info"].iter_calls_by_pointers():
@@ -204,8 +201,6 @@ class Callgraph(Extension):
                 self.calls_by_ptr[context_file][context_func][func_ptr].append(call_line)
 
     def __process_functions_usages(self):
-        self.log("Processing functions usages")
-
         is_builtin = re.compile(r'(__builtin)|(__compiletime)')
 
         for file_line in self.extensions["Info"].iter_functions_usages():
@@ -331,8 +326,6 @@ class Callgraph(Extension):
         """
         if not os.path.isfile(self.err_log):
             return
-
-        self.log("Cleaning error log")
 
         dup_lines = dict()
 
