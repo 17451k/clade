@@ -41,31 +41,31 @@
         "PidGraph.as_picture": false,
         "PidGraph.filter_cmds_by_pid": true,
         "AR.which_list": [
-            "^.*?ar$"
+            "ar$"
         ],
         "AS.which_list": [
-            "^.*?as$"
+            "as$"
         ],
         "CC.which_list": [
-            "^.*cc$",
-            "^.*cc1$",
-            "^.*[mg]cc(-?\\d+(\\.\\d+){0,2})?$",
-            "^.*clang(-?\\d+(\\.\\d+){0,2})?$"
+            "cc$",
+            "cc1$",
+            "[mg]cc(-?\\d+(\\.\\d+){0,2})?$",
+            "clang(-?\\d+(\\.\\d+){0,2})?$"
         ],
         "LD.which_list": [
-            "^.*?ld$"
+            "ld$"
         ],
         "MV.which_list": [
-            "^.*?mv$"
+            "mv$"
         ],
         "Objcopy.which_list": [
-            "^.*?objcopy$"
+            "objcopy$"
         ],
         "CL.which_list": [
-            "^.*?(cl|CL)\\.exe$"
+            "(cl|CL)\\.exe$"
         ],
         "Link.which_list": [
-            "^.*?link\\.exe$"
+            "link\\.exe$"
         ]
     },
     "base_print": {
