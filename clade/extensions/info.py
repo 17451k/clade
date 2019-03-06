@@ -15,6 +15,7 @@
 
 import codecs
 import concurrent.futures
+import fnmatch
 import gc
 import hashlib
 import os
@@ -92,6 +93,9 @@ class Info(Extension):
             self.typedefs,
         ]
 
+        # Path to cif output
+        self.cif_output_dir = os.path.join(self.work_dir, "output")
+
         # Path to files containing CIF log
         self.cif_log = os.path.join(self.work_dir, "cif.log")
         self.err_log = os.path.join(self.work_dir, "err.log")
@@ -115,7 +119,10 @@ class Info(Extension):
             raise RuntimeError(
                 "Something is wrong with every compilation command"
             )
-        elif not [file for file in self.files if os.path.exists(file)] and os.path.exists(self.err_log):
+
+        cif_output = self.__find_cif_output()
+
+        if not cif_output and os.path.exists(self.err_log):
             raise RuntimeError(
                 "CIF failed on every command. Log: {}".format(self.err_log)
             )
@@ -125,7 +132,7 @@ class Info(Extension):
         else:
             self.log("CIF finished with errors. Log: {}".format(self.err_log))
 
-        self.__normalize_cif_output(cmds_file)
+        self.__normalize_cif_output(cif_output)
 
     def _run_cif(self, cmd):
         if self.__is_cmd_bad_for_cif(cmd):
@@ -160,11 +167,9 @@ class Info(Extension):
                 tmp_dir, os.path.basename(cmd_in.lstrip(os.sep)) + ".o"
             )
 
-            os.makedirs(self.work_dir, exist_ok=True)
-
-            os.environ["CIF_INFO_DIR"] = self.work_dir
-            os.environ["C_FILE"] = norm_cmd_in
-            os.environ["CIF_CMD_CWD"] = cmd["cwd"]
+            cif_env = dict()
+            cif_env["CIF_INFO_DIR"] = self.cif_output_dir
+            cif_env["C_FILE"] = norm_cmd_in
 
             cif_args = [
                 self.conf.get("Info.cif", "cif"),
@@ -207,11 +212,12 @@ class Info(Extension):
                     stderr=subprocess.STDOUT,
                     cwd=cwd,
                     universal_newlines=True,
+                    env=os.environ.update(cif_env)
                 )
-                self.__save_log(cmd["id"], cwd, cif_args, output, self.cif_log)
+                self.__save_log(cmd["id"], cwd, cif_args, cif_env, output, self.cif_log)
             except subprocess.CalledProcessError as e:
-                self.__save_log(cmd["id"], cwd, cif_args, e.output, self.err_log)
-                self.__save_log(cmd["id"], cwd, cif_args, e.output, self.cif_log)
+                self.__save_log(cmd["id"], cwd, cif_args, cif_env, e.output, self.err_log)
+                self.__save_log(cmd["id"], cwd, cif_args, cif_env, e.output, self.cif_log)
                 return
 
         # Force garbage collector to work
@@ -230,13 +236,18 @@ class Info(Extension):
 
         return False
 
-    def __save_log(self, cmd_id, cwd, args, log, file):
+    def __save_log(self, cmd_id, cwd, args, env, log, file):
         os.makedirs(self.work_dir, exist_ok=True)
 
         with open(file, "a") as log_fh:
             log_fh.write("COMMAND_ID: {}\n".format(cmd_id))
             log_fh.write("CWD: {}\n".format(cwd))
-            log_fh.write("CIF ARGS: " + " ".join(args) + "\n\n")
+
+            log_fh.write("CIF ARGS: ")
+            for key in env:
+                log_fh.write("{}={} ".format(key, env[key]))
+            log_fh.write(" ".join(args) + "\n\n")
+
             log_fh.writelines(log)
             log_fh.write("\n\n")
 
@@ -244,51 +255,72 @@ class Info(Extension):
         if not os.path.isfile(file):
             return
 
-        regexp = re.compile(r"\"(.*?)\" \"(.*?)\" (.*)")
         storage = self.extensions["Storage"].get_storage_dir()
 
         seen = set()
         with codecs.open(file, "r", encoding="utf8", errors="ignore") as fh:
             with open(file + ".temp", "w") as temp_fh:
                 for line in fh:
+                    if not line:
+                        continue
+
                     # Storing hash of string instead of string itself reduces memory usage by 30-40%
                     h = hashlib.md5(line.encode("utf-8")).hexdigest()
                     if h not in seen:
                         seen.add(h)
-                        m = regexp.match(line)
 
-                        if m:
-                            cwd, path, rest = m.groups()
+                        # Path to the source file is encoded in the path to the CIF output file
+                        path = os.path.dirname(file)
 
-                            path = self.extensions["Path"].normalize_rel_path(
-                                path, cwd
-                            )
-
-                            if "\\/" in path:
-                                self.warning(
-                                    "Normalized path looks weird: {!r}".format(
-                                        path
-                                    )
+                        if "\\/" in path:
+                            self.error(
+                                "Normalized path looks weird: {!r}".format(
+                                    path
                                 )
+                            )
+                            raise RuntimeError
 
-                            path = path.replace(storage, "")
-                            temp_fh.write('"{}" {}\n'.format(path, rest))
-                        else:
-                            temp_fh.write(line)
+                        path = path.replace(storage, "")
+                        path = path.replace(self.cif_output_dir, "")
+                        temp_fh.write('"{}" {}'.format(path, line))
 
         seen.clear()
 
         os.remove(file)
         os.rename(file + ".temp", file)
 
-    def __normalize_cif_output(self, cmds_file):
+    def __find_cif_output(self):
+        cif_output = []
+
+        for root, _, filenames in os.walk(self.work_dir):
+            for filename in fnmatch.filter(filenames, "*.txt"):
+                cif_output.append(os.path.join(root, filename))
+
+        return cif_output
+
+    def __normalize_cif_output(self, cif_output):
         self.log("Normalizing CIF output")
 
+        # Normalize all small cif output files
         with concurrent.futures.ProcessPoolExecutor(
             max_workers=os.cpu_count()
         ) as p:
-            for file in [f for f in self.files if f != self.init_global]:
+            init_global = os.path.basename(self.init_global)
+            for file in [f for f in cif_output if not f.endswith(init_global)]:
                 p.submit(unwrap, self, file)
+
+        # Join all cif output file into several big .txt files
+        for file in self.files:
+            output_type = os.path.basename(file)
+
+            for output_file in [f for f in cif_output if f.endswith(output_type)]:
+                with open(file, "a") as file_fh:
+                    with open(output_file, "r") as output_fh:
+                        # This files should be fairly small
+                        file_fh.write(output_fh.read())
+
+        # Remove cif output directory
+        shutil.rmtree(self.cif_output_dir)
 
         self.log("Normalizing finished")
 

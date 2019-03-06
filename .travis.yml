@@ -14,7 +14,7 @@ install:
 before_script:
   - sudo apt-get install -y graphviz
   - pip install coveralls pytest
-  - curl -sSfL -o cif.tar.xz https://github.com/17451k/cif/releases/download/2018-09-17/cif-20180917-linux.tar.xz
+  - curl -sSfL -o cif.tar.xz https://github.com/17451k/cif/releases/download/2019-03-06/cif-20190306-linux-x64.tar.xz
   - tar xf cif.tar.xz
 
 script:
