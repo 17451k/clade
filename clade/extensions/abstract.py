@@ -316,8 +316,8 @@ class Extension(metaclass=abc.ABCMeta):
                     if total_cmds:
                         finished_cmds += len(done_futures)
 
-                        msg = "\t {} of {} commands are parsed".format(
-                            finished_cmds, total_cmds
+                        msg = "\t [{:.0f}%] {} of {} commands are parsed".format(
+                            finished_cmds / total_cmds * 100, finished_cmds, total_cmds
                         )
                         print(msg, end="\r")
 
