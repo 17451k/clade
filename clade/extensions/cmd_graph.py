@@ -28,7 +28,7 @@ class CmdGraph(Extension):
     always_requires = ["PidGraph", "Path"]
     requires = always_requires + ["CC", "LD", "AR"]
 
-    __version__ = "1"
+    __version__ = "2"
 
     def __init__(self, work_dir, conf=None, preset="base"):
         conf = conf if conf else dict()
