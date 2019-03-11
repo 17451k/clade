@@ -29,6 +29,7 @@ gcc_opts = [
     "-include",
     "-imacros",
     "-MF",
+    "-MD",
     "-MT",
     "-MQ",
     "-Xpreprocessor",
