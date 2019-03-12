@@ -103,8 +103,7 @@
         "Common.filter_out": [
             "/dev/null",
             "scripts/(?!mod/.*empty\\.o)",
-            "\\.cmd$",
-            "vmlinux"
+            "\\.cmd$"
         ],
         "Info.extra_CIF_opts": ["-Dvector_size(x)="]
     },
