@@ -69,6 +69,8 @@ class SrcGraph(Extension):
         self.src_graph.clear()
 
     def load_all_cmds(self):
+        cmds = []
+
         for ext_name in [
             x for x in self.extensions if x not in self.always_requires
         ]:
@@ -76,7 +78,9 @@ class SrcGraph(Extension):
                 compile_only=True
             ):
                 cmd["type"] = ext_name
-                yield cmd
+                cmds.append(cmd)
+
+        return cmds
 
     def __generate_src_graph(self, cmds):
         try:

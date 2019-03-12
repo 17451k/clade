@@ -40,6 +40,7 @@ def test_cmd_graph(tmpdir, cmds_file):
     cc_cmds = c.get_all_cmds_by_type("CC")
     assert comp_cmds
     assert cc_cmds
+    assert comp_cmds == c.get_compilation_cmds()
 
     for cmd in comp_cmds:
         assert cmd["id"] in (x["id"] for x in cc_cmds)
@@ -47,6 +48,7 @@ def test_cmd_graph(tmpdir, cmds_file):
     cmd_ids = c.cmd_ids
     assert cmd_ids
     assert len(cmd_ids) == len(c.cmds)
+    assert c.cmds == c.get_cmds()
 
     for cmd_id in c.cmd_ids:
         assert c.get_cmd(cmd_id)
