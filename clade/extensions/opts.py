@@ -502,7 +502,7 @@ i_regex = re.compile("(" + "|".join(cif_include_opts) + ")=?(.*)")
 s_regex = re.compile("|".join(cif_supported_opts))
 
 
-def filter_opts(opts, get_storage_path):
+def filter_opts(opts, get_storage_path=None):
     if not cif_supported_opts:
         return []
 
@@ -525,7 +525,7 @@ def filter_opts(opts, get_storage_path):
         path = m.group(2)
 
         if path:
-            if os.path.isabs(path):
+            if get_storage_path and os.path.isabs(path):
                 opt = opt.replace(path, get_storage_path(path))
 
             filtered_opts.append(opt)
@@ -533,7 +533,7 @@ def filter_opts(opts, get_storage_path):
             filtered_opts.append(opt)
             path = next(opts)
 
-            if os.path.isabs(path):
+            if get_storage_path and os.path.isabs(path):
                 path = get_storage_path(path)
 
             filtered_opts.append(path)
