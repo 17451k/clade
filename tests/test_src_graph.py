@@ -32,9 +32,10 @@ def test_src_graph(tmpdir, cmds_file):
     assert len(src_graph[test_file]["compiled_in"]) == 3
     assert len(src_graph[test_file]["used_by"]) == 2
 
-    file_sizes = c.load_src_sizes()
-    assert file_sizes
-    assert file_sizes[test_file] == 11
+    src_info = c.load_src_info()
+    assert src_info
+    assert src_info[test_file]["loc"] == 11
+    assert src_info[test_file]["checksum"] == "d41d8cd98f00b204e9800998ecf8427e"
 
     graph_part = c.load_src_graph([test_file])
     assert graph_part

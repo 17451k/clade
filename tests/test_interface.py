@@ -94,9 +94,13 @@ def test_src_graph(tmpdir, cmds_file):
     for file in c.src_graph:
         assert c.get_compilation_cmds_by_file(file)
         assert c.get_file_size(file) > 0
+        assert c.get_file_checksum(file)
 
     with pytest.raises(RuntimeError):
         assert c.get_file_size("this_file_does_not_exist.c")
+
+    with pytest.raises(RuntimeError):
+        assert c.get_file_checksum("this_file_does_not_exist.c")
 
 
 def test_pid_graph(tmpdir, cmds_file):

@@ -60,7 +60,7 @@ class Clade:
 
         self._SrcGraph = None
         self._src_graph = None
-        self._src_sizes = None
+        self._src_info = None
 
         self._PidGraph = None
         self._pid_graph = None
@@ -297,12 +297,12 @@ class Clade:
         return self._src_graph
 
     @property
-    def src_sizes(self):
+    def src_info(self):
         """Dictionary that contain number of lines of code for all source files."""
-        if not self._src_sizes:
-            self._src_sizes = self.SrcGraph.load_src_sizes()
+        if not self._src_info:
+            self._src_info = self.SrcGraph.load_src_info()
 
-        return self._src_sizes
+        return self._src_info
 
     def get_file_size(self, file):
         """Get a number of lines of code for a given file.
@@ -310,12 +310,23 @@ class Clade:
         Args:
             file: A name of the source file from the source graph
         """
-        size = self.src_sizes.get(file)
 
-        if size is None:
+        try:
+            return int(self.src_info[file]["loc"])
+        except KeyError:
             raise RuntimeError("Can't find {!r} file in the source graph".format(file))
 
-        return int(size)
+    def get_file_checksum(self, file):
+        """Get a checksum for a given file.
+
+        Args:
+            file: A name of the source file from the source graph
+        """
+
+        try:
+            return self.src_info[file]["checksum"]
+        except KeyError:
+            raise RuntimeError("Can't find {!r} file in the source graph".format(file))
 
     def get_compilation_cmds_ids_by_file(self, file):
         """Get list of identifiers of compilation commands in which the file was compiled.

@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import hashlib
 import os
 import sys
 
@@ -39,8 +40,8 @@ class SrcGraph(Extension):
         self.src_graph_file = "src_graph.json"
         self.src_graph_folder = "src_graph"
 
-        self.src_sizes = dict()
-        self.src_sizes_file = "src_sizes.json"
+        self.src_info = dict()
+        self.src_info_file = "src_info.json"
 
     def load_src_graph(self, files=None):
         """Load source graph."""
@@ -49,9 +50,9 @@ class SrcGraph(Extension):
         else:
             return self.load_data(self.src_graph_file)
 
-    def load_src_sizes(self):
-        """Load source graph without dependencies."""
-        return self.load_data(self.src_sizes_file)
+    def load_src_info(self):
+        """Load information about source files."""
+        return self.load_data(self.src_info_file)
 
     @Extension.prepare
     def parse(self, cmds_file):
@@ -60,7 +61,7 @@ class SrcGraph(Extension):
         cmds_iter = self.load_all_cmds()
         self.__generate_src_graph(cmds_iter)
         self.dump_data(self.src_graph, self.src_graph_file)
-        self.dump_data(self.src_sizes, self.src_sizes_file)
+        self.dump_data(self.src_info, self.src_info_file)
         self.dump_data_by_key(self.src_graph, self.src_graph_folder)
 
         if not self.src_graph:
@@ -103,9 +104,12 @@ class SrcGraph(Extension):
 
                 if norm_in not in self.src_graph:
                     self.src_graph[norm_in] = self.__get_new_value()
-                    self.src_sizes[norm_in] = self.__get_file_len(
-                        os.path.join(cmd["cwd"], src_file)
-                    )
+
+                    abs_src_file = os.path.join(cmd["cwd"], src_file)
+                    self.src_info[norm_in] = {
+                        "loc": self.__count_file_loc(abs_src_file),
+                        "checksum": self.__calculate_checksum(abs_src_file),
+                    }
 
                 # compiled_in is a list of commands
                 # that compile 'rel_in' source file
@@ -121,8 +125,8 @@ class SrcGraph(Extension):
 
         return used_by
 
-    def __get_file_len(self, file):
-        """Count number of lines in the file."""
+    def __count_file_loc(self, file):
+        """Count number of lines of code in the file."""
         try:
             with open(file, "rb") as f:
                 for i, _ in enumerate(f):
@@ -134,6 +138,15 @@ class SrcGraph(Extension):
         except FileNotFoundError:
             self.warning("Cannot get size of file {}".format(file))
             return 0
+
+    def __calculate_checksum(self, file):
+        """Calculate a md5 checksum of a file"""
+
+        with open(file, "rb") as fh:
+            # Larger chunk makes generating faster
+            for chunk in iter(lambda: fh.read(4096 * 32), b""):
+                hashlib.md5().update(chunk)
+        return hashlib.md5().hexdigest()
 
     @staticmethod
     def __get_new_value():
