@@ -224,14 +224,14 @@ class Info(Extension):
         gc.collect()
 
     def __is_cmd_bad_for_cif(self, cmd):
-        if cmd["in"] == []:
+        if not cmd["in"]:
             return True
 
         for cif_in in cmd["in"]:
             if cif_in == "-" or cif_in == "/dev/null":
                 return True
-            elif re.search(r"\.(s|S)$", cif_in):
-                # Assember files are not supported
+            elif re.search(r"\.[sS]$", cif_in):
+                # Assembler files are not supported
                 return True
 
         return False

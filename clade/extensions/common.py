@@ -99,7 +99,7 @@ class Common(Extension, metaclass=abc.ABCMeta):
         }
 
     def parse_cmd(self, cmd, cmd_type):
-        """Parse single bulid command."""
+        """Parse single build command."""
         self.debug("Parse: {}".format(cmd))
         parsed_cmd = self._get_cmd_dict(cmd)
 

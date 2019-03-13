@@ -23,11 +23,11 @@ from clade.extensions.compiler import Compiler
 from clade.extensions.opts import requires_value
 from clade.extensions.utils import common_main
 
-# TODO: Suppport /E and /EP options (Preprocess to stdout)
-# TODO: Suppport /FA and /Fa options (output assembler code, .cod or .asm)
+# TODO: Support /E and /EP options (Preprocess to stdout)
+# TODO: Support /FA and /Fa options (output assembler code, .cod or .asm)
 # TODO: Support /Fe option (Name of the output EXE file)
 # /Fe[pathname] /Fe: pathname
-# TODO: Suppport /Fi option (Name of the output preprocessed code, .i)
+# TODO: Support /Fi option (Name of the output preprocessed code, .i)
 # Option is used together with /P
 
 
@@ -59,7 +59,7 @@ class CL(Compiler):
                         if not val:
                             break
                         parsed_cmd["opts"].append(val)
-            elif re.search(r"^(/|-)", opt):
+            elif re.search(r"^[/-]", opt):
                 parsed_cmd["opts"].append(opt)
             else:
                 parsed_cmd["in"].append(opt)
@@ -191,7 +191,7 @@ class CL(Compiler):
             os.rename(pre_from, pre_to)
 
         # Normalize paths in line directives
-        self.__normalize_paths(pre_to, cmd["cwd"])
+        self.__normalize_paths(pre_to)
 
         if self.conf.get("Compiler.preprocess_cmds"):
             self.debug("Preprocessed file: {}".format(pre_to))
@@ -199,7 +199,7 @@ class CL(Compiler):
 
         os.remove(pre_to)
 
-    def __normalize_paths(self, c_file, cwd):
+    def __normalize_paths(self, c_file):
         rawdata = open(c_file, 'rb').read()
 
         if self.conf.get("CL.pre_encoding"):

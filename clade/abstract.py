@@ -29,17 +29,17 @@ class Intercept(metaclass=abc.ABCMeta):
 
     Attributes:
         command: A list of strings representing build command to run and intercept
-        cwd: A path to the direcotry where build command should be executed
+        cwd: A path to the directory where build command should be executed
         output: A path to the file where intercepted commands will be saved
-        fallback: A boolean enabling fallback intercepting mode
         append: A boolean allowing to append intercepted commands to already existing file with commands
+        conf: dictionary with configuration
 
     Raises:
         NotImplementedError: Clade is launched on Windows
         RuntimeError: Clade installation is corrupted, or intercepting process failed
     """
 
-    def __init__(self, command=[], cwd=os.getcwd(), output="cmds.txt", append=False, conf=None):
+    def __init__(self, command, cwd=os.getcwd(), output="cmds.txt", append=False, conf=None):
         self.command = command
         self.cwd = cwd
         self.output = os.path.abspath(output)
@@ -81,17 +81,17 @@ class Intercept(metaclass=abc.ABCMeta):
             if not self.conf.get("Intercept.preprocess"):
                 return execute(self, *args, **kwargs)
 
+            server = PreprocessServer(self.conf, self.output)
+
+            # self.env.update(server.env) would be wrong
+            server_env = server.env.copy()
+            server_env.update(self.env)
+            self.env = server_env
+
+            self.logger.debug("Start preprocess server")
+            server.start()
+
             try:
-                server = PreprocessServer(self.conf, self.output)
-
-                # self.env.update(server.env) would be wrong
-                server_env = server.env.copy()
-                server_env.update(self.env)
-                self.env = server_env
-
-                self.logger.debug("Start preprocess server")
-                server.start()
-
                 return execute(self, *args, **kwargs)
             finally:
                 self.logger.debug("Terminate preprocess server")

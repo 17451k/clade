@@ -22,7 +22,7 @@ from clade.abstract import Intercept
 
 
 class Wrapper(Intercept):
-    def __init__(self, command=[], cwd=os.getcwd(), output="cmds.txt", append=False, conf=None):
+    def __init__(self, command, cwd=os.getcwd(), output="cmds.txt", append=False, conf=None):
         self.wrappers_dir = tempfile.mkdtemp()
 
         super().__init__(command, cwd, output, append, conf)

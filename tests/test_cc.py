@@ -53,10 +53,10 @@ def test_cc_load_all_cmds(tmpdir, cmds_file, with_opts, with_deps):
         assert cmd_by_id["out"] == cmd["out"]
 
         if with_opts:
-            cmd["opts"] == c.load_opts_by_id(cmd["id"])
+            assert cmd["opts"] == c.load_opts_by_id(cmd["id"])
 
         if with_deps:
-            cmd["deps"] == c.load_deps_by_id(cmd["id"])
+            assert cmd["deps"] == c.load_deps_by_id(cmd["id"])
 
 
 @pytest.mark.parametrize("store_deps", [True, False])

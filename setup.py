@@ -116,9 +116,9 @@ def build_debugger(build_dir):
 
 
 def build_libinterceptor():
-    try:
-        build_dir = tempfile.mkdtemp()
+    build_dir = tempfile.mkdtemp()
 
+    try:
         if sys.platform == "linux":
             build_wrapper(build_dir)
             build_interceptor(build_dir)
@@ -223,6 +223,7 @@ setuptools.setup(
             "clade-link=clade.extensions.link:main",
             "clade-all=clade:parse_all_main",
             "clade=clade.extensions.cdb:main",
+            "clade-diff=clade.diff:main",
         ]
     },
     cmdclass={

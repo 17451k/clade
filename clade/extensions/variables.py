@@ -38,6 +38,9 @@ class Variables(Callgraph):
         self.used_in_vars = dict()
         self.used_in_vars_file = "used_in_vars.json"
 
+        self.functions = None
+        self.src_graph = None
+
     @Extension.prepare
     def parse(self, cmds_file):
         self.functions = self.extensions["Functions"].load_functions()

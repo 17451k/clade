@@ -57,7 +57,7 @@ class PidGraph(Extension):
         self.graph.clear()
         self.pid_by_id.clear()
 
-    def __print_pid_graph(self, cmds_file, reduced=False):
+    def __print_pid_graph(self, cmds_file):
         dot = Digraph(graph_attr={'rankdir': 'LR'}, node_attr={'shape': 'rectangle'})
 
         cmds = list(iter_cmds(cmds_file))

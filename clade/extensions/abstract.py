@@ -44,7 +44,6 @@ class Extension(metaclass=abc.ABCMeta):
 
     Attributes:
         work_dir: A path to the working directory where all output files will be stored
-        cmds: A list with intercepted build commands
         conf: A dictionary with optional arguments
         preset: Name of one of the available preset configurations
 
@@ -348,7 +347,7 @@ class Extension(metaclass=abc.ABCMeta):
 
     @staticmethod
     def __get_all_subclasses(cls):
-        """Get all sublclasses of a given class."""
+        """Get all subclasses of a given class."""
 
         for subclass in cls.__subclasses__():
             yield subclass
@@ -356,7 +355,7 @@ class Extension(metaclass=abc.ABCMeta):
 
     @staticmethod
     def __get_all_parents(cls):
-        """Get all sublclasses of a given class."""
+        """Get all subclasses of a given class."""
 
         for parent in cls.__bases__:
             yield parent
@@ -381,7 +380,7 @@ class Extension(metaclass=abc.ABCMeta):
 
     @staticmethod
     def find_subclass(ext_name):
-        """Find a sublclass of Interface class."""
+        """Find a subclass of Interface class."""
         for ext_class in Extension.__get_all_subclasses(Extension):
             if ext_name == ext_class.__name__:
                 return ext_class

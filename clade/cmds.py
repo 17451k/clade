@@ -49,7 +49,7 @@ def iter_cmds_by_which(cmds_file, which_list):
 
 
 def number_of_cmds_by_which(cmds_file, which_list):
-    """Retun number of all intercepted commands filtered by 'which' field.
+    """Return number of all intercepted commands filtered by 'which' field.
 
     Args:
         cmds_file: Path to the txt file with intercepted commands.

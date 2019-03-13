@@ -23,7 +23,7 @@ LIB64 = os.path.join(os.path.dirname(__file__), "intercept", "lib64")
 
 
 class Debugger(Intercept):
-    def __init__(self, command=[], cwd=os.getcwd(), output="cmds.txt", append=False, conf=None):
+    def __init__(self, command, cwd=os.getcwd(), output="cmds.txt", append=False, conf=None):
         super().__init__(command, cwd, output, append, conf)
 
         # self.conf["Intercept.preprocess"] = self.conf.get("Intercept.preprocess", True)

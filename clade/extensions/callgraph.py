@@ -143,8 +143,7 @@ class Callgraph(Extension):
                     self.callgraph[possible_file] = dict()
 
                 if func not in self.callgraph[possible_file]:
-                    val = {"called_in": dict()}
-                    val['called_in'] = {context_file: {context_func: {call_line: call_val}}}
+                    val = {"called_in": {context_file: {context_func: {call_line: call_val}}}}
                     self.callgraph[possible_file][func] = val
                 elif 'called_in' not in self.callgraph[possible_file][func]:
                     self.callgraph[possible_file][func]['called_in'] = {context_file: {context_func: {call_line: call_val}}}

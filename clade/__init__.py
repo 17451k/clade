@@ -32,12 +32,12 @@ from clade.extensions.path import Path
 from clade.extensions.utils import parse_args
 
 
-class Clade():
+class Clade:
     """Interface to all functionality available in Clade.
 
     Args:
         work_dir: A path to the working directory where all output files will be stored
-        output: A path to the file where intercepted commands are or will be saved
+        cmds_file: A path to the file where intercepted commands are or will be saved
         conf: A dictionary with optional arguments
         preset: Name of one of the available preset configurations
 
@@ -85,8 +85,9 @@ class Clade():
 
         Args:
             command: A list of strings representing build command to run and intercept
+            cwd: A path to the directory where build command will be executed
             append: A boolean allowing to append intercepted commands to already existing file with commands
-            fallback: A boolean enabling fallback intercepting mode
+            use_wrappers: A boolean enabling intercepting mode based on wrappers
 
         Returns:
             0 if everything went successful and error code otherwise
@@ -364,7 +365,7 @@ class Clade():
 
     @property
     def storage_dir(self):
-        """Name of a directory where CC extension copied source files."""
+        """Name of a directory where CC and CL extensions has copied source files."""
         return self._Storage.get_storage_dir()
 
     def add_file_to_storage(self, file, storage_filename=None):
@@ -525,7 +526,7 @@ class Clade():
 
         return v.load_variables(files)
 
-    def get_used_in_vars_functions(self, files=None):
+    def get_used_in_vars_functions(self):
         v = Variables(self.work_dir, self.conf, self.preset)
 
         if not v.is_parsed():
