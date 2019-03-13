@@ -36,19 +36,18 @@ class Macros(Extension):
 
     @Extension.prepare
     def parse(self, cmds_file):
+        self.log("Parsing macros")
+
         self.__process_macros_definitions()
         self.__process_macros_expansions()
 
-        self.log("Dump parsed data")
         self.dump_data_by_key(self.define, self.define_folder)
         self.dump_data_by_key(self.expand, self.expand_folder)
         self.define.clear()
         self.expand.clear()
-        self.log("Finish")
+        self.log("Parsing finished")
 
     def __process_macros_definitions(self):
-        self.log("Processing macros definitions")
-
         regex = re.compile(r"\"(.*?)\" (\S*) (\S*)")
 
         for line in self.extensions["Info"].iter_macros_definitions():
@@ -67,8 +66,6 @@ class Macros(Extension):
                 self.define[file] = {macro: [line]}
 
     def __process_macros_expansions(self):
-        self.log("Processing macros expansions")
-
         regex = re.compile(r'\"(.*?)\" (\S*)(.*)')
         regex2 = re.compile(r' actual_arg\d+=(.*)')
 
