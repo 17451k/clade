@@ -91,7 +91,7 @@ class Extension(metaclass=abc.ABCMeta):
         self.ext_meta = {"version": self.get_ext_version(), "corrupted": False}
         self.ext_meta_file = ".meta.json"
         self.global_meta_file = os.path.abspath(
-            os.path.join(work_dir, ".meta.json")
+            os.path.join(str(work_dir), ".meta.json")
         )
         self.check_ext_meta()
 
