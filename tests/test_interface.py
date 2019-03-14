@@ -121,6 +121,13 @@ def test_storage(tmpdir, cmds_file):
     assert os.path.exists(os.path.join(c.storage_dir, __file__))
 
 
+def test_storage_with_convertation(tmpdir, cmds_file):
+    c = Clade(tmpdir, cmds_file, conf={"Storage.convert_to_utf8": True})
+
+    c.add_file_to_storage(__file__)
+    assert os.path.exists(os.path.join(c.storage_dir, __file__))
+
+
 def test_callgraph(tmpdir, cmds_file):
     c = Clade(tmpdir, cmds_file)
 

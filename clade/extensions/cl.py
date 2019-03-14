@@ -114,7 +114,9 @@ class CL(Compiler):
         self.debug("Parsed command: {}".format(parsed_cmd))
         self.dump_cmd_by_id(cmd["id"], parsed_cmd)
 
-        if self.conf.get("Compiler.store_deps"):
+        if self.conf.get(
+            "Compiler.store_deps"
+        ) and self.is_a_compilation_command(parsed_cmd):
             self.store_src_files(deps, parsed_cmd["cwd"])
 
     def __get_deps(self, cmd_id, cmd):

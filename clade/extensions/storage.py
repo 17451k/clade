@@ -13,9 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import cchardet
 import functools
 import os
 import shutil
+import tempfile
 
 from clade.extensions.abstract import Extension
 
@@ -34,18 +36,13 @@ class Storage(Extension):
             else self.extensions["Path"].normalize_abs_path(filename)
         )
 
-        dst = (
-            self.work_dir
-            + os.sep
-            + storage_filename
-        )
+        dst = self.work_dir + os.sep + storage_filename
 
         if self.__path_exists(dst):
             return
 
         try:
-            os.makedirs(os.path.dirname(dst), exist_ok=True)
-            shutil.copyfile(filename, dst)
+            self.__copy_file(filename, dst)
         except FileNotFoundError as e:
             self.debug(e)
         except shutil.SameFileError:
@@ -54,6 +51,37 @@ class Storage(Extension):
     @functools.lru_cache(maxsize=30000)
     def __path_exists(self, path):
         return os.path.exists(path)
+
+    def __copy_file(self, filename, dst):
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+
+        if not self.conf.get("Storage.convert_to_utf8"):
+            shutil.copyfile(filename, dst)
+        else:
+            with open(filename, "rb") as fh:
+                content_bytes = fh.read()
+
+            encoding = cchardet.detect(content_bytes)["encoding"]
+
+            detected = cchardet.detect(content_bytes)
+            encoding = detected["encoding"]
+            confidence = detected["confidence"]
+
+            if not confidence or confidence < 0.7:
+                self.warning(
+                    "Can't confidently detect encoding of {!r}.".format(
+                        filename
+                    )
+                )
+                shutil.copyfile(filename, dst)
+                return
+
+            with tempfile.NamedTemporaryFile(
+                mode="w", encoding="utf-8", delete=False
+            ) as f:
+                f.write(content_bytes.decode(encoding))
+
+            os.replace(f.name, dst)
 
     def get_storage_dir(self):
         return self.work_dir

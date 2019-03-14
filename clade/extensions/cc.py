@@ -70,7 +70,9 @@ class CC(Compiler):
         self.dump_deps_by_id(cmd_id, deps)
         self.dump_cmd_by_id(cmd_id, parsed_cmd)
 
-        if self.conf.get("Compiler.store_deps"):
+        if self.conf.get(
+            "Compiler.store_deps"
+        ) and self.is_a_compilation_command(parsed_cmd):
             self.store_src_files(deps, parsed_cmd["cwd"])
 
     def __get_deps(self, cmd_id, cmd):
@@ -149,9 +151,6 @@ class CC(Compiler):
 
     def __preprocess_cmd(self, cmd):
         pre = []
-
-        if not self.is_a_compilation_command(cmd):
-            return pre
 
         for cmd_in in cmd["in"]:
             if not os.path.isabs(cmd_in):

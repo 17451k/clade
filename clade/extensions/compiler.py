@@ -44,7 +44,13 @@ class Compiler(Common):
         self.dump_data(deps, os.path.join("deps", "{}.json".format(id)))
 
     def is_a_compilation_command(self, cmd):
-        if [cmd_in for cmd_in in cmd["in"] if os.path.splitext(os.path.basename(cmd_in))[1] not in self.file_extensions]:
+        if any(
+            (
+                True
+                for cmd_in in cmd["in"]
+                if os.path.splitext(os.path.basename(cmd_in))[1] not in self.file_extensions
+            )
+        ):
             return False
 
         return True
