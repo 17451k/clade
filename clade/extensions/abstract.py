@@ -76,8 +76,8 @@ class Extension(metaclass=abc.ABCMeta):
             shutil.rmtree(self.work_dir)
             self.conf["force_current"] = False
 
-        self.already_initialised = dict()
-        self.already_initialised[self.name] = self
+        self.already_initialized = dict()
+        self.already_initialized[self.name] = self
         self.init_extensions(work_dir)
 
         self.meta = {
@@ -91,18 +91,18 @@ class Extension(metaclass=abc.ABCMeta):
         self.debug("Working directory: {}".format(self.work_dir))
 
     def init_extensions(self, work_dir):
-        """Initialise all extensions required by this object."""
+        """Initialize all extensions required by this object."""
 
         if not self.requires:
             return
 
-        self.debug("Prerequisites to initialise: {}".format(
-            [x for x in self.requires if x not in self.already_initialised]
+        self.debug("Prerequisites to initialize: {}".format(
+            [x for x in self.requires if x not in self.already_initialized]
         ))
 
         for ext_name in self.requires:
-            if ext_name in self.already_initialised:
-                self.extensions[ext_name] = self.already_initialised[ext_name]
+            if ext_name in self.already_initialized:
+                self.extensions[ext_name] = self.already_initialized[ext_name]
                 continue
 
             # If subclass is found then there is no need to import extension modules
