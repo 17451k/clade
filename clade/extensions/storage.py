@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import functools
 import os
 import shutil
 
@@ -24,7 +25,7 @@ class Storage(Extension):
 
     __version__ = "1"
 
-    def add_file(self, filename, storage_filename=None, cache=set()):
+    def add_file(self, filename, storage_filename=None):
         """Add file to the storage."""
 
         storage_filename = (
@@ -39,10 +40,8 @@ class Storage(Extension):
             + storage_filename
         )
 
-        if dst in cache:
+        if self.__path_exists(dst):
             return
-        else:
-            cache.add(dst)
 
         try:
             os.makedirs(os.path.dirname(dst), exist_ok=True)
@@ -51,6 +50,10 @@ class Storage(Extension):
             self.debug(e)
         except shutil.SameFileError:
             pass
+
+    @functools.lru_cache(maxsize=30000)
+    def __path_exists(self, path):
+        return os.path.exists(path)
 
     def get_storage_dir(self):
         return self.work_dir
