@@ -19,8 +19,10 @@ import glob
 import hashlib
 import itertools
 import logging
+import pkg_resources
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 import time
@@ -35,7 +37,9 @@ from clade.extensions.utils import merge_preset_to_conf
 # Setup extensions logger
 logger = logging.getLogger("Clade")
 handler = logging.StreamHandler(stream=sys.stdout)
-handler.setFormatter(logging.Formatter("%(asctime)s clade %(message)s", "%H:%M:%S"))
+handler.setFormatter(
+    logging.Formatter("%(asctime)s clade %(message)s", "%H:%M:%S")
+)
 logger.addHandler(handler)
 
 
@@ -69,10 +73,14 @@ class Extension(metaclass=abc.ABCMeta):
         logger.setLevel(self.conf.get("log_level", "INFO"))
 
         if self.conf.get("force") and os.path.exists(self.work_dir):
-            self.debug("Removing working directory: {!r}".format(self.work_dir))
+            self.debug(
+                "Removing working directory: {!r}".format(self.work_dir)
+            )
             shutil.rmtree(self.work_dir)
         elif self.conf.get("force_current") and os.path.exists(self.work_dir):
-            self.debug("Removing working directory: {!r}".format(self.work_dir))
+            self.debug(
+                "Removing working directory: {!r}".format(self.work_dir)
+            )
             shutil.rmtree(self.work_dir)
             self.conf["force_current"] = False
 
@@ -80,14 +88,14 @@ class Extension(metaclass=abc.ABCMeta):
         self.already_initialized[self.name] = self
         self.init_extensions(work_dir)
 
-        self.meta = {
-            "version": self.get_ext_version(),
-            "corrupted": False
-        }
-        self.meta_file = ".meta.json"
-        self.check_meta()
+        self.ext_meta = {"version": self.get_ext_version(), "corrupted": False}
+        self.ext_meta_file = ".meta.json"
+        self.global_meta_file = os.path.abspath(
+            os.path.join(work_dir, ".meta.json")
+        )
+        self.check_ext_meta()
 
-        self.debug("Extension version: {}".format(self.meta["version"]))
+        self.debug("Extension version: {}".format(self.ext_meta["version"]))
         self.debug("Working directory: {}".format(self.work_dir))
 
     def init_extensions(self, work_dir):
@@ -96,9 +104,11 @@ class Extension(metaclass=abc.ABCMeta):
         if not self.requires:
             return
 
-        self.debug("Prerequisites to initialize: {}".format(
-            [x for x in self.requires if x not in self.already_initialized]
-        ))
+        self.debug(
+            "Prerequisites to initialize: {}".format(
+                [x for x in self.requires if x not in self.already_initialized]
+            )
+        )
 
         for ext_name in self.requires:
             if ext_name in self.already_initialized:
@@ -135,6 +145,7 @@ class Extension(metaclass=abc.ABCMeta):
         It checks that commands were not already parsed
         and run parse() for required extensions.
         """
+
         def parse_wrapper(self, *args, **kwargs):
             if self.is_parsed():
                 self.log("Build commands are already parsed")
@@ -145,14 +156,17 @@ class Extension(metaclass=abc.ABCMeta):
             try:
                 return parse(self, *args, **kwargs)
             except Exception:
-                self.meta["corrupted"] = True
+                self.ext_meta["corrupted"] = True
                 raise
             finally:
                 if os.path.exists(self.temp_dir):
                     shutil.rmtree(self.temp_dir)
 
                 if os.path.exists(self.work_dir):
-                    self.dump_meta()
+                    self.dump_ext_meta()
+
+                if os.path.exists(os.path.dirname(self.work_dir)):
+                    self.dump_global_meta(args[0])
 
         return parse_wrapper
 
@@ -161,13 +175,8 @@ class Extension(metaclass=abc.ABCMeta):
         """Parse intercepted commands."""
         pass
 
-    def get_build_cwd(self, cmds_file):
-        build_cwd = self.conf.get("Clade.build_cwd")
-
-        if not build_cwd:
-            build_cwd = clade.cmds.get_build_cwd(cmds_file)
-
-        return build_cwd
+    def get_build_dir(self, cmds_file):
+        return clade.cmds.get_build_dir(cmds_file)
 
     def load_data(self, file_name, raise_exception=True):
         """Load json file by name."""
@@ -199,10 +208,21 @@ class Extension(metaclass=abc.ABCMeta):
 
         try:
             with open(file_name, "w") as fh:
-                ujson.dump(data, fh, sort_keys=True, indent=indent, ensure_ascii=False, escape_forward_slashes=False)
+                ujson.dump(
+                    data,
+                    fh,
+                    sort_keys=True,
+                    indent=indent,
+                    ensure_ascii=False,
+                    escape_forward_slashes=False,
+                )
         except RecursionError:
             # todo: This is a workaround but it is required rarely
-            self.warning("Do not print data to file due to recursion limit {}".format(file_name))
+            self.warning(
+                "Do not print data to file due to recursion limit {}".format(
+                    file_name
+                )
+            )
 
     def load_data_by_key(self, folder, files=None):
         """Load data stored in multiple json files using dump_data_by_key()."""
@@ -212,10 +232,17 @@ class Extension(metaclass=abc.ABCMeta):
                 data.update(self.load_data(file, raise_exception=False))
         elif isinstance(files, list) or isinstance(files, set):
             for key in files:
-                file_name = os.path.join(folder, hashlib.md5(key.encode('utf-8')).hexdigest() + ".json")
+                file_name = os.path.join(
+                    folder,
+                    hashlib.md5(key.encode("utf-8")).hexdigest() + ".json",
+                )
                 data.update(self.load_data(file_name, raise_exception=False))
         else:
-            raise TypeError("Provide a list or set of files to retrieve data but not {!r}".format(type(files).__name__))
+            raise TypeError(
+                "Provide a list or set of files to retrieve data but not {!r}".format(
+                    type(files).__name__
+                )
+            )
 
         return data
 
@@ -224,7 +251,9 @@ class Extension(metaclass=abc.ABCMeta):
         for key in data:
             to_dump = {key: data[key]}
 
-            file_name = os.path.join(folder, hashlib.md5(key.encode('utf-8')).hexdigest() + ".json")
+            file_name = os.path.join(
+                folder, hashlib.md5(key.encode("utf-8")).hexdigest() + ".json"
+            )
 
             self.dump_data(to_dump, file_name, indent=0)
 
@@ -237,22 +266,57 @@ class Extension(metaclass=abc.ABCMeta):
 
         return version
 
-    def check_meta(self):
-        stored_meta = self.load_meta()
+    def check_ext_meta(self):
+        stored_meta = self.load_ext_meta()
 
         if stored_meta:
-            if self.meta["version"] != stored_meta["version"]:
-                self.error("Working directory was created by an older version of Clade and can't be used.")
+            if self.ext_meta["version"] != stored_meta["version"]:
+                self.error(
+                    "Working directory was created by an older version of Clade and can't be used."
+                )
                 raise RuntimeError
             elif stored_meta["corrupted"]:
                 self.error("Working directory is corrupted and can't be used.")
                 raise RuntimeError
 
-    def load_meta(self):
-        return self.load_data(self.meta_file, raise_exception=False)
+    def load_ext_meta(self):
+        return self.load_data(self.ext_meta_file, raise_exception=False)
 
-    def dump_meta(self):
-        self.dump_data(self.meta, self.meta_file)
+    def dump_ext_meta(self):
+        self.dump_data(self.ext_meta, self.ext_meta_file)
+
+    def load_global_meta(self):
+        return self.load_data(self.global_meta_file, raise_exception=False)
+
+    def dump_global_meta(self, cmds_file):
+        stored_meta = self.load_global_meta()
+        stored_meta[self.name] = self.ext_meta
+
+        if "conf" not in stored_meta:
+            stored_meta["conf"] = self.conf
+
+        if "build_dir" not in stored_meta:
+            stored_meta["build_dir"] = self.get_build_dir(cmds_file)
+        elif self.name == "Path":
+            stored_meta["build_dir"] = self.conf["build_dir"]
+
+        if "version" not in stored_meta:
+            stored_meta["version"] = Extension.get_clade_version()
+
+        self.dump_data(stored_meta, self.global_meta_file)
+
+    @staticmethod
+    def get_clade_version():
+        version = pkg_resources.get_distribution("clade").version
+        location = pkg_resources.get_distribution("clade").location
+
+        try:
+            desc = ["git", "describe", "--tags", "--dirty"]
+            version = subprocess.check_output(
+                desc, cwd=location, stderr=subprocess.DEVNULL,
+            ).strip()
+        finally:
+            return version
 
     def __get_cmd_chunk(self, cmds, chunk_size=1000):
         cmds_it = iter(cmds)
@@ -316,7 +380,9 @@ class Extension(metaclass=abc.ABCMeta):
                         finished_cmds += len(done_futures)
 
                         msg = "\t [{:.0f}%] {} of {} commands are parsed".format(
-                            finished_cmds / total_cmds * 100, finished_cmds, total_cmds
+                            finished_cmds / total_cmds * 100,
+                            finished_cmds,
+                            total_cmds,
                         )
                         print(msg, end="\r")
 
@@ -325,10 +391,16 @@ class Extension(metaclass=abc.ABCMeta):
                         try:
                             f.result()
                         except Exception as e:
-                            raise RuntimeError("Something happened in the child process: {}".format(e))
+                            raise RuntimeError(
+                                "Something happened in the child process: {}".format(
+                                    e
+                                )
+                            )
 
                     # Submit next chunk if the current one is almost processed
-                    finished_chunk_cmds = len([x for x in chunk_futures if x.done()])
+                    finished_chunk_cmds = len(
+                        [x for x in chunk_futures if x.done()]
+                    )
                     if finished_chunk_cmds > (chunk_size - chunk_size // 10):
                         break
 
@@ -367,7 +439,7 @@ class Extension(metaclass=abc.ABCMeta):
 
         """Import all Python modules located in 'extensions' folder."""
         for root, _, filenames in os.walk(os.path.dirname(__file__)):
-            for filename in fnmatch.filter(filenames, '*.py'):
+            for filename in fnmatch.filter(filenames, "*.py"):
                 module_name = os.path.splitext(os.path.basename(filename))[0]
 
                 for module in clade_modules:

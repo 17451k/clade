@@ -17,7 +17,7 @@ import os
 import pytest
 import shutil
 
-from clade.cmds import iter_cmds, iter_cmds_by_which, open_cmds_file, get_build_cwd, get_last_id, get_stats, print_cmds_stats
+from clade.cmds import iter_cmds, iter_cmds_by_which, open_cmds_file, get_build_dir, get_last_id, get_stats, print_cmds_stats
 
 # TODO: Replace >= by ==
 number_of_cmds = 5
@@ -38,8 +38,8 @@ def test_iter_by_which(cmds_file):
     assert len(list(iter_cmds_by_which(cmds_file, [gcc_which]))) >= number_of_gcc_cmds
 
 
-def test_get_build_cmd(cmds_file):
-    assert get_build_cwd(cmds_file) == os.getcwd()
+def test_get_build_dir(cmds_file):
+    assert get_build_dir(cmds_file) == os.getcwd()
 
 
 def test_get_last_id(cmds_file):

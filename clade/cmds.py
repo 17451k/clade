@@ -95,7 +95,7 @@ def get_first_cmd(cmds_file):
     return next(iter_cmds(cmds_file))
 
 
-def get_build_cwd(cmds_file):
+def get_build_dir(cmds_file):
     """Get the working directory in which build process occurred."""
     first_cmd = get_first_cmd(cmds_file)
     return first_cmd["cwd"]

@@ -29,9 +29,10 @@ class Path(Extension):
         self.paths = dict()
         self.paths_file = "paths.json"
 
+    @Extension.prepare
     def parse(self, cmds_file):
-        build_cwd = self.get_build_cwd(cmds_file)
-        self.normalize_abs_path(build_cwd)
+        build_cwd = self.get_build_dir(cmds_file)
+        self.conf["build_dir"] = self.normalize_abs_path(build_cwd)
 
     def get_rel_paths(self, paths, cwd):
         # TODO: check that paths is a list, not a string

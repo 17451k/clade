@@ -589,6 +589,22 @@ class Clade:
     def __normalize_deps(self, deps, cwd):
         return [self.Path.get_rel_path(d, cwd) for d in deps]
 
+    def get_meta(self):
+        """Get meta information about Clade working directory"""
+        return self.PidGraph.load_global_meta()
+
+    def get_build_dir(self):
+        """Get the directory where the build process was performed."""
+        return self.get_meta()["build_dir"]
+
+    def get_conf(self):
+        """Get the configuration of Clade that was used to create specified working directory."""
+        return self.get_meta()["conf"]
+
+    def get_version(self):
+        """Get the version of Clade that was used to create specified working directory."""
+        return self.get_meta()["version"]
+
 
 def parse_all_main(args=sys.argv[1:]):
     conf = parse_args(args)

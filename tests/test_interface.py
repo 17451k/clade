@@ -174,3 +174,11 @@ def test_cdb(tmpdir, cmds_file):
     c = Clade(tmpdir, cmds_file)
 
     assert c.compilation_database
+
+
+def test_meta(tmpdir, cmds_file):
+    c = Clade(tmpdir, cmds_file)
+
+    assert c.get_conf()
+    assert c.get_version()
+    assert c.get_build_dir() == os.getcwd()

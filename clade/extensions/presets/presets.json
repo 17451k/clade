@@ -5,7 +5,6 @@
         "force": false,
         "force_current": false,
         "cpu_count": null,
-        "Clade.build_cwd": "",
         "Wrapper.wrap_list": [],
         "Wrapper.recursive_wrap": false,
         "CC.ignore_cc1": true,
