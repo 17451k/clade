@@ -244,7 +244,7 @@ class Extension(metaclass=abc.ABCMeta):
             if self.meta["version"] != stored_meta["version"]:
                 self.error("Working directory was created by an older version of Clade and can't be used.")
                 raise RuntimeError
-            elif self.meta["corrupted"]:
+            elif stored_meta["corrupted"]:
                 self.error("Working directory is corrupted and can't be used.")
                 raise RuntimeError
 
