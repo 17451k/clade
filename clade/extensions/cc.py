@@ -54,7 +54,9 @@ class CC(Compiler):
 
         self.debug("Parsed command: {}".format(parsed_cmd))
 
-        if self.conf.get("Compiler.preprocess_cmds"):
+        if self.conf.get(
+            "Compiler.preprocess_cmds"
+        ) and self.is_a_compilation_command(parsed_cmd):
             pre = self.__preprocess_cmd(parsed_cmd)
             self.debug("Preprocessed files: {}".format(pre))
             self.store_src_files(pre, parsed_cmd["cwd"])
