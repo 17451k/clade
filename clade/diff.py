@@ -523,8 +523,14 @@ class Diff:
 
                 signatures_are_same = False
 
-            decl_files1 = set(f1[file][func]["declarations"].keys())
-            decl_files2 = set(f2[file][func]["declarations"].keys())
+            if f1[file][func]["declarations"]:
+                decl_files1 = set(f1[file][func]["declarations"].keys())
+            else:
+                decl_files1 = set()
+            if f2[file][func]["declarations"]:
+                decl_files2 = set(f2[file][func]["declarations"].keys())
+            else:
+                decl_files2 = set()
 
             if decl_files1 == decl_files2:
                 common_decl_files = decl_files2
@@ -569,7 +575,7 @@ class Diff:
 
                 if signature1 != signature2:
                     logger.error(
-                        "{!r} function from {!r} file changed its declaration signature line from {!r} to {!r}".format(
+                        "{!r} function from {!r} file changed its declaration signature from {!r} to {!r}".format(
                             func, file, signature1, signature2
                         )
                     )
@@ -660,8 +666,8 @@ class Diff:
                 exp_names_are_same = False
 
             for exp_name in common_exp_names:
-                args1 = exp1[exp_file][exp_name]["args"]
-                args2 = exp2[exp_file][exp_name]["args"]
+                args1 = set([x for sublist in exp1[exp_file][exp_name]["args"] for x in sublist])
+                args2 = set([x for sublist in exp2[exp_file][exp_name]["args"] for x in sublist])
 
                 if args1 != args2:
                     removed = args1 - args2
