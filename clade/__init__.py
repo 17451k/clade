@@ -103,9 +103,24 @@ class Clade:
         if cmds_file:
             self.cmds_file = cmds_file
 
-        extensions = ("Callgraph", "Variables", "Macros", "Typedefs")
+        self.parse("Callgraph")
+
+        # Backup "force" options
+        force_current = self.conf["force_current"]
+        force = self.conf["force"]
+
+        # If  "force" is True, then set "force_current" to True
+        # and "force" to False
+        self.conf["force_current"] = self.conf["force"]
+        self.conf["force"] = False
+
+        extensions = ("Variables", "Macros", "Typedefs")
         for ext_name in extensions:
             self.parse(ext_name)
+
+        # Restore "force" options
+        self.conf["force_current"] = force_current
+        self.conf["force"] = force
 
     def parse(self, ext_name):
         """Execute parse() method of a specified Clade extension.
