@@ -32,6 +32,8 @@ from clade.extensions.utils import common_main
 
 
 class CL(Compiler):
+    requires = Compiler.requires + ["Path"]
+
     __version__ = "1"
 
     def parse(self, cmds_file):
@@ -193,7 +195,7 @@ class CL(Compiler):
             os.rename(pre_from, pre_to)
 
         # Normalize paths in line directives
-        self.__normalize_paths(pre_to)
+        self.__normalize_paths(pre_to, cmd["cwd"])
 
         if self.conf.get("Compiler.preprocess_cmds"):
             self.debug("Preprocessed file: {}".format(pre_to))
@@ -201,7 +203,7 @@ class CL(Compiler):
 
         os.remove(pre_to)
 
-    def __normalize_paths(self, c_file):
+    def __normalize_paths(self, c_file, cwd):
         rawdata = open(c_file, 'rb').read()
 
         if self.conf.get("CL.pre_encoding"):
@@ -213,14 +215,15 @@ class CL(Compiler):
             c_file + ".new", "w", encoding="utf-8"
         ) as c_file_new_fh:
             for line in c_file_fh:
-                m = re.match(r"#line \d* \"(.*?)\"", line)
+                m = re.match(r"\s*#line \d* \"(.*?)\"", line)
 
                 if m:
                     inc_file = m.group(1)
 
-                    norm_inc_file = os.path.normpath(inc_file)
-                    norm_inc_file = norm_inc_file.strip()
-                    norm_inc_file = norm_inc_file.replace("\\", "\\\\")
+                    inc_file = inc_file.strip()
+                    norm_inc_file = self.extensions["Path"].normalize_rel_path(
+                        inc_file, cwd
+                    )
 
                     line = line.replace(inc_file, norm_inc_file)
 
