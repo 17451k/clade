@@ -61,13 +61,11 @@ class Storage(Extension):
             with open(filename, "rb") as fh:
                 content_bytes = fh.read()
 
-            encoding = cchardet.detect(content_bytes)["encoding"]
-
             detected = cchardet.detect(content_bytes)
             encoding = detected["encoding"]
             confidence = detected["confidence"]
 
-            if not confidence or confidence < 0.7:
+            if not confidence:
                 self.warning(
                     "Can't confidently detect encoding of {!r}.".format(
                         filename
