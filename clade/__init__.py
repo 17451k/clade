@@ -606,6 +606,9 @@ class Clade:
 
     def get_meta(self):
         """Get meta information about Clade working directory"""
+        if not self.PidGraph.is_parsed():
+            raise RuntimeError("Clade working directory is empty")
+
         return self.PidGraph.load_global_meta()
 
     def get_build_dir(self):
@@ -619,6 +622,17 @@ class Clade:
     def get_version(self):
         """Get the version of Clade that was used to create specified working directory."""
         return self.get_meta()["version"]
+
+    def get_meta_by_key(self, key):
+        """Get meta information by its key"""
+        return self.get_meta()[key]
+
+    def add_meta_by_key(self, key, data):
+        """Add new meta information by key"""
+        if not self.PidGraph.is_parsed():
+            raise RuntimeError("Clade working directory is empty")
+
+        self.PidGraph.add_data_to_global_meta(key, data)
 
 
 def parse_all_main(args=sys.argv[1:]):

@@ -189,3 +189,9 @@ def test_meta(tmpdir, cmds_file):
     assert c.get_conf()
     assert c.get_version()
     assert c.get_build_dir() == os.getcwd()
+
+    test_data = {"test_data": 5}
+    c.add_meta_by_key("test", test_data)
+    assert test_data == c.get_meta_by_key("test")
+    with pytest.raises(KeyError):
+        assert c.get_meta_by_key("test2")

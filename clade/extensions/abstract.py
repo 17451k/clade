@@ -91,7 +91,7 @@ class Extension(metaclass=abc.ABCMeta):
         self.ext_meta = {"version": self.get_ext_version(), "corrupted": False}
         self.ext_meta_file = ".meta.json"
         self.global_meta_file = os.path.abspath(
-            os.path.join(str(work_dir), ".meta.json")
+            os.path.join(str(work_dir), "meta.json")
         )
         self.check_ext_meta()
 
@@ -303,6 +303,11 @@ class Extension(metaclass=abc.ABCMeta):
         if "version" not in stored_meta:
             stored_meta["version"] = Extension.get_clade_version()
 
+        self.dump_data(stored_meta, self.global_meta_file)
+
+    def add_data_to_global_meta(self, key, data):
+        stored_meta = self.load_global_meta()
+        stored_meta[key] = data
         self.dump_data(stored_meta, self.global_meta_file)
 
     @staticmethod
