@@ -331,18 +331,6 @@ class Clade:
         except KeyError:
             raise RuntimeError("Can't find {!r} file in the source graph".format(file))
 
-    def get_file_checksum(self, file):
-        """Get a checksum for a given file.
-
-        Args:
-            file: A name of the source file from the source graph
-        """
-
-        try:
-            return self.src_info[file]["checksum"]
-        except KeyError:
-            raise RuntimeError("Can't find {!r} file in the source graph".format(file))
-
     def get_compilation_cmds_ids_by_file(self, file):
         """Get list of identifiers of compilation commands in which the file was compiled.
 
@@ -626,6 +614,10 @@ class Clade:
     def get_meta_by_key(self, key):
         """Get meta information by its key"""
         return self.get_meta()[key]
+
+    def get_uuid(self):
+        """Get the universally unique identifier (uuid) of the Clade working directory"""
+        return self.get_meta()["uuid"]
 
     def add_meta_by_key(self, key, data):
         """Add new meta information by key"""

@@ -35,7 +35,6 @@ def test_src_graph(tmpdir, cmds_file):
     src_info = c.load_src_info()
     assert src_info
     assert src_info[test_file]["loc"] == 11
-    assert src_info[test_file]["checksum"] == "d41d8cd98f00b204e9800998ecf8427e"
 
     graph_part = c.load_src_graph([test_file])
     assert graph_part

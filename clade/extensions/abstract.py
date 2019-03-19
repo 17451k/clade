@@ -19,6 +19,8 @@ import glob
 import hashlib
 import itertools
 import logging
+import uuid
+
 import pkg_resources
 import os
 import shutil
@@ -303,6 +305,9 @@ class Extension(metaclass=abc.ABCMeta):
 
         if "version" not in stored_meta:
             stored_meta["version"] = Extension.get_clade_version()
+
+        if "uuid" not in stored_meta:
+            stored_meta["uuid"] = str(uuid.uuid4())
 
         self.dump_data(stored_meta, self.global_meta_file)
 

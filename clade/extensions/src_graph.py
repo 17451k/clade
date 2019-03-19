@@ -108,7 +108,6 @@ class SrcGraph(Extension):
                     abs_src_file = os.path.join(cmd["cwd"], src_file)
                     self.src_info[norm_in] = {
                         "loc": self.__count_file_loc(abs_src_file),
-                        "checksum": self.__calculate_checksum(abs_src_file),
                     }
 
                 # compiled_in is a list of commands
@@ -138,15 +137,6 @@ class SrcGraph(Extension):
         except FileNotFoundError:
             self.warning("Cannot get size of file {}".format(file))
             return 0
-
-    def __calculate_checksum(self, file):
-        """Calculate a md5 checksum of a file"""
-
-        with open(file, "rb") as fh:
-            # Larger chunk makes generating faster
-            for chunk in iter(lambda: fh.read(4096 * 32), b""):
-                hashlib.md5().update(chunk)
-        return hashlib.md5().hexdigest()
 
     @staticmethod
     def __get_new_value():
