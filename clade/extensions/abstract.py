@@ -77,11 +77,12 @@ class Extension(metaclass=abc.ABCMeta):
                 "Removing working directory: {!r}".format(self.work_dir)
             )
             shutil.rmtree(self.work_dir)
-        elif self.conf.get("force_current") and os.path.exists(self.work_dir):
-            self.debug(
-                "Removing working directory: {!r}".format(self.work_dir)
-            )
-            shutil.rmtree(self.work_dir)
+        elif self.conf.get("force_current"):
+            if os.path.exists(self.work_dir):
+                self.debug(
+                    "Removing working directory: {!r}".format(self.work_dir)
+                )
+                shutil.rmtree(self.work_dir)
             self.conf["force_current"] = False
 
         self.already_initialized = dict()
