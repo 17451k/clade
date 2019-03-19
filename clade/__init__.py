@@ -609,7 +609,7 @@ class Clade:
 
     def get_version(self):
         """Get the version of Clade that was used to create specified working directory."""
-        return self.get_meta()["version"]
+        return self.get_meta()["clade_version"]
 
     def get_meta_by_key(self, key):
         """Get meta information by its key"""

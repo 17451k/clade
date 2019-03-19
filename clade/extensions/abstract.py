@@ -14,13 +14,13 @@
 # limitations under the License.
 
 import abc
+import datetime
 import fnmatch
 import glob
 import hashlib
 import itertools
 import logging
-import uuid
-
+import platform
 import pkg_resources
 import os
 import shutil
@@ -29,6 +29,7 @@ import sys
 import tempfile
 import time
 import ujson
+import uuid
 
 from concurrent.futures import ProcessPoolExecutor
 
@@ -156,6 +157,8 @@ class Extension(metaclass=abc.ABCMeta):
 
             self.temp_dir = tempfile.mkdtemp()
             self.parse_prerequisites(args[0])
+            time_start = time.time()
+
             try:
                 return parse(self, *args, **kwargs)
             except Exception:
@@ -164,6 +167,10 @@ class Extension(metaclass=abc.ABCMeta):
             finally:
                 if os.path.exists(self.temp_dir):
                     shutil.rmtree(self.temp_dir)
+
+                self.ext_meta["time"] = str(
+                    datetime.timedelta(seconds=(time.time() - time_start))
+                )
 
                 if os.path.exists(self.work_dir):
                     self.dump_ext_meta()
@@ -303,11 +310,27 @@ class Extension(metaclass=abc.ABCMeta):
         elif self.name == "Path":
             stored_meta["build_dir"] = self.conf["build_dir"]
 
-        if "version" not in stored_meta:
-            stored_meta["version"] = Extension.get_clade_version()
+        if "clade_version" not in stored_meta:
+            stored_meta["clade_version"] = Extension.get_clade_version()
 
         if "uuid" not in stored_meta:
             stored_meta["uuid"] = str(uuid.uuid4())
+
+        if "python_version" not in stored_meta:
+            stored_meta["python_version"] = platform.python_version()
+
+        if "platform" not in stored_meta:
+            stored_meta["platform"] = platform.platform()
+
+        if "requirements" not in stored_meta:
+            stored_meta["requirements"] = [
+                "{}=={}".format(d.project_name, d.version)
+                for d in pkg_resources.working_set
+                if d.project_name in sys.modules and d.project_name != "clade"
+            ]
+
+        if "date" not in stored_meta:
+            stored_meta["date"] = datetime.datetime.today().strftime('%Y-%m-%d %H:%M')
 
         self.dump_data(stored_meta, self.global_meta_file)
 
@@ -324,7 +347,7 @@ class Extension(metaclass=abc.ABCMeta):
         try:
             desc = ["git", "describe", "--tags", "--dirty"]
             version = subprocess.check_output(
-                desc, cwd=location, stderr=subprocess.DEVNULL,
+                desc, cwd=location, stderr=subprocess.DEVNULL
             ).strip()
         finally:
             return version
