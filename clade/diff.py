@@ -569,6 +569,7 @@ class Diff:
                             func, file, line1, line2
                         )
                     )
+                    decls_are_same = False
 
                 signature1 = decl1["signature"]
                 signature2 = decl2["signature"]
@@ -580,6 +581,8 @@ class Diff:
                         )
                     )
 
+                    decls_are_same = False
+
                 type1 = decl1["type"]
                 type2 = decl2["type"]
 
@@ -589,6 +592,8 @@ class Diff:
                             func, file, type1, type2
                         )
                     )
+
+                    decls_are_same = False
 
         if (
             keys_are_same
@@ -974,7 +979,7 @@ class Diff:
                                     )
                                 )
 
-                            match_types_are_same = False
+                                match_types_are_same = False
 
         if (
             files_are_same
