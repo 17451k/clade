@@ -196,7 +196,7 @@ setuptools.setup(
     author_email="ilya.shchepetkov@yandex.ru",
     url="https://github.com/17451k/clade",
     license="LICENSE.txt",
-    long_description=open("README.rst").read(),
+    long_description=open("README.rst", encoding="utf8").read(),
     python_requires=">=3.4",
     packages=["clade"],
     package_data={"clade": package_files("clade")},
