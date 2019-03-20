@@ -123,6 +123,10 @@ def test_storage_with_convertation(tmpdir, cmds_file):
     c.add_file_to_storage(__file__)
     assert os.path.exists(os.path.join(c.storage_dir, __file__))
 
+    storage_path = c.get_storage_path(__file__)
+
+    assert open(__file__).read()
+
 
 def test_callgraph(tmpdir, cmds_file):
     c = Clade(tmpdir, cmds_file)

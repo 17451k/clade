@@ -75,9 +75,9 @@ class Storage(Extension):
                 return
 
             with tempfile.NamedTemporaryFile(
-                mode="w", encoding="utf-8", delete=False
+                mode="wb", delete=False
             ) as f:
-                f.write(content_bytes.decode(encoding))
+                f.write(content_bytes.decode(encoding).encode("utf-8"))
 
             os.replace(f.name, dst)
 
