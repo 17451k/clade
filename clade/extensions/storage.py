@@ -79,7 +79,10 @@ class Storage(Extension):
             ) as f:
                 f.write(content_bytes.decode(encoding).encode("utf-8"))
 
-            os.replace(f.name, dst)
+            try:
+                os.replace(f.name, dst)
+            except OSError:
+                os.remove(f.name)
 
     def get_storage_dir(self):
         return self.work_dir

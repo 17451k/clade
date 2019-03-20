@@ -229,8 +229,10 @@ class CL(Compiler):
 
                 c_file_new_fh.write(line)
 
-        os.remove(c_file)
-        os.rename(c_file + ".new", c_file)
+        try:
+            os.replace(c_file + ".new", c_file)
+        except OSError:
+            os.remove(c_file + ".new")
 
 
 def main(args=sys.argv[1:]):
