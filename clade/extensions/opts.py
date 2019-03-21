@@ -241,7 +241,7 @@ clang_opts = [
     "-filetype",
 ]
 
-preprocessor_deps_opts = [
+cc_preprocessor_deps_opts = [
     "-M",
     "-MM",
     "-MF",
@@ -463,6 +463,15 @@ cl_opts = [
     "-Tp",
     "/U",
     "-U",
+]
+
+cl_preprocessor_deps_opts = [
+    "/EP",
+    "-EP",
+    "/E",
+    "-E",
+    "/P",
+    "-P",
 ]
 
 requires_value = {

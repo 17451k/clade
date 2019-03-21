@@ -20,15 +20,12 @@ import subprocess
 import sys
 
 from clade.extensions.compiler import Compiler
-from clade.extensions.opts import requires_value
+from clade.extensions.opts import requires_value, cl_preprocessor_deps_opts
 from clade.extensions.utils import common_main
 
-# TODO: Support /E and /EP options (Preprocess to stdout)
 # TODO: Support /FA and /Fa options (output assembler code, .cod or .asm)
 # TODO: Support /Fe option (Name of the output EXE file)
 # /Fe[pathname] /Fe: pathname
-# TODO: Support /Fi option (Name of the output preprocessed code, .i)
-# Option is used together with /P
 
 
 class CL(Compiler):
@@ -71,8 +68,8 @@ class CL(Compiler):
         ):
             for cmd_in in parsed_cmd["in"]:
                 for opt in parsed_cmd["opts"]:
-                    if re.search(r"/Fo|-Fo", opt):
-                        obj_path = re.sub(r"/Fo|-Fo", "", opt)
+                    if re.search(r"[/-]Fo", opt):
+                        obj_path = re.sub(r"[/-]Fo", "", opt)
 
                         if not os.path.isabs(obj_path):
                             obj_path = os.path.join(
@@ -104,6 +101,30 @@ class CL(Compiler):
                 )
                 cmd_out = os.path.join(parsed_cmd["cwd"], exe_name)
                 parsed_cmd["out"].append(cmd_out)
+
+        for opt in parsed_cmd["opts"]:
+            if re.search(r"[/-](E|EP)$", opt):
+                parsed_cmd["out"] = list()
+
+        if any(i for i in parsed_cmd["opts"] if i in ["/P", "-P"]):
+            parsed_cmd["out"] = list()
+
+            for opt in parsed_cmd["opts"]:
+                if re.search(r"[/-]Fi", opt):
+                    if len(parsed_cmd["in"] != 1):
+                        raise RuntimeError("/Fi option could only be used with a single input file")
+
+                    i_path = re.sub(r"[/-]Fi", "", opt)
+
+                    if os.path.splitext(i_path)[1]:
+                        parsed_cmd["out"].append(i_path)
+                    else:
+                        parsed_cmd["out"].append(i_path + ".i")
+                    break
+            else:
+                for cmd_in in parsed_cmd["in"]:
+                    i_name = os.path.basename(os.path.splitext(cmd_in)[0] + ".i")
+                    parsed_cmd["out"].append(os.path.join(cmd["cwd"], i_name))
 
         if self.is_bad(parsed_cmd):
             self.dump_bad_cmd_by_id(cmd["id"], parsed_cmd)
@@ -233,6 +254,20 @@ class CL(Compiler):
             os.replace(c_file + ".new", c_file)
         except OSError:
             os.remove(c_file + ".new")
+
+    def is_a_compilation_command(self, cmd):
+        if not super().is_a_compilation_command(cmd):
+            return False
+
+        if "opts" not in cmd:
+            opts = self.load_opts_by_id(cmd["id"])
+        else:
+            opts = cmd["opts"]
+
+        if set(opts).intersection(cl_preprocessor_deps_opts):
+            return False
+
+        return True
 
 
 def main(args=sys.argv[1:]):

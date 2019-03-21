@@ -18,7 +18,7 @@ import pytest
 import re
 
 from clade.extensions.cc import CC
-from clade.extensions.opts import preprocessor_deps_opts
+from clade.extensions.opts import cc_preprocessor_deps_opts
 
 
 def test_cc_load_deps_by_id(tmpdir, cmds_file):
@@ -111,22 +111,18 @@ def test_cc_ignore_cc1(tmpdir, cmds_file, ignore_cc1):
     assert ignore_cc1 != found_cc1
 
 
-@pytest.mark.parametrize("filter_deps", [True, False])
-def test_cc_filter_deps(tmpdir, cmds_file, filter_deps):
-    conf = {
-        "CC.filter_deps": filter_deps
-    }
-
-    c = CC(tmpdir, conf)
+@pytest.mark.parametrize("compile_only", [True, False])
+def test_cc_filter_deps(tmpdir, cmds_file, compile_only):
+    c = CC(tmpdir)
     c.parse(cmds_file)
 
     found_deps_opt = False
 
-    for cmd in c.load_all_cmds(with_opts=True):
-        if set(preprocessor_deps_opts).intersection(cmd["opts"]):
+    for cmd in c.load_all_cmds(with_opts=True, compile_only=compile_only):
+        if set(cc_preprocessor_deps_opts).intersection(cmd["opts"]):
             found_deps_opt = True
 
-    assert filter_deps != found_deps_opt
+    assert compile_only != found_deps_opt
 
 
 @pytest.mark.parametrize("filter", [[], ["/dev/null"]])

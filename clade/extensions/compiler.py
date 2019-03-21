@@ -59,6 +59,7 @@ class Compiler(Common):
         cmds = super().load_all_cmds(with_opts=with_opts, with_raw=with_raw, filter_by_pid=filter_by_pid)
 
         # compile only - ignore linker commands, like gcc func.o main.o -o main
+        # or cl /EP /P file.c
         for cmd in cmds:
             if compile_only and not self.is_a_compilation_command(cmd):
                 continue

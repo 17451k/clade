@@ -20,7 +20,7 @@ import sys
 
 from clade.extensions.compiler import Compiler
 from clade.extensions.utils import common_main
-from clade.extensions.opts import preprocessor_deps_opts
+from clade.extensions.opts import cc_preprocessor_deps_opts
 
 
 class CC(Compiler):
@@ -139,17 +139,26 @@ class CC(Compiler):
         if super().is_bad(cmd):
             return True
 
-        if self.conf.get("CC.filter_deps", True) and set(
-            cmd["opts"]
-        ).intersection(preprocessor_deps_opts):
-            return True
-
         if self.conf.get("CC.ignore_cc1", True) and (
             "-cc1" in cmd["opts"] or cmd["command"][0].endswith("cc1")
         ):
             return True
 
         return False
+
+    def is_a_compilation_command(self, cmd):
+        if not super().is_a_compilation_command(cmd):
+            return False
+
+        if "opts" not in cmd:
+            opts = self.load_opts_by_id(cmd["id"])
+        else:
+            opts = cmd["opts"]
+
+        if set(opts).intersection(cc_preprocessor_deps_opts):
+            return False
+
+        return True
 
     def __preprocess_cmd(self, cmd):
         pre = []
