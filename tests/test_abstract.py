@@ -70,8 +70,8 @@ def test_force(tmpdir, cmds_file, force):
     c = Clade(tmpdir, cmds_file, conf=conf)
     c.parse("CC")
 
-    p_work_dir = os.path.join(tmpdir, "PidGraph")
-    c_work_dir = os.path.join(tmpdir, "CC")
+    p_work_dir = os.path.join(str(tmpdir), "PidGraph")
+    c_work_dir = os.path.join(str(tmpdir), "CC")
 
     p_mtime1 = os.stat(p_work_dir).st_mtime
     c_mtime1 = os.stat(c_work_dir).st_mtime
@@ -92,8 +92,8 @@ def test_force_current(tmpdir, cmds_file, force_current):
     c = Clade(tmpdir, cmds_file, conf=conf)
     c.parse("CC")
 
-    p_work_dir = os.path.join(tmpdir, "PidGraph")
-    c_work_dir = os.path.join(tmpdir, "CC")
+    p_work_dir = os.path.join(str(tmpdir), "PidGraph")
+    c_work_dir = os.path.join(str(tmpdir), "CC")
 
     p_mtime1 = os.stat(p_work_dir).st_mtime
     c_mtime1 = os.stat(c_work_dir).st_mtime
