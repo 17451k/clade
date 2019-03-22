@@ -52,7 +52,7 @@ class Clade:
     def __init__(self, work_dir="clade", cmds_file="cmds.txt", conf=None, preset="base"):
         self.work_dir = os.path.abspath(str(work_dir))
         self.cmds_file = os.path.abspath(cmds_file)
-        self.conf = conf
+        self.conf = conf if conf else dict()
         self.preset = preset
 
         self._CmdGraph = None
@@ -106,12 +106,12 @@ class Clade:
         self.parse("Callgraph")
 
         # Backup "force" options
-        force_current = self.conf["force_current"]
-        force = self.conf["force"]
+        force_current = self.conf.get("force_current", False)
+        force = self.conf.get("force", False)
 
         # If  "force" is True, then set "force_current" to True
         # and "force" to False
-        self.conf["force_current"] = self.conf["force"]
+        self.conf["force_current"] = self.conf.get("force", False)
         self.conf["force"] = False
 
         extensions = ("Variables", "Macros", "Typedefs")
@@ -414,15 +414,18 @@ class Clade:
 
         return self._callgraph
 
-    def get_callgraph(self, files=None):
+    def get_callgraph(self, files=None, add_unknown=True):
         """Get function call graph (C only).
 
         Args:
             files: A list of files to narrow down call graph
+            add_unknown: Add functions without known definition
         """
         if isinstance(files, set) or isinstance(files, list):
             files = set(files)
-            files.add('unknown')
+
+            if add_unknown:
+                files.add('unknown')
 
         return self.Callgraph.load_callgraph(files)
 
@@ -453,16 +456,19 @@ class Clade:
 
         return self._functions_by_file
 
-    def get_functions_by_file(self, files=None):
+    def get_functions_by_file(self, files=None, add_unknown=True):
         """Get definitions of functions (C only).
 
         Args:
             files: A list of files to narrow down returned dictionary
+            add_unknown: Add functions without known definition
         """
 
         if isinstance(files, set) or isinstance(files, list):
             files = set(files)
-            files.add('unknown')
+
+            if add_unknown:
+                files.add('unknown')
 
         return self.Functions.load_functions_by_file(files)
 

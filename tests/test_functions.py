@@ -22,9 +22,7 @@ zero_h = os.path.abspath("tests/test_project/zero.h")
 main_c = os.path.abspath("tests/test_project/main.c")
 
 
-def funcs_is_ok(c):
-    funcs = c.load_functions()
-
+def funcs_are_ok(funcs):
     assert not funcs["main"][main_c]["declarations"]
     assert funcs["main"][main_c]["line"] == "8"
     assert funcs["main"][main_c]["signature"] == "int main(void);"
@@ -32,9 +30,7 @@ def funcs_is_ok(c):
     assert len(funcs["print"]) >= 2
 
 
-def funcs_by_file_is_ok(c):
-    funcs_by_file = c.load_functions_by_file()
-
+def funcs_by_file_are_ok(funcs_by_file):
     assert funcs_by_file
     assert set(funcs_by_file[zero_c]) == {"zero", "print", "func_with_pointers"}
     assert funcs_by_file[zero_c]["zero"]["declarations"][zero_h]["line"] == "1"
@@ -43,24 +39,18 @@ def funcs_by_file_is_ok(c):
     assert funcs_by_file[zero_c]["zero"]["declarations"][zero_h]["type"] == "global"
 
 
-def funcs_are_consistent(c):
-    funcs = c.load_functions()
-    funcs_by_file = c.load_functions_by_file()
-
+def funcs_are_consistent(funcs, funcs_by_file):
     for func in funcs:
         for file in funcs[func]:
             assert funcs[func][file] == funcs_by_file[file][func]
 
 
-def filtered_funcs_by_file_is_ok(c):
-    funcs_by_file = c.load_functions_by_file()
-    funcs_by_zero_c = c.load_functions_by_file([zero_c])
-
+def filtered_funcs_by_file_are_ok(funcs_by_file, funcs_by_main_c):
     for file in funcs_by_file:
-        if file == zero_c:
-            assert funcs_by_zero_c[zero_c] == funcs_by_file[zero_c]
+        if file == main_c:
+            assert funcs_by_main_c[main_c] == funcs_by_file[main_c]
         else:
-            assert file not in funcs_by_zero_c
+            assert file not in funcs_by_main_c
 
 
 def test_functions(tmpdir, cmds_file):
@@ -69,7 +59,11 @@ def test_functions(tmpdir, cmds_file):
     c = Functions(tmpdir, conf)
     c.parse(cmds_file)
 
-    funcs_is_ok(c)
-    funcs_by_file_is_ok(c)
-    funcs_are_consistent(c)
-    filtered_funcs_by_file_is_ok(c)
+    funcs = c.load_functions()
+    funcs_by_file = c.load_functions_by_file()
+    funcs_by_main_c = c.load_functions_by_file([main_c])
+
+    funcs_are_ok(funcs)
+    funcs_by_file_are_ok(funcs_by_file)
+    funcs_are_consistent(funcs, funcs_by_file)
+    filtered_funcs_by_file_are_ok(funcs_by_file, funcs_by_main_c)

@@ -20,11 +20,7 @@ from clade.extensions.variables import Variables
 zero_c = os.path.abspath("tests/test_project/zero.c")
 
 
-def test_variables(tmpdir, cmds_file):
-    c = Variables(tmpdir)
-    c.parse(cmds_file)
-
-    variables = c.load_variables()
+def variables_are_ok(variables):
     assert variables[zero_c]
     assert variables[zero_c][0]["declaration"] == "int (*fp3[1U])(void)"
     assert variables[zero_c][0]["path"] == zero_c
@@ -32,5 +28,14 @@ def test_variables(tmpdir, cmds_file):
     assert variables[zero_c][0]["value"][0]["index"] == 0
     assert variables[zero_c][0]["value"][0]["value"] == " & zero"
 
-    used_in_vars = c.load_used_in_vars()
+
+def used_in_vars_is_ok(used_in_vars):
     assert used_in_vars["zero"][zero_c] == [zero_c]
+
+
+def test_variables(tmpdir, cmds_file):
+    c = Variables(tmpdir)
+    c.parse(cmds_file)
+
+    variables_are_ok(c.load_variables())
+    used_in_vars_is_ok(c.load_used_in_vars())

@@ -18,8 +18,14 @@ import pytest
 
 from clade import Clade
 from tests.test_intercept import test_project_make, calculate_loc
+from tests.test_functions import funcs_are_ok, funcs_by_file_are_ok, funcs_are_consistent, filtered_funcs_by_file_are_ok
+from tests.test_callgraph import callgraph_is_ok, callgraph_by_file_is_ok
+from tests.test_variables import variables_are_ok, used_in_vars_is_ok
+from tests.test_typedefs import typedefs_are_ok
+from tests.test_macros import definitions_are_ok, expansions_are_ok
 
 main_c = os.path.abspath("tests/test_project/main.c")
+zero_c = os.path.abspath("tests/test_project/zero.c")
 
 
 def test_intercept(tmpdir):
@@ -42,8 +48,11 @@ def test_cmd_graph(tmpdir, cmds_file):
     assert cc_cmds
     assert comp_cmds == c.get_compilation_cmds()
 
-    for cmd in comp_cmds:
+    for cmd in c.get_compilation_cmds(with_opts=True, with_raw=True, with_deps=True):
         assert cmd["id"] in (x["id"] for x in cc_cmds)
+        assert "opts" in cmd
+        assert "command" in cmd
+        assert "deps" in cmd
 
     cmd_ids = c.cmd_ids
     assert cmd_ids
@@ -115,50 +124,48 @@ def test_storage(tmpdir, cmds_file):
 
     c.add_file_to_storage(__file__)
     assert os.path.exists(os.path.join(c.storage_dir, __file__))
-
-
-def test_storage_with_convertation(tmpdir, cmds_file):
-    c = Clade(tmpdir, cmds_file, conf={"Storage.convert_to_utf8": True})
-
-    c.add_file_to_storage(__file__)
-    assert os.path.exists(os.path.join(c.storage_dir, __file__))
-
-    storage_path = c.get_storage_path(__file__)
-
-    assert open(__file__).read()
+    assert c.get_storage_path(__file__)
 
 
 def test_callgraph(tmpdir, cmds_file):
     c = Clade(tmpdir, cmds_file)
 
-    assert len(c.callgraph.keys()) > 1
-    assert len(c.get_callgraph([main_c]).keys()) > 1
+    callgraph = c.callgraph
+    callgraph_by_zero_c = c.get_callgraph([zero_c], add_unknown=False)
+
+    callgraph_is_ok(callgraph)
+    callgraph_by_file_is_ok(callgraph, callgraph_by_zero_c)
 
 
 def test_functions(tmpdir, cmds_file):
     c = Clade(tmpdir, cmds_file)
 
-    assert c.functions
-    assert c.functions_by_file
-    assert len(c.get_functions_by_file([main_c]).keys()) > 1
+    funcs = c.functions
+    funcs_by_file = c.functions_by_file
+    funcs_by_main_c = c.get_functions_by_file([main_c], add_unknown=False)
+
+    funcs_are_ok(funcs)
+    funcs_by_file_are_ok(funcs_by_file)
+    funcs_are_consistent(funcs, funcs_by_file)
+    filtered_funcs_by_file_are_ok(funcs_by_file, funcs_by_main_c)
 
 
 def test_get_typedefs(tmpdir, cmds_file):
     c = Clade(tmpdir, cmds_file)
 
-    assert c.get_typedefs()
+    typedefs_are_ok(c.get_typedefs())
 
 
 def test_get_variables(tmpdir, cmds_file):
     c = Clade(tmpdir, cmds_file)
 
-    assert c.get_variables()
+    variables_are_ok(c.get_variables())
 
 
 def test_get_used_in_vars_functions(tmpdir, cmds_file):
     c = Clade(tmpdir, cmds_file)
 
-    assert c.get_used_in_vars_functions()
+    used_in_vars_is_ok(c.get_used_in_vars_functions())
 
 
 def test_get_macros_expansions(tmpdir, cmds_file):
@@ -166,7 +173,8 @@ def test_get_macros_expansions(tmpdir, cmds_file):
 
     assert c.get_macros_expansions(macros_names=["ZERO", "WEIRD_ZERO"])
     assert not c.get_macros_expansions(macros_names=["ZERO2"])
-    assert c.get_macros_expansions()
+
+    expansions_are_ok(c.get_macros_expansions())
 
 
 def test_get_macros_definitions(tmpdir, cmds_file):
@@ -174,8 +182,8 @@ def test_get_macros_definitions(tmpdir, cmds_file):
 
     assert c.get_macros_definitions(macros_names=["ZERO", "WEIRD_ZERO"])
     assert not c.get_macros_definitions(macros_names=["ZERO2"])
-    assert c.get_macros_definitions()
 
+    definitions_are_ok(c.get_macros_definitions())
 
 def test_cdb(tmpdir, cmds_file):
     c = Clade(tmpdir, cmds_file)
@@ -197,3 +205,8 @@ def test_meta(tmpdir, cmds_file):
         assert c.get_meta_by_key("test2")
 
     assert c.get_uuid()
+
+
+def test_parse_all(tmpdir, cmds_file):
+    c = Clade(tmpdir, cmds_file)
+    c.parse_all()

@@ -33,14 +33,15 @@ class Typedefs(Extension):
 
     @Extension.prepare
     def parse(self, cmds_file):
+        self.log("Parsing typedefs")
+
         self.__process_typedefs()
         self.dump_data_by_key(self.typedefs, self.typedefs_folder)
         self.typedefs.clear()
-        self.log("Finish")
+
+        self.log("Parsing finished")
 
     def __process_typedefs(self):
-        self.log("Processing typedefs")
-
         regex = re.compile(r'\"(.*?)\" typedef (.*)')
         typedefs = self.typedefs
 

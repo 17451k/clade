@@ -20,15 +20,19 @@ from clade.extensions.macros import Macros
 zero_c = os.path.abspath("tests/test_project/zero.c")
 
 
+def definitions_are_ok(definitions):
+    assert definitions[zero_c]["WEIRD_ZERO"] == ["3"]
+    assert definitions[zero_c]["ZERO"] == ["4"]
+
+
+def expansions_are_ok(expansions):
+    assert expansions[zero_c]["WEIRD_ZERO"]
+    assert expansions[zero_c]["ZERO"]
+
+
 def test_macros(tmpdir, cmds_file):
     c = Macros(tmpdir)
     c.parse(cmds_file)
 
-    definitions = c.load_macros_definitions()
-    assert definitions[zero_c]["WEIRD_ZERO"] == ["3"]
-    assert definitions[zero_c]["ZERO"] == ["4"]
-
-    expansions = c.load_macros_expansions()
-    assert expansions[zero_c]["WEIRD_ZERO"]
-    # TODO: Fix in CIF
-    # assert expansions[zero_c]["ZERO"]
+    definitions_are_ok(c.load_macros_definitions())
+    expansions_are_ok(c.load_macros_expansions())

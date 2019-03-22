@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISP RAS (http://www.ispras.ru)
+# Copyright (c) 2019 ISP RAS (http://www.ispras.ru)
 # Ivannikov Institute for System Programming of the Russian Academy of Sciences
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,17 +15,18 @@
 
 import os
 
-from clade.extensions.typedefs import Typedefs
+from clade.extensions.src_graph import SrcGraph
+from clade.extensions.path import Path
 
-zero_c = os.path.abspath("tests/test_project/zero.c")
-
-
-def typedefs_are_ok(typedefs):
-    assert "unsigned char super_char;" in typedefs[zero_c]
+test_file_rel = "tests/test_project/main.c"
+test_file_abs = os.path.abspath(test_file_rel)
 
 
-def test_typedefs(tmpdir, cmds_file):
-    c = Typedefs(tmpdir)
+def test_path(tmpdir, cmds_file):
+    c = SrcGraph(tmpdir)
     c.parse(cmds_file)
 
-    typedefs_are_ok(c.load_typedefs())
+    p = Path(tmpdir)
+
+    assert p.get_abs_path(test_file_abs) == test_file_abs
+    assert p.normalize_rel_path(test_file_rel, os.getcwd()) == test_file_abs
