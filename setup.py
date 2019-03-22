@@ -193,7 +193,7 @@ setuptools.setup(
     name="clade",
     version="2.2.dev1",
     author="Ilya Shchepetkov",
-    author_email="ilya.shchepetkov@yandex.ru",
+    author_email="shchepetkov@ispras.ru",
     url="https://github.com/17451k/clade",
     license="LICENSE.txt",
     long_description=open("README.rst", encoding="utf8").read(),
