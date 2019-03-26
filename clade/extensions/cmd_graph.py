@@ -68,7 +68,17 @@ class CmdGraph(Extension):
     def load_all_cmds_by_type(self, cmd_type, filter_by_pid=True):
         ext_obj = self.get_ext_obj(cmd_type)
 
-        return ext_obj.load_all_cmds(filter_by_pid=filter_by_pid)
+        cmds = ext_obj.load_all_cmds(filter_by_pid=False)
+
+        if not filter_by_pid:
+            return cmds
+
+        if not self.graph:
+            cmd_graph = self.load_cmd_graph()
+        else:
+            cmd_graph = self.graph
+
+        return [cmd for cmd in cmds if cmd["id"] in cmd_graph]
 
     def normalize_all_paths(self, cmds):
         for cmd in cmds:
