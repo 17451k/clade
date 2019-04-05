@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import re
+import os
 import ply.lex as lex
 import ply.yacc as yacc
 
@@ -332,8 +333,8 @@ def setup_parser():
     global __parser
     global __lexer
 
-    __lexer = lex.lex()
-    __parser = yacc.yacc(debug=True, write_tables=True)
+    __lexer = lex.lex(outputdir=os.path.curdir, optimize=1, errorlog=yacc.NullLogger())
+    __parser = yacc.yacc(outputdir=os.path.curdir, optimize=1, errorlog=yacc.NullLogger())
 
 
 def add_function(value):
