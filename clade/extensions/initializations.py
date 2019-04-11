@@ -324,7 +324,7 @@ def p_simple_value(p):
     p[0] = value
 
 
-def setup_parser():
+def setup_parser(work_dir):
     """
     Setup the parser.
 
@@ -333,8 +333,9 @@ def setup_parser():
     global __parser
     global __lexer
 
-    __lexer = lex.lex(outputdir=os.path.curdir, optimize=1, errorlog=yacc.NullLogger())
-    __parser = yacc.yacc(outputdir=os.path.curdir, optimize=1, errorlog=yacc.NullLogger())
+    os.makedirs(work_dir, exist_ok=True)
+    __lexer = lex.lex(outputdir=work_dir, optimize=1, errorlog=yacc.NullLogger())
+    __parser = yacc.yacc(outputdir=work_dir, optimize=1, errorlog=yacc.NullLogger())
 
 
 def add_function(value):
@@ -352,7 +353,7 @@ def commit_functions(path):
     tmp_value_cache = set()
 
 
-def parse_declaration(string):
+def parse_declaration(string, work_dir):
     """
     Parse the given C declaration string with the possible interface extensions.
 
@@ -363,12 +364,12 @@ def parse_declaration(string):
     global __lexer
 
     if not __parser:
-        setup_parser()
+        setup_parser(work_dir)
 
     return __parser.parse(string, lexer=__lexer)
 
 
-def parse_variables_initializations(filename, callgraph_functions, commit_method):
+def parse_variables_initializations(filename, callgraph_functions, commit_method, work_dir):
     global functions
     global callgraph_update_method
     functions = callgraph_functions
@@ -376,4 +377,4 @@ def parse_variables_initializations(filename, callgraph_functions, commit_method
     with open(filename, 'r') as fp:
         data = fp.read() + '\n'
 
-    return parse_declaration(data)
+    return parse_declaration(data, work_dir)

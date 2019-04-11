@@ -80,7 +80,7 @@ class Variables(Callgraph):
             return
 
         self.log("Parsing global variables initializations")
-        self.variables = parse_variables_initializations(init_global, self.functions, self.__process_callv)
+        self.variables = parse_variables_initializations(init_global, self.functions, self.__process_callv, self.work_dir)
         self.log("Parsing finished")
 
     def __process_callv(self, functions, context_file):
