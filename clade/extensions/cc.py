@@ -183,6 +183,12 @@ class CC(Compiler):
 
             if not r:
                 pre.append(pre_file)
+            else:
+                self.warning(
+                    "Can't preprocess command with ID={!r} and input file {!r}".format(
+                        cmd["id"], cmd_in
+                    )
+                )
 
         return pre
 

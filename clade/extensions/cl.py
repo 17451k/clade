@@ -112,7 +112,9 @@ class CL(Compiler):
             for opt in parsed_cmd["opts"]:
                 if re.search(r"[/-]Fi", opt):
                     if len(parsed_cmd["in"] != 1):
-                        raise RuntimeError("/Fi option could only be used with a single input file")
+                        raise RuntimeError(
+                            "/Fi option could only be used with a single input file"
+                        )
 
                     i_path = re.sub(r"[/-]Fi", "", opt)
 
@@ -123,7 +125,9 @@ class CL(Compiler):
                     break
             else:
                 for cmd_in in parsed_cmd["in"]:
-                    i_name = os.path.basename(os.path.splitext(cmd_in)[0] + ".i")
+                    i_name = os.path.basename(
+                        os.path.splitext(cmd_in)[0] + ".i"
+                    )
                     parsed_cmd["out"].append(os.path.join(cmd["cwd"], i_name))
 
         if self.is_bad(parsed_cmd):
@@ -155,8 +159,10 @@ class CL(Compiler):
         deps_file = os.path.join(self.temp_dir, "{}-deps.txt".format(cmd_id))
 
         deps_cmd = (
-            [cmd["command"][0]] + cmd["opts"]
-            + ["/showIncludes", "/P"] + [cmd_in]
+            [cmd["command"][0]]
+            + cmd["opts"]
+            + ["/showIncludes", "/P"]
+            + [cmd_in]
             + self.conf.get("Compiler.extra_preprocessor_opts", [])
         )
 
@@ -172,6 +178,12 @@ class CL(Compiler):
 
             if not proc.returncode:
                 self.__preprocess_cmd(cmd, cmd_in)
+            else:
+                self.warning(
+                    "Can't preprocess command with ID={!r} and input file {!r}".format(
+                        cmd_id, cmd_in
+                    )
+                )
 
         return deps_file
 
@@ -225,7 +237,7 @@ class CL(Compiler):
         os.remove(pre_to)
 
     def __normalize_paths(self, c_file, cwd):
-        rawdata = open(c_file, 'rb').read()
+        rawdata = open(c_file, "rb").read()
 
         if self.conf.get("CL.pre_encoding"):
             encoding = self.conf.get("CL.pre_encoding")
