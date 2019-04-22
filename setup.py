@@ -151,6 +151,7 @@ def package_files(package_directory):
     paths.extend(
         [
             os.path.join("intercept", "libinterceptor.so"),
+            os.path.join("intercept", "libinterceptor.dylib"),
             os.path.join("intercept", "lib", "libinterceptor.so"),
             os.path.join("intercept", "lib64", "libinterceptor.so"),
             os.path.join("intercept", "wrapper"),
@@ -191,7 +192,7 @@ except ImportError:
 
 setuptools.setup(
     name="clade",
-    version="3.0.2",
+    version="3.0.3",
     author="Ilya Shchepetkov",
     author_email="shchepetkov@ispras.ru",
     url="https://github.com/17451k/clade",
