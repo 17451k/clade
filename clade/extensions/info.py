@@ -20,6 +20,7 @@ import gc
 import hashlib
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -250,10 +251,13 @@ class Info(Extension):
             log_fh.write("COMMAND_ID: {}\n".format(cmd_id))
             log_fh.write("CWD: {}\n".format(cwd))
 
-            log_fh.write("CIF ARGS: ")
+            log_fh.write("CIF ARGS:")
             for key in env:
-                log_fh.write("{}={} ".format(key, env[key]))
-            log_fh.write(" ".join(args) + "\n\n")
+                log_fh.write(" {}={}".format(key, shlex.quote(env[key])))
+
+            for arg in args:
+                log_fh.write(" {}".format(shlex.quote(arg)))
+            log_fh.write("\n\n")
 
             log_fh.writelines(log)
             log_fh.write("\n\n")
