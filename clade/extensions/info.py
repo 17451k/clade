@@ -105,6 +105,13 @@ class Info(Extension):
         if not shutil.which(self.conf.get("Info.cif", "cif")):
             raise RuntimeError("Can't find CIF in PATH")
 
+        # Check that CIF was not added in PATH via relative path
+        current_dir = os.getcwd()
+        os.chdir(self.temp_dir)
+        if not shutil.which(self.conf.get("Info.cif", "cif")):
+            raise RuntimeError("Path to CIF must be absolute")
+        os.chdir(current_dir)
+
         cmds = list(self.extensions["SrcGraph"].load_all_cmds())
 
         if not cmds:
