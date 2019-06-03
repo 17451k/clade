@@ -23,11 +23,7 @@ class Compiler(Common):
 
     requires = Common.requires + ["Storage"]
 
-    file_extensions = [
-        ".c", ".i", ".h",  # C
-        "C", ".cc", ".cpp", ".cxx", ".c++", ".h", ".hh", ".hpp", ".hxx", ".h++",  # C++
-        ".s", ".S", ".asm"  # Assembly
-    ]
+    file_extensions = [".c", ".i"]
 
     __version__ = "1"
 
@@ -48,12 +44,12 @@ class Compiler(Common):
             (
                 True
                 for cmd_in in cmd["in"]
-                if os.path.splitext(os.path.basename(cmd_in))[1] not in self.file_extensions
+                if os.path.splitext(os.path.basename(cmd_in))[1] in self.file_extensions
             )
         ):
-            return False
+            return True
 
-        return True
+        return False
 
     def load_all_cmds(self, filter_by_pid=True, with_opts=False, with_raw=False, with_deps=False, compile_only=False):
         cmds = super().load_all_cmds(with_opts=with_opts, with_raw=with_raw, filter_by_pid=filter_by_pid)
@@ -63,6 +59,12 @@ class Compiler(Common):
         for cmd in cmds:
             if compile_only and not self.is_a_compilation_command(cmd):
                 continue
+
+            if compile_only:
+                # Remove .o files from compile-and-link commands, like gcc main.c -o main.o func.o
+                cmd["in"] = [cmd_in for cmd_in in cmd["in"] if os.path.splitext(os.path.basename(cmd_in))[1] in self.file_extensions]
+                if not cmd["in"]:
+                    continue
 
             if with_deps:
                 cmd["deps"] = self.load_deps_by_id(cmd["id"])
