@@ -88,16 +88,23 @@ class Extension(metaclass=abc.ABCMeta):
                 shutil.rmtree(self.work_dir)
             self.conf["force_current"] = False
 
-        self.already_initialized = dict()
-        self.already_initialized[self.name] = self
-        self.init_extensions(work_dir)
-
         self.ext_meta = {"version": self.get_ext_version(), "corrupted": False}
         self.ext_meta_file = ".meta.json"
         self.global_meta_file = os.path.abspath(
             os.path.join(str(work_dir), "meta.json")
         )
         self.check_ext_meta()
+
+        if self.conf.get("force") and not self.conf.get("force_meta_deleted"):
+            try:
+                os.remove(self.global_meta_file)
+            except FileNotFoundError:
+                pass
+            self.conf["force_meta_deleted"] = True
+
+        self.already_initialized = dict()
+        self.already_initialized[self.name] = self
+        self.init_extensions(work_dir)
 
         self.debug("Extension version: {}".format(self.ext_meta["version"]))
         self.debug("Working directory: {}".format(self.work_dir))
