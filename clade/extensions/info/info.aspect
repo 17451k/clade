@@ -88,5 +88,5 @@ info: init_global($ $){
 }
 
 info: introduce($ $) {
-	$fprintf<"$env<CIF_INFO_DIR>/$env<C_FILE>/typedefs.txt","%s\n",$signature>
+	$fprintf<"$env<CIF_INFO_DIR>" $path "/typedefs.txt","%s\n",$signature>
 }
