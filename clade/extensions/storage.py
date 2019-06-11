@@ -77,7 +77,11 @@ class Storage(Extension):
             with tempfile.NamedTemporaryFile(
                 mode="wb", delete=False
             ) as f:
-                f.write(content_bytes.decode(encoding).encode("utf-8"))
+                # Encode file content to utf-8
+                content_bytes = content_bytes.decode(encoding).encode("utf-8")
+                # Convert CRLF line endings to LF
+                content_bytes = content_bytes.replace(b"\r\n", b"\n")
+                f.write(content_bytes)
 
             try:
                 os.replace(f.name, dst)
