@@ -253,9 +253,8 @@ class CL(Compiler):
                 if m:
                     inc_file = m.group(1)
 
-                    inc_file = inc_file.strip()
                     norm_inc_file = self.extensions["Path"].normalize_rel_path(
-                        inc_file, cwd
+                        inc_file.strip(), cwd
                     )
 
                     line = line.replace(inc_file, norm_inc_file)
