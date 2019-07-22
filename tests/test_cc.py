@@ -18,7 +18,7 @@ import pytest
 import re
 
 from clade.extensions.cc import CC
-from clade.extensions.opts import cc_preprocessor_deps_opts
+from clade.extensions.opts import cc_preprocessor_opts
 
 
 def test_cc_load_deps_by_id(tmpdir, cmds_file):
@@ -119,7 +119,7 @@ def test_cc_filter_deps(tmpdir, cmds_file, compile_only):
     found_deps_opt = False
 
     for cmd in c.load_all_cmds(with_opts=True, compile_only=compile_only):
-        if set(cc_preprocessor_deps_opts).intersection(cmd["opts"]):
+        if set(cc_preprocessor_opts).intersection(cmd["opts"]):
             found_deps_opt = True
 
     assert compile_only != found_deps_opt

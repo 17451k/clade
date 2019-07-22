@@ -241,7 +241,8 @@ clang_opts = [
     "-filetype",
 ]
 
-cc_preprocessor_deps_opts = [
+cc_preprocessor_opts = [
+    "-E",
     "-M",
     "-MM",
     "-MF",
@@ -504,7 +505,9 @@ gcc_optimization_opts = [
 ]
 
 cif_supported_opts = (
-    ["-D", "-U", "-nostdinc"] + gcc_optimization_opts + cif_include_opts
+    ["-D", "-U", "-nostdinc", "-fshort-wchar"]
+    + gcc_optimization_opts
+    + cif_include_opts
 )
 
 i_regex = re.compile("(" + "|".join(cif_include_opts) + ")=?(.*)")

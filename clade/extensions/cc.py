@@ -20,7 +20,7 @@ import sys
 
 from clade.extensions.compiler import Compiler
 from clade.extensions.utils import common_main
-from clade.extensions.opts import cc_preprocessor_deps_opts
+from clade.extensions.opts import cc_preprocessor_opts
 
 
 class CC(Compiler):
@@ -153,7 +153,7 @@ class CC(Compiler):
         else:
             opts = cmd["opts"]
 
-        if set(opts).intersection(cc_preprocessor_deps_opts):
+        if set(opts).intersection(cc_preprocessor_opts):
             return False
 
         return True
