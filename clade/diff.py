@@ -211,19 +211,31 @@ class Diff:
         ]
 
         for cmd_id in common_compilation_cmds_ids:
-            cmd_deps1 = sorted(
+            cmd_deps1 = set(
                 self.cl1.get_cmd(cmd_id, with_deps=True)["deps"]
             )
-            cmd_deps2 = sorted(
+            cmd_deps2 = set(
                 self.cl2.get_cmd(cmd_id, with_deps=True)["deps"]
             )
 
             if cmd_deps1 != cmd_deps2:
-                logger.error(
-                    "{!r} command with ID={!r} changed its dependencies".format(
-                        self.cl1.get_cmd_type(cmd_id), cmd_id
+                removed = cmd_deps1 - cmd_deps2
+                added = cmd_deps2 - cmd_deps1
+
+                for dep in removed:
+                    logger.error(
+                        "{!r} command with ID={!r} no longer has dependency: {!r}".format(
+                            self.cl1.get_cmd_type(cmd_id), cmd_id, dep
+                        )
                     )
-                )
+
+                for dep in added:
+                    logger.error(
+                        "{!r} command with ID={!r} has new dependency: {!r}".format(
+                            self.cl1.get_cmd_type(cmd_id), cmd_id, dep
+                        )
+                    )
+
                 deps_are_same = False
 
         if (
@@ -995,7 +1007,7 @@ class Diff:
 
     @staticmethod
     def __get_extension_list(work_dir):
-        return os.listdir(work_dir)
+        return [f for f in os.listdir(work_dir) if os.path.isdir(os.path.join(work_dir, f))]
 
     def __ext_work_dirs_exist(self, ext_name):
         a = os.path.join(self.work_dir1, ext_name)
