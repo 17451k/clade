@@ -40,10 +40,10 @@
         "PidGraph.as_picture": false,
         "PidGraph.filter_cmds_by_pid": true,
         "AR.which_list": [
-            "ar$"
+            "(/|-)ar$"
         ],
         "AS.which_list": [
-            "as$"
+            "(/|-)as$"
         ],
         "CC.which_list": [
             "cc$",
@@ -52,10 +52,10 @@
             "clang(-?\\d+(\\.\\d+){0,2})?$"
         ],
         "LD.which_list": [
-            "ld$"
+            "(/|-)ld$"
         ],
         "MV.which_list": [
-            "mv$"
+            "/mv$"
         ],
         "Objcopy.which_list": [
             "objcopy$"
