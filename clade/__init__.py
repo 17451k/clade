@@ -13,9 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import argparse
 import os
 import sys
 
+from clade.utils import get_logger
 from clade.intercept import intercept
 from clade.extensions.abstract import Extension
 from clade.extensions.cdb import CDB
@@ -54,6 +56,7 @@ class Clade:
         self.cmds_file = os.path.abspath(cmds_file)
         self.conf = conf if conf else dict()
         self.preset = preset
+        self.logger = get_logger("clade-api", with_name=False)
 
         self._CmdGraph = None
         self._cmd_graph = None
@@ -632,9 +635,57 @@ class Clade:
 
         self.PidGraph.add_data_to_global_meta(key, data)
 
+    def is_work_dir_ok(self, log=False):
+        """Check that Clade working directory exists and not corrupted.
+
+        Returns:
+            True if everything is OK and False otherwise
+        """
+
+        PidGraphObj = PidGraph(self.work_dir, self.conf, self.preset)
+
+        if not os.path.exists(self.work_dir) or not PidGraphObj.is_parsed():
+            if log:
+                self.logger.info("Working directory does not exist")
+            return False
+
+        if not PidGraphObj.load_ext_meta():
+            if log:
+                self.logger.info("Working directory does not contain file with meta information")
+            return False
+
+        try:
+            PidGraphObj.check_ext_meta()
+        except RuntimeError:
+            if log:
+                self.logger.info("Working directory is corrupted")
+            return False
+
+        if log:
+            exts = [f for f in os.listdir(self.work_dir) if os.path.isdir(os.path.join(self.work_dir, f))]
+            self.logger.info(
+                "Working directory is OK and contains data from the following extensions: {}".format(", ".join(exts))
+            )
+        return True
+
 
 def parse_all_main(args=sys.argv[1:]):
     conf = parse_args(args)
 
     c = Clade(conf["work_dir"], conf["cmds_file"], conf, conf["preset"])
     c.parse_all()
+
+
+def check(args=sys.argv[1:]):
+    parser = argparse.ArgumentParser(
+        description="Check that Clade working directory exists and not corrupted."
+    )
+
+    parser.add_argument(
+        dest="work_dir", help="path to the Clade working directory"
+    )
+
+    args = parser.parse_args(args)
+
+    c = Clade(args.work_dir)
+    sys.exit(not c.is_work_dir_ok(log=True))

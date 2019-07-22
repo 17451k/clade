@@ -17,14 +17,18 @@ import logging
 import sys
 
 
-def get_logger(name, conf=None):
+def get_logger(name, with_name=True, conf=None):
     if not conf:
         conf = dict()
 
     logger = logging.getLogger(name)
 
     handler = logging.StreamHandler(stream=sys.stdout)
-    handler.setFormatter(logging.Formatter("%(asctime)s clade {}: %(message)s".format(name), "%H:%M:%S"))
+
+    if with_name:
+        handler.setFormatter(logging.Formatter("%(asctime)s clade {}: %(message)s".format(name), "%H:%M:%S"))
+    else:
+        handler.setFormatter(logging.Formatter("%(asctime)s clade: %(message)s", "%H:%M:%S"))
 
     logger.addHandler(handler)
     logger.setLevel(conf.get("log_level", "INFO"))

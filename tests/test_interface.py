@@ -185,6 +185,7 @@ def test_get_macros_definitions(tmpdir, cmds_file):
 
     definitions_are_ok(c.get_macros_definitions())
 
+
 def test_cdb(tmpdir, cmds_file):
     c = Clade(tmpdir, cmds_file)
 
@@ -210,3 +211,16 @@ def test_meta(tmpdir, cmds_file):
 def test_parse_all(tmpdir, cmds_file):
     c = Clade(tmpdir, cmds_file)
     c.parse_all()
+
+
+def test_check_work_dir_fail():
+    c = Clade("/")
+
+    assert not c.is_work_dir_ok()
+
+
+def test_check_work_dir(tmpdir, cmds_file):
+    c = Clade(tmpdir, cmds_file)
+    c.parse("PidGraph")
+
+    assert c.is_work_dir_ok()

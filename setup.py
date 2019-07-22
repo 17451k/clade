@@ -226,6 +226,7 @@ setuptools.setup(
             "clade-all=clade:parse_all_main",
             "clade=clade.extensions.cdb:main",
             "clade-diff=clade.diff:main",
+            "clade-check=clade:check",
         ]
     },
     cmdclass={
