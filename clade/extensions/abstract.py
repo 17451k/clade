@@ -299,7 +299,7 @@ class Extension(metaclass=abc.ABCMeta):
                 raise RuntimeError
 
     def check_conf_consistency(self):
-        """ Check configuration consistency.
+        """Check configuration consistency.
 
         Any configuration change between launches must not affect already
         collected part of the build base.
