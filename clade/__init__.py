@@ -132,7 +132,11 @@ class Clade:
         self.logger.info("All extensions are parsed")
 
     def __get_ext_obj(self, ext_name):
-        ext_class = Extension.find_subclass(ext_name)
+        try:
+            ext_class = Extension.find_subclass(ext_name)
+        except NotImplementedError:
+            Extension._import_extension_modules()
+            ext_class = Extension.find_subclass(ext_name)
         return ext_class(self.work_dir, conf=self.conf, preset=self.preset)
 
     def are_parsed(self, ext_name):
