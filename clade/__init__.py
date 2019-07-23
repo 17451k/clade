@@ -56,7 +56,7 @@ class Clade:
         self.cmds_file = os.path.abspath(cmds_file)
         self.conf = conf if conf else dict()
         self.preset = preset
-        self.logger = get_logger("clade-api", with_name=False)
+        self.logger = get_logger("clade-api", with_name=False, conf=conf)
 
         self._CmdGraph = None
         self._cmd_graph = None
@@ -106,10 +106,14 @@ class Clade:
         if cmds_file:
             self.cmds_file = cmds_file
 
-        self.parse("Callgraph")
+        if self.conf.get("force_current"):
+            self.logger.error("--force_current option is not supported in the 'parse all' mode.")
+            raise RuntimeError
 
-        # Backup "force" options
-        force_current = self.conf.get("force_current", False)
+        if self.conf.get("force") or not self.are_parsed("Callgraph"):
+            self.parse("Callgraph")
+
+        # Backup "force" option
         force = self.conf.get("force", False)
 
         # If  "force" is True, then set "force_current" to True
@@ -119,11 +123,30 @@ class Clade:
 
         extensions = ("Variables", "Macros", "Typedefs")
         for ext_name in extensions:
-            self.parse(ext_name)
+            if self.conf.get("force_current") or not self.are_parsed(ext_name):
+                self.parse(ext_name)
 
-        # Restore "force" options
-        self.conf["force_current"] = force_current
+        # Restore "force" option
         self.conf["force"] = force
+
+        self.logger.info("All extensions are parsed")
+
+    def __get_ext_obj(self, ext_name):
+        ext_class = Extension.find_subclass(ext_name)
+        return ext_class(self.work_dir, conf=self.conf, preset=self.preset)
+
+    def are_parsed(self, ext_name):
+        """Check whether build commands are parsed or not.
+
+        Args:
+            ext_name: An extension name, like "Callgraph"
+
+        Returns:
+            True if specified extension already parsed build commands and False otherwise
+        """
+
+        e = self.__get_ext_obj(ext_name)
+        return e.is_parsed()
 
     def parse(self, ext_name):
         """Execute parse() method of a specified Clade extension.
@@ -134,9 +157,8 @@ class Clade:
         Returns:
             An extension object
         """
-        ext_class = Extension.find_subclass(ext_name)
 
-        e = ext_class(self.work_dir, conf=self.conf, preset=self.preset)
+        e = self.__get_ext_obj(ext_name)
         e.parse(self.cmds_file)
 
         return e
@@ -646,19 +668,19 @@ class Clade:
 
         if not os.path.exists(self.work_dir) or not PidGraphObj.is_parsed():
             if log:
-                self.logger.info("Working directory does not exist")
+                self.logger.error("Working directory does not exist")
             return False
 
         if not PidGraphObj.load_ext_meta():
             if log:
-                self.logger.info("Working directory does not contain file with meta information")
+                self.logger.error("Working directory does not contain file with meta information")
             return False
 
         try:
             PidGraphObj.check_ext_meta()
         except RuntimeError:
             if log:
-                self.logger.info("Working directory is corrupted")
+                self.logger.error("Working directory is corrupted")
             return False
 
         if log:
@@ -673,7 +695,10 @@ def parse_all_main(args=sys.argv[1:]):
     conf = parse_args(args)
 
     c = Clade(conf["work_dir"], conf["cmds_file"], conf, conf["preset"])
-    c.parse_all()
+    try:
+        c.parse_all()
+    except Exception:
+        sys.exit(-1)
 
 
 def check(args=sys.argv[1:]):
