@@ -299,27 +299,39 @@ class Extension(metaclass=abc.ABCMeta):
                 raise RuntimeError
 
     def check_conf_consistency(self):
+        """ Check configuration consistency.
+
+        Any configuration change between launches must not affect already
+        collected part of the build base.
+        """
         global_meta = self.load_global_meta()
 
         if global_meta:
-            names = [self.name]
+            for key in [k for k in global_meta["conf"] if k in self.get_ext_opts()]:
+                # If we cant load extension meta, then it is it's first launch
+                # And it does not matter that the configuration was changed
+                if global_meta["conf"][key] != self.conf[key] and self.load_ext_meta():
+                    self.error("Configuration option {!r} was changed between launches".format(key))
+                    raise RuntimeError
 
-            # Find names of all parent classes. For example,
-            # for CC it would be Compiler and Abstract
-            for parent in Extension.__get_all_parents(self.__class__):
-                names.append(parent.__name__)
+    def get_ext_opts(self):
+        """Get all options that are related to the current extension."""
+        names = [self.name]
+        opts = []
 
-            for name in names:
-                # Here we check that all options that are related to the
-                # current extension were not changed between launches.
-                # Options are related if their names start with the name of
-                # the extension class.
-                for key in [k for k in global_meta["conf"] if k.startswith(name + ".")]:
-                    # If we cant load extension meta, then it is it's first launch
-                    # And it does not matter that the configuration was changed
-                    if global_meta["conf"][key] != self.conf[key] and self.load_ext_meta():
-                        self.error("Configuration option {!r} was changed between launches".format(key))
-                        raise RuntimeError
+        # Find names of all parent classes. For example,
+        # for CC it would be Compiler and Abstract
+        for parent in Extension.__get_all_parents(self.__class__):
+            names.append(parent.__name__)
+
+        for name in names:
+            # Here we check that all options that are related to the
+            # current extension were not changed between launches.
+            # Options are related if their names start with the name of
+            # the extension class.
+            opts.extend([k for k in self.conf if k.startswith(name + ".")])
+
+        return opts
 
     def load_ext_meta(self):
         return self.load_data(self.ext_meta_file, raise_exception=False)
@@ -336,6 +348,11 @@ class Extension(metaclass=abc.ABCMeta):
 
         if "conf" not in stored_meta:
             stored_meta["conf"] = self.conf
+        else:
+            # Store updated values of extension options after it finishes its
+            # execution
+            for key in [k for k in stored_meta["conf"] if k in self.get_ext_opts()]:
+                stored_meta["conf"][key] = self.conf[key]
 
         if "build_dir" not in stored_meta:
             stored_meta["build_dir"] = self.get_build_dir(cmds_file)
