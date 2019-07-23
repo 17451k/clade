@@ -102,6 +102,8 @@ class Extension(metaclass=abc.ABCMeta):
                 pass
             self.conf["force_meta_deleted"] = True
 
+        self.check_conf_consistency()
+
         self.already_initialized = dict()
         self.already_initialized[self.name] = self
         self.init_extensions(work_dir)
@@ -295,6 +297,29 @@ class Extension(metaclass=abc.ABCMeta):
             elif stored_meta["corrupted"]:
                 self.error("Working directory is corrupted and can't be used.")
                 raise RuntimeError
+
+    def check_conf_consistency(self):
+        global_meta = self.load_global_meta()
+
+        if global_meta:
+            names = [self.name]
+
+            # Find names of all parent classes. For example,
+            # for CC it would be Compiler and Abstract
+            for parent in Extension.__get_all_parents(self.__class__):
+                names.append(parent.__name__)
+
+            for name in names:
+                # Here we check that all options that are related to the
+                # current extension were not changed between launches.
+                # Options are related if their names start with the name of
+                # the extension class.
+                for key in [k for k in global_meta["conf"] if k.startswith(name + ".")]:
+                    # If we cant load extension meta, then it is it's first launch
+                    # And it does not matter that the configuration was changed
+                    if global_meta["conf"][key] != self.conf[key] and self.load_ext_meta():
+                        self.error("Configuration option {!r} was changed between launches".format(key))
+                        raise RuntimeError
 
     def load_ext_meta(self):
         return self.load_data(self.ext_meta_file, raise_exception=False)

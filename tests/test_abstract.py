@@ -105,3 +105,16 @@ def test_force_current(tmpdir, cmds_file, force_current):
 
     assert force_current != (c_mtime1 == c_mtime2)
     assert p_mtime1 == p_mtime2
+
+
+def test_check_conf_consistency(tmpdir, cmds_file):
+    conf = {"PidGraph.filter_cmds_by_pid": True}
+
+    c = Clade(tmpdir, cmds_file, conf=conf)
+    c.parse("PidGraph")
+
+    changed_conf = {"PidGraph.filter_cmds_by_pid": False}
+
+    c = Clade(tmpdir, cmds_file, conf=changed_conf)
+    with pytest.raises(RuntimeError):
+        c.parse("CC")
