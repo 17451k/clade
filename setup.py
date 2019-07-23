@@ -224,7 +224,7 @@ setuptools.setup(
             "clade-cl=clade.extensions.cl:main",
             "clade-link=clade.extensions.link:main",
             "clade-all=clade:parse_all_main",
-            "clade=clade.extensions.cdb:main",
+            "clade-cdb=clade.extensions.cdb:main",
             "clade-diff=clade.diff:main",
             "clade-check=clade:check",
         ]

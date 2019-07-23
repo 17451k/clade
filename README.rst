@@ -853,7 +853,7 @@ database can be generated using *clade* command:
 
 .. code-block:: bash
 
-    $ clade make
+    $ clade-cdb make
 
 where *make* should be replaced by your project build command.
 As a result your project will be build and the *compile_commands.json*
@@ -864,7 +864,7 @@ If you have *cmds.txt* file you can skip the build process and get
 
 .. code-block:: bash
 
-    $ clade -c cmds.txt
+    $ clade-cdb -c cmds.txt
 
 Other options are available through --help option.
 
