@@ -459,7 +459,7 @@ class Extension(metaclass=abc.ABCMeta):
                     futures = [x for x in futures if not x.done()]
 
                     # Track progress (only if stdout is not redirected)
-                    if total_cmds and sys.stdout.isatty():
+                    if total_cmds and sys.stdout.isatty() and self.conf["log_level"] in ["INFO", "DEBUG"]:
                         finished_cmds += len(done_futures)
 
                         msg = "\t [{:.0f}%] {} of {} commands are parsed".format(
@@ -491,7 +491,8 @@ class Extension(metaclass=abc.ABCMeta):
                     # skip sleep only for very small projects
                     time.sleep(0.1)
 
-            print(" " * 79, end="\r")
+            if total_cmds and sys.stdout.isatty() and self.conf["log_level"] in ["INFO", "DEBUG"]:
+                print(" " * 79, end="\r")
 
     @staticmethod
     def get_all_extensions():
