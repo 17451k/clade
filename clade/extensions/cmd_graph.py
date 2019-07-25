@@ -20,7 +20,6 @@ import os
 from graphviz import Digraph
 
 from clade.extensions.abstract import Extension
-from clade.extensions.utils import merge_preset_to_conf
 
 
 class CmdGraph(Extension):
@@ -29,14 +28,13 @@ class CmdGraph(Extension):
 
     __version__ = "1"
 
-    def __init__(self, work_dir, conf=None, preset="base"):
+    def __init__(self, work_dir, conf=None):
         conf = conf if conf else dict()
-        conf = merge_preset_to_conf(preset, conf)
 
         if "CmdGraph.requires" in conf:
             self.requires = self.always_requires + conf["CmdGraph.requires"]
 
-        super().__init__(work_dir, conf, preset)
+        super().__init__(work_dir, conf)
 
         self.graph = dict()
         self.graph_file = "cmd_graph.json"

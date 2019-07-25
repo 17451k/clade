@@ -15,11 +15,10 @@
 
 import argparse
 import os
-import shutil
 import sys
+import ujson
 
 from clade import Clade
-from clade.extensions.utils import load_conf_file, merge_preset_to_conf
 
 
 def parse_args(args):
@@ -109,48 +108,36 @@ def parse_args(args):
 
 
 def prepare_conf(args):
-    conf = load_conf_file(args.config)
+    conf = dict()
 
-    try:
-        conf = merge_preset_to_conf(args.preset, conf)
-    except RuntimeError as e:
-        raise SystemExit(e)
+    if args.config:
+        try:
+            with open(args.config, "r") as f:
+                conf = ujson.load(f)
+        except FileNotFoundError:
+            print("Configuration file is not found")
+            sys.exit(-1)
 
     conf["work_dir"] = args.work_dir
     conf["log_level"] = args.log_level
     conf["cmds_file"] = args.cmds
-    conf["force_current"] = args.force_exts
+    conf["force"] = args.force
     conf["use_wrappers"] = args.wrappers
     conf["preset"] = args.preset
     conf["command"] = args.command
 
-    if args.extensions:
-        conf["extensions"] = args.extensions.split(",")
-
     return conf
-
-
-def prepare_work_dir(conf, args):
-    # Clean working directory
-    if args.force and os.path.isdir(conf["work_dir"]):
-        shutil.rmtree(conf["work_dir"])
-
-    # Create all necessary directories recursively
-    os.makedirs(conf["work_dir"], exist_ok=True)
-
-    # dirname can be empty if cmads_file is located in the current directory
-    if os.path.dirname(conf["cmds_file"]):
-        os.makedirs(os.path.dirname(conf["cmds_file"]), exist_ok=True)
 
 
 def main(sys_args=sys.argv[1:]):
     args = parse_args(sys_args)
     conf = prepare_conf(args)
 
-    prepare_work_dir(conf, args)
-
     # Create Clade interface object
-    c = Clade(work_dir=conf["work_dir"], cmds_file=conf["cmds_file"], conf=conf)
+    try:
+        c = Clade(work_dir=conf["work_dir"], cmds_file=conf["cmds_file"], conf=conf, preset=args.preset)
+    except RuntimeError as e:
+        raise SystemExit(e)
 
     if os.path.isfile(conf["cmds_file"]) and not args.append:
         c.logger.info("Skipping build and reusing {!r} file".format(conf["cmds_file"]))
@@ -172,8 +159,10 @@ def main(sys_args=sys.argv[1:]):
         return
 
     try:
+        extensions = args.extensions.split(",") if args.extensions else c.conf["extensions"]
+
         c.logger.info("Executing extensions")
-        c.parse_list(conf["extensions"])
+        c.parse_list(extensions, args.force_exts)
         c.logger.info("Executing extensions finished")
     except RuntimeError as e:
         if e.args:

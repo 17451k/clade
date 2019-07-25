@@ -15,14 +15,14 @@
 
 import re
 
-from clade.extensions.ld import LD
+from clade import Clade
 
 
 def test_ld(tmpdir, cmds_file):
-    c = LD(tmpdir)
-    c.parse(cmds_file)
+    c = Clade(tmpdir, cmds_file)
+    e = c.parse("LD")
 
-    cmds = c.load_all_cmds(with_opts=True, with_raw=True)
+    cmds = e.load_all_cmds(with_opts=True, with_raw=True)
 
     target_cmd = dict()
 

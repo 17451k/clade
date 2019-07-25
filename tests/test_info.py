@@ -13,21 +13,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from clade.extensions.info import Info
+from clade import Clade
 
 
 def test_info(tmpdir, cmds_file):
     conf = {"CC.filter_deps": False, "Info.extra_CIF_pts": ["-hello"]}
 
-    c = Info(tmpdir, conf)
-    c.parse(cmds_file)
+    c = Clade(tmpdir, cmds_file, conf)
+    e = c.parse("Info")
 
-    assert list(c.iter_definitions())
-    assert list(c.iter_declarations())
-    assert not list(c.iter_exported())
-    assert list(c.iter_calls())
-    assert list(c.iter_calls_by_pointers())
-    assert list(c.iter_functions_usages())
-    assert list(c.iter_macros_definitions())
-    assert list(c.iter_macros_expansions())
-    assert list(c.iter_typedefs())
+    assert list(e.iter_definitions())
+    assert list(e.iter_declarations())
+    assert not list(e.iter_exported())
+    assert list(e.iter_calls())
+    assert list(e.iter_calls_by_pointers())
+    assert list(e.iter_functions_usages())
+    assert list(e.iter_macros_definitions())
+    assert list(e.iter_macros_expansions())
+    assert list(e.iter_typedefs())

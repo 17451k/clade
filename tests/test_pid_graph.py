@@ -16,18 +16,18 @@
 import os
 import pytest
 
-from clade.extensions.pid_graph import PidGraph
+from clade import Clade
 from clade.cmds import get_last_id
 
 
 def test_pid_graph(tmpdir, cmds_file):
-    c = PidGraph(tmpdir)
-    c.parse(cmds_file)
+    c = Clade(tmpdir, cmds_file)
+    e = c.parse("PidGraph")
 
     last_id = get_last_id(cmds_file)
 
-    pid_graph = c.load_pid_graph()
-    pid_by_id = c.load_pid_by_id()
+    pid_graph = e.load_pid_graph()
+    pid_by_id = e.load_pid_by_id()
 
     cmd_ids = list(str(x) for x in range(1, int(last_id) + 1))
     assert len(pid_graph) == len(cmd_ids)
@@ -50,8 +50,8 @@ def test_pid_graph(tmpdir, cmds_file):
 def test_pid_graph_as_picture(tmpdir, cmds_file, as_picture):
     conf = {"PidGraph.as_picture": as_picture}
 
-    c = PidGraph(tmpdir, conf)
-    c.parse(cmds_file)
+    c = Clade(tmpdir, cmds_file, conf)
+    e = c.parse("PidGraph")
 
-    assert os.path.exists(c.graph_dot) == as_picture
-    assert os.path.exists(c.graph_dot + ".pdf") == as_picture
+    assert os.path.exists(e.graph_dot) == as_picture
+    assert os.path.exists(e.graph_dot + ".pdf") == as_picture

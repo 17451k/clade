@@ -2,7 +2,6 @@
     "base": {
         "log_level": "INFO",
         "force": false,
-        "force_current": false,
         "cpu_count": null,
         "extensions": ["SrcGraph"],
         "Wrapper.wrap_list": [],

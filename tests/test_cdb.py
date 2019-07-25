@@ -15,17 +15,19 @@
 
 import os
 
-from clade.extensions.cdb import CDB, main
+from clade import Clade
+from clade.extensions.cdb import main
 
 
 def test_cdb(tmpdir, cmds_file):
     cdb_json = os.path.join(str(tmpdir), "cdb.json")
-    c = CDB(tmpdir, conf={"CDB.output": cdb_json})
-    c.parse(cmds_file)
 
-    cdb = c.load_cdb()
+    c = Clade(tmpdir, cmds_file, conf={"CDB.output": cdb_json})
+    e = c.parse("CDB")
+
+    cdb = e.load_cdb()
     assert cdb
-    assert len(cdb) >= len(list(c.extensions["CC"].load_all_cmds()))
+    assert len(cdb) >= len(list(e.extensions["CC"].load_all_cmds()))
 
     for cmd in cdb:
         assert "directory" in cmd

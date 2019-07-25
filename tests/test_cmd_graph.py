@@ -16,19 +16,19 @@
 import os
 import pytest
 
-from clade.extensions.cmd_graph import CmdGraph
+from clade import Clade
 
 
 def test_cmd_graph_requires(tmpdir, cmds_file):
     conf = {"CmdGraph.requires": ["CC", "MV"]}
 
-    c = CmdGraph(tmpdir, conf)
-    c.parse(cmds_file)
+    c = Clade(tmpdir, cmds_file, conf)
+    e = c.parse("CmdGraph")
 
-    cmd_graph = c.load_cmd_graph()
+    cmd_graph = e.load_cmd_graph()
 
     cmd_id = None
-    for cmd in c.extensions["CC"].load_all_cmds():
+    for cmd in e.extensions["CC"].load_all_cmds():
         if "main.c" in cmd["in"] and "zero.c" in cmd["in"] and "tmp_main" in cmd["out"]:
             cmd_id = str(cmd["id"])
 
@@ -45,10 +45,10 @@ def test_cmd_graph_requires(tmpdir, cmds_file):
 def test_cmd_graph_empty_requires(tmpdir, cmds_file):
     conf = {"CmdGraph.requires": []}
 
-    c = CmdGraph(tmpdir, conf)
-    c.parse(cmds_file)
+    c = Clade(tmpdir, cmds_file, conf)
+    e = c.parse("CmdGraph")
 
-    cmd_graph = c.load_cmd_graph()
+    cmd_graph = e.load_cmd_graph()
     assert not cmd_graph
 
 
@@ -56,15 +56,15 @@ def test_cmd_graph_empty_requires(tmpdir, cmds_file):
 def test_cmd_graph_as_picture(tmpdir, cmds_file, as_picture):
     conf = {"CmdGraph.as_picture": as_picture}
 
-    c = CmdGraph(tmpdir, conf)
-    c.parse(cmds_file)
+    c = Clade(tmpdir, cmds_file, conf)
+    e = c.parse("CmdGraph")
 
-    assert os.path.exists(c.graph_dot) == as_picture
-    assert os.path.exists(c.graph_dot + ".pdf") == as_picture
+    assert os.path.exists(e.graph_dot) == as_picture
+    assert os.path.exists(e.graph_dot + ".pdf") == as_picture
 
 
 def test_cmd_graph_empty_conf(tmpdir, cmds_file):
-    c = CmdGraph(tmpdir)
-    c.parse(cmds_file)
+    c = Clade(tmpdir, cmds_file)
+    e = c.parse("CmdGraph")
 
-    assert c.load_cmd_graph()
+    assert e.load_cmd_graph()

@@ -25,8 +25,8 @@ from clade.extensions.abstract import Extension
 class PidGraph(Extension):
     __version__ = "1"
 
-    def __init__(self, work_dir, conf=None, preset="base"):
-        super().__init__(work_dir, conf, preset)
+    def __init__(self, work_dir, conf=None):
+        super().__init__(work_dir, conf)
 
         self.graph = dict()
         self.graph_file = "pid_graph.json"

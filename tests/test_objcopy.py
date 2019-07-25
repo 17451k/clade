@@ -15,17 +15,17 @@
 
 import sys
 
-from clade.extensions.objcopy import Objcopy
+from clade import Clade
 
 
 def test_objcopy(tmpdir, cmds_file):
     if not sys.platform == "linux":
         return
 
-    c = Objcopy(tmpdir)
-    c.parse(cmds_file)
+    c = Clade(tmpdir, cmds_file)
+    e = c.parse("Objcopy")
 
-    cmds = c.load_all_cmds(with_opts=True, with_raw=True)
+    cmds = e.load_all_cmds(with_opts=True, with_raw=True)
     assert len(cmds) == 2
     for cmd in cmds:
         assert len(cmd["in"]) == 1

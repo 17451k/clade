@@ -27,8 +27,8 @@ class Variables(Callgraph):
 
     __version__ = "1"
 
-    def __init__(self, work_dir, conf=None, preset="base"):
-        super().__init__(work_dir, conf, preset)
+    def __init__(self, work_dir, conf=None):
+        super().__init__(work_dir, conf)
 
         self.variables = dict()
         self.variables_folder = "variables"

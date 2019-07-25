@@ -39,7 +39,7 @@ class Info(Extension):
 
     __version__ = "1"
 
-    def __init__(self, work_dir, conf=None, preset="base"):
+    def __init__(self, work_dir, conf=None):
         if not conf:
             conf = dict()
 
@@ -49,7 +49,7 @@ class Info(Extension):
         if "SrcGraph.requires" in conf:
             self.requires = self.always_requires + conf["SrcGraph.requires"]
 
-        super().__init__(work_dir, conf, preset)
+        super().__init__(work_dir, conf)
 
         self.aspect = os.path.join(
             os.path.dirname(__file__), "info", "info.aspect"

@@ -23,8 +23,8 @@ from clade.extensions.abstract import Extension
 class Path(Extension):
     __version__ = "1"
 
-    def __init__(self, work_dir, conf=None, preset="base"):
-        super().__init__(work_dir, conf=conf, preset=preset)
+    def __init__(self, work_dir, conf=None):
+        super().__init__(work_dir, conf)
 
         self.paths = dict()
         self.paths_file = "paths.json"

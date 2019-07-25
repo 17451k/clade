@@ -13,14 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from clade.extensions.ar import AR
+from clade import Clade
 
 
 def test_ar(tmpdir, cmds_file):
-    c = AR(tmpdir)
-    c.parse(cmds_file)
+    c = Clade(tmpdir, cmds_file)
+    e = c.parse("AR")
 
-    cmds = c.load_all_cmds(with_opts=True, with_raw=True)
+    cmds = e.load_all_cmds(with_opts=True, with_raw=True)
     assert len(cmds) == 1
     assert len(cmds[0]["in"]) == 2
     assert len(cmds[0]["out"]) == 1

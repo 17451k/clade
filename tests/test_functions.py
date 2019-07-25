@@ -15,7 +15,7 @@
 
 import os
 
-from clade.extensions.functions import Functions
+from clade import Clade
 
 zero_c = os.path.abspath("tests/test_project/zero.c")
 zero_h = os.path.abspath("tests/test_project/zero.h")
@@ -56,12 +56,12 @@ def filtered_funcs_by_file_are_ok(funcs_by_file, funcs_by_main_c):
 def test_functions(tmpdir, cmds_file):
     conf = {"CmdGraph.requires": ["CC", "MV"]}
 
-    c = Functions(tmpdir, conf)
-    c.parse(cmds_file)
+    c = Clade(tmpdir, cmds_file, conf)
+    e = c.parse("Functions")
 
-    funcs = c.load_functions()
-    funcs_by_file = c.load_functions_by_file()
-    funcs_by_main_c = c.load_functions_by_file([main_c])
+    funcs = e.load_functions()
+    funcs_by_file = e.load_functions_by_file()
+    funcs_by_main_c = e.load_functions_by_file([main_c])
 
     funcs_are_ok(funcs)
     funcs_by_file_are_ok(funcs_by_file)

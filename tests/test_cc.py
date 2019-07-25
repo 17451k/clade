@@ -17,16 +17,16 @@ import os
 import pytest
 import re
 
-from clade.extensions.cc import CC
+from clade import Clade
 from clade.extensions.opts import cc_preprocessor_opts
 
 
 def test_cc_load_deps_by_id(tmpdir, cmds_file):
-    c = CC(tmpdir)
-    c.parse(cmds_file)
+    c = Clade(tmpdir, cmds_file)
+    e = c.parse("CC")
 
-    for cmd in c.load_all_cmds(compile_only=True):
-        deps = c.load_deps_by_id(cmd["id"])
+    for cmd in e.load_all_cmds(compile_only=True):
+        deps = e.load_deps_by_id(cmd["id"])
         assert deps
 
         for cmd_in in cmd["in"]:
@@ -36,39 +36,39 @@ def test_cc_load_deps_by_id(tmpdir, cmds_file):
 @pytest.mark.parametrize("with_opts", [True, False])
 @pytest.mark.parametrize("with_deps", [True, False])
 def test_cc_load_all_cmds(tmpdir, cmds_file, with_opts, with_deps):
-    c = CC(tmpdir)
-    c.parse(cmds_file)
+    c = Clade(tmpdir, cmds_file)
+    e = c.parse("CC")
 
-    cmds = list(c.load_all_cmds(with_opts=with_opts, with_deps=with_deps))
+    cmds = list(e.load_all_cmds(with_opts=with_opts, with_deps=with_deps))
     assert len(cmds) > 1
 
     for cmd in cmds:
         assert ("opts" in cmd) == with_opts
         assert ("deps" in cmd) == with_deps
 
-        cmd_by_id = c.load_cmd_by_id(cmd["id"])
+        cmd_by_id = e.load_cmd_by_id(cmd["id"])
 
         assert cmd_by_id["id"] == cmd["id"]
         assert cmd_by_id["in"] == cmd["in"]
         assert cmd_by_id["out"] == cmd["out"]
 
         if with_opts:
-            assert cmd["opts"] == c.load_opts_by_id(cmd["id"])
+            assert cmd["opts"] == e.load_opts_by_id(cmd["id"])
 
         if with_deps:
-            assert cmd["deps"] == c.load_deps_by_id(cmd["id"])
+            assert cmd["deps"] == e.load_deps_by_id(cmd["id"])
 
 
 @pytest.mark.parametrize("store_deps", [True, False])
 def test_cc_store_deps(tmpdir, cmds_file, store_deps):
     conf = {"Compiler.store_deps": store_deps}
 
-    c = CC(tmpdir, conf)
-    c.parse(cmds_file)
+    c = Clade(tmpdir, cmds_file, conf)
+    e = c.parse("CC")
 
-    storage_dir = c.extensions["Storage"].get_storage_dir()
+    storage_dir = e.extensions["Storage"].get_storage_dir()
 
-    for cmd in c.load_all_cmds(with_deps=True, compile_only=True):
+    for cmd in e.load_all_cmds(with_deps=True, compile_only=True):
         for file in cmd["deps"]:
             if not os.path.isabs(file):
                 file = os.path.join(cmd["cwd"], file)
@@ -80,10 +80,10 @@ def test_cc_store_deps(tmpdir, cmds_file, store_deps):
 def test_cc_with_system_header_files(tmpdir, cmds_file, with_system_header_files):
     conf = {"CC.with_system_header_files": with_system_header_files}
 
-    c = CC(tmpdir, conf)
-    c.parse(cmds_file)
+    c = Clade(tmpdir, cmds_file, conf)
+    e = c.parse("CC")
 
-    for cmd in c.load_all_cmds(with_deps=True, compile_only=True):
+    for cmd in e.load_all_cmds(with_deps=True, compile_only=True):
         if not with_system_header_files:
             for file in cmd["deps"]:
                 assert not re.match(r"/usr", file)
@@ -99,12 +99,12 @@ def test_cc_with_system_header_files(tmpdir, cmds_file, with_system_header_files
 def test_cc_ignore_cc1(tmpdir, cmds_file, ignore_cc1):
     conf = {"CC.ignore_cc1": ignore_cc1}
 
-    c = CC(tmpdir, conf)
-    c.parse(cmds_file)
+    c = Clade(tmpdir, cmds_file, conf)
+    e = c.parse("CC")
 
     found_cc1 = False
 
-    for cmd in c.load_all_cmds(with_opts=True):
+    for cmd in e.load_all_cmds(with_opts=True):
         if"-cc1" in cmd["opts"]:
             found_cc1 = True
 
@@ -113,12 +113,12 @@ def test_cc_ignore_cc1(tmpdir, cmds_file, ignore_cc1):
 
 @pytest.mark.parametrize("compile_only", [True, False])
 def test_cc_filter_deps(tmpdir, cmds_file, compile_only):
-    c = CC(tmpdir)
-    c.parse(cmds_file)
+    c = Clade(tmpdir, cmds_file)
+    e = c.parse("CC")
 
     found_deps_opt = False
 
-    for cmd in c.load_all_cmds(with_opts=True, compile_only=compile_only):
+    for cmd in e.load_all_cmds(with_opts=True, compile_only=compile_only):
         if set(cc_preprocessor_opts).intersection(cmd["opts"]):
             found_deps_opt = True
 
@@ -135,17 +135,17 @@ def test_cc_filter(tmpdir, cmds_file, filter, filter_in, filter_out):
         "Common.filter_out": filter_out
     }
 
-    c = CC(tmpdir, conf)
-    c.parse(cmds_file)
+    c = Clade(tmpdir, cmds_file, conf)
+    e = c.parse("CC")
 
-    assert len(list(c.load_all_cmds()))
+    assert len(list(e.load_all_cmds()))
 
 
 def test_cc_empty_conf(tmpdir, cmds_file):
-    c = CC(tmpdir)
-    c.parse(cmds_file)
+    c = Clade(tmpdir, cmds_file)
+    e = c.parse("CC")
 
-    assert len(list(c.load_all_cmds()))
+    assert len(list(e.load_all_cmds()))
 
 
 def test_cc_empty_which_list(tmpdir, cmds_file):
@@ -153,10 +153,10 @@ def test_cc_empty_which_list(tmpdir, cmds_file):
         "CC.which_list": []
     }
 
-    c = CC(tmpdir, conf)
-    c.parse(cmds_file)
+    c = Clade(tmpdir, cmds_file, conf)
+    e = c.parse("CC")
 
-    assert len(list(c.load_all_cmds())) == 0
+    assert len(list(e.load_all_cmds())) == 0
 
 
 def test_cc_preprocess(tmpdir, cmds_file):
@@ -164,7 +164,7 @@ def test_cc_preprocess(tmpdir, cmds_file):
         "Compiler.preprocess_cmds": True
     }
 
-    c = CC(tmpdir, conf)
-    c.parse(cmds_file)
+    c = Clade(tmpdir, cmds_file, conf)
+    e = c.parse("CC")
 
-    assert c.get_all_pre_files()
+    assert e.get_all_pre_files()

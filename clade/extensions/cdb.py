@@ -28,12 +28,12 @@ class CDB(Extension):
 
     __version__ = "1"
 
-    def __init__(self, work_dir, conf=None, preset="base"):
+    def __init__(self, work_dir, conf=None):
         if not conf:
             conf = dict()
 
         conf["log_level"] = "ERROR"
-        super().__init__(work_dir, conf, preset)
+        super().__init__(work_dir, conf)
 
         self.cdb = []
         # DO NOT put CDB.output option to the presets file

@@ -15,7 +15,7 @@
 
 import os
 
-from clade.extensions.callgraph import Callgraph
+from clade import Clade
 
 zero_c = os.path.abspath("tests/test_project/zero.c")
 main_c = os.path.abspath("tests/test_project/main.c")
@@ -51,13 +51,13 @@ def used_in_is_ok(used_in):
 def test_callgraph(tmpdir, cmds_file):
     conf = {"CmdGraph.requires": ["CC", "MV"]}
 
-    c = Callgraph(tmpdir, conf=conf)
-    c.parse(cmds_file)
+    c = Clade(tmpdir, cmds_file, conf)
+    e = c.parse("Callgraph")
 
-    callgraph = c.load_callgraph()
-    callgraph_by_zero_c = c.load_callgraph([zero_c])
-    calls_by_ptr = c.load_calls_by_ptr()
-    used_in = c.load_used_in()
+    callgraph = e.load_callgraph()
+    callgraph_by_zero_c = e.load_callgraph([zero_c])
+    calls_by_ptr = e.load_calls_by_ptr()
+    used_in = e.load_used_in()
 
     callgraph_is_ok(callgraph)
     callgraph_by_file_is_ok(callgraph, callgraph_by_zero_c)

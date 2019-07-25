@@ -15,9 +15,10 @@
 
 import argparse
 import os
+import shutil
 import sys
 
-from clade.utils import get_logger
+from clade.utils import get_logger, merge_preset_to_conf
 from clade.intercept import intercept
 from clade.extensions.abstract import Extension
 from clade.extensions.cdb import CDB
@@ -53,9 +54,12 @@ class Clade:
     def __init__(self, work_dir="clade", cmds_file="cmds.txt", conf=None, preset="base"):
         self.work_dir = os.path.abspath(str(work_dir))
         self.cmds_file = os.path.abspath(cmds_file)
-        self.conf = conf if conf else dict()
-        self.preset = preset
         self.logger = get_logger("clade-api", with_name=False, conf=conf)
+
+        self.conf = conf if conf else dict()
+        self.conf = merge_preset_to_conf(preset, self.conf)
+
+        self.__prepare_work_dir()
 
         self._CmdGraph = None
         self._cmd_graph = None
@@ -68,7 +72,7 @@ class Clade:
         self._pid_graph = None
         self._pid_by_id = None
 
-        self._Storage = Storage(self.work_dir, self.conf, self.preset)
+        self._Storage = Storage(self.work_dir, self.conf)
 
         self._Callgraph = None
         self._callgraph = None
@@ -81,6 +85,18 @@ class Clade:
         self._cdb = None
 
         self._Path = None
+
+    def __prepare_work_dir(self):
+        # Clean working directory
+        if self.conf.get("force") and os.path.isdir(self.work_dir):
+            shutil.rmtree(self.work_dir)
+
+        # Create all necessary directories recursively
+        os.makedirs(self.work_dir, exist_ok=True)
+
+        # dirname can be empty if cmds_file is located in the current directory
+        if os.path.dirname(self.cmds_file):
+            os.makedirs(os.path.dirname(self.cmds_file), exist_ok=True)
 
     def intercept(self, command, cwd=os.getcwd(), append=False, use_wrappers=False):
         """Execute intercepting of build commands.
@@ -103,7 +119,7 @@ class Clade:
         except NotImplementedError:
             Extension._import_extension_modules()
             ext_class = Extension.find_subclass(ext_name)
-        return ext_class(self.work_dir, conf=self.conf, preset=self.preset)
+        return ext_class(self.work_dir, conf=self.conf)
 
     def are_parsed(self, ext_name):
         """Check whether build commands are parsed or not.
@@ -118,7 +134,7 @@ class Clade:
         e = self.__get_ext_obj(ext_name)
         return e.is_parsed()
 
-    def parse(self, ext_name):
+    def parse(self, ext_name, clean=False):
         """Execute parse() method of a specified Clade extension.
 
         Args:
@@ -129,11 +145,15 @@ class Clade:
         """
 
         e = self.__get_ext_obj(ext_name)
+
+        if clean and os.path.isdir(e.work_dir):
+            shutil.rmtree(e.work_dir)
+
         e.parse(self.cmds_file)
 
         return e
 
-    def parse_list(self, ext_names):
+    def parse_list(self, ext_names, clean=False):
         """Execute parse() method of several Clade extensions.
 
         Args:
@@ -144,14 +164,14 @@ class Clade:
         """
 
         for ext_name in ext_names:
-            if not self.are_parsed(ext_name):
-                self.parse(ext_name)
+            if not self.are_parsed(ext_name) or clean:
+                self.parse(ext_name, clean=clean)
 
     @property
     def CmdGraph(self):
         """Object of "CmdGraph" extension."""
         if not self._CmdGraph:
-            self._CmdGraph = CmdGraph(self.work_dir, self.conf, self.preset)
+            self._CmdGraph = CmdGraph(self.work_dir, self.conf)
 
         if not self._CmdGraph.is_parsed():
             self.parse("CmdGraph")
@@ -301,7 +321,7 @@ class Clade:
     def SrcGraph(self):
         """Object of "SrcGraph" extension."""
         if not self._SrcGraph:
-            self._SrcGraph = SrcGraph(self.work_dir, self.conf, self.preset)
+            self._SrcGraph = SrcGraph(self.work_dir, self.conf)
 
         if not self._SrcGraph.is_parsed():
             self.parse("SrcGraph")
@@ -360,7 +380,7 @@ class Clade:
     def PidGraph(self):
         """Object of "PidGraph" extension."""
         if not self._PidGraph:
-            self._PidGraph = PidGraph(self.work_dir, self.conf, self.preset)
+            self._PidGraph = PidGraph(self.work_dir, self.conf)
 
         if not self._PidGraph.is_parsed():
             self.parse("PidGraph")
@@ -408,7 +428,7 @@ class Clade:
     def Callgraph(self):
         """Object of "Callgraph" extension."""
         if not self._Callgraph:
-            self._Callgraph = Callgraph(self.work_dir, self.conf, self.preset)
+            self._Callgraph = Callgraph(self.work_dir, self.conf)
 
         if not self._Callgraph.is_parsed():
             self.parse("Callgraph")
@@ -442,7 +462,7 @@ class Clade:
     def Functions(self):
         """Object of "Functions" extension."""
         if not self._Functions:
-            self._Functions = Functions(self.work_dir, self.conf, self.preset)
+            self._Functions = Functions(self.work_dir, self.conf)
 
         if not self._Functions.is_parsed():
             self.parse("Functions")
@@ -483,7 +503,7 @@ class Clade:
 
     def get_typedefs(self, files=None):
         """Get dictionary with type definitions (C only)."""
-        t = Typedefs(self.work_dir, self.conf, self.preset)
+        t = Typedefs(self.work_dir, self.conf)
 
         if not t.is_parsed():
             self.parse("Typedefs")
@@ -497,7 +517,7 @@ class Clade:
             files: A list of files to narrow down returned dictionary
             macros_names: A list of macros names to find and return
         """
-        m = Macros(self.work_dir, self.conf, self.preset)
+        m = Macros(self.work_dir, self.conf)
 
         if not m.is_parsed():
             self.parse("Macros")
@@ -525,7 +545,7 @@ class Clade:
             files: A list of files to narrow down returned dictionary
             macros_names: A list of macros names to find and return
         """
-        m = Macros(self.work_dir, self.conf, self.preset)
+        m = Macros(self.work_dir, self.conf)
 
         if not m.is_parsed():
             self.parse("Macros")
@@ -548,7 +568,7 @@ class Clade:
 
     def get_variables(self, files=None):
         """Get dictionary with variables (C only)."""
-        v = Variables(self.work_dir, self.conf, self.preset)
+        v = Variables(self.work_dir, self.conf)
 
         if not v.is_parsed():
             self.parse("Variables")
@@ -556,7 +576,7 @@ class Clade:
         return v.load_variables(files)
 
     def get_used_in_vars_functions(self):
-        v = Variables(self.work_dir, self.conf, self.preset)
+        v = Variables(self.work_dir, self.conf)
 
         if not v.is_parsed():
             self.parse("Variables")
@@ -567,7 +587,7 @@ class Clade:
     def CDB(self):
         """Object of "CDB" extension."""
         if not self._CDB:
-            self._CDB = CDB(self.work_dir, self.conf, self.preset)
+            self._CDB = CDB(self.work_dir, self.conf)
 
         if not self._CDB.is_parsed():
             self.parse("CDB")
@@ -586,7 +606,7 @@ class Clade:
     def Path(self):
         """Object of "Path" extension."""
         if not self._Path:
-            self._Path = Path(self.work_dir, self.conf, self.preset)
+            self._Path = Path(self.work_dir, self.conf)
 
         return self._Path
 
@@ -648,7 +668,7 @@ class Clade:
             True if everything is OK and False otherwise
         """
 
-        PidGraphObj = PidGraph(self.work_dir, self.conf, self.preset)
+        PidGraphObj = PidGraph(self.work_dir, self.conf)
 
         if not os.path.exists(self.work_dir) or not PidGraphObj.is_parsed():
             if log:

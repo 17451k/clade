@@ -40,8 +40,8 @@ class Common(Extension, metaclass=abc.ABCMeta):
 
     __version__ = "1"
 
-    def __init__(self, work_dir, conf=None, preset="base"):
-        super().__init__(work_dir, conf, preset)
+    def __init__(self, work_dir, conf=None):
+        super().__init__(work_dir, conf)
 
         self.raw_dir = "raw"
         self.opts_dir = "opts"

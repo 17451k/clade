@@ -25,10 +25,10 @@ def test_cc_parallel(tmpdir, cmds_file):
     del os.environ["CLADE_DEBUG"]
 
     try:
-        c = CC(tmpdir)
-        c.parse(cmds_file)
+        c = Clade(tmpdir, cmds_file)
+        e = c.parse("CC")
 
-        assert c.load_all_cmds()
+        assert e.load_all_cmds()
     finally:
         os.environ["CLADE_DEBUG"] = "1"
 
@@ -41,9 +41,9 @@ def test_cc_parallel_with_exception(tmpdir, cmds_file):
         with unittest.mock.patch("concurrent.futures.Future.result") as result_mock:
             result_mock.side_effect = Exception
 
-            c = CC(tmpdir)
+            c = Clade(tmpdir, cmds_file)
             with pytest.raises(RuntimeError):
-                c.parse(cmds_file)
+                c.parse("CC")
     finally:
         os.environ["CLADE_DEBUG"] = "1"
 
@@ -55,10 +55,10 @@ def test_cc_parallel_with_print(tmpdir, cmds_file):
         with unittest.mock.patch("sys.stdout.isatty") as isatty_mock:
             isatty_mock.return_value = True
 
-            c = CC(tmpdir)
-            c.parse(cmds_file)
+            c = Clade(tmpdir, cmds_file)
+            e = c.parse("CC")
 
-            assert c.load_all_cmds()
+            assert e.load_all_cmds()
     finally:
         os.environ["CLADE_DEBUG"] = "1"
 
@@ -67,8 +67,8 @@ def test_cc_parallel_with_print(tmpdir, cmds_file):
 def test_force(tmpdir, cmds_file, force):
     conf = {"force": force}
 
-    c = Clade(tmpdir, cmds_file, conf=conf)
-    c.parse("CC")
+    c1 = Clade(tmpdir, cmds_file, conf=conf)
+    c1.parse("CC")
 
     p_work_dir = os.path.join(str(tmpdir), "PidGraph")
     c_work_dir = os.path.join(str(tmpdir), "CC")
@@ -76,7 +76,8 @@ def test_force(tmpdir, cmds_file, force):
     p_mtime1 = os.stat(p_work_dir).st_mtime
     c_mtime1 = os.stat(c_work_dir).st_mtime
 
-    c.parse("CC")
+    c2 = Clade(tmpdir, cmds_file, conf=conf)
+    c2.parse("CC")
 
     p_mtime2 = os.stat(p_work_dir).st_mtime
     c_mtime2 = os.stat(c_work_dir).st_mtime
@@ -85,12 +86,10 @@ def test_force(tmpdir, cmds_file, force):
     assert force != (c_mtime1 == c_mtime2)
 
 
-@pytest.mark.parametrize("force_current", [True, False])
-def test_force_current(tmpdir, cmds_file, force_current):
-    conf = {"force_current": force_current}
-
-    c = Clade(tmpdir, cmds_file, conf=conf)
-    c.parse("CC")
+@pytest.mark.parametrize("clean", [True, False])
+def test_parse_clean(tmpdir, cmds_file, clean):
+    c = Clade(tmpdir, cmds_file)
+    c.parse("CC", clean=clean)
 
     p_work_dir = os.path.join(str(tmpdir), "PidGraph")
     c_work_dir = os.path.join(str(tmpdir), "CC")
@@ -98,12 +97,12 @@ def test_force_current(tmpdir, cmds_file, force_current):
     p_mtime1 = os.stat(p_work_dir).st_mtime
     c_mtime1 = os.stat(c_work_dir).st_mtime
 
-    c.parse("CC")
+    c.parse("CC", clean=clean)
 
     p_mtime2 = os.stat(p_work_dir).st_mtime
     c_mtime2 = os.stat(c_work_dir).st_mtime
 
-    assert force_current != (c_mtime1 == c_mtime2)
+    assert clean != (c_mtime1 == c_mtime2)
     assert p_mtime1 == p_mtime2
 
 

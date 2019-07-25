@@ -15,18 +15,15 @@
 
 import os
 
-from clade.extensions.src_graph import SrcGraph
-from clade.extensions.path import Path
+from clade import Clade
 
 test_file_rel = "tests/test_project/main.c"
 test_file_abs = os.path.abspath(test_file_rel)
 
 
 def test_path(tmpdir, cmds_file):
-    c = SrcGraph(tmpdir)
-    c.parse(cmds_file)
+    c = Clade(tmpdir, cmds_file)
+    c.parse("SrcGraph")
 
-    p = Path(tmpdir)
-
-    assert p.get_abs_path(test_file_abs) == test_file_abs
-    assert p.normalize_rel_path(test_file_rel, os.getcwd()) == test_file_abs
+    assert c.Path.get_abs_path(test_file_abs) == test_file_abs
+    assert c.Path.normalize_rel_path(test_file_rel, os.getcwd()) == test_file_abs

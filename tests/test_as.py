@@ -15,14 +15,14 @@
 
 import re
 
-from clade.extensions.assembler import AS
+from clade import Clade
 
 
 def test_as(tmpdir, cmds_file):
-    c = AS(tmpdir)
-    c.parse(cmds_file)
+    c = Clade(tmpdir, cmds_file)
+    e = c.parse("AS")
 
-    cmds = c.load_all_cmds(with_opts=True, with_raw=True)
+    cmds = e.load_all_cmds(with_opts=True, with_raw=True)
     target_cmd = dict()
 
     for cmd in cmds:

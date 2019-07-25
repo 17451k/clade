@@ -16,7 +16,6 @@
 import os
 
 from clade.extensions.abstract import Extension
-from clade.extensions.utils import merge_preset_to_conf
 
 
 class SrcGraph(Extension):
@@ -25,14 +24,13 @@ class SrcGraph(Extension):
     always_requires = ["CmdGraph", "Path"]
     requires = always_requires + ["CC", "CL"]
 
-    def __init__(self, work_dir, conf=None, preset="base"):
+    def __init__(self, work_dir, conf=None):
         conf = conf if conf else dict()
-        conf = merge_preset_to_conf(preset, conf)
 
         if "SrcGraph.requires" in conf:
             self.requires = self.always_requires + conf["SrcGraph.requires"]
 
-        super().__init__(work_dir, conf, preset)
+        super().__init__(work_dir, conf)
 
         self.src_graph = dict()
         self.src_graph_file = "src_graph.json"

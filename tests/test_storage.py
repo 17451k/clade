@@ -14,33 +14,31 @@
 # limitations under the License.
 
 import os
-import pytest
 import shutil
 import unittest.mock
 
-from clade.extensions.cc import CC
-from clade.extensions.storage import Storage
+from clade import Clade
 
 test_file = os.path.abspath("tests/test_project/main.c")
 
 
 def test_storage(tmpdir):
-    c = Storage(tmpdir)
+    c = Clade(tmpdir)
 
-    c.add_file(__file__)
-    c.add_file("do_not_exist.c")
-    assert os.path.exists(os.path.join(c.get_storage_dir(), __file__))
+    c.add_file_to_storage(__file__)
+    c.add_file_to_storage("do_not_exist.c")
+    assert os.path.exists(os.path.join(c.storage_dir, __file__))
     assert c.get_storage_path(__file__)
 
     # Test possible race condition
     with unittest.mock.patch("shutil.copyfile") as copyfile_mock:
         copyfile_mock.side_effect = shutil.SameFileError
-        c.add_file(test_file)
+        c.add_file_to_storage(test_file)
 
 
 def test_storage_with_conversion(tmpdir):
-    c = Storage(tmpdir, conf={"Storage.convert_to_utf8": True})
+    c = Clade(tmpdir, conf={"Storage.convert_to_utf8": True})
 
     with unittest.mock.patch("os.replace") as replace_mock:
         replace_mock.side_effect = OSError
-        c.add_file(test_file)
+        c.add_file_to_storage(test_file)

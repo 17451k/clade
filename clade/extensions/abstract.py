@@ -34,7 +34,6 @@ import uuid
 from concurrent.futures import ProcessPoolExecutor
 
 import clade.cmds
-from clade.extensions.utils import merge_preset_to_conf
 
 
 # Setup extensions logger
@@ -52,7 +51,6 @@ class Extension(metaclass=abc.ABCMeta):
     Attributes:
         work_dir: A path to the working directory where all output files will be stored
         conf: A dictionary with optional arguments
-        preset: Name of one of the available preset configurations
 
     Raises:
         NotImplementedError: Required subclass is not found
@@ -61,11 +59,10 @@ class Extension(metaclass=abc.ABCMeta):
 
     __version__ = "1"
 
-    def __init__(self, work_dir, conf=None, preset="base"):
+    def __init__(self, work_dir, conf=None):
         self.name = self.__class__.__name__
         self.work_dir = os.path.join(os.path.abspath(str(work_dir)), self.name)
         self.conf = conf if conf else dict()
-        self.conf = merge_preset_to_conf(preset, self.conf)
         self.temp_dir = None
 
         if not hasattr(self, "requires"):
@@ -74,19 +71,6 @@ class Extension(metaclass=abc.ABCMeta):
         self.extensions = dict()
 
         logger.setLevel(self.conf.get("log_level", "INFO"))
-
-        if self.conf.get("force") and os.path.exists(self.work_dir):
-            self.debug(
-                "Removing working directory: {!r}".format(self.work_dir)
-            )
-            shutil.rmtree(self.work_dir)
-        elif self.conf.get("force_current"):
-            if os.path.exists(self.work_dir):
-                self.debug(
-                    "Removing working directory: {!r}".format(self.work_dir)
-                )
-                shutil.rmtree(self.work_dir)
-            self.conf["force_current"] = False
 
         self.ext_meta = {"version": self.get_ext_version(), "corrupted": False}
         self.ext_meta_file = ".meta.json"

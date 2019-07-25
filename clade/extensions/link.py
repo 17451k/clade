@@ -22,8 +22,8 @@ from clade.extensions.opts import requires_value
 class Link(Common):
     __version__ = "1"
 
-    def __init__(self, work_dir, conf=None, preset="base"):
-        super().__init__(work_dir, conf, preset)
+    def __init__(self, work_dir, conf=None):
+        super().__init__(work_dir, conf)
 
     def parse(self, cmds_file):
         super().parse(cmds_file, self.conf.get("Link.which_list", []))

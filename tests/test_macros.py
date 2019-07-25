@@ -15,7 +15,7 @@
 
 import os
 
-from clade.extensions.macros import Macros
+from clade import Clade
 
 zero_c = os.path.abspath("tests/test_project/zero.c")
 
@@ -31,8 +31,8 @@ def expansions_are_ok(expansions):
 
 
 def test_macros(tmpdir, cmds_file):
-    c = Macros(tmpdir)
-    c.parse(cmds_file)
+    c = Clade(tmpdir, cmds_file)
+    e = c.parse("Macros")
 
-    definitions_are_ok(c.load_macros_definitions())
-    expansions_are_ok(c.load_macros_expansions())
+    definitions_are_ok(e.load_macros_definitions())
+    expansions_are_ok(e.load_macros_expansions())

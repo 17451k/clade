@@ -15,7 +15,7 @@
 
 import os
 
-from clade.extensions.typedefs import Typedefs
+from clade import Clade
 
 zero_c = os.path.abspath("tests/test_project/zero.c")
 
@@ -25,7 +25,7 @@ def typedefs_are_ok(typedefs):
 
 
 def test_typedefs(tmpdir, cmds_file):
-    c = Typedefs(tmpdir)
-    c.parse(cmds_file)
+    c = Clade(tmpdir, cmds_file)
+    e = c.parse("Typedefs")
 
-    typedefs_are_ok(c.load_typedefs())
+    typedefs_are_ok(e.load_typedefs())

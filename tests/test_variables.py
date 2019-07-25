@@ -15,7 +15,7 @@
 
 import os
 
-from clade.extensions.variables import Variables
+from clade import Clade
 
 zero_c = os.path.abspath("tests/test_project/zero.c")
 
@@ -34,8 +34,8 @@ def used_in_vars_is_ok(used_in_vars):
 
 
 def test_variables(tmpdir, cmds_file):
-    c = Variables(tmpdir)
-    c.parse(cmds_file)
+    c = Clade(tmpdir, cmds_file)
+    e = c.parse("Variables")
 
-    variables_are_ok(c.load_variables())
-    used_in_vars_is_ok(c.load_used_in_vars())
+    variables_are_ok(e.load_variables())
+    used_in_vars_is_ok(e.load_used_in_vars())

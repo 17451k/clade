@@ -15,7 +15,7 @@
 
 import os
 
-from clade.extensions.src_graph import SrcGraph
+from clade import Clade
 
 test_file = os.path.abspath("tests/test_project/main.c")
 
@@ -23,29 +23,29 @@ test_file = os.path.abspath("tests/test_project/main.c")
 def test_src_graph(tmpdir, cmds_file):
     conf = {"CmdGraph.requires": ["CC", "MV"]}
 
-    c = SrcGraph(tmpdir, conf)
-    c.parse(cmds_file)
+    c = Clade(tmpdir, cmds_file, conf)
+    e = c.parse("SrcGraph")
 
-    src_graph = c.load_src_graph()
+    src_graph = e.load_src_graph()
 
     assert src_graph
     assert len(src_graph[test_file]["compiled_in"]) == 3
     assert len(src_graph[test_file]["used_by"]) == 2
 
-    src_info = c.load_src_info()
+    src_info = e.load_src_info()
     assert src_info
     assert src_info[test_file]["loc"] == 11
 
-    graph_part = c.load_src_graph([test_file])
+    graph_part = e.load_src_graph([test_file])
     assert graph_part
     assert len(graph_part[test_file]["used_by"]) == 2
     assert len(src_graph[test_file]["compiled_in"]) == 3
 
 
 def test_src_graph_empty_conf(tmpdir, cmds_file):
-    c = SrcGraph(tmpdir)
-    c.parse(cmds_file)
+    c = Clade(tmpdir, cmds_file)
+    e = c.parse("SrcGraph")
 
-    src_graph = c.load_src_graph()
+    src_graph = e.load_src_graph()
     assert src_graph
     assert len(src_graph[test_file]["used_by"]) >= 1

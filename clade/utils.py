@@ -14,7 +14,9 @@
 # limitations under the License.
 
 import logging
+import os
 import sys
+import ujson
 
 
 def get_logger(name, with_name=True, conf=None):
@@ -34,3 +36,25 @@ def get_logger(name, with_name=True, conf=None):
     logger.setLevel(conf.get("log_level", "INFO"))
 
     return logger
+
+
+def merge_preset_to_conf(preset_name, conf):
+    preset_file = os.path.join(
+        os.path.dirname(__file__), "extensions", "presets", "presets.json"
+    )
+
+    with open(preset_file, "r") as f:
+        presets = ujson.load(f)
+
+    if preset_name not in presets:
+        raise RuntimeError("Preset {!r} is not found".format(preset_name))
+
+    preset_conf = presets[preset_name]
+    parent_preset = preset_conf.get("extends")
+
+    if parent_preset:
+        preset_conf = merge_preset_to_conf(parent_preset, preset_conf)
+
+    preset_conf.update(conf)
+
+    return preset_conf
