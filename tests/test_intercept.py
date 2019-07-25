@@ -14,11 +14,10 @@
 # limitations under the License.
 
 import os
-import pytest
 import shutil
 import sys
 
-from clade.intercept import intercept, intercept_main
+from clade.intercept import intercept
 
 
 test_project = os.path.join(os.path.dirname(__file__), "test_project")
@@ -92,19 +91,3 @@ def test_fallback_with_unix_server(tmpdir):
     assert not intercept(command=test_project_make, output=output, use_wrappers=True, conf=conf)
     assert os.path.isfile(output)
     assert calculate_loc(output) > 1
-
-
-def test_main(tmpdir):
-    output = os.path.join(str(tmpdir), "cmds.txt")
-
-    with pytest.raises(SystemExit) as excinfo:
-        intercept_main(["-o", output] + test_project_make)
-
-    assert "0" in str(excinfo.value)
-
-
-def test_main_no_args():
-    with pytest.raises(SystemExit) as excinfo:
-        intercept_main([])
-
-    assert "0" not in str(excinfo.value)

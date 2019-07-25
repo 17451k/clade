@@ -169,7 +169,7 @@ def main(sys_args=sys.argv[1:]):
 
     if args.intercept:
         c.logger.info("Path to the file with intercepted commands: {!r}".format(conf["cmds_file"]))
-        sys.exit()
+        sys.exit(0)
 
     try:
         c.logger.info("Executing extensions")
@@ -180,3 +180,5 @@ def main(sys_args=sys.argv[1:]):
             raise SystemExit(e)
         else:
             raise SystemExit
+
+    sys.exit(0)

@@ -204,7 +204,6 @@ setuptools.setup(
     package_data={"clade": package_files("clade")},
     entry_points={
         "console_scripts": [
-            "clade-intercept=clade.intercept:intercept_main",
             "clade-cmds-stats=clade.cmds:print_cmds_stats",
             "clade-cc=clade.extensions.cc:main",
             "clade-ld=clade.extensions.ld:main",
