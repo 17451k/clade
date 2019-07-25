@@ -1,10 +1,10 @@
 {
     "base": {
-        "extends": [],
         "log_level": "INFO",
         "force": false,
         "force_current": false,
         "cpu_count": null,
+        "extensions": ["SrcGraph"],
         "Wrapper.wrap_list": [],
         "Wrapper.recursive_wrap": false,
         "CC.ignore_cc1": true,
@@ -68,16 +68,12 @@
         ]
     },
     "base_print": {
-        "extends": [
-            "base"
-        ],
+        "extends": "base",
         "CmdGraph.as_picture": true,
         "PidGraph.as_picture": true
     },
     "linux_kernel": {
-        "extends": [
-            "base"
-        ],
+        "extends": "base",
         "CmdGraph.requires": [
             "AR",
             "CC",
@@ -107,9 +103,7 @@
         "Info.extra_CIF_opts": ["-Dvector_size(x)="]
     },
     "busybox_linux": {
-        "extends": [
-            "base_print"
-        ],
+        "extends": "base_print",
         "Common.filter": [],
         "Common.filter_in": [
             "\\.tmp$",
@@ -127,9 +121,7 @@
         ]
     },
     "apache_linux": {
-        "extends": [
-            "base_print"
-        ],
+        "extends": "base_print",
         "Common.filter": [
             "/tmp/.*"
         ],
@@ -145,6 +137,15 @@
             "/dev/null",
             "\\.cmd$",
             "tmp\\.\\w+"
+        ]
+    },
+    "klever_linux_kernel": {
+        "extends": "linux_kernel",
+        "extensions": [
+            "Callgraph",
+            "Variables",
+            "Typedefs",
+            "Macros"
         ]
     }
 }

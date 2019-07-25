@@ -27,16 +27,17 @@ def merge_preset_to_conf(preset_name, conf):
     with open(preset_file, "r") as f:
         presets = ujson.load(f)
 
-        if preset_name not in presets:
-            print("Preset {!r} is not found".format(preset_name))
-            sys.exit(-1)
+    if preset_name not in presets:
+        raise RuntimeError("Preset {!r} is not found".format(preset_name))
 
-        preset_conf = presets[preset_name]
+    preset_conf = presets[preset_name]
+    parent_preset = preset_conf.get("extends")
 
-        for parent_preset in preset_conf.get("extends", []):
-            preset_conf = merge_preset_to_conf(parent_preset, preset_conf)
+    if parent_preset:
+        preset_conf = merge_preset_to_conf(parent_preset, preset_conf)
 
     preset_conf.update(conf)
+
     return preset_conf
 
 

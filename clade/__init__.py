@@ -96,7 +96,7 @@ class Clade:
             0 if everything went successful and error code otherwise
         """
 
-        return intercept(command=command, cwd=cwd, output=self.cmds_file, append=append, use_wrappers=use_wrappers)
+        return intercept(command=command, cwd=cwd, output=self.cmds_file, append=append, use_wrappers=use_wrappers, conf=self.conf)
 
     def parse_all(self, cmds_file=None):
         """Execute parse() method of all extensions available in Clade.
@@ -166,6 +166,20 @@ class Clade:
         e.parse(self.cmds_file)
 
         return e
+
+    def parse_list(self, ext_names):
+        """Execute parse() method of several Clade extensions.
+
+        Args:
+            ext_names: List of extension names, like ["Callgraph", "SrcGraph"]
+
+        Returns:
+            Nothing
+        """
+
+        for ext_name in ext_names:
+            if not self.are_parsed(ext_name):
+                self.parse(ext_name)
 
     @property
     def CmdGraph(self):

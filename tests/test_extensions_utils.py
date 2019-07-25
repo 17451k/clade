@@ -29,5 +29,5 @@ def test_common_main_bad_conf(tmpdir, cmds_file):
 
 
 def test_common_main_bad_preset(tmpdir, cmds_file):
-    with pytest.raises(SystemExit):
+    with pytest.raises(RuntimeError):
         common_main(CC, ["-w", str(tmpdir), "-p", "does_not_exist", cmds_file])
