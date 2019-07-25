@@ -105,9 +105,6 @@ def parse_args(args):
     if not args.cmds:
         args.cmds = os.path.join(args.work_dir, "cmds.txt")
 
-    if not args.command:
-        sys.exit("Build command is missing")
-
     return args
 
 
@@ -158,6 +155,10 @@ def main(sys_args=sys.argv[1:]):
     if os.path.isfile(conf["cmds_file"]) and not args.append:
         c.logger.info("Skipping build and reusing {!r} file".format(conf["cmds_file"]))
     else:
+        if not args.command:
+            c.logger.error("Build command is missing")
+            sys.exit(-1)
+
         c.logger.info("Starting build")
         r = c.intercept(conf["command"], use_wrappers=conf["use_wrappers"], append=args.append)
 
