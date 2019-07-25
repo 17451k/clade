@@ -98,39 +98,6 @@ class Clade:
 
         return intercept(command=command, cwd=cwd, output=self.cmds_file, append=append, use_wrappers=use_wrappers, conf=self.conf)
 
-    def parse_all(self, cmds_file=None):
-        """Execute parse() method of all extensions available in Clade.
-
-        It can be done only for projects written in C.
-        """
-        if cmds_file:
-            self.cmds_file = cmds_file
-
-        if self.conf.get("force_current"):
-            self.logger.error("--force_current option is not supported in the 'parse all' mode.")
-            raise RuntimeError
-
-        if self.conf.get("force") or not self.are_parsed("Callgraph"):
-            self.parse("Callgraph")
-
-        # Backup "force" option
-        force = self.conf.get("force", False)
-
-        # If  "force" is True, then set "force_current" to True
-        # and "force" to False
-        self.conf["force_current"] = self.conf.get("force", False)
-        self.conf["force"] = False
-
-        extensions = ("Variables", "Macros", "Typedefs")
-        for ext_name in extensions:
-            if self.conf.get("force_current") or not self.are_parsed(ext_name):
-                self.parse(ext_name)
-
-        # Restore "force" option
-        self.conf["force"] = force
-
-        self.logger.info("All extensions are parsed")
-
     def __get_ext_obj(self, ext_name):
         try:
             ext_class = Extension.find_subclass(ext_name)
@@ -707,16 +674,6 @@ class Clade:
                 "Working directory is OK and contains data from the following extensions: {}".format(", ".join(exts))
             )
         return True
-
-
-def parse_all_main(args=sys.argv[1:]):
-    conf = parse_args(args)
-
-    c = Clade(conf["work_dir"], conf["cmds_file"], conf, conf["preset"])
-    try:
-        c.parse_all()
-    except Exception:
-        sys.exit(-1)
 
 
 def check(args=sys.argv[1:]):

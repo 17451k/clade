@@ -222,7 +222,6 @@ setuptools.setup(
             "clade-as=clade.extensions.assembler:main",
             "clade-cl=clade.extensions.cl:main",
             "clade-link=clade.extensions.link:main",
-            "clade-all=clade:parse_all_main",
             "clade-cdb=clade.extensions.cdb:main",
             "clade-diff=clade.diff:main",
             "clade-check=clade:check",

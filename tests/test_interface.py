@@ -208,11 +208,6 @@ def test_meta(tmpdir, cmds_file):
     assert c.get_uuid()
 
 
-def test_parse_all(tmpdir, cmds_file):
-    c = Clade(tmpdir, cmds_file)
-    c.parse_all()
-
-
 def test_check_work_dir_fail():
     c = Clade("/")
 
