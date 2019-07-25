@@ -13,10 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
-
 from clade.extensions.common import Common
-from clade.extensions.utils import common_main
 
 
 class AS(Common):
@@ -34,7 +31,3 @@ class AS(Common):
 
         self.debug("Parsed command: {}".format(parsed_cmd))
         self.dump_cmd_by_id(cmd["id"], parsed_cmd)
-
-
-def main(args=sys.argv[1:]):
-    common_main(AS, args)

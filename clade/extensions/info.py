@@ -23,11 +23,9 @@ import re
 import shlex
 import shutil
 import subprocess
-import sys
 
 from clade.extensions.abstract import Extension
 from clade.extensions.opts import filter_opts
-from clade.extensions.utils import common_main
 
 
 # multiprocessing from Python 3.4 can't pickle Info._normalize_file directly
@@ -369,7 +367,3 @@ class Info(Extension):
         with open(file, "r") as f:
             for line in f:
                 yield line
-
-
-def main(args=sys.argv[1:]):
-    common_main(Info, args)

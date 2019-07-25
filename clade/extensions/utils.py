@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import argparse
 import os
 import sys
 import ujson
@@ -53,76 +52,3 @@ def load_conf_file(file_name):
             sys.exit(-1)
 
     return conf
-
-
-def parse_args(args):
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument(
-        "-w",
-        "--work-dir",
-        help="a path to the DIR where processed commands will be saved",
-        metavar="DIR",
-        default="clade",
-    )
-    parser.add_argument(
-        "-l",
-        "--log-level",
-        help="set logging level (ERROR, INFO, or DEBUG)",
-        metavar="LEVEL",
-        default="INFO",
-    )
-    parser.add_argument(
-        "-c",
-        "--config",
-        help="a path to the JSON file with configuration",
-        metavar="JSON",
-        default=None,
-    )
-    parser.add_argument(
-        "-p",
-        "--preset",
-        help="a name of the preset configuration",
-        metavar="NAME",
-        default="base",
-    )
-    parser.add_argument(
-        "-f",
-        "--force",
-        help="force all Clade extensions to run even if their working directories are not empty",
-        action="store_true"
-    )
-    parser.add_argument(
-        "-fc",
-        "--force-current",
-        help="force the current Clade extension to run even if its working directory is not empty",
-        action="store_true"
-    )
-    parser.add_argument(
-        dest="cmds_file", help="a path to the file with intercepted commands"
-    )
-
-    args = parser.parse_args(args)
-
-    conf = load_conf_file(args.config)
-    conf["work_dir"] = conf.get("work_dir", args.work_dir)
-    conf["log_level"] = conf.get("log_level", args.log_level)
-    conf["cmds_file"] = conf.get("cmds_file", args.cmds_file)
-    conf["force"] = conf.get("force", args.force)
-    conf["force_current"] = conf.get("force_current", args.force_current)
-    conf["preset"] = args.preset
-
-    return merge_preset_to_conf(args.preset, conf)
-
-
-def common_main(cl, args):
-    conf = parse_args(args)
-
-    try:
-        c = cl(conf["work_dir"], conf=conf)
-        c.parse(conf["cmds_file"])
-    except RuntimeError as e:
-        if e.args:
-            raise SystemExit(e)
-        else:
-            raise SystemExit

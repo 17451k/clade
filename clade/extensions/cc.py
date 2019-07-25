@@ -16,10 +16,8 @@
 import os
 import re
 import subprocess
-import sys
 
 from clade.extensions.compiler import Compiler
-from clade.extensions.utils import common_main
 from clade.extensions.opts import cc_preprocessor_opts
 
 
@@ -189,7 +187,3 @@ class CC(Compiler):
                 )
 
         return pre
-
-
-def main(args=sys.argv[1:]):
-    common_main(CC, args)

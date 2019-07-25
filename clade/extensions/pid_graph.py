@@ -15,13 +15,11 @@
 
 import re
 import os
-import sys
 
 from graphviz import Digraph
 
 from clade.cmds import iter_cmds, get_last_id
 from clade.extensions.abstract import Extension
-from clade.extensions.utils import common_main
 
 
 class PidGraph(Extension):
@@ -95,7 +93,3 @@ class PidGraph(Extension):
             parsed_ids.add(cmd["id"])
 
         return filtered_cmds
-
-
-def main(args=sys.argv[1:]):
-    common_main(PidGraph, args)

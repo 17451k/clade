@@ -15,10 +15,8 @@
 
 import os
 import re
-import sys
 
 from clade.extensions.abstract import Extension
-from clade.extensions.utils import common_main
 
 
 class Callgraph(Extension):
@@ -337,7 +335,3 @@ class Callgraph(Extension):
 
         os.remove(self.err_log)
         os.rename(self.err_log + ".temp", self.err_log)
-
-
-def main(args=sys.argv[1:]):
-    common_main(Callgraph, args)

@@ -13,13 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
 import re
 
 from clade.extensions.common import Common
 from clade.extensions.opts import requires_value
-
-from clade.extensions.utils import common_main
 
 
 class Link(Common):
@@ -59,7 +56,3 @@ class Link(Common):
 
         self.debug("Parsed command: {}".format(parsed_cmd))
         self.dump_cmd_by_id(cmd["id"], parsed_cmd)
-
-
-def main(args=sys.argv[1:]):
-    common_main(Link, args)

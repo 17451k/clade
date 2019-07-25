@@ -31,7 +31,6 @@ from clade.extensions.storage import Storage
 from clade.extensions.typedefs import Typedefs
 from clade.extensions.variables import Variables
 from clade.extensions.path import Path
-from clade.extensions.utils import parse_args
 
 
 class Clade:

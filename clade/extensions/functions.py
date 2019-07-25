@@ -14,11 +14,9 @@
 # limitations under the License.
 
 import re
-import sys
 
 from clade.extensions.abstract import Extension
 from clade.extensions.callgraph import Callgraph
-from clade.extensions.utils import common_main
 
 
 class Functions(Callgraph):
@@ -163,7 +161,3 @@ class Functions(Callgraph):
                     self.funcs_by_file[file][func] = self.funcs[func][file]
                 else:
                     self.funcs_by_file[file] = {func: self.funcs[func][file]}
-
-
-def main(args=sys.argv[1:]):
-    common_main(Functions, args)

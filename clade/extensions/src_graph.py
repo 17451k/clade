@@ -14,10 +14,9 @@
 # limitations under the License.
 
 import os
-import sys
 
 from clade.extensions.abstract import Extension
-from clade.extensions.utils import common_main, merge_preset_to_conf
+from clade.extensions.utils import merge_preset_to_conf
 
 
 class SrcGraph(Extension):
@@ -140,7 +139,3 @@ class SrcGraph(Extension):
     @staticmethod
     def __get_new_value():
         return {"compiled_in": set(), "used_by": set()}
-
-
-def main(args=sys.argv[1:]):
-    common_main(SrcGraph, args)

@@ -14,10 +14,8 @@
 # limitations under the License.
 
 import re
-import sys
 
 from clade.extensions.abstract import Extension
-from clade.extensions.utils import common_main
 
 
 class Macros(Extension):
@@ -96,7 +94,3 @@ class Macros(Extension):
 
     def load_macros_expansions(self, files=None):
         return self.load_data_by_key(self.expand_folder, files)
-
-
-def main(args=sys.argv[1:]):
-    common_main(Macros, args)

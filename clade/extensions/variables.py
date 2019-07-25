@@ -14,14 +14,12 @@
 # limitations under the License.
 
 import os
-import sys
 # TODO: You can remove it as it will work with ujson everywhere (almost)
 import json
 
 from clade.extensions.abstract import Extension
 from clade.extensions.callgraph import Callgraph
 from clade.extensions.initializations import parse_variables_initializations
-from clade.extensions.utils import common_main
 
 
 class Variables(Callgraph):
@@ -126,7 +124,3 @@ class Variables(Callgraph):
 
     def load_used_in_vars(self):
         return self.load_data(self.used_in_vars_file)
-
-
-def main(args=sys.argv[1:]):
-    common_main(Variables, args)

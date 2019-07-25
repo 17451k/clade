@@ -25,14 +25,27 @@ test_project_make = ["make", "-C", test_project]
 def test_intercept(tmpdir):
     cmds_file = os.path.join(str(tmpdir), "cmds.txt")
 
-    with pytest.raises(SystemExit) as excinfo:
-        main(["--cmds", cmds_file, "-i"] + test_project_make)
-
-    assert "0" == str(excinfo.value)
+    main(["--cmds", cmds_file, "-i"] + test_project_make)
 
 
 def test_intercept_no_command():
-    with pytest.raises(SystemExit) as excinfo:
+    with pytest.raises(SystemExit) as e:
         main(["-i"])
 
-    assert "-1" == str(excinfo.value)
+    assert "-1" == str(e.value)
+
+
+def test_main_cc(tmpdir, cmds_file):
+    main(["-w", str(tmpdir), "--cmds", cmds_file, "-e", "CC"])
+
+
+def test_main_bad_conf(tmpdir, cmds_file):
+    with pytest.raises(SystemExit) as e:
+        main(["-w", str(tmpdir), "--cmds", cmds_file, "-c", "does_not_exist.conf"])
+
+    assert "-1" == str(e.value)
+
+
+def test_main_bad_preset(tmpdir, cmds_file):
+    with pytest.raises(SystemExit):
+        main(["-w", str(tmpdir), "--cmds", cmds_file, "-p", "does_not_exist"])

@@ -16,12 +16,11 @@
 import hashlib
 import re
 import os
-import sys
 
 from graphviz import Digraph
 
 from clade.extensions.abstract import Extension
-from clade.extensions.utils import common_main, merge_preset_to_conf
+from clade.extensions.utils import merge_preset_to_conf
 
 
 class CmdGraph(Extension):
@@ -207,7 +206,3 @@ class CmdGraph(Extension):
             )
 
         return self.extensions[ext_name]
-
-
-def main(args=sys.argv[1:]):
-    common_main(CmdGraph, args)

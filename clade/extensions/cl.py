@@ -17,11 +17,9 @@ import cchardet
 import os
 import re
 import subprocess
-import sys
 
 from clade.extensions.compiler import Compiler
 from clade.extensions.opts import requires_value, cl_preprocessor_deps_opts
-from clade.extensions.utils import common_main
 
 # TODO: Support /FA and /Fa options (output assembler code, .cod or .asm)
 # TODO: Support /Fe option (Name of the output EXE file)
@@ -279,7 +277,3 @@ class CL(Compiler):
             return False
 
         return True
-
-
-def main(args=sys.argv[1:]):
-    common_main(CL, args)

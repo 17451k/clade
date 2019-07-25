@@ -14,10 +14,8 @@
 # limitations under the License.
 
 import re
-import sys
 
 from clade.extensions.abstract import Extension
-from clade.extensions.utils import common_main
 
 
 class Typedefs(Extension):
@@ -60,7 +58,3 @@ class Typedefs(Extension):
 
     def load_typedefs(self, files=None):
         return self.load_data_by_key(self.typedefs_folder, files)
-
-
-def main(args=sys.argv[1:]):
-    common_main(Typedefs, args)
