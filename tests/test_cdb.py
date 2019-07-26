@@ -16,7 +16,7 @@
 import os
 
 from clade import Clade
-from clade.extensions.cdb import main
+from clade.scripts.compilation_database import main
 
 
 def test_cdb(tmpdir, cmds_file):
@@ -27,7 +27,9 @@ def test_cdb(tmpdir, cmds_file):
 
     cdb = e.load_cdb()
     assert cdb
-    assert len(cdb) >= len(list(e.extensions["CC"].load_all_cmds()))
+
+    cc = c.parse("CC")
+    assert len(cdb) >= len(list(cc.load_all_cmds()))
 
     for cmd in cdb:
         assert "directory" in cmd
@@ -36,4 +38,4 @@ def test_cdb(tmpdir, cmds_file):
 
 
 def test_cdb_main(tmpdir, cmds_file):
-    main(["-o", os.path.join(str(tmpdir), "cdb.json"), "-c", cmds_file])
+    main(["-o", os.path.join(str(tmpdir), "cdb.json"), "--cmds", cmds_file])

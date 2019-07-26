@@ -208,17 +208,8 @@ class Clade:
 
     def get_compilation_cmds(self, with_opts=False, with_raw=False, with_deps=False):
         """Get list with all parsed compilation commands (C projects only)."""
-        cmds = self.SrcGraph.load_all_cmds()
-
-        for cmd in cmds:
-            if with_opts:
-                cmd["opts"] = self.get_cmd_opts(cmd["id"])
-
-            if with_raw:
-                cmd["command"] = self.get_cmd_raw(cmd["id"])
-
-            if with_deps:
-                cmd["deps"] = self.get_cmd_deps(cmd["id"])
+        cmds = self.SrcGraph.load_all_cmds(
+            with_opts=with_opts, with_raw=with_raw, with_deps=with_deps)
 
         return [self.__normalize_cmd(cmd) for cmd in cmds]
 

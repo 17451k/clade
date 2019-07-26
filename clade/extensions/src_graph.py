@@ -65,14 +65,15 @@ class SrcGraph(Extension):
 
         self.src_graph.clear()
 
-    def load_all_cmds(self):
+    def load_all_cmds(self, with_opts=False, with_raw=False, with_deps=False):
         cmds = []
 
         for ext_name in [
             x for x in self.extensions if x not in self.always_requires
         ]:
             for cmd in self.extensions[ext_name].load_all_cmds(
-                compile_only=True
+                compile_only=True, with_opts=with_opts,
+                with_raw=with_raw, with_deps=with_deps
             ):
                 cmd["type"] = ext_name
                 cmds.append(cmd)

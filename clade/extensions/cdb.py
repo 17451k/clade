@@ -13,18 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import argparse
 import os
-import shutil
-import sys
-import tempfile
 
 from clade.extensions.abstract import Extension
-from clade.intercept import intercept
 
 
 class CDB(Extension):
-    requires = ["CC"]
+    requires = ["SrcGraph"]
 
     __version__ = "1"
 
@@ -32,7 +27,6 @@ class CDB(Extension):
         if not conf:
             conf = dict()
 
-        conf["log_level"] = "ERROR"
         super().__init__(work_dir, conf)
 
         self.cdb = []
@@ -43,16 +37,12 @@ class CDB(Extension):
 
     @Extension.prepare
     def parse(self, cmds_file):
-        cmds = self.extensions["CC"].load_all_cmds(with_opts=True, with_raw=True, compile_only=True)
+        cmds = self.extensions["SrcGraph"].load_all_cmds(
+            with_opts=True, with_raw=True, with_deps=True
+        )
 
         for cmd in cmds:
             for i, cmd_in in enumerate(cmd["in"]):
-                # Ignore commands with object files as input
-                # So, gcc lib1.o lib2.o -o lib will be ignored
-                file_ext = os.path.splitext(os.path.basename(cmd_in))[1]
-                if file_ext not in self.extensions["CC"].file_extensions:
-                    continue
-
                 arguments = [cmd["command"]] + cmd["opts"] + [cmd_in]
                 if cmd["out"]:
                     if "-c" in cmd["opts"]:
@@ -73,55 +63,3 @@ class CDB(Extension):
     def load_cdb(self):
         """Load compilation database."""
         return self.load_data(self.cdb_file)
-
-
-def parse_args(args, work_dir):
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument(
-        "-o",
-        "--output",
-        help="a path to the FILE where compilation database will be saved",
-        metavar="FILE",
-        default="compile_commands.json",
-    )
-    parser.add_argument(
-        "-w",
-        "--wrappers",
-        help="enable intercepting mode based on wrappers (not available on Windows)",
-        action="store_true",
-    )
-    parser.add_argument(
-        "-c",
-        "--cmds_file",
-        help="a path to the file with intercepted commands",
-    )
-    parser.add_argument(
-        dest="command", nargs=argparse.REMAINDER, help="build command to run"
-    )
-
-    args = parser.parse_args(args)
-
-    if not args.command and not args.cmds_file:
-        sys.exit("Build command is missing")
-
-    if not args.cmds_file:
-        args.cmds_file = os.path.join(work_dir, "cmds.txt")
-
-    return args
-
-
-def main(args=sys.argv[1:]):
-    work_dir = tempfile.mkdtemp()
-    args = parse_args(args, work_dir)
-
-    if args.command:
-        intercept(
-            command=args.command,
-            output=args.cmds_file,
-            use_wrappers=args.wrappers,
-        )
-
-    c = CDB(work_dir, conf={"CDB.output": os.path.abspath(args.output)})
-    c.parse(args.cmds_file)
-    shutil.rmtree(work_dir)
