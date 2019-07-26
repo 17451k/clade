@@ -4,4 +4,4 @@ concurrency =
     concurrent.futures
 source = clade
 omit =
-    clade/diff.py
+    clade/scripts

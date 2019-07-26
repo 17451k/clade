@@ -15,8 +15,6 @@
 
 import os
 import re
-import sys
-
 DELIMITER = "||"
 
 
@@ -139,17 +137,3 @@ def get_stats(cmds_file):
             stats[cmd["which"]] = 1
 
     return stats
-
-
-def print_cmds_stats(args=sys.argv[1:]):
-    if not args:
-        sys.exit("Path to the json file with intercepted commands is missing")
-
-    stats = get_stats(args[0])
-
-    total_count = sum(stats.values())
-    for key in sorted(stats, key=stats.get):
-        print("{}: {}".format(stats[key], key))
-
-    print("-------------" + "-" * len(str(total_count)))
-    print("Total count: {}".format(total_count))

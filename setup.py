@@ -204,11 +204,11 @@ setuptools.setup(
     package_data={"clade": package_files("clade")},
     entry_points={
         "console_scripts": [
-            "clade-cmds-stats=clade.cmds:print_cmds_stats",
-            "clade-cdb=clade.extensions.cdb:main",
-            "clade-diff=clade.diff:main",
-            "clade-check=clade:check",
             "clade=clade.main:main",
+            "clade-cdb=clade.extensions.cdb:main",
+            "clade-cmds-stats=clade.scripts.stats:print_cmds_stats",
+            "clade-diff=clade.scripts.diff:main",
+            "clade-check=clade.scripts.check:main",
         ]
     },
     cmdclass={

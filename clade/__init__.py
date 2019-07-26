@@ -13,10 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import argparse
 import os
 import shutil
-import sys
 
 from clade.utils import get_logger, merge_preset_to_conf
 from clade.intercept import intercept
@@ -693,18 +691,3 @@ class Clade:
                 "Working directory is OK and contains data from the following extensions: {}".format(", ".join(exts))
             )
         return True
-
-
-def check(args=sys.argv[1:]):
-    parser = argparse.ArgumentParser(
-        description="Check that Clade working directory exists and not corrupted."
-    )
-
-    parser.add_argument(
-        dest="work_dir", help="path to the Clade working directory"
-    )
-
-    args = parser.parse_args(args)
-
-    c = Clade(args.work_dir)
-    sys.exit(not c.is_work_dir_ok(log=True))
