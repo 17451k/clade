@@ -204,7 +204,7 @@ setuptools.setup(
     package_data={"clade": package_files("clade")},
     entry_points={
         "console_scripts": [
-            "clade=clade.main:main",
+            "clade=clade.__main__:main",
             "clade-cdb=clade.scripts.compilation_database:main",
             "clade-cmds-stats=clade.scripts.stats:print_cmds_stats",
             "clade-diff=clade.scripts.diff:main",
