@@ -16,7 +16,7 @@
 import pytest
 import os
 
-from clade.main import main
+from clade.__main__ import main
 
 test_project = os.path.join(os.path.dirname(__file__), "test_project")
 test_project_make = ["make", "-C", test_project]

@@ -171,3 +171,7 @@ def main(sys_args=sys.argv[1:]):
             raise SystemExit(e)
         else:
             raise SystemExit
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
