@@ -54,9 +54,11 @@ def parse_args(args):
     )
     parser.add_argument(
         "-e",
-        "--extensions",
-        help="list of extensions to launch, separated by commas (no whitespaces!)",
-        metavar="EXTENSIONS"
+        "--extension",
+        help="extension to launch",
+        metavar="EXTENSION",
+        default=[],
+        action="append"
     )
     parser.add_argument(
         "--cmds",
@@ -159,7 +161,7 @@ def main(sys_args=sys.argv[1:]):
         return
 
     try:
-        extensions = args.extensions.split(",") if args.extensions else c.conf["extensions"]
+        extensions = args.extension if args.extension else c.conf["extensions"]
 
         c.logger.info("Executing extensions")
         c.parse_list(extensions, args.force_exts)
