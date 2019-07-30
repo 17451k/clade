@@ -48,32 +48,27 @@ class Clade:
 
         self.__prepare_work_dir()
 
+        self._PidGraph = None
+        self._Storage = None
         self._CmdGraph = None
-        self._cmd_graph = None
-
         self._SrcGraph = None
+        self._Path = None
+        self._Functions = None
+        self._Callgraph = None
+        self._Macros = None
+        self._Variables = None
+        self._CrossRef = None
+        self._CDB = None
+
+        self._cmd_graph = None
         self._src_graph = None
         self._src_info = None
-
-        self._PidGraph = None
         self._pid_graph = None
         self._pid_by_id = None
-
-        self._Storage = None
-
-        self._Callgraph = None
         self._callgraph = None
-
-        self._Functions = None
         self._functions = None
         self._functions_by_file = None
-
-        self._CDB = None
         self._cdb = None
-
-        self._Path = None
-
-        self._CrossRef = None
 
     def __prepare_work_dir(self):
         # Clean working directory
@@ -162,9 +157,6 @@ class Clade:
         """Object of "CmdGraph" extension."""
         if not self._CmdGraph:
             self._CmdGraph = self.__get_ext_obj("CmdGraph")
-
-        if not self._CmdGraph.is_parsed():
-            self.parse("CmdGraph")
 
         return self._CmdGraph
 
@@ -304,9 +296,6 @@ class Clade:
         if not self._SrcGraph:
             self._SrcGraph = self.__get_ext_obj("SrcGraph")
 
-        if not self._SrcGraph.is_parsed():
-            self.parse("SrcGraph")
-
         return self._SrcGraph
 
     @property
@@ -363,9 +352,6 @@ class Clade:
         if not self._PidGraph:
             self._PidGraph = self.__get_ext_obj("PidGraph")
 
-        if not self._PidGraph.is_parsed():
-            self.parse("PidGraph")
-
         return self._PidGraph
 
     @property
@@ -393,9 +379,6 @@ class Clade:
         if not self._Storage:
             self._Storage = self.__get_ext_obj("Storage")
 
-        if not self._Storage.is_parsed():
-            self.parse("Storage")
-
         return self._Storage
 
     @property
@@ -421,9 +404,6 @@ class Clade:
         """Object of "Callgraph" extension."""
         if not self._Callgraph:
             self._Callgraph = self.__get_ext_obj("Callgraph")
-
-        if not self._Callgraph.is_parsed():
-            self.parse("Callgraph")
 
         return self._Callgraph
 
@@ -455,9 +435,6 @@ class Clade:
         """Object of "Functions" extension."""
         if not self._Functions:
             self._Functions = self.__get_ext_obj("Functions")
-
-        if not self._Functions.is_parsed():
-            self.parse("Functions")
 
         return self._Functions
 
@@ -497,10 +474,15 @@ class Clade:
         """Get dictionary with type definitions (C only)."""
         t = self.__get_ext_obj("Typedefs")
 
-        if not t.is_parsed():
-            self.parse("Typedefs")
-
         return t.load_typedefs(files)
+
+    @property
+    def Macros(self):
+        """Object of "Macros" extension."""
+        if not self._Macros:
+            self._Macros = self.__get_ext_obj("Macros")
+
+        return self._Macros
 
     def get_macros_expansions(self, files=None, macros_names=None):
         """Get dictionary with macros expansions (C only).
@@ -509,12 +491,8 @@ class Clade:
             files: A list of files to narrow down returned dictionary
             macros_names: A list of macros names to find and return
         """
-        m = self.__get_ext_obj("Macros")
 
-        if not m.is_parsed():
-            self.parse("Macros")
-
-        expansions = m.load_macros_expansions(files)
+        expansions = self.Macros.load_macros_expansions(files)
 
         if macros_names:
             filtered_expansions = dict()
@@ -537,12 +515,8 @@ class Clade:
             files: A list of files to narrow down returned dictionary
             macros_names: A list of macros names to find and return
         """
-        m = self.__get_ext_obj("Macros")
 
-        if not m.is_parsed():
-            self.parse("Macros")
-
-        definitions = m.load_macros_definitions(files)
+        definitions = self.Macros.load_macros_definitions(files)
 
         if macros_names:
             filtered_definitions = dict()
@@ -558,31 +532,26 @@ class Clade:
 
         return definitions
 
+    @property
+    def Variables(self):
+        """Object of "Variables" extension."""
+        if not self._Variables:
+            self._Variables = self.__get_ext_obj("Variables")
+
+        return self._Variables
+
     def get_variables(self, files=None):
         """Get dictionary with variables (C only)."""
-        v = self.__get_ext_obj("Variables")
-
-        if not v.is_parsed():
-            self.parse("Variables")
-
-        return v.load_variables(files)
+        return self.Variables.load_variables(files)
 
     def get_used_in_vars_functions(self):
-        v = self.__get_ext_obj("Variables")
-
-        if not v.is_parsed():
-            self.parse("Variables")
-
-        return v.load_used_in_vars()
+        return self.Variables.load_used_in_vars()
 
     @property
     def CDB(self):
         """Object of "CDB" extension."""
         if not self._CDB:
             self._CDB = self.__get_ext_obj("CDB")
-
-        if not self._CDB.is_parsed():
-            self.parse("CDB")
 
         return self._CDB
 

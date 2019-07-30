@@ -37,8 +37,9 @@ def test_intercept(tmpdir):
     assert calculate_loc(output) > 1
 
 
-def test_cmd_graph(tmpdir, cmds_file):
-    c = Clade(tmpdir, cmds_file)
+def test_cmd_graph(clade_api: Clade):
+    c = clade_api
+
     assert c.cmd_graph
 
     comp_cmds = c.compilation_cmds
@@ -95,8 +96,8 @@ def test_cmd_graph(tmpdir, cmds_file):
         assert c.get_leaf_cmds("-1")
 
 
-def test_src_graph(tmpdir, cmds_file):
-    c = Clade(tmpdir, cmds_file)
+def test_src_graph(clade_api: Clade):
+    c = clade_api
 
     assert c.src_graph
     for file in c.src_graph:
@@ -107,8 +108,8 @@ def test_src_graph(tmpdir, cmds_file):
         assert c.get_file_size("this_file_does_not_exist.c")
 
 
-def test_pid_graph(tmpdir, cmds_file):
-    c = Clade(tmpdir, cmds_file)
+def test_pid_graph(clade_api: Clade):
+    c = clade_api
 
     assert c.pid_graph
     assert c.pid_by_id
@@ -126,8 +127,8 @@ def test_storage(tmpdir, cmds_file):
     assert c.get_storage_path(__file__)
 
 
-def test_callgraph(tmpdir, cmds_file):
-    c = Clade(tmpdir, cmds_file)
+def test_callgraph(clade_api: Clade):
+    c = clade_api
 
     callgraph = c.callgraph
     callgraph_by_zero_c = c.get_callgraph([zero_c], add_unknown=False)
@@ -136,8 +137,8 @@ def test_callgraph(tmpdir, cmds_file):
     callgraph_by_file_is_ok(callgraph, callgraph_by_zero_c)
 
 
-def test_functions(tmpdir, cmds_file):
-    c = Clade(tmpdir, cmds_file)
+def test_functions(clade_api: Clade):
+    c = clade_api
 
     funcs = c.functions
     funcs_by_file = c.functions_by_file
@@ -149,26 +150,20 @@ def test_functions(tmpdir, cmds_file):
     filtered_funcs_by_file_are_ok(funcs_by_file, funcs_by_main_c)
 
 
-def test_get_typedefs(tmpdir, cmds_file):
-    c = Clade(tmpdir, cmds_file)
-
-    typedefs_are_ok(c.get_typedefs())
+def test_get_typedefs(clade_api: Clade):
+    typedefs_are_ok(clade_api.get_typedefs())
 
 
-def test_get_variables(tmpdir, cmds_file):
-    c = Clade(tmpdir, cmds_file)
-
-    variables_are_ok(c.get_variables())
+def test_get_variables(clade_api: Clade):
+    variables_are_ok(clade_api.get_variables())
 
 
-def test_get_used_in_vars_functions(tmpdir, cmds_file):
-    c = Clade(tmpdir, cmds_file)
-
-    used_in_vars_is_ok(c.get_used_in_vars_functions())
+def test_get_used_in_vars_functions(clade_api: Clade):
+    used_in_vars_is_ok(clade_api.get_used_in_vars_functions())
 
 
-def test_get_macros_expansions(tmpdir, cmds_file):
-    c = Clade(tmpdir, cmds_file)
+def test_get_macros_expansions(clade_api: Clade):
+    c = clade_api
 
     assert c.get_macros_expansions(macros_names=["ZERO", "WEIRD_ZERO"])
     assert not c.get_macros_expansions(macros_names=["ZERO2"])
@@ -176,8 +171,8 @@ def test_get_macros_expansions(tmpdir, cmds_file):
     expansions_are_ok(c.get_macros_expansions())
 
 
-def test_get_macros_definitions(tmpdir, cmds_file):
-    c = Clade(tmpdir, cmds_file)
+def test_get_macros_definitions(clade_api: Clade):
+    c = clade_api
 
     assert c.get_macros_definitions(macros_names=["ZERO", "WEIRD_ZERO"])
     assert not c.get_macros_definitions(macros_names=["ZERO2"])
@@ -185,16 +180,12 @@ def test_get_macros_definitions(tmpdir, cmds_file):
     definitions_are_ok(c.get_macros_definitions())
 
 
-def test_cdb(tmpdir, cmds_file):
-    c = Clade(tmpdir, cmds_file)
-
-    assert c.compilation_database
+def test_cdb(clade_api: Clade):
+    assert clade_api.compilation_database
 
 
-def test_meta_good(tmpdir, cmds_file):
-    c = Clade(tmpdir, cmds_file)
-
-    c.parse("PidGraph")
+def test_meta_good(clade_api: Clade):
+    c = clade_api
 
     assert c.get_conf()
     assert c.get_version()
@@ -229,11 +220,8 @@ def test_check_work_dir_fail():
     assert not c.is_work_dir_ok()
 
 
-def test_check_work_dir(tmpdir, cmds_file):
-    c = Clade(tmpdir, cmds_file)
-    c.parse("PidGraph")
-
-    assert c.is_work_dir_ok(log=True)
+def test_check_work_dir(clade_api: Clade):
+    assert clade_api.is_work_dir_ok(log=True)
 
 
 def test_check_work_dir_bad(tmpdir, cmds_file):
@@ -242,10 +230,8 @@ def test_check_work_dir_bad(tmpdir, cmds_file):
     assert not c.is_work_dir_ok(log=True)
 
 
-def test_cross_ref(tmpdir, cmds_file):
-    c = Clade(tmpdir, cmds_file)
-
-    c.parse("CrossRef")
+def test_cross_ref(clade_api: Clade):
+    c = clade_api
 
     ref_to = c.get_ref_to()
 

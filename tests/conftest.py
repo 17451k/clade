@@ -16,6 +16,7 @@
 import os
 import pytest
 
+from clade import Clade
 from clade.intercept import intercept
 from tests.test_intercept import test_project_make
 
@@ -32,3 +33,13 @@ def cmds_file():
     yield test_cmds_file
 
     os.remove(test_cmds_file)
+
+
+@pytest.fixture(scope="session")
+def clade_api(tmpdir_factory, cmds_file):
+    tmpdir = tmpdir_factory.mktemp("Clade")
+
+    c = Clade(tmpdir, cmds_file)
+    c.parse_list(["CrossRef", "Variables", "Macros", "Typedefs", "CDB"])
+
+    yield c
