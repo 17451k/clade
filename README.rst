@@ -108,12 +108,64 @@ the test suite from the repository (doesn't work on Windows yet):
 How to use
 ==========
 
+The simplest way to start using Clade is to run the following command:
+
+.. code-block:: bash
+
+    $ clade make
+
+where *make* should be replaced by your project build command. Clade will
+execuite build, intercept build commands, parse them and generate a lot of data
+about build process and source files. The following sections explain formats
+of the generated data, as well as some other things.
+
 All functionality is available both as command-line scripts and
 as Python modules that you can import and use, so the following
 examples will include both use cases.
 
 Build command intercepting
 --------------------------
+
+Intercepting of build commands is quite easy: all you need is to
+wrap your main build command like this:
+
+.. code-block:: bash
+
+    $ clade -i make
+
+where *make* should be replaced by your project build command.
+The output file called *cmds.txt* will be stored in the directory named *clade*
+and will contain all intercepted commands, one per line.
+
+Note that *clade -i* only intercepts build commands and does not process
+them in any way.
+
+You can change the path to to the file where intercepted commands will be
+saved using --cmds option:
+
+.. code-block:: bash
+
+    $ clade -i --cmds /work/cmds.txt make
+
+In case the build process of your project consists of several independent
+steps, you can still create one single *cmds.txt* file using
+-a (--append) option:
+
+.. code-block:: bash
+
+    $ clade -i make step_one
+    $ clade -i -a make step_two
+
+As a result, build commands of the second make command will be appended
+to the *cmds.txt* file created previously.
+
+You can intercept build commands from a python script:
+
+.. code-block:: python
+
+    from clade import Clade
+    c = Clade(cmds_file="cmds.txt")
+    c.intercept(command=["make"], append=False)
 
 
 Clade implements several different methods of build commands intercepting.
@@ -134,43 +186,7 @@ the dynamic linker.
 .. image:: docs/pics/libinterceptor.png
     :alt: An explanation of LD_PRELOAD
 
-Intercepting of build commands is quite easy: all you need is to
-wrap your main build command like this:
-
-.. code-block:: bash
-
-    $ clade-intercept make
-
-where *make* should be replaced by your project build command.
-The output file called *cmds.txt* will be stored in the current directory
-and will contain all intercepted commands, one per line.
-
-You can change the path to to the file where intercepted commands will be
-saved using -o (--output) option:
-
-.. code-block:: bash
-
-    $ clade-intercept -o /work/cmds.txt make
-
-In case the build process of your project consists of several independent
-steps, you can still create one single *cmds.txt* file using
--a (--append) option:
-
-.. code-block:: bash
-
-    $ clade-intercept make step_one
-    $ clade-intercept -a make step_two
-
-As a result, build commands of the second make command will be appended
-to the *cmds.txt* file created previously.
-
-You can intercept build commands from a python script:
-
-.. code-block:: python
-
-    from clade import Clade
-    c = Clade(cmds_file="cmds.txt")
-    c.intercept(command=["make"], append=False)
+Library injection is used by default.
 
 Wrappers
 ~~~~~~~~
@@ -180,7 +196,7 @@ There is an alternative intercepting method that is based on
 
 .. code-block:: bash
 
-    $ clade-intercept -f make
+    $ clade -i -wr make
 
 Clade scans PATH environment variable to detect available
 executable files.
@@ -232,7 +248,7 @@ It can be used like this:
 
 .. code-block:: bash
 
-    $ clade-intercept msbuild MyProject.sln
+    $ clade -i msbuild MyProject.sln
 
 You can intercept build commands on Windows from a python script:
 
@@ -312,14 +328,16 @@ where:
 - *which* - path to an executable file that was executed
   as a result of this command.
 
-It should be noted that all other functionality available in Clade use
-*cmds.txt* file as input.
-Due to this you do not need to rebuild your project every time you want
-to use it - you can just use previously generated *cmds.txt* file.
+.. It should be noted that all other functionality available in Clade use
+.. *cmds.txt* file as input.
+.. Due to this you do not need to rebuild your project every time you want
+.. to use it - you can just use previously generated *cmds.txt* file.
 
 Parsing of intercepted commands
 -------------------------------
 
+Build command intercepting is performed internally by the *clade* command, so
+in most cases you do not need to thing about it.
 Once build commands are intercepted they can be parsed to search for input
 and output files, and options. Currently there are *extensions* in Clade
 for parsing following commands:
@@ -329,23 +347,23 @@ for parsing following commands:
 - assembler commands (as);
 - archive commands (ar);
 - move commands (mv);
-- object copy commands (objcopy, Linux only).
+- object copy commands (objcopy, Linux only);
+- Microsoft CL compilation commands;
+- Microsoft linker commands;
 
-These extensions can be executed from command line through *clade-cc*,
-*clade-ld*, *clade-as*, *clade-ar*, *clade-mv*, *clade-objcopy* commands
-respectively. They all have similar input interface and the format
-of output files, so let's just look at *clade-cc* command. It can be executed
-as follows:
+These extensions can be executed from command line through *clade -e EXTENSION_NAME*,
+where EXTENSION_NAME can be CC, LD, AS, AR, MV, Objcopy, CL, or Link, like this:
 
 .. code-block:: bash
 
-    $ clade-cc cmds.txt
+    $ clade -e CC make
 
 As a result, a working directory named *clade* will be created:
 
 ::
 
     clade/
+    ├── cmds.txt
     ├── CC/
     │   ├── cmds.json
     │   ├── cmds/
@@ -356,7 +374,7 @@ As a result, a working directory named *clade* will be created:
     └── Storage/
 
 Top-level directories are in turn working directories of corresponding
-extensions that were executed inside *clade-cc* command.
+extensions that were executed inside *clade* command.
 *CC* extension is the one we wanted to execute, but there are also
 other extensions - *PidGraph* and *Storage* - that were executed implicitly
 by *CC* because it depends on the results of their work.
@@ -493,14 +511,15 @@ Clade knows about this connection and tracks it by assigning to each intercepted
 command two attributes: a unique identifier (id) and identifier of its parent
 (pid).
 This information is stored in the *pid graph* and can be obtained using
-*clade-pid-graph* command line tool:
+*PidGraph* extension:
 
 .. code-block:: bash
 
-    $ clade-pid-graph cmds.txt
+    $ clade -e PidGraph make
     $ tree clade -L 2
 
     clade
+    ├── cmds.txt
     └── PidGraph
         ├── pid_by_id.json
         └── pid_graph.json
@@ -540,6 +559,7 @@ for a given id:
     # Initialize interface class with a path to the working directory
     # and a path to the file with intercepted commands
     c = Clade(work_dir="clade", cmds_file="cmds.txt")
+    c.parse("PidGraph)
 
     # Get all information
     pid_graph = c.pid_graph
@@ -575,7 +595,7 @@ Command graph
 
 Clade can connect commands by their input and output files.
 This information is stored in the *command graph* and can be obtained using
-*clade-cmd-graph* command line tool.
+*CmdGraph* extension.
 
 To appear in the *command graph* an intercepted command needs to be parsed
 to search for input and output files.
@@ -593,13 +613,14 @@ Let's consider the following makefile:
         as main.s -o main.o      # id = 2
         mv main.o main           # id = 3
 
-Using *clade-cmd-graph* these commands can be connected:
+Using *CmdGraph* these commands can be connected:
 
 .. code-block:: bash
 
-    $ clade-pid-graph cmds.txt
+    $ clade -e CmdGraph make
 
     clade/
+    ├── cmds.txt
     ├── CmdGraph/
     │   └── cmd_graph.json
     ├── CC/
@@ -656,13 +677,14 @@ Source graph
 For a given source file Clade can show in which commands this file
 is compiled, and in which commands it is indirectly used.
 This information is called *source graph* and can be generated
-using *clade-src-graph* command line utility:
+using *SrcGraph* extension:
 
 .. code-block:: bash
 
-    $ clade-src-graph cmds.txt
+    $ clade -e SrcGraph make
 
     clade/
+    ├── cmds.txt
     ├── SrcGraph/
     │   └── src_graph.json
     ├── CmdGraph/
@@ -721,13 +743,14 @@ Clade can generate function *call graph* for a given project written in C.
 This requires CIF installed on your computer, and path to its bin directory
 added to the PATH environment variable.
 
-*Call graph* can be generated through command line utility *clade-callgraph*:
+*Call graph* can be generated using *Callgraph* extension:
 
 .. code-block:: bash
 
-    $ clade-callgraph cmds.txt
+    $ clade -e Callgraph cmds.txt
 
     clade/
+    ├── cmds.txt
     ├── Callgraph/
     │   ├── callgraph/
     │   ├── callgraph.json
@@ -848,8 +871,7 @@ Compilation database
 
 Command line tool for generating compilation database has a different
 interface, compared to most other command line tools available in Clade.
-In that regard it's more like *clade-intercept* command. Compilation
-database can be generated using *clade* command:
+Compilation database can be generated using *clade-cdb* command:
 
 .. code-block:: bash
 
@@ -864,7 +886,7 @@ If you have *cmds.txt* file you can skip the build process and get
 
 .. code-block:: bash
 
-    $ clade-cdb -c cmds.txt
+    $ clade-cdb --cmds cmds.txt
 
 Other options are available through --help option.
 
@@ -889,14 +911,12 @@ Other options are available through --help option.
 Configuration
 =============
 
-There is a bunch of options that can be changed to alter the behaviour
-of various tools available in Clade. If you execute these tools from the
-command line (tools like *clade-cc*, *clade-callgraph*, *clade-cmd-graph*,
-and so on), then the configuration can be passed via the "-c" option like this:
+There is a bunch of options that can be changed to alter the behaviour of the
+*clade* command. The configuration can be passed via the "-c" option like this:
 
 .. code-block:: bash
 
-    $ clade-cc -c conf.json cmds.txt
+    $ clade -c conf.json make
 
 where *conf.json* is a json file with some configuration options:
 
@@ -915,8 +935,6 @@ where *conf.json* is a json file with some configuration options:
     }
 
 The configuration can be also passed as a Python dictionary:
-
-can be used through Python interface:
 
 .. code-block:: python
 
@@ -1003,7 +1021,7 @@ to deal with various problems and mess with the configuration:
 
 .. code-block:: bash
 
-    $ clade-cc -p linux_kernel cmds.txt
+    $ clade -p linux_kernel make
 
 or
 
