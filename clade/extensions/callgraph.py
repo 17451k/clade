@@ -99,7 +99,7 @@ class Callgraph(Extension):
             # files. Possible_files is a list of them.
             if func in self.funcs:
                 possible_files = tuple(f for f in self.funcs[func]
-                                       if f is not "unknown" and self.funcs[func][f]["type"] in (call_type, "exported"))
+                                       if f != "unknown" and self.funcs[func][f]["type"] in (call_type, "exported"))
             else:
                 self._error("Can't find '{}' in Functions".format(func))
                 possible_files = []
