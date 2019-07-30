@@ -144,6 +144,7 @@ class Clade:
 
         e = self.__get_ext_obj(ext_name)
 
+        # BUG: If working directory is corrupted, then clean option doesnt work
         if clean and os.path.isdir(e.work_dir):
             shutil.rmtree(e.work_dir)
 
