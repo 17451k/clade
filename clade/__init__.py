@@ -32,6 +32,7 @@ class Clade:
 
     Raises:
         RuntimeError: You did something wrong
+        PermissionError: You do not have permissions to create or access working directory
 
     TODO:
         Check that command was already intercepted
@@ -75,12 +76,25 @@ class Clade:
         if self.conf.get("force") and os.path.isdir(self.work_dir):
             shutil.rmtree(self.work_dir)
 
+        parent_dir = "." if self.work_dir == "clade" else os.path.dirname(self.work_dir)
+        if not os.path.exists(self.work_dir) and not os.access(parent_dir, os.X_OK | os.W_OK):
+            self.logger.error("Permission error: can't create working directory")
+            raise PermissionError
+
         # Create all necessary directories recursively
         os.makedirs(self.work_dir, exist_ok=True)
 
         # dirname can be empty if cmds_file is located in the current directory
         if os.path.dirname(self.cmds_file):
             os.makedirs(os.path.dirname(self.cmds_file), exist_ok=True)
+
+        if os.path.exists(self.work_dir):
+            if not os.access(self.work_dir, os.R_OK):
+                self.logger.error("Permission error: can't read files from the working directory")
+                raise PermissionError
+            if not os.access(self.work_dir, os.X_OK | os.W_OK):
+                self.logger.error("Permission error: can't write files to the working directory")
+                raise PermissionError
 
     def intercept(self, command, cwd=os.getcwd(), append=False, use_wrappers=False):
         """Execute intercepting of build commands.

@@ -214,10 +214,15 @@ def test_add_meta_bad(tmpdir):
         c.add_meta_by_key("test", None)
 
 
-def test_check_work_dir_fail():
-    c = Clade("/")
+def test_check_work_dir_fail(tmpdir):
+    c = Clade(tmpdir)
 
     assert not c.is_work_dir_ok()
+
+
+def test_cant_create_work_dir():
+    with pytest.raises(PermissionError):
+        Clade("/clade_test")
 
 
 def test_check_work_dir(clade_api: Clade):
