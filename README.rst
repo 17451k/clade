@@ -79,6 +79,17 @@ Optional dependencies:
 
 Clade works on Linux, macOS and partially on Windows.
 
+=====================
+Hardware requirements
+=====================
+
+If you want to run Clade on a large project, like the Linux kernel,
+you will need at least 16GB of RAM and 100GB of free disk space
+for temporary files. The size of generated data will be approximately
+10GB, so the space used for temporary files will be freed at the end.
+Also several CPU cores are recommended, since in some cases Clade takes
+twice as long time than a typical build process.
+
 ============
 Installation
 ============
