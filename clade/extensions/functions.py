@@ -124,17 +124,24 @@ class Functions(Callgraph):
             if decl_file not in self.src_graph:
                 self._error("Not in source graph: {}".format(decl_file))
 
+            found = False
+
             for src_file in self.funcs[decl_name]:
                 if src_file not in self.src_graph:
                     self._error("Not in source graph: {}".format(src_file))
 
-                if src_file == decl_file or self._t_unit_is_common(src_file, decl_file):
+                if src_file == decl_file or self._t_unit_is_common(src_file, decl_file) or (decl_type == "global" and self._files_are_linked(src_file, decl_file)):
                     self.funcs[decl_name][src_file]["declarations"][decl_file] = decl_val
+                    found = True
                 elif src_file == "unknown":
                     if "unknown" in self.funcs[decl_name]:
                         self.funcs[decl_name]["unknown"]["declarations"][decl_file] = decl_val
                     else:
                         self.funcs[decl_name]["unknown"] = get_unknown_val(decl_file, decl_val)
+                    found = True
+
+            if not found:
+                self.funcs[decl_name]["unknown"] = get_unknown_val(decl_file, decl_val)
 
     def __process_exported(self):
         regex = re.compile(r"\"(.*?)\" (\S*)")
