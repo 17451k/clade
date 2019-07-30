@@ -19,17 +19,6 @@ import shutil
 from clade.utils import get_logger, merge_preset_to_conf
 from clade.intercept import intercept
 from clade.extensions.abstract import Extension
-from clade.extensions.cdb import CDB
-from clade.extensions.functions import Functions
-from clade.extensions.callgraph import Callgraph
-from clade.extensions.cmd_graph import CmdGraph
-from clade.extensions.macros import Macros
-from clade.extensions.pid_graph import PidGraph
-from clade.extensions.src_graph import SrcGraph
-from clade.extensions.storage import Storage
-from clade.extensions.typedefs import Typedefs
-from clade.extensions.variables import Variables
-from clade.extensions.path import Path
 
 
 class Clade:
@@ -70,7 +59,7 @@ class Clade:
         self._pid_graph = None
         self._pid_by_id = None
 
-        self._Storage = Storage(self.work_dir, self.conf)
+        self._Storage = None
 
         self._Callgraph = None
         self._callgraph = None
@@ -170,7 +159,7 @@ class Clade:
     def CmdGraph(self):
         """Object of "CmdGraph" extension."""
         if not self._CmdGraph:
-            self._CmdGraph = CmdGraph(self.work_dir, self.conf)
+            self._CmdGraph = self.__get_ext_obj("CmdGraph")
 
         if not self._CmdGraph.is_parsed():
             self.parse("CmdGraph")
@@ -311,7 +300,7 @@ class Clade:
     def SrcGraph(self):
         """Object of "SrcGraph" extension."""
         if not self._SrcGraph:
-            self._SrcGraph = SrcGraph(self.work_dir, self.conf)
+            self._SrcGraph = self.__get_ext_obj("SrcGraph")
 
         if not self._SrcGraph.is_parsed():
             self.parse("SrcGraph")
@@ -370,7 +359,7 @@ class Clade:
     def PidGraph(self):
         """Object of "PidGraph" extension."""
         if not self._PidGraph:
-            self._PidGraph = PidGraph(self.work_dir, self.conf)
+            self._PidGraph = self.__get_ext_obj("PidGraph")
 
         if not self._PidGraph.is_parsed():
             self.parse("PidGraph")
@@ -397,6 +386,17 @@ class Clade:
         return self._pid_by_id
 
     @property
+    def Storage(self):
+        """Object of "Storage" extension."""
+        if not self._Storage:
+            self._Storage = self.__get_ext_obj("Storage")
+
+        if not self._Storage.is_parsed():
+            self.parse("Storage")
+
+        return self._Storage
+
+    @property
     def storage_dir(self):
         """Name of a directory where CC and CL extensions has copied source files."""
         return self._Storage.get_storage_dir()
@@ -408,17 +408,17 @@ class Clade:
             file: Path to the file
             storage_filename: Name by which the file will be stored
         """
-        self._Storage.add_file(file, storage_filename=storage_filename)
+        self.Storage.add_file(file, storage_filename=storage_filename)
 
     def get_storage_path(self, path):
         """Get path to the file or directory from the storage."""
-        return self._Storage.get_storage_path(path)
+        return self.Storage.get_storage_path(path)
 
     @property
     def Callgraph(self):
         """Object of "Callgraph" extension."""
         if not self._Callgraph:
-            self._Callgraph = Callgraph(self.work_dir, self.conf)
+            self._Callgraph = self.__get_ext_obj("Callgraph")
 
         if not self._Callgraph.is_parsed():
             self.parse("Callgraph")
@@ -452,7 +452,7 @@ class Clade:
     def Functions(self):
         """Object of "Functions" extension."""
         if not self._Functions:
-            self._Functions = Functions(self.work_dir, self.conf)
+            self._Functions = self.__get_ext_obj("Functions")
 
         if not self._Functions.is_parsed():
             self.parse("Functions")
@@ -493,7 +493,7 @@ class Clade:
 
     def get_typedefs(self, files=None):
         """Get dictionary with type definitions (C only)."""
-        t = Typedefs(self.work_dir, self.conf)
+        t = self.__get_ext_obj("Typedefs")
 
         if not t.is_parsed():
             self.parse("Typedefs")
@@ -507,7 +507,7 @@ class Clade:
             files: A list of files to narrow down returned dictionary
             macros_names: A list of macros names to find and return
         """
-        m = Macros(self.work_dir, self.conf)
+        m = self.__get_ext_obj("Macros")
 
         if not m.is_parsed():
             self.parse("Macros")
@@ -535,7 +535,7 @@ class Clade:
             files: A list of files to narrow down returned dictionary
             macros_names: A list of macros names to find and return
         """
-        m = Macros(self.work_dir, self.conf)
+        m = self.__get_ext_obj("Macros")
 
         if not m.is_parsed():
             self.parse("Macros")
@@ -558,7 +558,7 @@ class Clade:
 
     def get_variables(self, files=None):
         """Get dictionary with variables (C only)."""
-        v = Variables(self.work_dir, self.conf)
+        v = self.__get_ext_obj("Variables")
 
         if not v.is_parsed():
             self.parse("Variables")
@@ -566,7 +566,7 @@ class Clade:
         return v.load_variables(files)
 
     def get_used_in_vars_functions(self):
-        v = Variables(self.work_dir, self.conf)
+        v = self.__get_ext_obj("Variables")
 
         if not v.is_parsed():
             self.parse("Variables")
@@ -577,7 +577,7 @@ class Clade:
     def CDB(self):
         """Object of "CDB" extension."""
         if not self._CDB:
-            self._CDB = CDB(self.work_dir, self.conf)
+            self._CDB = self.__get_ext_obj("CDB")
 
         if not self._CDB.is_parsed():
             self.parse("CDB")
@@ -596,7 +596,7 @@ class Clade:
     def Path(self):
         """Object of "Path" extension."""
         if not self._Path:
-            self._Path = Path(self.work_dir, self.conf)
+            self._Path = self.__get_ext_obj("Path")
 
         return self._Path
 
@@ -683,3 +683,10 @@ class Clade:
                 "Working directory is OK and contains data from the following extensions: {}".format(", ".join(exts))
             )
         return True
+
+    def ref_to_by_file(self):
+        """Dictionary with references to definitions and declarations."""
+        if not self._functions_by_file:
+            self._functions_by_file = self.CrossRef.load_functions_by_file()
+
+        return self._functions_by_file
