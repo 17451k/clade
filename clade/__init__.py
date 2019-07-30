@@ -619,7 +619,7 @@ class Clade:
 
     def get_meta(self):
         """Get meta information about Clade working directory"""
-        if not self.PidGraph.is_parsed():
+        if not self.are_parsed("PidGraph"):
             raise RuntimeError("Clade working directory is empty")
 
         return self.PidGraph.load_global_meta()
@@ -646,7 +646,7 @@ class Clade:
 
     def add_meta_by_key(self, key, data):
         """Add new meta information by key"""
-        if not self.PidGraph.is_parsed():
+        if not self.are_parsed("PidGraph"):
             raise RuntimeError("Clade working directory is empty")
 
         self.PidGraph.add_data_to_global_meta(key, data)
@@ -658,20 +658,20 @@ class Clade:
             True if everything is OK and False otherwise
         """
 
-        PidGraphObj = PidGraph(self.work_dir, self.conf)
+        p = self.__get_ext_obj("PidGraph")
 
-        if not os.path.exists(self.work_dir) or not PidGraphObj.is_parsed():
+        if not os.path.exists(self.work_dir) or not p.is_parsed():
             if log:
                 self.logger.error("Working directory does not exist")
             return False
 
-        if not PidGraphObj.load_ext_meta():
+        if not p.load_ext_meta():
             if log:
                 self.logger.error("Working directory does not contain file with meta information")
             return False
 
         try:
-            PidGraphObj.check_ext_meta()
+            p.check_ext_meta()
         except RuntimeError:
             if log:
                 self.logger.error("Working directory is corrupted")

@@ -192,8 +192,10 @@ def test_cdb(tmpdir, cmds_file):
     assert c.compilation_database
 
 
-def test_meta(tmpdir, cmds_file):
+def test_meta_good(tmpdir, cmds_file):
     c = Clade(tmpdir, cmds_file)
+
+    c.parse("PidGraph")
 
     assert c.get_conf()
     assert c.get_version()
@@ -208,6 +210,20 @@ def test_meta(tmpdir, cmds_file):
     assert c.get_uuid()
 
 
+def test_get_meta_bad(tmpdir, cmds_file):
+    c = Clade(tmpdir, cmds_file)
+
+    with pytest.raises(RuntimeError):
+        c.get_meta()
+
+
+def test_add_meta_bad(tmpdir):
+    c = Clade(tmpdir)
+
+    with pytest.raises(RuntimeError):
+        c.add_meta_by_key("test", None)
+
+
 def test_check_work_dir_fail():
     c = Clade("/")
 
@@ -218,4 +234,10 @@ def test_check_work_dir(tmpdir, cmds_file):
     c = Clade(tmpdir, cmds_file)
     c.parse("PidGraph")
 
-    assert c.is_work_dir_ok()
+    assert c.is_work_dir_ok(log=True)
+
+
+def test_check_work_dir_bad(tmpdir, cmds_file):
+    c = Clade(tmpdir, cmds_file)
+
+    assert not c.is_work_dir_ok(log=True)
