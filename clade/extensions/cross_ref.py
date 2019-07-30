@@ -20,7 +20,7 @@ from clade.extensions.abstract import Extension
 from clade.extensions.callgraph import Callgraph
 
 
-class CrossReference(Callgraph):
+class CrossRef(Callgraph):
     requires = ["Functions", "Callgraph"]
 
     __version__ = "1"
