@@ -13,12 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-
 from clade import Clade
-
-zero_c = os.path.abspath("tests/test_project/zero.c")
-main_c = os.path.abspath("tests/test_project/main.c")
+from tests.test_project import main_c, zero_c
 
 
 def callgraph_is_ok(callgraph):

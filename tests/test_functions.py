@@ -13,13 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-
 from clade import Clade
-
-zero_c = os.path.abspath("tests/test_project/zero.c")
-zero_h = os.path.abspath("tests/test_project/zero.h")
-main_c = os.path.abspath("tests/test_project/main.c")
+from tests.test_project import main_c, zero_c, zero_h
 
 
 def funcs_are_ok(funcs):

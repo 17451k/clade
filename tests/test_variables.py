@@ -13,11 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-
 from clade import Clade
-
-zero_c = os.path.abspath("tests/test_project/zero.c")
+from tests.test_project import zero_c
 
 
 def variables_are_ok(variables):

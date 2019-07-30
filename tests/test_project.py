@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISP RAS (http://www.ispras.ru)
+# Copyright (c) 2019 ISP RAS (http://www.ispras.ru)
 # Ivannikov Institute for System Programming of the Russian Academy of Sciences
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,16 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from clade import Clade
-from tests.test_project import zero_c
+import os
 
-
-def typedefs_are_ok(typedefs):
-    assert "unsigned char super_char;" in typedefs[zero_c]
-
-
-def test_typedefs(tmpdir, cmds_file):
-    c = Clade(tmpdir, cmds_file)
-    e = c.parse("Typedefs")
-
-    typedefs_are_ok(e.load_typedefs())
+zero_c = os.path.abspath("tests/test_project/zero.c")
+zero_h = os.path.abspath("tests/test_project/zero.h")
+main_c = os.path.abspath("tests/test_project/main.c")

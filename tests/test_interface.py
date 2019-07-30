@@ -23,9 +23,7 @@ from tests.test_callgraph import callgraph_is_ok, callgraph_by_file_is_ok
 from tests.test_variables import variables_are_ok, used_in_vars_is_ok
 from tests.test_typedefs import typedefs_are_ok
 from tests.test_macros import definitions_are_ok, expansions_are_ok
-
-main_c = os.path.abspath("tests/test_project/main.c")
-zero_c = os.path.abspath("tests/test_project/zero.c")
+from tests.test_project import main_c, zero_c
 
 
 def test_intercept(tmpdir):
