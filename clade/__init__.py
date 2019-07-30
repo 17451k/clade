@@ -73,6 +73,8 @@ class Clade:
 
         self._Path = None
 
+        self._CrossRef = None
+
     def __prepare_work_dir(self):
         # Clean working directory
         if self.conf.get("force") and os.path.isdir(self.work_dir):
@@ -684,9 +686,40 @@ class Clade:
             )
         return True
 
-    def ref_to_by_file(self):
-        """Dictionary with references to definitions and declarations."""
-        if not self._functions_by_file:
-            self._functions_by_file = self.CrossRef.load_functions_by_file()
+    @property
+    def CrossRef(self):
+        """Object of "CrossRef" extension."""
+        if not self._CrossRef:
+            self._CrossRef = self.__get_ext_obj("CrossRef")
 
-        return self._functions_by_file
+        return self._CrossRef
+
+    def get_ref_to(self, files=None, add_unknown=True):
+        """Dictionary with references to definitions and declarations.
+
+        Args:
+            files: A list of files to narrow down data
+            add_unknown: Add functions without known definition
+        """
+        if isinstance(files, set) or isinstance(files, list):
+            files = set(files)
+
+            if add_unknown:
+                files.add('unknown')
+
+        return self.CrossRef.load_ref_to_by_file(files)
+
+    def get_ref_from(self, files=None, add_unknown=True):
+        """Dictionary with references to usages.
+
+        Args:
+            files: A list of files to narrow down data
+            add_unknown: Add functions without known definition
+        """
+        if isinstance(files, set) or isinstance(files, list):
+            files = set(files)
+
+            if add_unknown:
+                files.add('unknown')
+
+        return self.CrossRef.load_ref_from_by_file(files)

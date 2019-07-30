@@ -23,6 +23,7 @@ from tests.test_callgraph import callgraph_is_ok, callgraph_by_file_is_ok
 from tests.test_variables import variables_are_ok, used_in_vars_is_ok
 from tests.test_typedefs import typedefs_are_ok
 from tests.test_macros import definitions_are_ok, expansions_are_ok
+from tests.test_cross_ref import ref_to_are_ok, filtered_ref_to_are_ok, ref_from_are_ok, filtered_ref_from_are_ok
 from tests.test_project import main_c, zero_c
 
 
@@ -239,3 +240,22 @@ def test_check_work_dir_bad(tmpdir, cmds_file):
     c = Clade(tmpdir, cmds_file)
 
     assert not c.is_work_dir_ok(log=True)
+
+
+def test_cross_ref(tmpdir, cmds_file):
+    c = Clade(tmpdir, cmds_file)
+
+    c.parse("CrossRef")
+
+    ref_to = c.get_ref_to()
+
+    ref_to_are_ok(ref_to)
+
+    ref_to_main_c = c.get_ref_to([main_c], add_unknown=False)
+    filtered_ref_to_are_ok(ref_to, ref_to_main_c)
+
+    ref_from = c.get_ref_from()
+    ref_from_are_ok(ref_from)
+
+    ref_from_main_c = c.get_ref_from([main_c], add_unknown=False)
+    filtered_ref_from_are_ok(ref_from, ref_from_main_c)
