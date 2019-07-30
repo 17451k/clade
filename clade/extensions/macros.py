@@ -52,7 +52,7 @@ class Macros(Extension):
             m = regex.match(line)
 
             if not m:
-                raise SyntaxError("CIF output has unexpected format. Line: {!r}".format(line))
+                raise SyntaxError("CIF output has unexpected format: {!r}".format(line))
 
             file, macro, line = m.groups()
 
@@ -71,7 +71,7 @@ class Macros(Extension):
             m = regex.match(line)
 
             if not m:
-                raise SyntaxError("CIF output has unexpected format. Line: {!r}".format(line))
+                raise SyntaxError("CIF output has unexpected format: {!r}".format(line))
 
             file, macro, args_str = m.groups()
 

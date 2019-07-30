@@ -86,7 +86,7 @@ class Callgraph(Extension):
             m = regex.match(line)
 
             if not m:
-                raise SyntaxError("CIF output has unexpected format. Line: {!r}".format(line))
+                raise SyntaxError("CIF output has unexpected format: {!r}".format(line))
 
             context_file, context_func, func, call_line, call_type, args = m.groups()
 
@@ -182,7 +182,7 @@ class Callgraph(Extension):
             m = regex.match(line)
 
             if not m:
-                raise SyntaxError("CIF output has unexpected format. Line: {!r}".format(line))
+                raise SyntaxError("CIF output has unexpected format: {!r}".format(line))
 
             context_file, context_func, func_ptr, call_line = m.groups()
 
