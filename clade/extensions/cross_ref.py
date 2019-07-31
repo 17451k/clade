@@ -123,7 +123,11 @@ class CrossRef(Callgraph):
         storage_file = self.extensions["Storage"].get_storage_path(file)
 
         if not os.path.exists(storage_file):
-            return None
+            # There may be some header files from CIF that are not in the storage
+            if os.path.exists(file):
+                self.extensions["Storage"].add_file(file)
+            else:
+                return None
 
         locations = {"def": {}, "decl": {}, "call": {}}
 
