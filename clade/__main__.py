@@ -19,6 +19,7 @@ import sys
 import ujson
 
 from clade import Clade
+from clade.extensions.abstract import Extension
 
 
 def parse_args(args):
@@ -96,12 +97,22 @@ def parse_args(args):
         action="store_true",
     )
     parser.add_argument(
+        "-v",
+        "--version",
+        help="print Clade version",
+        action="store_true",
+    )
+    parser.add_argument(
         dest="command",
         nargs=argparse.REMAINDER,
         help="build command to run and intercept",
     )
 
     args = parser.parse_args(args)
+
+    if args.version:
+        print("Clade", Extension.get_clade_version().decode())
+        sys.exit()
 
     if not args.cmds:
         args.cmds = os.path.join(args.work_dir, "cmds.txt")
