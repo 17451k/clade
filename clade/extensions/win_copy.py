@@ -48,18 +48,26 @@ class Copy(Common):
 
         # TODO: support patterns in names (*.h)
         for opt in command:
+            # Redirects, like >nul and 2<&1
             if cmd["command"][0].endswith("cmd.exe") and ">" in opt or "<" in opt:
                 continue
+
             if opt.startswith("/") or opt.startswith("-"):
                 parsed_cmd["opts"].append(opt)
             elif not parsed_cmd["in"]:
-                parsed_cmd["in"].append(os.path.normpath(opt))
-            else:
-                opt = os.path.normpath(opt)
+                cmd_in = os.path.normpath(opt)
 
-                if os.path.isdir(opt) and parsed_cmd["in"]:
-                    opt = os.path.join(opt, os.path.basename(parsed_cmd["in"][0]))
-                parsed_cmd["out"].append(opt)
+                if not os.path.exists(cmd_in):
+                    return
+
+                parsed_cmd["in"].append(cmd_in)
+            else:
+                cmd_out = os.path.normpath(opt)
+
+                # workaround for "cmd.exe /c if exist a copy a b" commands
+                if os.path.isdir(cmd_out) and parsed_cmd["in"]:
+                    cmd_out = os.path.join(cmd_out, os.path.basename(parsed_cmd["in"][0]))
+                parsed_cmd["out"].append(cmd_out)
 
         if self.is_bad(parsed_cmd):
             self.dump_bad_cmd_by_id(cmd["id"], parsed_cmd)
