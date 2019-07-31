@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import re
 
 from clade.extensions.common import Common
@@ -39,6 +40,8 @@ class Link(Common):
 
         opts = iter(cmd["command"][1:])
 
+        libpaths = []
+
         for opt in opts:
             if opt in requires_value[self.name]:
                 val = next(opts)
@@ -47,8 +50,20 @@ class Link(Common):
                 parsed_cmd["out"].append(re.sub(r"[/-]OUT:", "", opt, flags=re.I))
             elif re.search(r"^[/-]", opt):
                 parsed_cmd["opts"].append(opt)
+
+                m = re.search(r"^[/-]libpath:(.*)", opt)
+
+                if m:
+                    libpaths.append(m.group(1))
             else:
-                parsed_cmd["in"].append(opt)
+                for libpath in libpaths:
+                    joined_opt = os.path.join(libpath, opt)
+
+                    if os.path.exists(joined_opt):
+                        parsed_cmd["in"].append(joined_opt)
+                        break
+                else:
+                    parsed_cmd["in"].append(opt)
 
         if self.is_bad(parsed_cmd):
             self.dump_bad_cmd_by_id(cmd["id"], parsed_cmd)
