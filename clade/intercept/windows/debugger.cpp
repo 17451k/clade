@@ -24,6 +24,7 @@
 #include <locale>
 #include <codecvt>
 #include <functional>
+#include <map>
 
 #include <windows.h>
 #include <shellapi.h>
@@ -46,10 +47,17 @@ int curDirPathOffset = 0x24;
 // NTAPI = Native Windows API
 typedef NTSTATUS(NTAPI *_NtQueryInformationProcess)(HANDLE, DWORD, PVOID, DWORD, PDWORD);
 
-// PEB - process environment block, low-level data stracture containing various information
-// Address of the PEB can be obtained using NTAPI function NtQueryInformationProcess
-// But the function itself is not public. Its address can be found in ntdll.dll.
-PVOID GetPebAddress(HANDLE ProcessHandle)
+// Required to get access to InheritedFromUniqueProcessId
+typedef struct MY_PROCESS_BASIC_INFORMATION {
+    NTSTATUS ExitStatus;
+    PPEB PebBaseAddress;
+    ULONG_PTR AffinityMask;
+    LONG BasePriority;
+    ULONG_PTR UniqueProcessId;
+    ULONG_PTR InheritedFromUniqueProcessId;
+} PBI;
+
+PBI GetPbi(HANDLE hProcess)
 {
     HINSTANCE hinstLib = LoadLibrary(TEXT("ntdll.dll"));
 
@@ -67,18 +75,22 @@ PVOID GetPebAddress(HANDLE ProcessHandle)
         exit(GetLastError());
     }
 
-    PROCESS_BASIC_INFORMATION pbi;
-    // Writes infortmation about the process to pbi structure
-    NtQueryInformationProcess(ProcessHandle, ProcessBasicInformation, &pbi, sizeof(pbi), 0);
+    PBI pbi;
+
+    NtQueryInformationProcess(hProcess, ProcessBasicInformation, &pbi, sizeof(pbi), 0);
 
     FreeLibrary(hinstLib);
 
-    return pbi.PebBaseAddress;
+    return pbi;
 }
 
-PVOID GetUserProcParamsAddress(HANDLE hProcess)
+// PEB - process environment block, low-level data stracture containing various information
+// Address of the PEB can be obtained using NTAPI function NtQueryInformationProcess
+// But the function itself is not public. Its address can be found in ntdll.dll.
+
+PVOID GetUserProcParamsAddress(HANDLE hProcess, PBI &pbi)
 {
-    PVOID pebAddress = GetPebAddress(hProcess);
+    PVOID pebAddress = pbi.PebBaseAddress;
     PCHAR procParamsAddress = (PCHAR)pebAddress + procParamsOffset;
     PVOID rtlUserProcParamsAddress;
 
@@ -91,9 +103,9 @@ PVOID GetUserProcParamsAddress(HANDLE hProcess)
     return rtlUserProcParamsAddress;
 }
 
-UNICODE_STRING GetCmdLineStruct(HANDLE hProcess)
+UNICODE_STRING GetCmdLineStruct(HANDLE hProcess, PBI &pbi)
 {
-    PVOID rtlUserProcParamsAddress = GetUserProcParamsAddress(hProcess);
+    PVOID rtlUserProcParamsAddress = GetUserProcParamsAddress(hProcess, pbi);
 
     UNICODE_STRING cmdLineStruct;
     PCHAR cmdLineAddress = (PCHAR)rtlUserProcParamsAddress + cmdLineOffset;
@@ -108,9 +120,9 @@ UNICODE_STRING GetCmdLineStruct(HANDLE hProcess)
     return cmdLineStruct;
 }
 
-wchar_t *GetCmdLine(HANDLE hProcess)
+wchar_t *GetCmdLine(HANDLE hProcess, PBI &pbi)
 {
-    UNICODE_STRING cmdLineStruct = GetCmdLineStruct(hProcess);
+    UNICODE_STRING cmdLineStruct = GetCmdLineStruct(hProcess, pbi);
     size_t cmdLineLen = cmdLineStruct.Length / 2;
     wchar_t *cmdLine = new wchar_t[cmdLineLen + 1];
 
@@ -126,9 +138,9 @@ wchar_t *GetCmdLine(HANDLE hProcess)
     return cmdLine;
 }
 
-UNICODE_STRING GetCurDirPathStruct(HANDLE hProcess)
+UNICODE_STRING GetCurDirPathStruct(HANDLE hProcess, PBI &pbi)
 {
-    PVOID rtlUserProcParamsAddress = GetUserProcParamsAddress(hProcess);
+    PVOID rtlUserProcParamsAddress = GetUserProcParamsAddress(hProcess, pbi);
 
     UNICODE_STRING curDirPathStruct;
     PCHAR curDirPathAddress = (PCHAR)rtlUserProcParamsAddress + curDirPathOffset;
@@ -143,9 +155,9 @@ UNICODE_STRING GetCurDirPathStruct(HANDLE hProcess)
     return curDirPathStruct;
 }
 
-wchar_t *GetCurDirPath(HANDLE hProcess)
+wchar_t *GetCurDirPath(HANDLE hProcess, PBI &pbi)
 {
-    UNICODE_STRING curDirPathStruct = GetCurDirPathStruct(hProcess);
+    UNICODE_STRING curDirPathStruct = GetCurDirPathStruct(hProcess, pbi);
     size_t curDirPathLen = curDirPathStruct.Length / 2;
     wchar_t *curDirPath = new wchar_t[curDirPathLen + 1];
 
@@ -259,12 +271,12 @@ wchar_t *ProcessCommandFiles(const wchar_t *_cmdLine)
     return cmdLineRet;
 }
 
-void HandleCreateProcess(CREATE_PROCESS_DEBUG_INFO const &createProcess)
+void HandleCreateProcess(CREATE_PROCESS_DEBUG_INFO const &createProcess, PBI &pbi, int pid)
 {
     HANDLE hProcess = createProcess.hProcess;
 
-    wchar_t *cmdLine = GetCmdLine(hProcess);
-    wchar_t *curDirPath = GetCurDirPath(hProcess);
+    wchar_t *cmdLine = GetCmdLine(hProcess, pbi);
+    wchar_t *curDirPath = GetCurDirPath(hProcess, pbi);
     wchar_t *which = GetPathToProcExecutable(hProcess);
 
     wchar_t *data_file = _wgetenv(L"CLADE_INTERCEPT");
@@ -276,7 +288,7 @@ void HandleCreateProcess(CREATE_PROCESS_DEBUG_INFO const &createProcess)
     }
 
     std::wostringstream data;
-    data << curDirPath << L"||0||" << which;
+    data << curDirPath << L"||" << pid << L"||" << which;
 
     wchar_t **cmdList;
     int nArgs;
@@ -321,6 +333,10 @@ void EnterDebugLoop()
     // Store ids of all currently debugging processes
     // Stop debugging once this array is empty
     std::vector<DWORD> processIds;
+    // Store map of windows process ids to my custom process ids
+    std::map<int, int> pidGraph;
+    // Current maximum parent process id
+    int max_pid = 0;
 
     while (TRUE)
     {
@@ -329,8 +345,29 @@ void EnterDebugLoop()
 
         if (DebugEvent.dwDebugEventCode == CREATE_PROCESS_DEBUG_EVENT)
         {
+            PBI pbi = GetPbi(DebugEvent.u.CreateProcessInfo.hProcess);
+
+            // Add first PPID to the map and assign 0 as its value
+            auto search = pidGraph.find(pbi.InheritedFromUniqueProcessId);
+            if (search == pidGraph.end()) {
+                pidGraph.insert({pbi.InheritedFromUniqueProcessId, max_pid});
+                max_pid++;
+            }
+
+            /// Add PID to the map and assign max_pid as its value
+            search = pidGraph.find(pbi.UniqueProcessId);
+            if (search == pidGraph.end()) {
+                pidGraph.insert({pbi.UniqueProcessId, max_pid});
+                max_pid++;
+            } else {
+                // Update existing value with the new one
+                // since UniqueProcessId process is already deleted
+                search->second = max_pid;
+                max_pid++;
+            }
+
             processIds.push_back(DebugEvent.dwProcessId);
-            HandleCreateProcess(DebugEvent.u.CreateProcessInfo);
+            HandleCreateProcess(DebugEvent.u.CreateProcessInfo, pbi, pidGraph.at(pbi.InheritedFromUniqueProcessId));
         }
         else if (DebugEvent.dwDebugEventCode == EXIT_PROCESS_DEBUG_EVENT)
         {
