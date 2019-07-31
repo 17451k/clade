@@ -23,7 +23,8 @@
             "MV",
             "Objcopy",
             "CL",
-            "Link"
+            "Link",
+            "Copy"
         ],
         "CmdGraph.as_picture": false,
         "SrcGraph.requires": [
@@ -65,6 +66,9 @@
         ],
         "Link.which_list": [
             "link\\.exe$"
+        ],
+        "Copy.which_list": [
+            "cmd\\.exe$"
         ]
     },
     "base_print": {
