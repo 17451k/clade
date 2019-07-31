@@ -21,7 +21,7 @@ from clade.extensions.callgraph import Callgraph
 
 
 class CrossRef(Callgraph):
-    requires = ["Functions", "Callgraph"]
+    requires = ["Functions", "Callgraph", "Storage"]
 
     __version__ = "1"
 
@@ -120,7 +120,9 @@ class CrossRef(Callgraph):
         return raw_locations
 
     def __parse_file(self, file, raw_locations):
-        if not os.path.exists(file):
+        storage_file = self.extensions["Storage"].get_storage_path(file)
+
+        if not os.path.exists(storage_file):
             return None
 
         locations = {"def": {}, "decl": {}, "call": {}}
@@ -128,7 +130,7 @@ class CrossRef(Callgraph):
         sorted_locs = sorted(raw_locations[file], key=lambda x: int(x[0]))
         sorted_pos = 0
 
-        with open(file, "r") as fp:
+        with open(storage_file, "r") as fp:
             for i, s in enumerate(fp):
                 if i == int(sorted_locs[sorted_pos][0]) - 1:
                     line = int(sorted_locs[sorted_pos][0])
