@@ -400,14 +400,17 @@ class Clade:
         """Name of a directory where CC and CL extensions has copied source files."""
         return self._Storage.get_storage_dir()
 
-    def add_file_to_storage(self, file, storage_filename=None):
+    def add_file_to_storage(self, file, storage_filename=None, encoding=None):
         """Add file to the storage.
 
         Args:
             file: Path to the file
             storage_filename: Name by which the file will be stored
+            encoding: encoding of the file, which may be required if you want
+                      to convert it to UTF-8 using 'Storage.convert_to_utf8'
+                      option
         """
-        self.Storage.add_file(file, storage_filename=storage_filename)
+        self.Storage.add_file(file, storage_filename=storage_filename, encoding=encoding)
 
     def get_storage_path(self, path):
         """Get path to the file or directory from the storage."""

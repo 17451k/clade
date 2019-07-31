@@ -57,7 +57,7 @@ class CC(Compiler):
         ) and self.is_a_compilation_command(parsed_cmd):
             pre = self.__preprocess_cmd(parsed_cmd)
             self.debug("Preprocessed files: {}".format(pre))
-            self.store_src_files(pre, parsed_cmd["cwd"])
+            self.store_pre_files(pre, parsed_cmd["cwd"])
 
             for file in pre:
                 if os.path.exists(file):
@@ -71,7 +71,7 @@ class CC(Compiler):
         if self.conf.get(
             "Compiler.store_deps"
         ) and self.is_a_compilation_command(parsed_cmd):
-            self.store_src_files(deps, parsed_cmd["cwd"])
+            self.store_deps_files(deps, parsed_cmd["cwd"])
 
     def __get_deps(self, cmd_id, cmd):
         """Get a list of CC command dependencies."""

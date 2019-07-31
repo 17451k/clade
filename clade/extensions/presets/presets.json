@@ -10,6 +10,7 @@
         "CC.with_system_header_files": true,
         "CL.deps_encoding": null,
         "CL.pre_encoding": null,
+        "Compiler.deps_encoding": null,
         "Compiler.store_deps": true,
         "Compiler.preprocess_cmds": false,
         "Compiler.extra_preprocessor_opts": [],

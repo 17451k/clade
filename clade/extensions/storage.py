@@ -27,8 +27,16 @@ class Storage(Extension):
 
     __version__ = "1"
 
-    def add_file(self, filename, storage_filename=None):
-        """Add file to the storage."""
+    def add_file(self, filename, storage_filename=None, encoding=None):
+        """Add file to the storage.
+
+        Args:
+            filename: Path to the file
+            storage_filename: Name by which the file will be stored
+            encoding: encoding of the file, which may be required if you want
+                      to convert it to UTF-8 using 'Storage.convert_to_utf8'
+                      option
+        """
 
         storage_filename = (
             storage_filename
@@ -42,7 +50,7 @@ class Storage(Extension):
             return
 
         try:
-            self.__copy_file(filename, dst)
+            self.__copy_file(filename, dst, encoding=encoding)
         except FileNotFoundError as e:
             self.debug(e)
         except shutil.SameFileError:
@@ -52,7 +60,7 @@ class Storage(Extension):
     def __path_exists(self, path):
         return os.path.exists(path)
 
-    def __copy_file(self, filename, dst):
+    def __copy_file(self, filename, dst, encoding=None):
         os.makedirs(os.path.dirname(dst), exist_ok=True)
 
         if not self.conf.get("Storage.convert_to_utf8"):
@@ -61,9 +69,13 @@ class Storage(Extension):
             with open(filename, "rb") as fh:
                 content_bytes = fh.read()
 
-            detected = cchardet.detect(content_bytes)
-            encoding = detected["encoding"]
-            confidence = detected["confidence"]
+            if not encoding:
+                detected = cchardet.detect(content_bytes)
+                encoding = detected["encoding"]
+                confidence = detected["confidence"]
+            else:
+                # Encoding is specified by the user
+                confidence = 1
 
             if not confidence:
                 self.warning(

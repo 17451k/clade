@@ -142,7 +142,7 @@ class CL(Compiler):
         if self.conf.get(
             "Compiler.store_deps"
         ) and self.is_a_compilation_command(parsed_cmd):
-            self.store_src_files(deps, parsed_cmd["cwd"])
+            self.store_deps_files(deps, parsed_cmd["cwd"])
 
     def __get_deps(self, cmd_id, cmd):
         """Get a list of CL command dependencies."""
@@ -225,23 +225,23 @@ class CL(Compiler):
         if not os.path.exists(pre_to):
             os.rename(pre_from, pre_to)
 
-        # Normalize paths in line directives
-        self.__normalize_paths(pre_to, cmd["cwd"])
-
-        if self.conf.get("Compiler.preprocess_cmds"):
-            self.debug("Preprocessed file: {}".format(pre_to))
-            self.store_src_files([pre_to], cmd["cwd"])
-
-        os.remove(pre_to)
-
-    def __normalize_paths(self, c_file, cwd):
-        rawdata = open(c_file, "rb").read()
-
+        # Detect encoding of preprocessed file
         if self.conf.get("CL.pre_encoding"):
             encoding = self.conf.get("CL.pre_encoding")
         else:
+            rawdata = open(pre_to, "rb").read()
             encoding = cchardet.detect(rawdata)["encoding"]
 
+        # Normalize paths in line directives
+        self.__normalize_paths(pre_to, cmd["cwd"], encoding)
+
+        if self.conf.get("Compiler.preprocess_cmds"):
+            self.debug("Preprocessed file: {}".format(pre_to))
+            self.store_pre_files([pre_to], cmd["cwd"], encoding)
+
+        os.remove(pre_to)
+
+    def __normalize_paths(self, c_file, cwd, encoding):
         with open(c_file, "r", encoding=encoding) as c_file_fh, open(
             c_file + ".new", "w", encoding="utf-8"
         ) as c_file_new_fh:
