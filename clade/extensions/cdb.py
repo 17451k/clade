@@ -43,7 +43,7 @@ class CDB(Extension):
 
         for cmd in cmds:
             for i, cmd_in in enumerate(cmd["in"]):
-                arguments = [cmd["command"]] + cmd["opts"] + [cmd_in]
+                arguments = [cmd["command"][0]] + cmd["opts"] + [cmd_in]
                 if cmd["out"]:
                     if "-c" in cmd["opts"]:
                         arguments.extend(["-o", cmd["out"][i]])

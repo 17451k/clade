@@ -36,6 +36,9 @@ def test_cdb(tmpdir, cmds_file):
         assert "arguments" in cmd
         assert "file" in cmd
 
+        for arg in cmd["arguments"]:
+            assert isinstance(arg, str)
+
 
 def test_cdb_main(tmpdir, cmds_file):
     main(["-o", os.path.join(str(tmpdir), "cdb.json"), "--cmds", cmds_file])
