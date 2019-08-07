@@ -398,7 +398,7 @@ class Clade:
     @property
     def storage_dir(self):
         """Name of a directory where CC and CL extensions has copied source files."""
-        return self._Storage.get_storage_dir()
+        return self.Storage.get_storage_dir()
 
     def add_file_to_storage(self, file, storage_filename=None, encoding=None):
         """Add file to the storage.
