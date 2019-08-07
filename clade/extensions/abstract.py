@@ -86,8 +86,6 @@ class Extension(metaclass=abc.ABCMeta):
                 pass
             self.conf["force_meta_deleted"] = True
 
-        self.check_conf_consistency()
-
         self.already_initialized = dict()
         self.already_initialized[self.name] = self
         self.init_extensions(work_dir)
@@ -124,6 +122,7 @@ class Extension(metaclass=abc.ABCMeta):
     def parse_prerequisites(self, cmds_file):
         """Run parse() method on all extensions required by this object."""
         for ext_name in self.extensions:
+            self.extensions[ext_name].check_conf_consistency()
             if not self.extensions[ext_name].is_parsed():
                 self.extensions[ext_name].parse(cmds_file)
 
