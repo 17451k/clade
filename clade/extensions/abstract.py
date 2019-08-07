@@ -379,7 +379,7 @@ class Extension(metaclass=abc.ABCMeta):
         try:
             desc = ["git", "describe", "--tags", "--dirty"]
             version = subprocess.check_output(
-                desc, cwd=location, stderr=subprocess.DEVNULL
+                desc, cwd=location, stderr=subprocess.DEVNULL, universal_newlines=True
             ).strip()
         finally:
             return version

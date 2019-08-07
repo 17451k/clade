@@ -111,7 +111,7 @@ def parse_args(args):
     args = parser.parse_args(args)
 
     if args.version:
-        print("Clade", Extension.get_clade_version().decode())
+        print("Clade", Extension.get_clade_version())
         sys.exit()
 
     if not args.cmds:
