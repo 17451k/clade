@@ -207,10 +207,12 @@ wchar_t *ProcessCommandFiles(const wchar_t *_cmdLine)
 
         // There should be "cmdLine.find(endSymbols, beginning) - 1"
         // but we have to support two cases, when ending symbols are " " and "\" ".
-        size_t end = cmdLine.find(endSymbols, beginning) + wcslen(endSymbols) - 2;
+        size_t end = cmdLine.find(endSymbols, beginning) + (wcslen(endSymbols) - 2);
 
-        if (end > wcslen(_cmdLine))
+        if (end > wcslen(_cmdLine)) {
+            // +1 is needed for @"file.txt"\n cases
             end = wcslen(_cmdLine) - wcslen(endSymbols) + 1;
+        }
 
         wchar_t *fileName = new wchar_t[cmdLine.length() + 1];
         size_t fileNameBeginning = beginning + 1;
@@ -233,9 +235,17 @@ wchar_t *ProcessCommandFiles(const wchar_t *_cmdLine)
 
         // Read command file line by line
         std::wifstream infile(fileName, std::ios::binary);
-        // apply BOM-sensitive UTF-16 facet
-        infile.imbue(std::locale(infile.getloc(),
-                                 new std::codecvt_utf16<wchar_t, 0x10ffff, std::consume_header>));
+
+        // detect UTF-16
+        wchar_t bom_buf[2];
+        infile.read(bom_buf, 2);
+        infile.seekg(0, infile.beg);
+        if (bom_buf[0] == 0xFF && bom_buf[1] == 0xFE || bom_buf[0] == 0xFE && bom_buf[1] == 0xFF) {
+            // apply BOM-sensitive UTF-16 facet
+            infile.imbue(std::locale(infile.getloc(),
+                                    new std::codecvt_utf16<wchar_t, 0x10ffff, std::consume_header>));
+        }
+
         std::wstring replacement;
 
         std::wstring line;
@@ -271,7 +281,7 @@ wchar_t *ProcessCommandFiles(const wchar_t *_cmdLine)
     return cmdLineRet;
 }
 
-void HandleCreateProcess(CREATE_PROCESS_DEBUG_INFO const &createProcess, PBI &pbi, int pid)
+void HandleCreateProcess(CREATE_PROCESS_DEBUG_INFO const &createProcess, PBI &pbi, int ppid)
 {
     HANDLE hProcess = createProcess.hProcess;
 
@@ -288,7 +298,7 @@ void HandleCreateProcess(CREATE_PROCESS_DEBUG_INFO const &createProcess, PBI &pb
     }
 
     std::wostringstream data;
-    data << curDirPath << L"||" << pid << L"||" << which;
+    data << curDirPath << L"||" << ppid << L"||" << which;
 
     wchar_t **cmdList;
     int nArgs;
@@ -322,6 +332,7 @@ void HandleCreateProcess(CREATE_PROCESS_DEBUG_INFO const &createProcess, PBI &pb
     delete[] cmdLine;
     delete[] curDirPath;
     delete[] which;
+    LocalFree(cmdList);
 
     // file handle should be closed, but process handle (hProcess) shouldn't
     if (createProcess.hFile)
