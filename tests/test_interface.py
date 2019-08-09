@@ -222,7 +222,8 @@ def test_check_work_dir_fail(tmpdir):
 
 def test_cant_create_work_dir():
     with pytest.raises(PermissionError):
-        Clade("/clade_test")
+        c = Clade("/clade_test")
+        c.parse("CC")
 
 
 def test_check_work_dir(clade_api: Clade):
@@ -250,3 +251,9 @@ def test_cross_ref(clade_api: Clade):
 
     ref_from_main_c = c.get_ref_from([main_c], add_unknown=False)
     filtered_ref_from_are_ok(ref_from, ref_from_main_c)
+
+
+def test_parse_undef(tmpdir):
+    with pytest.raises(NotImplementedError):
+        c = Clade(tmpdir)
+        c.parse("XYZ")

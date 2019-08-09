@@ -39,15 +39,19 @@ class Clade:
         Check that intercept() argument is list, not string
     """
 
-    def __init__(self, work_dir="clade", cmds_file="cmds.txt", conf=None, preset="base"):
+    def __init__(self, work_dir="clade", cmds_file=None, conf=None, preset="base"):
         self.work_dir = os.path.abspath(str(work_dir))
-        self.cmds_file = os.path.abspath(cmds_file)
         self.logger = get_logger("clade-api", with_name=False, conf=conf)
+
+        if not cmds_file:
+            self.cmds_file = os.path.join(self.work_dir, "cmds.txt")
+        else:
+            self.cmds_file = os.path.abspath(cmds_file)
 
         self.conf = conf if conf else dict()
         self.conf = merge_preset_to_conf(preset, self.conf)
 
-        self.__prepare_work_dir()
+        self.__prepare_to_init()
 
         self._PidGraph = None
         self._Storage = None
@@ -71,30 +75,42 @@ class Clade:
         self._functions_by_file = None
         self._cdb = None
 
-    def __prepare_work_dir(self):
+    def __prepare_to_init(self):
         # Clean working directory
         if self.conf.get("force") and os.path.isdir(self.work_dir):
             shutil.rmtree(self.work_dir)
-
-        parent_dir = "." if self.work_dir == "clade" else os.path.dirname(self.work_dir)
-        if not os.path.exists(self.work_dir) and not os.access(parent_dir, os.X_OK | os.W_OK):
-            self.logger.error("Permission error: can't create working directory")
-            raise PermissionError
-
-        # Create all necessary directories recursively
-        os.makedirs(self.work_dir, exist_ok=True)
-
-        # dirname can be empty if cmds_file is located in the current directory
-        if os.path.dirname(self.cmds_file):
-            os.makedirs(os.path.dirname(self.cmds_file), exist_ok=True)
 
         if os.path.exists(self.work_dir):
             if not os.access(self.work_dir, os.R_OK):
                 self.logger.error("Permission error: can't read files from the working directory")
                 raise PermissionError
-            if not os.access(self.work_dir, os.X_OK | os.W_OK):
-                self.logger.error("Permission error: can't write files to the working directory")
+
+    def __check_write_to_parent_dir(self, path):
+        # dirname can be empty if cmds_file is located in the current directory
+        parent_path = "." if not os.path.dirname(path) else os.path.dirname(path)
+
+        self.__check_write_to_dir(parent_path)
+
+    def __check_write_to_dir(self, path):
+        if path and os.path.exists(path):
+            if not os.access(path, os.X_OK | os.W_OK):
+                self.logger.error("Permission error: can't write files to the {!r} directory".format(path))
                 raise PermissionError
+
+    def __prepare_to_intercept(self):
+        self.__check_write_to_parent_dir(self.cmds_file)
+
+        cmds_file_dirname = "." if not os.path.dirname(self.cmds_file) else os.path.dirname(self.cmds_file)
+        os.makedirs(cmds_file_dirname, exist_ok=True)
+
+        self.__check_write_to_dir(cmds_file_dirname)
+
+    def __prepare_to_parse(self):
+        self.__check_write_to_parent_dir(self.work_dir)
+
+        os.makedirs(self.work_dir, exist_ok=True)
+
+        self.__check_write_to_dir(self.work_dir)
 
     def intercept(self, command, cwd=os.getcwd(), append=False, use_wrappers=False):
         """Execute intercepting of build commands.
@@ -108,6 +124,8 @@ class Clade:
         Returns:
             0 if everything went successful and error code otherwise
         """
+
+        self.__prepare_to_intercept()
 
         return intercept(command=command, cwd=cwd, output=self.cmds_file, append=append, use_wrappers=use_wrappers, conf=self.conf)
 
@@ -141,6 +159,8 @@ class Clade:
         Returns:
             An extension object
         """
+
+        self.__prepare_to_parse()
 
         e = self.__get_ext_obj(ext_name)
 
