@@ -62,6 +62,7 @@ def parse_args(args):
         action="append"
     )
     parser.add_argument(
+        "-C",
         "--cmds",
         help="path to the FILE where intercepted commands will be saved (default is clade/cmds.txt)",
         metavar="FILE"
