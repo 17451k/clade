@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import ujson
 import os
 import shutil
 
@@ -50,6 +51,7 @@ class Clade:
 
         self.conf = conf if conf else dict()
         self.conf = merge_preset_to_conf(preset, self.conf)
+        self.conf_file = os.path.join(self.work_dir, "conf.json")
 
         self.__prepare_to_init()
 
@@ -105,12 +107,25 @@ class Clade:
 
         self.__check_write_to_dir(cmds_file_dirname)
 
+    def __dump_conf(self):
+        # Overwrite this file each time
+        with open(self.conf_file, "w") as fh:
+            ujson.dump(
+                self.conf,
+                fh,
+                sort_keys=True,
+                indent=4,
+                ensure_ascii=False,
+                escape_forward_slashes=False,
+            )
+
     def __prepare_to_parse(self):
         self.__check_write_to_parent_dir(self.work_dir)
 
         os.makedirs(self.work_dir, exist_ok=True)
 
         self.__check_write_to_dir(self.work_dir)
+        self.__dump_conf()
 
     def intercept(self, command, cwd=os.getcwd(), append=False, use_wrappers=False):
         """Execute intercepting of build commands.
