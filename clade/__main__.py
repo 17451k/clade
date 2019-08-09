@@ -169,8 +169,12 @@ def main(sys_args=sys.argv[1:]):
             c.logger.info("Build completed successfully")
 
     if args.intercept:
-        c.logger.info("Path to the file with intercepted commands: {!r}".format(conf["cmds_file"]))
-        return
+        if os.path.exists(conf["cmds_file"]):
+            c.logger.info("Path to the file with intercepted commands: {!r}".format(conf["cmds_file"]))
+            return
+        else:
+            c.logger.error("Something is wrong: file with intercepted commands is empty")
+            sys.exit(-1)
 
     try:
         extensions = args.extension if args.extension else c.conf["extensions"]
