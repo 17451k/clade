@@ -136,33 +136,36 @@ class CrossRef(Callgraph):
 
         with open(storage_file, "r") as fp:
             for i, s in enumerate(fp):
-                if i == int(sorted_locs[sorted_pos][0]) - 1:
-                    line = int(sorted_locs[sorted_pos][0])
-                    name = sorted_locs[sorted_pos][1]
-                    ctype = sorted_locs[sorted_pos][2]
+                if sorted_pos >= len(sorted_locs):
+                    break
 
-                    lowest_index = s.find(name)
+                while (sorted_pos < len(sorted_locs) and int(sorted_locs[sorted_pos][0]) <= i + 1):
+                    if i == int(sorted_locs[sorted_pos][0]) - 1:
+                        line = int(sorted_locs[sorted_pos][0])
+                        name = sorted_locs[sorted_pos][1]
+                        ctype = sorted_locs[sorted_pos][2]
 
-                    if lowest_index != -1:
-                        if name in locations[ctype]:
-                            locations[ctype][name].append(
-                                (line, lowest_index, lowest_index + len(name))
-                            )
-                        else:
-                            locations[ctype][name] = [
-                                (line, lowest_index, lowest_index + len(name))
-                            ]
-                    # TODO: there may be a function call inside macro expansion
+                        lowest_index = s.find(name)
+
+                        if lowest_index != -1:
+                            if name in locations[ctype]:
+                                locations[ctype][name].append(
+                                    (line, lowest_index, lowest_index + len(name))
+                                )
+                            else:
+                                locations[ctype][name] = [
+                                    (line, lowest_index, lowest_index + len(name))
+                                ]
+                        # TODO: there may be a function call inside macro expansion
 
                     sorted_pos += 1
-
-                    if sorted_pos == len(sorted_locs):
-                        break
 
         return locations
 
     def __gen_ref_to(self, locations):
         for context_file in self.callgraph:
+            calls = set()
+
             for context_func in self.callgraph[context_file]:
                 if "calls" in self.callgraph[context_file][context_func]:
                     for file in self.callgraph[context_file][context_func]["calls"]:
@@ -178,25 +181,28 @@ class CrossRef(Callgraph):
                                 self._error("Can't find function: {!r} {!r}".format(func, file))
                                 continue
 
-                            loc_list = locations[context_file]["call"][func]
+                            calls.add((file, func))
 
-                            if self.funcs[file][func]["line"]:
-                                def_line = int(self.funcs[file][func]["line"])
+            for file, func in calls:
+                loc_list = locations[context_file]["call"][func]
 
-                                for loc_el in loc_list:
-                                    if context_file in self.ref_to:
-                                        self.ref_to[context_file]["def"].append((loc_el, (file, def_line)))
-                                    else:
-                                        self.ref_to[context_file] = {"def": [(loc_el, (file, def_line))], "decl": []}
+                if self.funcs[file][func]["line"]:
+                    def_line = int(self.funcs[file][func]["line"])
 
-                            for decl_file in self.funcs[file][func]["declarations"]:
-                                decl_line = int(self.funcs[file][func]["declarations"][decl_file]["line"])
+                    for loc_el in loc_list:
+                        if context_file in self.ref_to:
+                            self.ref_to[context_file]["def"].append((loc_el, (file, def_line)))
+                        else:
+                            self.ref_to[context_file] = {"def": [(loc_el, (file, def_line))], "decl": []}
 
-                                for loc_el in loc_list:
-                                    if context_file in self.ref_to:
-                                        self.ref_to[context_file]["decl"].append((loc_el, (decl_file, decl_line)))
-                                    else:
-                                        self.ref_to[context_file] = {"def": [], "decl": [(loc_el, (decl_file, decl_line))]}
+                for decl_file in self.funcs[file][func]["declarations"]:
+                    decl_line = int(self.funcs[file][func]["declarations"][decl_file]["line"])
+
+                    for loc_el in loc_list:
+                        if context_file in self.ref_to:
+                            self.ref_to[context_file]["decl"].append((loc_el, (decl_file, decl_line)))
+                        else:
+                            self.ref_to[context_file] = {"def": [], "decl": [(loc_el, (decl_file, decl_line))]}
 
     def __gen_ref_from(self, locations):
         for file in self.funcs:
