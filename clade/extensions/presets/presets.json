@@ -149,7 +149,8 @@
             "Callgraph",
             "Variables",
             "Typedefs",
-            "Macros"
+            "Macros",
+            "CrossRef"
         ]
     }
 }
