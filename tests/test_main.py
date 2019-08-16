@@ -15,6 +15,7 @@
 
 import pytest
 import os
+import sys
 
 from clade.__main__ import main
 
@@ -25,7 +26,8 @@ test_project_make = ["make", "-C", test_project]
 def test_intercept(tmpdir):
     cmds_file = os.path.join(str(tmpdir), "cmds.txt")
 
-    main(["--cmds", cmds_file, "-i"] + test_project_make)
+    if sys.platform != "darwin":
+        main(["--cmds", cmds_file, "-i"] + test_project_make)
 
 
 def test_intercept_no_command():
