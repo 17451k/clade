@@ -122,9 +122,10 @@ class Extension(metaclass=abc.ABCMeta):
     def parse_prerequisites(self, cmds_file):
         """Run parse() method on all extensions required by this object."""
         for ext_name in self.extensions:
-            self.extensions[ext_name].check_conf_consistency()
             if not self.extensions[ext_name].is_parsed():
                 self.extensions[ext_name].parse(cmds_file)
+            else:
+                self.extensions[ext_name].check_conf_consistency()
 
     def is_parsed(self):
         """Returns True if build commands are already parsed."""
@@ -291,9 +292,7 @@ class Extension(metaclass=abc.ABCMeta):
 
         if global_meta:
             for key in [k for k in global_meta["conf"] if k in self.get_ext_opts()]:
-                # If we cant load extension meta, then it is it's first launch
-                # And it does not matter that the configuration was changed
-                if global_meta["conf"][key] != self.conf[key] and self.load_ext_meta():
+                if global_meta["conf"][key] != self.conf[key]:
                     self.error("Configuration option {!r} was changed between launches".format(key))
                     raise RuntimeError
 

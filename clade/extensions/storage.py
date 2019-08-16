@@ -107,5 +107,6 @@ class Storage(Extension):
         """Get path to the file or directory from the storage."""
         return os.path.join(self.work_dir, path.lstrip(os.path.sep))
 
+    @Extension.prepare
     def parse(self, cmd_file):
         super().parse(cmd_file)
