@@ -53,19 +53,10 @@ class Clade:
         self.conf = merge_preset_to_conf(preset, self.conf)
         self.conf_file = os.path.join(self.work_dir, "conf.json")
 
-        self.__prepare_to_init()
+        # "Name -> Object" storage of all available extensions
+        self.extensions = dict()
 
-        self._PidGraph = None
-        self._Storage = None
-        self._CmdGraph = None
-        self._SrcGraph = None
-        self._Path = None
-        self._Functions = None
-        self._Callgraph = None
-        self._Macros = None
-        self._Variables = None
-        self._CrossRef = None
-        self._CDB = None
+        self.__prepare_to_init()
 
         self._cmd_graph = None
         self._src_graph = None
@@ -82,6 +73,7 @@ class Clade:
         if self.conf.get("force") and os.path.isdir(self.work_dir):
             shutil.rmtree(self.work_dir)
 
+        # Check that Clade has permission to read the working directory (if it exists)
         if os.path.exists(self.work_dir):
             if not os.access(self.work_dir, os.R_OK):
                 self.logger.error("Permission error: can't read files from the working directory")
@@ -100,12 +92,12 @@ class Clade:
                 raise PermissionError
 
     def __prepare_to_intercept(self):
+        # Check that Clade has permission to create the cmds.txt file
         self.__check_write_to_parent_dir(self.cmds_file)
 
+        # Create path to the cmds.txt file
         cmds_file_dirname = "." if not os.path.dirname(self.cmds_file) else os.path.dirname(self.cmds_file)
         os.makedirs(cmds_file_dirname, exist_ok=True)
-
-        self.__check_write_to_dir(cmds_file_dirname)
 
     def __dump_conf(self):
         # Overwrite this file each time
@@ -124,7 +116,6 @@ class Clade:
 
         os.makedirs(self.work_dir, exist_ok=True)
 
-        self.__check_write_to_dir(self.work_dir)
         self.__dump_conf()
 
     def intercept(self, command, cwd=os.getcwd(), append=False, use_wrappers=False):
@@ -145,12 +136,18 @@ class Clade:
         return intercept(command=command, cwd=cwd, output=self.cmds_file, append=append, use_wrappers=use_wrappers, conf=self.conf)
 
     def __get_ext_obj(self, ext_name):
-        try:
-            ext_class = Extension.find_subclass(ext_name)
-        except NotImplementedError:
-            Extension._import_extension_modules()
-            ext_class = Extension.find_subclass(ext_name)
-        return ext_class(self.work_dir, conf=self.conf)
+        """Return object of specified extension."""
+
+        if ext_name in self.extensions:
+            return self.extensions[ext_name]
+
+        ext_objs = self.__get_ext_obj_list([ext_name])
+
+        for e in ext_objs:
+            if e.name == ext_name:
+                return e
+        else:
+            raise RuntimeError("Cant find required extension {!r}".format(ext_name))
 
     def are_parsed(self, ext_name):
         """Check whether build commands are parsed or not.
@@ -170,44 +167,108 @@ class Clade:
 
         Args:
             ext_name: An extension name, like "Callgraph"
+            clean: Clean working directory of specified extension before parsing
 
         Returns:
             An extension object
         """
 
-        self.__prepare_to_parse()
-
-        e = self.__get_ext_obj(ext_name)
-
-        # BUG: If working directory is corrupted, then clean option doesnt work
-        if clean and os.path.isdir(e.work_dir):
-            shutil.rmtree(e.work_dir)
-
-        e.parse(self.cmds_file)
-
-        return e
+        return self.parse_list([ext_name], clean=clean)[0]
 
     def parse_list(self, ext_names, clean=False):
         """Execute parse() method of several Clade extensions.
 
         Args:
             ext_names: List of extension names, like ["Callgraph", "SrcGraph"]
+            clean: Clean working directory of specified extensions before parsing
 
         Returns:
-            Nothing
+            List of extension objects
         """
 
+        self.__prepare_to_parse()
+
+        # Get list of extension objects to parse, including implicitly required ones
+        ext_objs = self.__get_ext_obj_list(ext_names)
+
+        for ext_obj in ext_objs:
+            # BUG: If working directory is corrupted, then clean option doesnt work
+            if clean and ext_obj.name in ext_names and os.path.isdir(ext_obj.work_dir):
+                shutil.rmtree(ext_obj.work_dir)
+
+            if ext_obj.is_parsed():
+                ext_obj.check_conf_consistency()
+            else:
+                ext_obj.parse(self.cmds_file)
+
+        return [e for e in ext_objs if e.name in ext_names]
+
+    def __get_ext_obj_list(self, ext_names):
+        """Return correctly initialised list of extension objects
+        for the given list of extension names.
+
+        List includes extensions that are required implicitly.
+        """
+        ext_objs = []
+
         for ext_name in ext_names:
-            if not self.are_parsed(ext_name) or clean:
-                self.parse(ext_name, clean=clean)
+            already_initialized = [x.name for x in ext_objs]
+            ext_objs.extend(self.__create_ext_obj_list(ext_name, already_initialized))
+
+        for ext_obj in [e for e in ext_objs if e.name not in self.extensions]:
+            # Correctly initialise .extensions variable for each extension object,
+            # without creating additional objects
+            ext_obj.extensions = self.__map_ext_names(ext_obj, ext_objs)
+            # Store extension object for future use
+            self.extensions[ext_obj.name] = ext_obj
+
+        return ext_objs
+
+    def __create_ext_obj_list(self, ext_name, already_initialized=None):
+        """Return list of extension objects for the given list of extension names.
+
+        List can be filtered using already_initialized argument.
+        """
+
+        if not already_initialized:
+            already_initialized = []
+
+        if ext_name in already_initialized:
+            return []
+
+        e = self.__create_ext_obj(ext_name)
+
+        ext_objs = []
+
+        for req_name in e.requires:
+            already_initialized += [x.name for x in ext_objs]
+            r_ext_objs = self.__create_ext_obj_list(req_name, already_initialized)
+            ext_objs.extend(r_ext_objs)
+
+        ext_objs.append(e)
+
+        return ext_objs
+
+    def __map_ext_names(self, ext_obj, ext_objs):
+        """Return dictionary of extension objects that a given extension requires."""
+        return {e.name: e for e in ext_objs if e.name in ext_obj.requires}
+
+    def __create_ext_obj(self, ext_name):
+        """Create or return extension object of a given name."""
+        if ext_name in self.extensions:
+            return self.extensions[ext_name]
+
+        try:
+            ext_class = Extension.find_subclass(ext_name)
+        except NotImplementedError:
+            Extension._import_extension_modules()
+            ext_class = Extension.find_subclass(ext_name)
+        return ext_class(self.work_dir, conf=self.conf)
 
     @property
     def CmdGraph(self):
         """Object of "CmdGraph" extension."""
-        if not self._CmdGraph:
-            self._CmdGraph = self.__get_ext_obj("CmdGraph")
-
-        return self._CmdGraph
+        return self.__get_ext_obj("CmdGraph")
 
     @property
     def cmd_graph(self):
@@ -342,10 +403,7 @@ class Clade:
     @property
     def SrcGraph(self):
         """Object of "SrcGraph" extension."""
-        if not self._SrcGraph:
-            self._SrcGraph = self.__get_ext_obj("SrcGraph")
-
-        return self._SrcGraph
+        return self.__get_ext_obj("SrcGraph")
 
     @property
     def src_graph(self):
@@ -398,10 +456,7 @@ class Clade:
     @property
     def PidGraph(self):
         """Object of "PidGraph" extension."""
-        if not self._PidGraph:
-            self._PidGraph = self.__get_ext_obj("PidGraph")
-
-        return self._PidGraph
+        return self.__get_ext_obj("PidGraph")
 
     @property
     def pid_graph(self):
@@ -425,10 +480,7 @@ class Clade:
     @property
     def Storage(self):
         """Object of "Storage" extension."""
-        if not self._Storage:
-            self._Storage = self.__get_ext_obj("Storage")
-
-        return self._Storage
+        return self.__get_ext_obj("Storage")
 
     @property
     def storage_dir(self):
@@ -445,6 +497,7 @@ class Clade:
                       to convert it to UTF-8 using 'Storage.convert_to_utf8'
                       option
         """
+
         self.Storage.add_file(file, storage_filename=storage_filename, encoding=encoding)
 
     def get_storage_path(self, path):
@@ -454,10 +507,7 @@ class Clade:
     @property
     def Callgraph(self):
         """Object of "Callgraph" extension."""
-        if not self._Callgraph:
-            self._Callgraph = self.__get_ext_obj("Callgraph")
-
-        return self._Callgraph
+        return self.__get_ext_obj("Callgraph")
 
     @property
     def callgraph(self):
@@ -485,10 +535,7 @@ class Clade:
     @property
     def Functions(self):
         """Object of "Functions" extension."""
-        if not self._Functions:
-            self._Functions = self.__get_ext_obj("Functions")
-
-        return self._Functions
+        return self.__get_ext_obj("Functions")
 
     @property
     def functions(self):
@@ -531,10 +578,7 @@ class Clade:
     @property
     def Macros(self):
         """Object of "Macros" extension."""
-        if not self._Macros:
-            self._Macros = self.__get_ext_obj("Macros")
-
-        return self._Macros
+        return self.__get_ext_obj("Macros")
 
     def get_macros_expansions(self, files=None, macros_names=None):
         """Get dictionary with macros expansions (C only).
@@ -587,10 +631,7 @@ class Clade:
     @property
     def Variables(self):
         """Object of "Variables" extension."""
-        if not self._Variables:
-            self._Variables = self.__get_ext_obj("Variables")
-
-        return self._Variables
+        return self.__get_ext_obj("Variables")
 
     def get_variables(self, files=None):
         """Get dictionary with variables (C only)."""
@@ -602,10 +643,7 @@ class Clade:
     @property
     def CDB(self):
         """Object of "CDB" extension."""
-        if not self._CDB:
-            self._CDB = self.__get_ext_obj("CDB")
-
-        return self._CDB
+        return self.__get_ext_obj("CDB")
 
     @property
     def compilation_database(self):
@@ -618,10 +656,7 @@ class Clade:
     @property
     def Path(self):
         """Object of "Path" extension."""
-        if not self._Path:
-            self._Path = self.__get_ext_obj("Path")
-
-        return self._Path
+        return self.__get_ext_obj("Path")
 
     def __normalize_cmd(self, cmd):
         if "cwd" in cmd and "in" in cmd:
@@ -710,10 +745,7 @@ class Clade:
     @property
     def CrossRef(self):
         """Object of "CrossRef" extension."""
-        if not self._CrossRef:
-            self._CrossRef = self.__get_ext_obj("CrossRef")
-
-        return self._CrossRef
+        return self.__get_ext_obj("CrossRef")
 
     def get_ref_to(self, files=None, add_unknown=True):
         """Dictionary with references to definitions and declarations.

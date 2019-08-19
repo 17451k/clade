@@ -86,46 +86,8 @@ class Extension(metaclass=abc.ABCMeta):
                 pass
             self.conf["force_meta_deleted"] = True
 
-        self.already_initialized = dict()
-        self.already_initialized[self.name] = self
-        self.init_extensions(work_dir)
-
         self.debug("Extension version: {}".format(self.ext_meta["version"]))
         self.debug("Working directory: {}".format(self.work_dir))
-
-    def init_extensions(self, work_dir):
-        """Initialize all extensions required by this object."""
-
-        if not self.requires:
-            return
-
-        self.debug(
-            "Prerequisites to initialize: {}".format(
-                [x for x in self.requires if x not in self.already_initialized]
-            )
-        )
-
-        for ext_name in self.requires:
-            if ext_name in self.already_initialized:
-                self.extensions[ext_name] = self.already_initialized[ext_name]
-                continue
-
-            # If subclass is found then there is no need to import extension modules
-            try:
-                ext_class = Extension.find_subclass(ext_name)
-            except NotImplementedError:
-                Extension._import_extension_modules()
-                ext_class = Extension.find_subclass(ext_name)
-
-            self.extensions[ext_name] = ext_class(work_dir, self.conf)
-
-    def parse_prerequisites(self, cmds_file):
-        """Run parse() method on all extensions required by this object."""
-        for ext_name in self.extensions:
-            if not self.extensions[ext_name].is_parsed():
-                self.extensions[ext_name].parse(cmds_file)
-            else:
-                self.extensions[ext_name].check_conf_consistency()
 
     def is_parsed(self):
         """Returns True if build commands are already parsed."""
@@ -139,8 +101,8 @@ class Extension(metaclass=abc.ABCMeta):
     def prepare(parse):
         """Decorator for parse() method
 
-        It checks that commands were not already parsed
-        and run parse() for required extensions.
+        It checks configuration consistency, collects meta
+        information, checks that working directory is not corrupted
         """
 
         def parse_wrapper(self, *args, **kwargs):
@@ -149,7 +111,6 @@ class Extension(metaclass=abc.ABCMeta):
                 return
 
             self.temp_dir = tempfile.mkdtemp()
-            self.parse_prerequisites(args[0])
             time_start = time.time()
 
             try:
