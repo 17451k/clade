@@ -915,6 +915,9 @@ Other options are available through --help option.
     # This step can be skipped if build commands are already intercepted
     c.intercept(command=["make"], append=False, use_wrappers=False)
 
+    # Parse intercepted commands and generate compilation database
+    c.parse("CDB")
+
     # Get compilation database
     compilation_database = c.compilation_database
 
