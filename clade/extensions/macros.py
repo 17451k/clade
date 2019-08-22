@@ -16,21 +16,28 @@
 import re
 
 from clade.extensions.abstract import Extension
+from clade.extensions.utils import nested_dict, traverse
 
 
 class Macros(Extension):
     requires = ["Info"]
 
-    __version__ = "1"
+    __version__ = "2"
 
     def __init__(self, work_dir, conf=None):
         super().__init__(work_dir, conf)
 
-        self.define = dict()
-        self.define_folder = "define"
+        self.def_regex = re.compile(r"\"(.*?)\" (\S*) (\S*)")
+        self.exp_regex = re.compile(r'\"(.*?)\" \"(.*?)\" (\S*) (\S*) (\S*)(.*)')
+        self.arg_regex = re.compile(r' actual_arg\d+=(.*)')
 
-        self.expand = dict()
-        self.expand_folder = "expand"
+        self.macros = nested_dict()
+        self.macros_file = "macros.json"
+        self.macros_folder = "macros"
+
+        self.exps = nested_dict()
+        self.exps_file = "expansions.json"
+        self.expansions_folder = "expansions"
 
     @Extension.prepare
     def parse(self, cmds_file):
@@ -38,59 +45,66 @@ class Macros(Extension):
 
         self.__process_macros_definitions()
         self.__process_macros_expansions()
+        self.__reverse_expansions()
 
-        self.dump_data_by_key(self.define, self.define_folder)
-        self.dump_data_by_key(self.expand, self.expand_folder)
-        self.define.clear()
-        self.expand.clear()
+        self.dump_data(self.macros, self.macros_file)
+        self.dump_data(self.exps, self.exps_file)
+        self.dump_data_by_key(self.macros, self.macros_folder)
+        self.dump_data_by_key(self.exps, self.expansions_folder)
+
+        self.macros.clear()
         self.log("Parsing finished")
 
     def __process_macros_definitions(self):
-        regex = re.compile(r"\"(.*?)\" (\S*) (\S*)")
-
         for line in self.extensions["Info"].iter_macros_definitions():
-            m = regex.match(line)
+            m = self.def_regex.match(line)
 
             if not m:
                 raise SyntaxError("CIF output has unexpected format: {!r}".format(line))
 
             file, macro, line = m.groups()
 
-            if file in self.define and macro in self.define[file]:
-                self.define[file][macro].append(line)
-            elif file in self.define:
-                self.define[file][macro] = [line]
-            else:
-                self.define[file] = {macro: [line]}
+            self.macros[file][macro][line] = nested_dict()
 
     def __process_macros_expansions(self):
-        regex = re.compile(r'\"(.*?)\" (\S*)(.*)')
-        regex2 = re.compile(r' actual_arg\d+=(.*)')
-
         for line in self.extensions["Info"].iter_macros_expansions():
-            m = regex.match(line)
+            m = self.exp_regex.match(line)
 
             if not m:
                 raise SyntaxError("CIF output has unexpected format: {!r}".format(line))
 
-            file, macro, args_str = m.groups()
+            file, def_file, macro, line, def_line, args_str = m.groups()
 
             args = list()
             if args_str:
                 for arg in args_str.split(','):
-                    m_arg = regex2.match(arg)
+                    m_arg = self.arg_regex.match(arg)
                     if m_arg:
                         args.append(m_arg.group(1))
 
-            if file in self.expand and macro in self.expand[file]:
-                self.expand[file][macro]["args"].append(args)
-            elif file in self.expand:
-                self.expand[file][macro] = {'args': [args]}
+            if def_file not in self.macros:
+                def_file = "unknown"
+
+            if not args:
+                self.macros[def_file][macro][def_line][file][line] = []
+            elif self.macros[def_file][macro][def_line][file][line]:
+                self.macros[def_file][macro][def_line][file][line].append(args)
             else:
-                self.expand[file] = {macro: {'args': [args]}}
+                self.macros[def_file][macro][def_line][file][line] = [args]
 
-    def load_macros_definitions(self, files=None):
-        return self.load_data_by_key(self.define_folder, files)
+    def __reverse_expansions(self, allow_smaller=True):
+        for def_file, macro, def_line, exp_file, exp_line, args in traverse(self.macros, 6):
+            self.exps[exp_file][macro][exp_line][def_file][def_line] = args
 
-    def load_macros_expansions(self, files=None):
-        return self.load_data_by_key(self.expand_folder, files)
+    def load_macros(self, files=None):
+        """Load json with all information about macros."""
+
+        if files:
+            return self.load_data_by_key(self.macros_folder, files)
+        else:
+            return self.load_data(self.macros_file)
+
+    def load_expansions(self, files=None):
+        """Load json with all information about macro expansions."""
+
+        return self.load_data_by_key(self.expansions_folder, files)

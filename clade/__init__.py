@@ -20,6 +20,7 @@ import shutil
 from clade.utils import get_logger, merge_preset_to_conf
 from clade.intercept import intercept
 from clade.extensions.abstract import Extension
+from clade.extensions.utils import nested_dict, traverse
 
 
 class Clade:
@@ -583,22 +584,29 @@ class Clade:
     def get_macros_expansions(self, files=None, macros_names=None):
         """Get dictionary with macros expansions (C only).
 
+        DEPRECATED: use get_expansions() instead.
+
         Args:
             files: A list of files to narrow down returned dictionary
             macros_names: A list of macros names to find and return
         """
 
-        expansions = self.Macros.load_macros_expansions(files)
+        exps = self.Macros.load_expansions(files)
+        expansions = nested_dict()
+
+        # Map new format of macros to the old one
+        for exp_file, macro, _, _, _, args in traverse(exps, 6):
+            if expansions[exp_file][macro]:
+                expansions[exp_file][macro].append(args)
+            else:
+                expansions[exp_file][macro] = [args]
 
         if macros_names:
-            filtered_expansions = dict()
-            for file in expansions:
-                for macros in expansions[file]:
-                    if macros in macros_names:
-                        if file not in filtered_expansions:
-                            filtered_expansions[file] = {macros: expansions[file][macros]}
-                        else:
-                            filtered_expansions[file][macros] = expansions[file][macros]
+            filtered_expansions = nested_dict()
+
+            for file, macros in traverse(expansions, 2):
+                if macros in macros_names:
+                    filtered_expansions[file][macros] = expansions[file][macros]
 
             return filtered_expansions
 
@@ -607,26 +615,45 @@ class Clade:
     def get_macros_definitions(self, files=None, macros_names=None):
         """Get dictionary with macros definitions (C only).
 
+        DEPRECATED: use get_macros() instead.
+
         Args:
             files: A list of files to narrow down returned dictionary
             macros_names: A list of macros names to find and return
         """
 
-        definitions = self.Macros.load_macros_definitions(files)
+        macros = self.Macros.load_macros(files)
 
+        definitions = nested_dict()
+
+        # Map new format of macros to the old one
+        for file, macro, line in traverse(macros, 3):
+            if definitions[file][macro]:
+                definitions[file][macro].append(line)
+            else:
+                definitions[file][macro] = [line]
+
+        # Filter macro definitions by names
         if macros_names:
-            filtered_definitions = dict()
-            for file in definitions:
-                for macros in definitions[file]:
-                    if macros in macros_names:
-                        if file not in filtered_definitions:
-                            filtered_definitions[file] = {macros: definitions[file][macros]}
-                        else:
-                            filtered_definitions[file][macros] = definitions[file][macros]
+            filtered_definitions = nested_dict()
+
+            for file, macros in traverse(definitions, 2):
+                if macros in macros_names:
+                    filtered_definitions[file][macros] = definitions[file][macros]
 
             return filtered_definitions
 
         return definitions
+
+    def get_macros(self, files=None):
+        """Get all information about macros."""
+
+        return self.Macros.load_macros(files)
+
+    def get_expansions(self, files):
+        """Get information about macro expansions"""
+
+        return self.Macros.load_expansions(files)
 
     @property
     def Variables(self):

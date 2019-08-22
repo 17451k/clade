@@ -36,19 +36,19 @@ info: declare_func($ $(..)) {
 }
 
 info: expand(__EXPORT_SYMBOL(sym, sec)) {
-	$fprintf<"$env<CIF_INFO_DIR>" $path "/exported.txt","%s\n",$arg_val1>
+	$fprintf<"$env<CIF_INFO_DIR>" $expansion_path "/exported.txt","%s\n",$arg_val1>
 }
 
 info: expand(___EXPORT_SYMBOL(sym, sec)) {
-	$fprintf<"$env<CIF_INFO_DIR>" $path "/exported.txt","%s\n",$arg_val1>
+	$fprintf<"$env<CIF_INFO_DIR>" $expansion_path "/exported.txt","%s\n",$arg_val1>
 }
 
 info: expand($) {
-	$fprintf<"$env<CIF_INFO_DIR>" $path "/expand.txt","%s\n",$macro_name>
+	$fprintf<"$env<CIF_INFO_DIR>" $expansion_path "/expand.txt","\"%s\" %s %d %d\n",$path,$macro_name,$expansion_line,$line>
 }
 
 info: expand($(..)) {
-	$fprintf<"$env<CIF_INFO_DIR>" $path "/expand.txt","%s %s\n",$macro_name,$actual_args>
+	$fprintf<"$env<CIF_INFO_DIR>" $expansion_path "/expand.txt","\"%s\" %s %d %d %s\n",$path,$macro_name,$expansion_line,$line,$actual_args>
 }
 
 info: define($) {

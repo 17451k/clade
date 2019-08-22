@@ -32,7 +32,7 @@ def expansions_are_ok(expansions):
 
 def test_macros(tmpdir, cmds_file):
     c = Clade(tmpdir, cmds_file)
-    e = c.parse("Macros")
+    c.parse("Macros")
 
-    definitions_are_ok(e.load_macros_definitions())
-    expansions_are_ok(e.load_macros_expansions())
+    definitions_are_ok(c.get_macros_definitions())
+    expansions_are_ok(c.get_macros_expansions())

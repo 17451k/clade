@@ -37,7 +37,7 @@ class Info(Extension):
     always_requires = ["SrcGraph", "Path", "Storage"]
     requires = always_requires + ["CC", "CL"]
 
-    __version__ = "1"
+    __version__ = "2"
 
     def __init__(self, work_dir, conf=None):
         if not conf:
@@ -98,6 +98,8 @@ class Info(Extension):
         # Path to files containing CIF log
         self.cif_log = os.path.join(self.work_dir, "cif.log")
         self.err_log = os.path.join(self.work_dir, "err.log")
+
+        self.expand_regex = re.compile(r'\"(.*?)\"(.*)')
 
     @Extension.prepare
     def parse(self, cmds_file):
@@ -291,6 +293,19 @@ class Info(Extension):
 
                         path = path.replace(storage, "")
                         path = path.replace(self.cif_output_dir, "")
+
+                        expand = os.path.basename(self.expand)
+                        if file.endswith(expand):
+                            m = self.expand_regex.match(line)
+
+                            if m:
+                                expansion_path, rest = m.groups()
+
+                                expansion_path = expansion_path.replace(storage, "")
+                                expansion_path = expansion_path.replace(self.cif_output_dir, "")
+
+                                line = "\"{}\"{}\n".format(expansion_path, rest)
+
                         temp_fh.write('"{}" {}'.format(path, line))
 
         seen.clear()
