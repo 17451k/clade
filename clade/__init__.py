@@ -780,7 +780,7 @@ class Clade:
         """Object of "CrossRef" extension."""
         return self.__get_ext_obj("CrossRef")
 
-    def get_ref_to(self, files=None, add_unknown=True):
+    def get_ref_to(self, files=None):
         """Dictionary with references to definitions and declarations.
 
         Args:
@@ -790,22 +790,15 @@ class Clade:
         if isinstance(files, set) or isinstance(files, list):
             files = set(files)
 
-            if add_unknown:
-                files.add('unknown')
-
         return self.CrossRef.load_ref_to_by_file(files)
 
-    def get_ref_from(self, files=None, add_unknown=True):
+    def get_ref_from(self, files=None):
         """Dictionary with references to usages.
 
         Args:
             files: A list of files to narrow down data
-            add_unknown: Add functions without known definition
         """
         if isinstance(files, set) or isinstance(files, list):
             files = set(files)
-
-            if add_unknown:
-                files.add('unknown')
 
         return self.CrossRef.load_ref_from_by_file(files)

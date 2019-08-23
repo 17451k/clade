@@ -21,15 +21,18 @@ def ref_to_are_ok(ref_to):
     assert ref_to[main_c]
     assert ref_to[zero_c]
 
-    assert ref_to[main_c]["decl"]
-    assert ref_to[main_c]["def"]
+    assert ref_to[main_c]["decl_func"]
+    assert ref_to[main_c]["def_func"]
+    assert "def_macro" not in ref_to[main_c]
 
-    assert ref_to[zero_c]["decl"]
-    assert not ref_to[zero_c]["def"]
+    assert ref_to[zero_c]["decl_func"]
+    assert "def_func" not in ref_to[zero_c]
+    assert ref_to[zero_c]["def_macro"]
 
-    assert [[10, 11, 15], [zero_h, 1]] in ref_to[main_c]["decl"]
-    assert [[9, 4, 9], [main_c, 4]] in ref_to[main_c]["def"]
-    assert [[10, 11, 15], [zero_c, 6]] in ref_to[main_c]["def"]
+    assert [[10, 11, 15], [zero_h, 1]] in ref_to[main_c]["decl_func"]
+    assert [[9, 4, 9], [main_c, 4]] in ref_to[main_c]["def_func"]
+    assert [[10, 11, 15], [zero_c, 6]] in ref_to[main_c]["def_func"]
+    assert [[7, 11, 15], [zero_c, 4]] in ref_to[zero_c]["def_macro"]
 
 
 def filtered_ref_to_are_ok(rel_to, rel_to_main_c):
@@ -48,6 +51,8 @@ def ref_from_are_ok(ref_from):
     assert [[4, 12, 17], [main_c, [9]]] in ref_from[main_c]
     assert [[6, 4, 8], [main_c, [10]]] in ref_from[zero_c]
     assert [[1, 11, 15], [main_c, [10]]] in ref_from[zero_h]
+    assert [[3, 8, 18], [zero_c, [7]]] in ref_from[zero_c]
+    assert [[4, 8, 12], [zero_c, [7]]] in ref_from[zero_c]
 
 
 def filtered_ref_from_are_ok(rel_from, rel_from_main_c):
@@ -58,7 +63,7 @@ def filtered_ref_from_are_ok(rel_from, rel_from_main_c):
             assert file not in rel_from_main_c
 
 
-def test_functions(tmpdir, cmds_file):
+def test_cross_ref(tmpdir, cmds_file):
     c = Clade(tmpdir, cmds_file)
     e = c.parse("CrossRef")
 
