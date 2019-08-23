@@ -349,31 +349,106 @@ class Info(Extension):
         self.log("Normalizing finished")
 
     def iter_definitions(self):
-        return self.__iter_file(self.execution)
+        """Yield src_file, func, signature, def_line, func_type"""
+
+        regex = re.compile(r"\"(.*?)\" (\S*) signature='([^']*)' (\S*) (\S*)")
+
+        for content in self.__iter_file_regex(self.execution, regex):
+            yield content
 
     def iter_declarations(self):
-        return self.__iter_file(self.decl)
+        """Yield decl_file, decl_name, decl_signature, decl_line, decl_type"""
+
+        regex = re.compile(r"\"(.*?)\" (\S*) signature='([^']*)' (\S*) (\S*)")
+
+        for content in self.__iter_file_regex(self.decl, regex):
+            yield content
 
     def iter_exported(self):
-        return self.__iter_file(self.exported)
+        """Yield src_file, func"""
+
+        regex = re.compile(r"\"(.*?)\" (\S*)")
+
+        for content in self.__iter_file_regex(self.exported, regex):
+            yield content
 
     def iter_calls(self):
-        return self.__iter_file(self.call)
+        """Yield context_file, context_func, func, call_line, call_type, args"""
+
+        regex = re.compile(r'\"(.*?)\" (\S*) (\S*) (\S*) (\S*) (.*)')
+        args_regex = re.compile(r"actual_arg_func_name(\d+)=\s*(\w+)\s*")
+
+        for content in self.__iter_file_regex(self.call, regex):
+            content = list(content)
+
+            # Last element should be args
+            content[-1] = args_regex.findall(content[-1])
+
+            yield content
 
     def iter_calls_by_pointers(self):
-        return self.__iter_file(self.callp)
+        """Yield context_file, context_func, func_ptr, call_line"""
+
+        regex = re.compile(r'\"(.*?)\" (\S*) (\S*) (\S*)')
+
+        for content in self.__iter_file_regex(self.callp, regex):
+            yield content
 
     def iter_functions_usages(self):
-        return self.__iter_file(self.use_func)
+        """Yield context_file, context_func, func, line"""
+
+        regex = re.compile(r'\"(.*?)\" (\S*) (\S*) (\S*)')
+
+        for content in self.__iter_file_regex(self.use_func, regex):
+            yield content
 
     def iter_macros_definitions(self):
-        return self.__iter_file(self.define)
+        """Yield file, macro, line"""
+
+        regex = re.compile(r"\"(.*?)\" (\S*) (\S*)")
+
+        for content in self.__iter_file_regex(self.define, regex):
+            yield content
 
     def iter_macros_expansions(self):
-        return self.__iter_file(self.expand)
+        """Yield file, def_file, macro, line, def_line, args_str"""
+
+        regex = re.compile(r'\"(.*?)\" \"(.*?)\" (\S*) (\S*) (\S*)(.*)')
+        arg_regex = re.compile(r' actual_arg\d+=(.*)')
+
+        for content in self.__iter_file_regex(self.expand, regex):
+            content = list(content)
+
+            args = list()
+
+            # Last element should be args
+            if content[-1]:
+                for arg in content[-1].split(','):
+                    m_arg = arg_regex.match(arg)
+                    if m_arg:
+                        args.append(m_arg.group(1))
+
+            content[-1] = args
+
+            yield content
 
     def iter_typedefs(self):
-        return self.__iter_file(self.typedefs)
+        """Yeild scope_file, declaration"""
+
+        regex = re.compile(r'\"(.*?)\" typedef (.*)')
+
+        for content in self.__iter_file_regex(self.typedefs, regex):
+            yield content
+
+    def __iter_file_regex(self, file, regex):
+        for line in self.__iter_file(file):
+            m = regex.match(line)
+
+            if not m:
+                self.error("CIF output has unexpected format: {!r}".format(line))
+                raise SyntaxError
+
+            yield m.groups()
 
     def __iter_file(self, file):
         if not os.path.isfile(file):

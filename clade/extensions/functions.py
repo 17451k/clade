@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re
-
 from clade.extensions.abstract import Extension
 from clade.extensions.callgraph import Callgraph
 from clade.extensions.utils import nested_dict, traverse
@@ -67,18 +65,7 @@ class Functions(Callgraph):
             return self.load_data(self.funcs_by_file_file)
 
     def __process_definitions(self):
-        regex = re.compile(r"\"(.*?)\" (\S*) signature='([^']*)' (\S*) (\S*)")
-
-        for line in self.extensions["Info"].iter_definitions():
-            m = regex.match(line)
-
-            if not m:
-                raise SyntaxError(
-                    "CIF output has unexpected format: {!r}".format(line)
-                )
-
-            src_file, func, signature, def_line, func_type = m.groups()
-
+        for src_file, func, signature, def_line, func_type in self.extensions["Info"].iter_definitions():
             if func in self.funcs and src_file in self.funcs[func]:
                 self._error(
                     "Function is defined more than once: {!r} {!r}".format(
@@ -95,8 +82,6 @@ class Functions(Callgraph):
             }
 
     def __process_declarations(self):
-        regex = re.compile(r"\"(.*?)\" (\S*) signature='([^']*)' (\S*) (\S*)")
-
         def get_unknown_val(decl_file, decl_val):
             return {
                 "type": "global",
@@ -105,18 +90,7 @@ class Functions(Callgraph):
                 "declarations": {decl_file: decl_val},
             }
 
-        for line in self.extensions["Info"].iter_declarations():
-            m = regex.match(line)
-
-            if not m:
-                raise SyntaxError(
-                    "CIF output has unexpected format: {!r}".format(line)
-                )
-
-            decl_file, decl_name, decl_signature, decl_line, decl_type = (
-                m.groups()
-            )
-
+        for decl_file, decl_name, decl_signature, decl_line, decl_type in self.extensions["Info"].iter_declarations():
             decl_val = {
                 "signature": decl_signature,
                 "line": decl_line,
@@ -167,18 +141,7 @@ class Functions(Callgraph):
                 )
 
     def __process_exported(self):
-        regex = re.compile(r"\"(.*?)\" (\S*)")
-
-        for line in self.extensions["Info"].iter_exported():
-            m = regex.match(line)
-
-            if not m:
-                raise SyntaxError(
-                    "CIF output has unexpected format: {!r}".format(line)
-                )
-
-            src_file, func = m.groups()
-
+        for src_file, func in self.extensions["Info"].iter_exported():
             # Variables can also be exported
             if func not in self.funcs:
                 continue

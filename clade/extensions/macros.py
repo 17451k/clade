@@ -27,10 +27,6 @@ class Macros(Extension):
     def __init__(self, work_dir, conf=None):
         super().__init__(work_dir, conf)
 
-        self.def_regex = re.compile(r"\"(.*?)\" (\S*) (\S*)")
-        self.exp_regex = re.compile(r'\"(.*?)\" \"(.*?)\" (\S*) (\S*) (\S*)(.*)')
-        self.arg_regex = re.compile(r' actual_arg\d+=(.*)')
-
         self.macros = nested_dict()
         self.macros_file = "macros.json"
         self.macros_folder = "macros"
@@ -56,32 +52,11 @@ class Macros(Extension):
         self.log("Parsing finished")
 
     def __process_macros_definitions(self):
-        for line in self.extensions["Info"].iter_macros_definitions():
-            m = self.def_regex.match(line)
-
-            if not m:
-                raise SyntaxError("CIF output has unexpected format: {!r}".format(line))
-
-            file, macro, line = m.groups()
-
+        for file, macro, line in self.extensions["Info"].iter_macros_definitions():
             self.macros[file][macro][line] = nested_dict()
 
     def __process_macros_expansions(self):
-        for line in self.extensions["Info"].iter_macros_expansions():
-            m = self.exp_regex.match(line)
-
-            if not m:
-                raise SyntaxError("CIF output has unexpected format: {!r}".format(line))
-
-            file, def_file, macro, line, def_line, args_str = m.groups()
-
-            args = list()
-            if args_str:
-                for arg in args_str.split(','):
-                    m_arg = self.arg_regex.match(arg)
-                    if m_arg:
-                        args.append(m_arg.group(1))
-
+        for file, def_file, macro, line, def_line, args in self.extensions["Info"].iter_macros_expansions():
             if def_file not in self.macros:
                 def_file = "unknown"
 

@@ -44,6 +44,8 @@ class Callgraph(Extension):
         self.used_in = nested_dict()
         self.used_in_file = "used_in.json"
 
+        self.is_builtin = re.compile(r'(__builtin)|(__compiletime)')
+
     @Extension.prepare
     def parse(self, cmds_file):
         self.log("Generating callgraph")
@@ -77,25 +79,11 @@ class Callgraph(Extension):
         return self.load_data(self.used_in_file)
 
     def __process_calls(self):
-        regex = re.compile(r'\"(.*?)\" (\S*) (\S*) (\S*) (\S*) (.*)')
-
-        is_builtin = re.compile(r'(__builtin)|(__compiletime)')
         is_bad = re.compile(r'__bad')
 
-        args_regex = re.compile(r"actual_arg_func_name(\d+)=\s*(\w+)\s*")
-
-        for line in self.extensions["Info"].iter_calls():
-            m = regex.match(line)
-
-            if not m:
-                raise SyntaxError("CIF output has unexpected format: {!r}".format(line))
-
-            context_file, context_func, func, call_line, call_type, args = m.groups()
-
-            if is_builtin.match(func) or (is_bad.match(func) and func not in self.callgraph):
+        for context_file, context_func, func, call_line, call_type, args in self.extensions["Info"].iter_calls():
+            if self.is_builtin.match(func) or (is_bad.match(func) and func not in self.callgraph):
                 continue
-
-            args = args_regex.findall(args)
 
             # For each function call there can be many definitions with the same name, defined in different
             # files. Possible_files is a list of them.
@@ -155,76 +143,61 @@ class Callgraph(Extension):
             self.callgraph[path][func]["type"] = self.funcs[func][path]["type"]
 
     def __process_calls_by_pointers(self):
-        regex = re.compile(r'\"(.*?)\" (\S*) (\S*) (\S*)')
-
-        for line in self.extensions["Info"].iter_calls_by_pointers():
-            m = regex.match(line)
-
-            if not m:
-                raise SyntaxError("CIF output has unexpected format: {!r}".format(line))
-
-            context_file, context_func, func_ptr, call_line = m.groups()
-
+        for context_file, context_func, func_ptr, call_line in self.extensions["Info"].iter_calls_by_pointers():
             if func_ptr not in self.calls_by_ptr[context_file][context_func]:
                 self.calls_by_ptr[context_file][context_func][func_ptr] = [call_line]
             else:
                 self.calls_by_ptr[context_file][context_func][func_ptr].append(call_line)
 
     def __process_functions_usages(self):
-        is_builtin = re.compile(r'(__builtin)|(__compiletime)')
+        for context_file, context_func, func, line in self.extensions["Info"].iter_functions_usages():
+            if self.is_builtin.match(func):
+                continue
 
-        for file_line in self.extensions["Info"].iter_functions_usages():
-            m = re.match(r'\"(.*?)\" (\S*) (\S*) (\S*)', file_line)
-            if m:
-                context_file, context_func, func, line = m.groups()
+            if func not in self.funcs:
+                self._error("Use of function without definition: {}".format(func))
+                continue
 
-                if is_builtin.match(func):
-                    continue
+            # For each function call there can be many definitions with the same name, defined in different files.
+            # possible_files is a list of them.
+            possible_files = tuple(f for f in self.funcs[func] if f != "unknown")
 
-                if func not in self.funcs:
-                    self._error("Use of function without definition: {}".format(func))
-                    continue
+            if len(possible_files) == 0:
+                self._error("No possible definitions for use: {}".format(func))
+                continue
 
-                # For each function call there can be many definitions with the same name, defined in different files.
-                # possible_files is a list of them.
-                possible_files = tuple(f for f in self.funcs[func] if f != "unknown")
+            # Assign priority number for each possible definition. Examples:
+            # 3 means that definition is located in the same file as the call
+            # 2 - in the same translation unit
+            # 1 - in the object file that is linked with the object file that contains the call
+            # 0 - definition is not found
+            index = 3
+            for files in (
+                    (f for f in possible_files if f == context_file),
+                    (f for f in possible_files if self._t_unit_is_common(f, context_file)),
+                    (f for f in possible_files if self._files_are_linked(f, context_file)),
+                    ['unknown']):
+                matched_files = tuple(files)
+                if matched_files:
+                    break
+                index -= 1
+            else:
+                raise RuntimeError("We do not expect any other file class")
 
-                if len(possible_files) == 0:
-                    self._error("No possible definitions for use: {}".format(func))
-                    continue
+            if len(matched_files) > 1:
+                self._error("Multiple matches for use: {} call in {}".format(func, context_func))
 
-                # Assign priority number for each possible definition. Examples:
-                # 3 means that definition is located in the same file as the call
-                # 2 - in the same translation unit
-                # 1 - in the object file that is linked with the object file that contains the call
-                # 0 - definition is not found
-                index = 3
-                for files in (
-                        (f for f in possible_files if f == context_file),
-                        (f for f in possible_files if self._t_unit_is_common(f, context_file)),
-                        (f for f in possible_files if self._files_are_linked(f, context_file)),
-                        ['unknown']):
-                    matched_files = tuple(files)
-                    if matched_files:
-                        break
-                    index -= 1
+            for possible_file in matched_files:
+                if func not in self.used_in[possible_file]:
+                    self.used_in[possible_file][func] = {"used_in_file": nested_dict(), "used_in_func": nested_dict()}
+
+                if context_func == "NULL":
+                    self.used_in[possible_file][func]["used_in_file"][context_file][line] = index
                 else:
-                    raise RuntimeError("We do not expect any other file class")
+                    self.used_in[possible_file][func]["used_in_func"][context_file][context_func][line] = index
 
-                if len(matched_files) > 1:
-                    self._error("Multiple matches for use: {} call in {}".format(func, context_func))
-
-                for possible_file in matched_files:
-                    if func not in self.used_in[possible_file]:
-                        self.used_in[possible_file][func] = {"used_in_file": nested_dict(), "used_in_func": nested_dict()}
-
-                    if context_func == "NULL":
-                        self.used_in[possible_file][func]["used_in_file"][context_file][line] = index
-                    else:
-                        self.used_in[possible_file][func]["used_in_func"][context_file][context_func][line] = index
-
-                    if possible_file == "unknown":
-                        self._error("Can't match definition for use: {} {}".format(func, context_file))
+                if possible_file == "unknown":
+                    self._error("Can't match definition for use: {} {}".format(func, context_file))
 
     @functools.lru_cache()
     def _t_unit_is_common(self, file1, file2, cache=dict()):

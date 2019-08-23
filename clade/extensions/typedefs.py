@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re
-
 from clade.extensions.abstract import Extension
 
 
@@ -40,21 +38,11 @@ class Typedefs(Extension):
         self.log("Parsing finished")
 
     def __process_typedefs(self):
-        regex = re.compile(r'\"(.*?)\" typedef (.*)')
-        typedefs = self.typedefs
-
-        for line in self.extensions["Info"].iter_typedefs():
-            m = regex.match(line)
-
-            if not m:
-                raise SyntaxError("CIF output has unexpected format: {!r}".format(line))
-
-            scope_file, declaration = m.groups()
-
+        for scope_file, declaration in self.extensions["Info"].iter_typedefs():
             if scope_file not in self.typedefs:
-                typedefs[scope_file] = [declaration]
-            elif declaration not in typedefs[scope_file]:
-                typedefs[scope_file].append(declaration)
+                self.typedefs[scope_file] = [declaration]
+            elif declaration not in self.typedefs[scope_file]:
+                self.typedefs[scope_file].append(declaration)
 
     def load_typedefs(self, files=None):
         return self.load_data_by_key(self.typedefs_folder, files)
