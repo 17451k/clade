@@ -243,13 +243,13 @@ def test_cross_ref(clade_api: Clade):
 
     ref_to_are_ok(ref_to)
 
-    ref_to_main_c = c.get_ref_to([main_c], add_unknown=False)
+    ref_to_main_c = c.get_ref_to([main_c])
     filtered_ref_to_are_ok(ref_to, ref_to_main_c)
 
     ref_from = c.get_ref_from()
     ref_from_are_ok(ref_from)
 
-    ref_from_main_c = c.get_ref_from([main_c], add_unknown=False)
+    ref_from_main_c = c.get_ref_from([main_c])
     filtered_ref_from_are_ok(ref_from, ref_from_main_c)
 
 
