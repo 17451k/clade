@@ -193,9 +193,11 @@ class Clade:
         ext_objs = self.__get_ext_obj_list(ext_names)
 
         for ext_obj in ext_objs:
-            # BUG: If working directory is corrupted, then clean option doesnt work
             if clean and ext_obj.name in ext_names and os.path.isdir(ext_obj.work_dir):
                 shutil.rmtree(ext_obj.work_dir)
+
+            # Check that working directory is not corrupted
+            ext_obj.check_corrupted()
 
             if ext_obj.is_parsed():
                 ext_obj.check_conf_consistency()

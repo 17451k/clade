@@ -77,7 +77,8 @@ class Extension(metaclass=abc.ABCMeta):
         self.global_meta_file = os.path.abspath(
             os.path.join(str(work_dir), "meta.json")
         )
-        self.check_ext_meta()
+
+        self.check_ext_version()
 
         if self.conf.get("force") and not self.conf.get("force_meta_deleted"):
             try:
@@ -230,18 +231,23 @@ class Extension(metaclass=abc.ABCMeta):
 
         return version
 
-    def check_ext_meta(self):
+    def check_ext_version(self):
+        """Check that working directory was creating with the extension of correct version."""
         stored_meta = self.load_ext_meta()
 
-        if stored_meta:
-            if self.ext_meta["version"] != stored_meta["version"]:
-                self.error(
-                    "Working directory was created by an older version of Clade and can't be used."
-                )
-                raise RuntimeError
-            elif stored_meta["corrupted"]:
-                self.error("Working directory is corrupted and can't be used.")
-                raise RuntimeError
+        if stored_meta and self.ext_meta["version"] != stored_meta["version"]:
+            self.error(
+                "Working directory was created by an older version of Clade and can't be used."
+            )
+            raise RuntimeError
+
+    def check_corrupted(self):
+        """Check that working directory is not corrupted."""
+        stored_meta = self.load_ext_meta()
+
+        if stored_meta and stored_meta["corrupted"]:
+            self.error("Working directory is corrupted and can't be used.")
+            raise RuntimeError
 
     def check_conf_consistency(self):
         """Check configuration consistency.
