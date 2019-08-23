@@ -752,22 +752,26 @@ class Clade:
                 self.logger.error("Working directory does not exist")
             return False
 
-        if not p.load_ext_meta():
-            if log:
-                self.logger.error("Working directory does not contain file with meta information")
-            return False
+        ext_names = [f for f in os.listdir(self.work_dir) if os.path.isdir(os.path.join(self.work_dir, f))]
+        ext_objs = [ext_obj for ext_obj in self.__get_ext_obj_list(ext_names) if ext_obj.name in ext_names]
 
-        try:
-            p.check_ext_meta()
-        except RuntimeError:
-            if log:
-                self.logger.error("Working directory is corrupted")
-            return False
+        if ext_objs:
+            if not ext_objs[0].load_global_meta():
+                if log:
+                    self.logger.error("Working directory does not contain file with global meta information")
+                return False
+
+        for ext_obj in ext_objs:
+            try:
+                ext_obj.check_corrupted()
+            except RuntimeError:
+                if log:
+                    self.logger.error("Working directory of {!r} extension is corrupted".format(ext_obj.name))
+                return False
 
         if log:
-            exts = [f for f in os.listdir(self.work_dir) if os.path.isdir(os.path.join(self.work_dir, f))]
             self.logger.info(
-                "Working directory is OK and contains data from the following extensions: {}".format(", ".join(exts))
+                "Working directory is OK and contains data from the following extensions: {}".format(", ".join(ext_names))
             )
         return True
 
