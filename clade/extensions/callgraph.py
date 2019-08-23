@@ -13,10 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import functools
 import os
 import re
 
 from clade.extensions.abstract import Extension
+from clade.extensions.utils import nested_dict, traverse
 
 
 class Callgraph(Extension):
@@ -32,14 +34,14 @@ class Callgraph(Extension):
 
         self.err_log = os.path.join(self.work_dir, "err.log")
 
-        self.callgraph = dict()
+        self.callgraph = nested_dict()
         self.callgraph_file = "callgraph.json"
         self.callgraph_folder = "callgraph"
 
-        self.calls_by_ptr = dict()
+        self.calls_by_ptr = nested_dict()
         self.calls_by_ptr_file = "calls_by_ptr.json"
 
-        self.used_in = dict()
+        self.used_in = nested_dict()
         self.used_in_file = "used_in.json"
 
     @Extension.prepare
@@ -137,43 +139,20 @@ class Callgraph(Extension):
                 if args:
                     call_val["args"] = args
 
-                if possible_file not in self.callgraph:
-                    self.callgraph[possible_file] = dict()
-
-                if func not in self.callgraph[possible_file]:
-                    val = {"called_in": {context_file: {context_func: {call_line: call_val}}}}
-                    self.callgraph[possible_file][func] = val
-                elif 'called_in' not in self.callgraph[possible_file][func]:
-                    self.callgraph[possible_file][func]['called_in'] = {context_file: {context_func: {call_line: call_val}}}
-                elif context_file not in self.callgraph[possible_file][func]['called_in']:
-                    self.callgraph[possible_file][func]['called_in'][context_file] = {context_func: {call_line: call_val}}
-                elif context_func not in self.callgraph[possible_file][func]['called_in'][context_file]:
-                    self.callgraph[possible_file][func]['called_in'][context_file][context_func] = {call_line: call_val}
-                else:
-                    self.callgraph[possible_file][func]['called_in'][context_file][context_func][call_line] = call_val
+                self.callgraph[possible_file][func]['called_in'][context_file][context_func][call_line] = call_val
 
                 # Create reversed callgraph
-                if context_file not in self.callgraph:
-                    self.callgraph[context_file] = {context_func: {"calls": {possible_file: {func: {call_line: call_val}}}}}
-                elif context_func not in self.callgraph[context_file]:
-                    self.callgraph[context_file][context_func] = {"calls": {possible_file: {func: {call_line: call_val}}}}
-                elif "calls" not in self.callgraph[context_file][context_func]:
-                    self.callgraph[context_file][context_func]["calls"] = {possible_file: {func: {call_line: call_val}}}
-                elif possible_file not in self.callgraph[context_file][context_func]["calls"]:
-                    self.callgraph[context_file][context_func]["calls"][possible_file] = {func: {call_line: call_val}}
-                elif func not in self.callgraph[context_file][context_func]["calls"][possible_file]:
-                    self.callgraph[context_file][context_func]["calls"][possible_file][func] = {call_line: call_val}
-                else:
-                    self.callgraph[context_file][context_func]["calls"][possible_file][func][call_line] = call_val
+                self.callgraph[context_file][context_func]["calls"][possible_file][func][call_line] = call_val
 
                 if possible_file == "unknown":
                     self._error("Can't match definition: {} {}".format(func, context_file))
 
-        for path, funcs in self.callgraph.items():
-            for func, desc in funcs.items():
-                if path == 'unknown' and (func not in self.funcs or not self.funcs[func].get(path)):
-                    continue
-                desc['type'] = self.funcs[func][path].get('type')
+        # Keep function types in the callgraph
+        for path, func in traverse(self.callgraph, 2):
+            if path == "unknown" and (func not in self.funcs or not self.funcs[func].get(path)):
+                continue
+
+            self.callgraph[path][func]["type"] = self.funcs[func][path]["type"]
 
     def __process_calls_by_pointers(self):
         regex = re.compile(r'\"(.*?)\" (\S*) (\S*) (\S*)')
@@ -185,12 +164,6 @@ class Callgraph(Extension):
                 raise SyntaxError("CIF output has unexpected format: {!r}".format(line))
 
             context_file, context_func, func_ptr, call_line = m.groups()
-
-            if context_file not in self.calls_by_ptr:
-                self.calls_by_ptr[context_file] = {context_func: dict()}
-
-            if context_func not in self.calls_by_ptr[context_file]:
-                self.calls_by_ptr[context_file][context_func] = {func_ptr: [call_line]}
 
             if func_ptr not in self.calls_by_ptr[context_file][context_func]:
                 self.calls_by_ptr[context_file][context_func][func_ptr] = [call_line]
@@ -242,85 +215,52 @@ class Callgraph(Extension):
                     self._error("Multiple matches for use: {} call in {}".format(func, context_func))
 
                 for possible_file in matched_files:
-                    if possible_file not in self.used_in:
-                        val = {"used_in_file": dict(), "used_in_func": dict()}
+                    if func not in self.used_in[possible_file]:
+                        self.used_in[possible_file][func] = {"used_in_file": nested_dict(), "used_in_func": nested_dict()}
 
-                        if context_func:
-                            val["used_in_func"][context_file] = {context_func: {line: index}}
-                        else:
-                            val["used_in_file"] = {context_file: {line: index}}
-
-                        self.used_in[possible_file] = {func: val}
+                    if context_func == "NULL":
+                        self.used_in[possible_file][func]["used_in_file"][context_file][line] = index
                     else:
-                        if func not in self.used_in[possible_file]:
-                            self.used_in[possible_file][func] = {"used_in_file": dict(), "used_in_func": dict()}
-
-                        if context_func == "NULL":
-                            if context_file in self.used_in[possible_file][func]["used_in_file"]:
-                                self.used_in[possible_file][func]["used_in_file"][context_file][line] = index
-                            else:
-                                self.used_in[possible_file][func]["used_in_file"][context_file] = {line: index}
-                        else:
-                            if context_file not in self.used_in[possible_file][func]["used_in_func"]:
-                                self.used_in[possible_file][func]["used_in_func"][context_file] = {
-                                    context_func: {
-                                        line: index
-                                    }
-                                }
-                            elif context_func not in self.used_in[possible_file][func]["used_in_func"][context_file]:
-                                self.used_in[possible_file][func]["used_in_func"][context_file][context_func] = \
-                                    {line: index}
-                            else:
-                                self.used_in[possible_file][func]["used_in_func"][context_file][context_func][line] = index
+                        self.used_in[possible_file][func]["used_in_func"][context_file][context_func][line] = index
 
                     if possible_file == "unknown":
                         self._error("Can't match definition for use: {} {}".format(func, context_file))
 
+    @functools.lru_cache()
     def _t_unit_is_common(self, file1, file2, cache=dict()):
-        file1, file2 = sorted([file1, file2])
+        return (
+            file1 in self.src_graph
+            and file2 in self.src_graph
+            and len(
+                set(self.src_graph[file1]["compiled_in"])
+                & set(self.src_graph[file2]["compiled_in"])
+            )
+            > 0
+        )
 
-        if file1 in cache and file2 in cache[file1]:
-            return cache[file1][file2]
-
-        graph = self.src_graph
-        result = file1 in graph and file2 in graph and len(set(graph[file1]["compiled_in"]) & set(graph[file2]["compiled_in"])) > 0
-
-        if file1 not in cache:
-            cache[file1] = {file2: result}
-        else:
-            cache[file1][file2] = result
-
-        return result
-
+    @functools.lru_cache()
     def _files_are_linked(self, file1, file2, cache=dict()):
-        file1, file2 = sorted([file1, file2])
-
-        if file1 in cache and file2 in cache[file1]:
-            return cache[file1][file2]
-
-        graph = self.src_graph
-        result = file1 in graph and file2 in graph and len(set(graph[file1]["used_by"]) & set(graph[file2]["used_by"])) > 0
-
-        if file1 not in cache:
-            cache[file1] = {file2: result}
-        else:
-            cache[file1][file2] = result
-
-        return result
+        return (
+            file1 in self.src_graph
+            and file2 in self.src_graph
+            and len(
+                set(self.src_graph[file1]["used_by"])
+                & set(self.src_graph[file2]["used_by"])
+            )
+            > 0
+        )
 
     def _error(self, msg):
-        """
-        Prints an error message
-        """
+        """Print an error message."""
+
         os.makedirs(self.work_dir, exist_ok=True)
 
         with open(self.err_log, "a") as err_fh:
             err_fh.write("{}\n".format(msg))
 
     def _clean_error_log(self):
-        """
-        Removes duplicate error messages
-        """
+        """Remove duplicate error messages."""
+
         if not os.path.isfile(self.err_log):
             return
 
