@@ -17,6 +17,7 @@ import re
 
 from clade.extensions.abstract import Extension
 from clade.extensions.callgraph import Callgraph
+from clade.extensions.utils import nested_dict, traverse
 
 
 class Functions(Callgraph):
@@ -29,10 +30,10 @@ class Functions(Callgraph):
 
         self.src_graph = dict()
 
-        self.funcs = dict()
+        self.funcs = nested_dict()
         self.funcs_file = "functions.json"
 
-        self.funcs_by_file = dict()
+        self.funcs_by_file = nested_dict()
         self.funcs_by_file_file = "functions_by_file.json"
         self.funcs_by_file_folder = "functions_by_file"
 
@@ -72,7 +73,9 @@ class Functions(Callgraph):
             m = regex.match(line)
 
             if not m:
-                raise SyntaxError("CIF output has unexpected format: {!r}".format(line))
+                raise SyntaxError(
+                    "CIF output has unexpected format: {!r}".format(line)
+                )
 
             src_file, func, signature, def_line, func_type = m.groups()
 
@@ -84,17 +87,12 @@ class Functions(Callgraph):
                 )
                 continue
 
-            val = {
+            self.funcs[func][src_file] = {
                 "type": func_type,
                 "line": def_line,
                 "signature": signature,
                 "declarations": dict(),
             }
-
-            if func in self.funcs:
-                self.funcs[func][src_file] = val
-            else:
-                self.funcs[func] = {src_file: val}
 
     def __process_declarations(self):
         regex = re.compile(r"\"(.*?)\" (\S*) signature='([^']*)' (\S*) (\S*)")
@@ -111,9 +109,13 @@ class Functions(Callgraph):
             m = regex.match(line)
 
             if not m:
-                raise SyntaxError("CIF output has unexpected format: {!r}".format(line))
+                raise SyntaxError(
+                    "CIF output has unexpected format: {!r}".format(line)
+                )
 
-            decl_file, decl_name, decl_signature, decl_line, decl_type = m.groups()
+            decl_file, decl_name, decl_signature, decl_line, decl_type = (
+                m.groups()
+            )
 
             decl_val = {
                 "signature": decl_signature,
@@ -122,9 +124,9 @@ class Functions(Callgraph):
             }
 
             if decl_name not in self.funcs:
-                self.funcs[decl_name] = {
-                    "unknown": get_unknown_val(decl_file, decl_val)
-                }
+                self.funcs[decl_name]["unknown"] = get_unknown_val(
+                    decl_file, decl_val
+                )
                 continue
 
             if decl_file not in self.src_graph:
@@ -144,11 +146,15 @@ class Functions(Callgraph):
                         and self._files_are_linked(src_file, decl_file)
                     )
                 ):
-                    self.funcs[decl_name][src_file]["declarations"][decl_file] = decl_val
+                    self.funcs[decl_name][src_file]["declarations"][
+                        decl_file
+                    ] = decl_val
                     found = True
                 elif src_file == "unknown":
                     if "unknown" in self.funcs[decl_name]:
-                        self.funcs[decl_name]["unknown"]["declarations"][decl_file] = decl_val
+                        self.funcs[decl_name]["unknown"]["declarations"][
+                            decl_file
+                        ] = decl_val
                     else:
                         self.funcs[decl_name]["unknown"] = get_unknown_val(
                             decl_file, decl_val
@@ -167,7 +173,9 @@ class Functions(Callgraph):
             m = regex.match(line)
 
             if not m:
-                raise SyntaxError("CIF output has unexpected format: {!r}".format(line))
+                raise SyntaxError(
+                    "CIF output has unexpected format: {!r}".format(line)
+                )
 
             src_file, func = m.groups()
 
@@ -179,9 +187,5 @@ class Functions(Callgraph):
             self.funcs[func][src_file]["type"] = "exported"
 
     def __group_functions_by_file(self):
-        for func in self.funcs:
-            for file in self.funcs[func]:
-                if file in self.funcs_by_file:
-                    self.funcs_by_file[file][func] = self.funcs[func][file]
-                else:
-                    self.funcs_by_file[file] = {func: self.funcs[func][file]}
+        for func, file in traverse(self.funcs, 2):
+            self.funcs_by_file[file][func] = self.funcs[func][file]
