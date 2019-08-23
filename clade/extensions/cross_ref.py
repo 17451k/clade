@@ -238,10 +238,9 @@ class CrossRef(Callgraph):
     def __gen_ref_to_macro(self, locations):
         for exp_file, _, macro, loc_list in traverse(locations, 4, {2: "expand"}):
             for loc_el in loc_list:
-                # str(loc_el[0]) - line number
-                restrict = {1: exp_file, 2: macro, 3: str(loc_el[0])}
+                exp_line = str(loc_el[0])
 
-                for _, _, _, def_file, def_line in traverse(self.expansions, 5, restrict):
+                for def_file, def_line in traverse(self.expansions[exp_file][macro][exp_line], 2):
                     if def_file == "unknown":
                         continue
 
@@ -296,7 +295,7 @@ class CrossRef(Callgraph):
         for context_file in called_in:
             lines = []
 
-            for context_func, line in traverse(called_in[context_file], 2):
+            for _, line in traverse(called_in[context_file], 2):
                 lines.append(int(line))
 
             locs.append((context_file, lines))
@@ -307,9 +306,8 @@ class CrossRef(Callgraph):
         for def_file, _, macro, loc_list in traverse(locations, 4, {2: "def_macro"}):
             for loc_el in loc_list:
                 def_line = str(loc_el[0])
-                restrict = {1: def_file, 2: macro, 3: def_line}
 
-                for _, _, _, exp_file in traverse(self.macros, 4, restrict):
+                for exp_file in self.macros[def_file][macro][def_line]:
                     exp_lines = [int(l) for l in self.macros[def_file][macro][def_line][exp_file]]
                     val = (loc_el, (exp_file, exp_lines))
 
