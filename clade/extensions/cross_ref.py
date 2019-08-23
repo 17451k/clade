@@ -18,6 +18,7 @@ import os
 
 from clade.extensions.abstract import Extension
 from clade.extensions.callgraph import Callgraph
+from clade.extensions.utils import nested_dict, traverse
 
 
 class CrossRef(Callgraph):
@@ -31,11 +32,11 @@ class CrossRef(Callgraph):
         self.funcs = None
         self.callgraph = None
 
-        self.ref_to = dict()
+        self.ref_to = nested_dict()
         self.ref_to_file = "ref_to.json"
         self.ref_to_folder = "ref_to"
 
-        self.ref_from = dict()
+        self.ref_from = nested_dict()
         self.ref_from_file = "ref_from.json"
         self.ref_from_folder = "ref_from"
 
@@ -82,40 +83,34 @@ class CrossRef(Callgraph):
     def __get_raw_locations(self):
         raw_locations = dict()
 
-        for file in self.funcs:
-            for func in self.funcs[file]:
-                def_line = self.funcs[file][func]["line"]
+        for file, func in traverse(self.funcs, 2):
+            def_line = self.funcs[file][func]["line"]
 
-                if def_line:
-                    if file in raw_locations:
-                        raw_locations[file].append((def_line, func, "def"))
-                    else:
-                        raw_locations[file] = [(def_line, func, "def")]
+            if def_line:
+                val = (def_line, func, "def")
 
-                for decl_file in self.funcs[file][func]["declarations"]:
-                    decl_line = self.funcs[file][func]["declarations"][decl_file]["line"]
+                if file in raw_locations:
+                    raw_locations[file].append(val)
+                else:
+                    raw_locations[file] = [val]
 
-                    if decl_file in raw_locations:
-                        raw_locations[decl_file].append(
-                            (decl_line, func, "decl")
-                        )
-                    else:
-                        raw_locations[decl_file] = [(decl_line, func, "decl")]
+            for decl_file in self.funcs[file][func]["declarations"]:
+                decl_line = self.funcs[file][func]["declarations"][decl_file]["line"]
 
-        for context_file in self.callgraph:
-            for context_func in self.callgraph[context_file]:
-                if "calls" in self.callgraph[context_file][context_func]:
-                    for file in self.callgraph[context_file][context_func]["calls"]:
-                        for func in self.callgraph[context_file][context_func]["calls"][file]:
-                            for line in self.callgraph[context_file][context_func]["calls"][file][func]:
-                                if context_file in raw_locations:
-                                    raw_locations[context_file].append(
-                                        (line, func, "call")
-                                    )
-                                else:
-                                    raw_locations[context_file] = [
-                                        (line, func, "call")
-                                    ]
+                val = (decl_line, func, "decl")
+
+                if decl_file in raw_locations:
+                    raw_locations[decl_file].append(val)
+                else:
+                    raw_locations[decl_file] = [val]
+
+        for context_file, context_func, _, file, func, line in traverse(self.callgraph, 6, {3: "calls"}):
+            val = (line, func, "call")
+
+            if context_file in raw_locations:
+                raw_locations[context_file].append(val)
+            else:
+                raw_locations[context_file] = [val]
 
         return raw_locations
 
@@ -148,14 +143,11 @@ class CrossRef(Callgraph):
                         lowest_index = s.find(name)
 
                         if lowest_index != -1:
+                            val = (line, lowest_index, lowest_index + len(name))
                             if name in locations[ctype]:
-                                locations[ctype][name].append(
-                                    (line, lowest_index, lowest_index + len(name))
-                                )
+                                locations[ctype][name].append(val)
                             else:
-                                locations[ctype][name] = [
-                                    (line, lowest_index, lowest_index + len(name))
-                                ]
+                                locations[ctype][name] = [val]
                         # TODO: there may be a function call inside macro expansion
 
                     sorted_pos += 1
@@ -166,22 +158,21 @@ class CrossRef(Callgraph):
         for context_file in self.callgraph:
             calls = set()
 
-            for context_func in self.callgraph[context_file]:
-                if "calls" in self.callgraph[context_file][context_func]:
-                    for file in self.callgraph[context_file][context_func]["calls"]:
-                        if file not in self.funcs:
-                            self._error("Can't find file: {!r}".format(file))
-                            continue
-                        for func in self.callgraph[context_file][context_func]["calls"][file]:
-                            if func not in locations[context_file]["call"]:
-                                # Probably because of macro expansion
-                                continue
+            for context_func, _, file in traverse(self.callgraph[context_file], 3, {2: "calls"}):
+                if file not in self.funcs:
+                    self._error("Can't find file: {!r}".format(file))
+                    continue
 
-                            if func not in self.funcs[file]:
-                                self._error("Can't find function: {!r} {!r}".format(func, file))
-                                continue
+                for func in self.callgraph[context_file][context_func]["calls"][file]:
+                    if func not in locations[context_file]["call"]:
+                        # Probably because of macro expansion
+                        continue
 
-                            calls.add((file, func))
+                    if func not in self.funcs[file]:
+                        self._error("Can't find function: {!r} {!r}".format(func, file))
+                        continue
+
+                    calls.add((file, func))
 
             for file, func in calls:
                 loc_list = locations[context_file]["call"][func]
@@ -190,57 +181,67 @@ class CrossRef(Callgraph):
                     def_line = int(self.funcs[file][func]["line"])
 
                     for loc_el in loc_list:
+                        val = (loc_el, (file, def_line))
+
                         if context_file in self.ref_to:
-                            self.ref_to[context_file]["def"].append((loc_el, (file, def_line)))
+                            self.ref_to[context_file]["def"].append(val)
                         else:
-                            self.ref_to[context_file] = {"def": [(loc_el, (file, def_line))], "decl": []}
+                            self.ref_to[context_file] = {"def": [val], "decl": []}
 
                 for decl_file in self.funcs[file][func]["declarations"]:
                     decl_line = int(self.funcs[file][func]["declarations"][decl_file]["line"])
 
                     for loc_el in loc_list:
+                        val = (loc_el, (decl_file, decl_line))
+
                         if context_file in self.ref_to:
-                            self.ref_to[context_file]["decl"].append((loc_el, (decl_file, decl_line)))
+                            self.ref_to[context_file]["decl"].append(val)
                         else:
-                            self.ref_to[context_file] = {"def": [], "decl": [(loc_el, (decl_file, decl_line))]}
+                            self.ref_to[context_file] = {"def": [], "decl": [val]}
 
     def __gen_ref_from(self, locations):
-        for file in self.funcs:
-            for func in self.funcs[file]:
-                context_locs = self.__get_context_locs(file, func)
+        for file, func in traverse(self.funcs, 2):
+            context_locs = self.__get_context_locs(file, func)
 
-                if file != "unknown" and func in locations[file]["def"]:
-                    loc_list = locations[file]["def"][func]
+            if file != "unknown" and func in locations[file]["def"]:
+                loc_list = locations[file]["def"][func]
+
+                for context_file, lines in context_locs:
+                    for loc_el in loc_list:
+                        val = (loc_el, (context_file, lines))
+
+                        if file in self.ref_from:
+                            self.ref_from[file].append(val)
+                        else:
+                            self.ref_from[file] = [val]
+
+            for decl_file in self.funcs[file][func]["declarations"]:
+                if func in locations[decl_file]["decl"]:
+                    loc_list = locations[decl_file]["decl"][func]
 
                     for context_file, lines in context_locs:
                         for loc_el in loc_list:
-                            if file in self.ref_from:
-                                self.ref_from[file].append((loc_el, (context_file, lines)))
+                            val = (loc_el, (context_file, lines))
+
+                            if decl_file in self.ref_from:
+                                self.ref_from[decl_file].append(val)
                             else:
-                                self.ref_from[file] = [(loc_el, (context_file, lines))]
-
-                for decl_file in self.funcs[file][func]["declarations"]:
-                    if func in locations[decl_file]["decl"]:
-                        loc_list = locations[decl_file]["decl"][func]
-
-                        for context_file, lines in context_locs:
-                            for loc_el in loc_list:
-                                if decl_file in self.ref_from:
-                                    self.ref_from[decl_file].append((loc_el, (context_file, lines)))
-                                else:
-                                    self.ref_from[decl_file] = [(loc_el, (context_file, lines))]
+                                self.ref_from[decl_file] = [val]
 
     def __get_context_locs(self, file, func):
         locs = []
 
-        if file in self.callgraph and func in self.callgraph[file] and "called_in" in self.callgraph[file][func]:
-            for context_file in self.callgraph[file][func]["called_in"]:
-                lines = []
+        if file not in self.callgraph or func not in self.callgraph[file] or "called_in" not in self.callgraph[file][func]:
+            return locs
 
-                for context_func in self.callgraph[file][func]["called_in"][context_file]:
-                    for line in self.callgraph[file][func]["called_in"][context_file][context_func]:
-                        lines.append(int(line))
+        called_in = self.callgraph[file][func]["called_in"]
 
-                locs.append((context_file, lines))
+        for context_file in called_in:
+            lines = []
+
+            for context_func, line in traverse(called_in[context_file], 2):
+                lines.append(int(line))
+
+            locs.append((context_file, lines))
 
         return locs
