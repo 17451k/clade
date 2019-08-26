@@ -268,50 +268,49 @@ class Info(Extension):
 
         storage = self.extensions["Storage"].get_storage_dir()
 
+        # Path to the source file is encoded in the path to the CIF output file
+        path = os.path.dirname(file)
+
+        path = path.replace(storage, "")
+        path = path.replace(self.cif_output_dir, "")
+
+        if "\\/" in path:
+            self.error(
+                "Normalized path looks weird: {!r}".format(
+                    path
+                )
+            )
+            raise RuntimeError
+
+        expand = os.path.basename(self.expand)
+        if file.endswith(expand):
+            path, def_path = path.split("/CLADE-EXPAND")
+
         seen = set()
+        new_file = file + ".tmp"
+
         with codecs.open(file, "r", encoding="utf8", errors="ignore") as fh:
-            with open(file + ".temp", "w") as temp_fh:
+            with open(new_file, "w") as temp_fh:
                 for line in fh:
                     if not line:
                         continue
 
                     # Storing hash of string instead of string itself reduces memory usage by 30-40%
                     h = hashlib.md5(line.encode("utf-8")).hexdigest()
-                    if h not in seen:
-                        seen.add(h)
+                    if h in seen:
+                        continue
 
-                        # Path to the source file is encoded in the path to the CIF output file
-                        path = os.path.dirname(file)
+                    seen.add(h)
 
-                        if "\\/" in path:
-                            self.error(
-                                "Normalized path looks weird: {!r}".format(
-                                    path
-                                )
-                            )
-                            raise RuntimeError
-
-                        path = path.replace(storage, "")
-                        path = path.replace(self.cif_output_dir, "")
-
-                        expand = os.path.basename(self.expand)
-                        if file.endswith(expand):
-                            m = self.expand_regex.match(line)
-
-                            if m:
-                                expansion_path, rest = m.groups()
-
-                                expansion_path = expansion_path.replace(storage, "")
-                                expansion_path = expansion_path.replace(self.cif_output_dir, "")
-
-                                line = "\"{}\"{}\n".format(expansion_path, rest)
-
+                    if file.endswith(expand):
+                        temp_fh.write('"{}" "{}" {}'.format(path, def_path, line))
+                    else:
                         temp_fh.write('"{}" {}'.format(path, line))
 
         seen.clear()
 
         os.remove(file)
-        os.rename(file + ".temp", file)
+        os.rename(new_file, file)
 
     def __find_cif_output(self):
         cif_output = []

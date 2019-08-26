@@ -44,11 +44,11 @@ info: expand(___EXPORT_SYMBOL(sym, sec)) {
 }
 
 info: expand($) {
-    $fprintf<"$env<CIF_INFO_DIR>" $expansion_path "/expand.txt", "\"%s\" %s %d %d\n", $path, $macro_name, $expansion_line, $line>
+    $fprintf<"$env<CIF_INFO_DIR>" $expansion_path "/CLADE-EXPAND" $path "/expand.txt", "%s %d %d\n", $macro_name, $expansion_line, $line>
 }
 
 info: expand($(..)) {
-    $fprintf<"$env<CIF_INFO_DIR>" $expansion_path "/expand.txt", "\"%s\" %s %d %d %s\n", $path, $macro_name, $expansion_line, $line, $actual_args>
+    $fprintf<"$env<CIF_INFO_DIR>" $expansion_path "/CLADE-EXPAND" $path "/expand.txt", "%s %d %d %s\n", $macro_name, $expansion_line, $line, $actual_args>
 }
 
 info: define($) {
