@@ -94,7 +94,7 @@ class CrossRef(Callgraph):
                     raw_locations[decl_file] = [val]
 
         for context_file, callgraph in self.extensions["Callgraph"].yield_callgraph():
-            for context_func, _, file, func, line in traverse(callgraph[context_file], 5, {2: "calls"}):
+            for _, _, file, func, line in traverse(callgraph[context_file], 5, {2: "calls"}):
                 val = (line, func, "call")
 
                 if context_file in raw_locations:
