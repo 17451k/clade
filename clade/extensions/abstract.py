@@ -191,25 +191,55 @@ class Extension(metaclass=abc.ABCMeta):
 
     def load_data_by_key(self, folder, files=None):
         """Load data stored in multiple json files using dump_data_by_key()."""
-        data = dict()
-        if files is None:
-            for file in glob.glob(os.path.join(self.work_dir, folder, "*")):
-                data.update(self.load_data(file, raise_exception=False))
-        elif isinstance(files, list) or isinstance(files, set):
-            for key in files:
-                file_name = os.path.join(
-                    folder,
-                    hashlib.md5(key.encode("utf-8")).hexdigest() + ".json",
-                )
-                data.update(self.load_data(file_name, raise_exception=False))
-        else:
+        if files and not isinstance(files, list) and not isinstance(files, set):
             raise TypeError(
                 "Provide a list or set of files to retrieve data but not {!r}".format(
                     type(files).__name__
                 )
             )
 
+        data = dict()
+
+        if files:
+            for key in files:
+                file = os.path.join(
+                    folder,
+                    hashlib.md5(key.encode("utf-8")).hexdigest() + ".json",
+                )
+                data.update(self.load_data(file, raise_exception=False))
+        else:
+            for file in self.__get_all_files_in_folder(folder):
+                data.update(self.load_data(file, raise_exception=False))
+
         return data
+
+    def yield_data_by_key(self, folder, files=None):
+        """Yield data stored in multiple json files using dump_data_by_key()."""
+        if files and not isinstance(files, list) and not isinstance(files, set):
+            raise TypeError(
+                "Provide a list or set of files to retrieve data but not {!r}".format(
+                    type(files).__name__
+                )
+            )
+
+        if files:
+            for key in files:
+                file = os.path.join(
+                    folder,
+                    hashlib.md5(key.encode("utf-8")).hexdigest() + ".json",
+                )
+
+                data = self.load_data(file, raise_exception=False)
+                for key in data:
+                    yield key, data
+        else:
+            for file in self.__get_all_files_in_folder(folder):
+                data = self.load_data(file, raise_exception=False)
+                for key in data:
+                    yield key, data
+
+    def __get_all_files_in_folder(self, folder):
+        return glob.glob(os.path.join(self.work_dir, folder, "*"))
 
     def dump_data_by_key(self, data, folder):
         """Dump data to multiple json files in the object working directory."""

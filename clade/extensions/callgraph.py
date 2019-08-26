@@ -72,6 +72,9 @@ class Callgraph(Extension):
         else:
             return self.load_data(self.callgraph_file)
 
+    def yield_callgraph(self, files=None):
+        yield from self.yield_data_by_key(self.callgraph_folder, files)
+
     def load_calls_by_ptr(self):
         return self.load_data(self.calls_by_ptr_file)
 

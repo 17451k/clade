@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re
-
 from clade.extensions.abstract import Extension
 from clade.extensions.utils import nested_dict, traverse
 
@@ -33,7 +31,7 @@ class Macros(Extension):
 
         self.exps = nested_dict()
         self.exps_file = "expansions.json"
-        self.expansions_folder = "expansions"
+        self.exps_folder = "expansions"
 
     @Extension.prepare
     def parse(self, cmds_file):
@@ -46,7 +44,7 @@ class Macros(Extension):
         self.dump_data(self.macros, self.macros_file)
         self.dump_data(self.exps, self.exps_file)
         self.dump_data_by_key(self.macros, self.macros_folder)
-        self.dump_data_by_key(self.exps, self.expansions_folder)
+        self.dump_data_by_key(self.exps, self.exps_folder)
 
         self.macros.clear()
         self.log("Parsing finished")
@@ -79,7 +77,18 @@ class Macros(Extension):
         else:
             return self.load_data(self.macros_file)
 
+    def yield_macros(self, files=None):
+        """Yeild dictionaries with information about macros."""
+        yield from self.yield_data_by_key(self.macros_folder, files)
+
     def load_expansions(self, files=None):
         """Load json with all information about macro expansions."""
 
-        return self.load_data_by_key(self.expansions_folder, files)
+        if files:
+            return self.load_data_by_key(self.exps_folder, files)
+        else:
+            return self.load_data(self.exps_file)
+
+    def yield_expansions(self, files=None):
+        """Yeild dictionaries with information about macro expansions."""
+        yield from self.yield_data_by_key(self.exps_folder, files)
