@@ -15,6 +15,7 @@
 
 import os
 import pytest
+import tempfile
 
 from clade import Clade
 from clade.intercept import intercept
@@ -26,13 +27,9 @@ def cmds_file():
     # Disable multiprocessing
     os.environ["CLADE_DEBUG"] = "1"
 
-    test_cmds_file = os.path.join(os.path.dirname(__file__), "test_project", "cmds.txt")
-
-    if not os.path.isfile(test_cmds_file):
-        intercept(command=test_project_make, output=test_cmds_file, use_wrappers=True)
-    yield test_cmds_file
-
-    os.remove(test_cmds_file)
+    with tempfile.NamedTemporaryFile() as fh:
+        intercept(command=test_project_make, output=fh.name, use_wrappers=True)
+        yield fh.name
 
 
 @pytest.fixture(scope="session")
