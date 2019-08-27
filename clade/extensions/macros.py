@@ -39,12 +39,14 @@ class Macros(Extension):
         self.log("Parsing macros expansions")
         self.__process_macros_expansions()
 
+        self.log("Dumping macros")
+        self.dump_data_by_key(self.macros, self.macros_folder)
+        self.macros.clear()
+
         self.log("Reversing macros expansions")
         self.__reverse_expansions()
 
-        self.log("Dumping data")
-        self.dump_data_by_key(self.macros, self.macros_folder)
-        self.macros.clear()
+        self.log("Dumping macros expansions")
         self.dump_data_by_key(self.exps, self.exps_folder)
         self.exps.clear()
 
@@ -66,9 +68,10 @@ class Macros(Extension):
             else:
                 self.macros[def_file][macro][def_line][exp_file][exp_line] = [args]
 
-    def __reverse_expansions(self, allow_smaller=True):
-        for def_file, macro, def_line, exp_file, exp_line, args in traverse(self.macros, 6):
-            self.exps[exp_file][macro][exp_line][def_file][def_line] = args
+    def __reverse_expansions(self):
+        for def_file, macros in self.yield_macros():
+            for macro, def_line, exp_file, exp_line, args in traverse(macros[def_file], 5):
+                self.exps[exp_file][macro][exp_line][def_file][def_line] = args
 
     def load_macros(self, files=None):
         """Load json with all information about macros."""
