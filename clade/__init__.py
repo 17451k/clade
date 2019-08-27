@@ -199,6 +199,9 @@ class Clade:
             # Check that working directory is not corrupted
             ext_obj.check_corrupted()
 
+            # Check that working directory was creating with the extension of correct version
+            ext_obj.check_ext_version()
+
             if ext_obj.is_parsed():
                 ext_obj.check_conf_consistency()
             else:
@@ -598,10 +601,10 @@ class Clade:
 
         # Map new format of macros to the old one
         for exp_file, macro, _, _, _, args in traverse(exps, 6):
-            if expansions[exp_file][macro]:
-                expansions[exp_file][macro].append(args)
+            if expansions[exp_file][macro]["args"]:
+                expansions[exp_file][macro]["args"].append(args)
             else:
-                expansions[exp_file][macro] = [args]
+                expansions[exp_file][macro]["args"] = [args]
 
         if macros_names:
             filtered_expansions = nested_dict()

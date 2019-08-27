@@ -78,8 +78,6 @@ class Extension(metaclass=abc.ABCMeta):
             os.path.join(str(work_dir), "meta.json")
         )
 
-        self.check_ext_version()
-
         if self.conf.get("force") and not self.conf.get("force_meta_deleted"):
             try:
                 os.remove(self.global_meta_file)
