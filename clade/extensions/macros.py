@@ -76,7 +76,7 @@ class Macros(Extension):
     def load_macros(self, files=None):
         """Load json with all information about macros."""
 
-        self.load_data_by_key(self.macros_folder, files)
+        return self.load_data_by_key(self.macros_folder, files)
 
     def yield_macros(self, files=None):
         """Yeild dictionaries with information about macros."""
@@ -85,7 +85,7 @@ class Macros(Extension):
     def load_expansions(self, files=None):
         """Load json with all information about macro expansions."""
 
-        self.load_data_by_key(self.exps_folder, files)
+        return self.load_data_by_key(self.exps_folder, files)
 
     def yield_expansions(self, files=None):
         """Yeild dictionaries with information about macro expansions."""
