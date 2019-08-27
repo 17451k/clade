@@ -35,7 +35,6 @@ class Callgraph(Extension):
         self.err_log = os.path.join(self.work_dir, "err.log")
 
         self.callgraph = nested_dict()
-        self.callgraph_file = "callgraph.json"
         self.callgraph_folder = "callgraph"
 
         self.calls_by_ptr = nested_dict()
@@ -59,7 +58,6 @@ class Callgraph(Extension):
         self._clean_error_log()
 
         self.dump_data_by_key(self.callgraph, self.callgraph_folder)
-        self.dump_data(self.callgraph, self.callgraph_file)
         self.dump_data(self.calls_by_ptr, self.calls_by_ptr_file)
         self.dump_data(self.used_in, self.used_in_file)
         self.callgraph.clear()
@@ -67,10 +65,7 @@ class Callgraph(Extension):
         self.log("Generating finished")
 
     def load_callgraph(self, files=None):
-        if files:
-            return self.load_data_by_key(self.callgraph_folder, files)
-        else:
-            return self.load_data(self.callgraph_file)
+        return self.load_data_by_key(self.callgraph_folder, files)
 
     def yield_callgraph(self, files=None):
         yield from self.yield_data_by_key(self.callgraph_folder, files)
