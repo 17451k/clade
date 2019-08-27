@@ -410,7 +410,7 @@ class Info(Extension):
             yield content
 
     def iter_macros_expansions(self):
-        """Yield file, def_file, macro, line, def_line, args_str"""
+        """Yield exp_file, def_file, macro, exp_line, def_line, args_str"""
 
         regex = re.compile(r'\"(.*?)\" \"(.*?)\" (\S*) (\S*) (\S*)(.*)')
         arg_regex = re.compile(r' actual_arg\d+=(.*)')

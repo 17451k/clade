@@ -26,27 +26,28 @@ class Macros(Extension):
         super().__init__(work_dir, conf)
 
         self.macros = nested_dict()
-        self.macros_file = "macros.json"
         self.macros_folder = "macros"
 
         self.exps = nested_dict()
-        self.exps_file = "expansions.json"
         self.exps_folder = "expansions"
 
     @Extension.prepare
     def parse(self, cmds_file):
-        self.log("Parsing macros")
-
+        self.log("Parsing macros definitions")
         self.__process_macros_definitions()
+
+        self.log("Parsing macros expansions")
         self.__process_macros_expansions()
+
+        self.log("Reversing macros expansions")
         self.__reverse_expansions()
 
-        self.dump_data(self.macros, self.macros_file)
-        self.dump_data(self.exps, self.exps_file)
+        self.log("Dumping data")
         self.dump_data_by_key(self.macros, self.macros_folder)
-        self.dump_data_by_key(self.exps, self.exps_folder)
-
         self.macros.clear()
+        self.dump_data_by_key(self.exps, self.exps_folder)
+        self.exps.clear()
+
         self.log("Parsing finished")
 
     def __process_macros_definitions(self):
@@ -54,16 +55,16 @@ class Macros(Extension):
             self.macros[file][macro][line] = nested_dict()
 
     def __process_macros_expansions(self):
-        for file, def_file, macro, line, def_line, args in self.extensions["Info"].iter_macros_expansions():
+        for exp_file, def_file, macro, exp_line, def_line, args in self.extensions["Info"].iter_macros_expansions():
             if def_file not in self.macros:
                 def_file = "unknown"
 
             if not args:
-                self.macros[def_file][macro][def_line][file][line] = []
-            elif self.macros[def_file][macro][def_line][file][line]:
-                self.macros[def_file][macro][def_line][file][line].append(args)
+                self.macros[def_file][macro][def_line][exp_file][exp_line] = []
+            elif self.macros[def_file][macro][def_line][exp_file][exp_line]:
+                self.macros[def_file][macro][def_line][exp_file][exp_line].append(args)
             else:
-                self.macros[def_file][macro][def_line][file][line] = [args]
+                self.macros[def_file][macro][def_line][exp_file][exp_line] = [args]
 
     def __reverse_expansions(self, allow_smaller=True):
         for def_file, macro, def_line, exp_file, exp_line, args in traverse(self.macros, 6):
@@ -72,10 +73,7 @@ class Macros(Extension):
     def load_macros(self, files=None):
         """Load json with all information about macros."""
 
-        if files:
-            return self.load_data_by_key(self.macros_folder, files)
-        else:
-            return self.load_data(self.macros_file)
+        self.load_data_by_key(self.macros_folder, files)
 
     def yield_macros(self, files=None):
         """Yeild dictionaries with information about macros."""
@@ -84,10 +82,7 @@ class Macros(Extension):
     def load_expansions(self, files=None):
         """Load json with all information about macro expansions."""
 
-        if files:
-            return self.load_data_by_key(self.exps_folder, files)
-        else:
-            return self.load_data(self.exps_file)
+        self.load_data_by_key(self.exps_folder, files)
 
     def yield_expansions(self, files=None):
         """Yeild dictionaries with information about macro expansions."""
