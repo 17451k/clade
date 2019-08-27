@@ -602,9 +602,9 @@ class Clade:
         # Map new format of macros to the old one
         for exp_file, macro, _, _, _, args in traverse(exps, 6):
             if expansions[exp_file][macro]["args"]:
-                expansions[exp_file][macro]["args"].append(args)
+                expansions[exp_file][macro]["args"].extend(args)
             else:
-                expansions[exp_file][macro]["args"] = [args]
+                expansions[exp_file][macro]["args"] = args
 
         if macros_names:
             filtered_expansions = nested_dict()
