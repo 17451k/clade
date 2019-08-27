@@ -48,11 +48,16 @@ def ref_from_are_ok(ref_from):
     assert ref_from[zero_c]
     assert ref_from[zero_h]
 
-    assert [[4, 12, 17], [main_c, [9]]] in ref_from[main_c]
-    assert [[6, 4, 8], [main_c, [10]]] in ref_from[zero_c]
-    assert [[1, 11, 15], [main_c, [10]]] in ref_from[zero_h]
-    assert [[3, 8, 18], [zero_c, [7]]] in ref_from[zero_c]
-    assert [[4, 8, 12], [zero_c, [7]]] in ref_from[zero_c]
+    assert ref_from[main_c]["call"]
+    assert ref_from[zero_c]["call"]
+    assert ref_from[zero_c]["expand"]
+    assert ref_from[zero_h]["call"]
+
+    assert [[4, 12, 17], [main_c, [9]]] in ref_from[main_c]["call"]
+    assert [[6, 4, 8], [main_c, [10]]] in ref_from[zero_c]["call"]
+    assert [[1, 11, 15], [main_c, [10]]] in ref_from[zero_h]["call"]
+    assert [[3, 8, 18], [zero_c, [7]]] in ref_from[zero_c]["expand"]
+    assert [[4, 8, 12], [zero_c, [7]]] in ref_from[zero_c]["expand"]
 
 
 def filtered_ref_from_are_ok(rel_from, rel_from_main_c):

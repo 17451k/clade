@@ -277,10 +277,10 @@ class CrossRef(Callgraph):
                         for loc_el in loc_list:
                             val = (loc_el, (context_file, lines))
 
-                            if file in ref_from:
-                                ref_from[file].append(val)
+                            if ref_from[file]["call"]:
+                                ref_from[file]["call"].append(val)
                             else:
-                                ref_from[file] = [val]
+                                ref_from[file]["call"] = [val]
 
                 for decl_file in self.funcs[file][func]["declarations"]:
                     if func in locations[decl_file]["decl_func"]:
@@ -290,10 +290,10 @@ class CrossRef(Callgraph):
                             for loc_el in loc_list:
                                 val = (loc_el, (context_file, lines))
 
-                                if decl_file in ref_from:
-                                    ref_from[decl_file].append(val)
+                                if ref_from[decl_file]["call"]:
+                                    ref_from[decl_file]["call"].append(val)
                                 else:
-                                    ref_from[decl_file] = [val]
+                                    ref_from[decl_file]["call"] = [val]
 
             self.__dump_ref_from(ref_from)
 
@@ -330,10 +330,10 @@ class CrossRef(Callgraph):
                         exp_lines = [int(l) for l in macros[def_file][macro][def_line][exp_file]]
                         val = (loc_el, (exp_file, exp_lines))
 
-                        if ref_from[def_file]:
-                            ref_from[def_file].append(val)
+                        if ref_from[def_file]["expand"]:
+                            ref_from[def_file]["expand"].append(val)
                         else:
-                            ref_from[def_file] = [val]
+                            ref_from[def_file]["expand"] = [val]
 
             self.__dump_ref_from(ref_from)
 
@@ -347,6 +347,16 @@ class CrossRef(Callgraph):
             if file not in local_ref_from:
                 continue
 
-            ref_from[file].extend(local_ref_from[file])
+            if "call" in local_ref_from[file]:
+                if ref_from[file]["call"]:
+                    ref_from[file]["call"].extend(local_ref_from[file]["call"])
+                else:
+                    ref_from[file]["call"] = local_ref_from[file]["call"]
+
+            if "expand" in local_ref_from[file]:
+                if ref_from[file]["expand"]:
+                    ref_from[file]["expand"].extend(local_ref_from[file]["expand"])
+                else:
+                    ref_from[file]["expand"] = local_ref_from[file]["expand"]
 
         self.dump_data_by_key(ref_from, self.ref_from_folder)
