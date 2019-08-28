@@ -805,7 +805,7 @@ the Linux kernel:
                         }
                     }
                 },
-                "type": "global"
+                "type": "extern"
             }
         }
     }
@@ -833,12 +833,12 @@ They are stored in the *functions.json* file:
                     "drivers/net/usb/asix.h": {
                         "line": "204",
                         "signature": "int asix_get_phy_addr(struct usbnet *);",
-                        "type": "global"
+                        "type": "extern"
                     }
                 },
                 "line": "232",
                 "signature": "int asix_get_phy_addr(struct usbnet *dev);",
-                "type": "global"
+                "type": "extern"
             }
     }
 

@@ -103,11 +103,11 @@ class Callgraph(Extension):
             for files in (
                     (f for f in possible_files if f == context_file),
                     (f for f in possible_files if self._t_unit_is_common(f, context_file)),
-                    (f for f in possible_files if self.funcs[func][f]["type"] == "exported") if call_type == "global" else tuple(),
+                    (f for f in possible_files if self.funcs[func][f]["type"] == "exported") if call_type == "extern" else tuple(),
                     (f for f in possible_files if self._files_are_linked(f, context_file) and
-                        any(self._t_unit_is_common(cf, context_file) for cf in self.funcs[func][f]["declarations"])) if call_type == "global" else tuple(),
+                        any(self._t_unit_is_common(cf, context_file) for cf in self.funcs[func][f]["declarations"])) if call_type == "extern" else tuple(),
                     (f for f in possible_files if any(self._t_unit_is_common(cf, context_file) for cf in self.funcs[func][f]["declarations"]))
-                    if call_type == "global" else tuple(),
+                    if call_type == "extern" else tuple(),
                     ['unknown']):
                 matched_files = tuple(files)
                 if matched_files:

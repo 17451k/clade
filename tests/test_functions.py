@@ -21,7 +21,7 @@ def funcs_are_ok(funcs):
     assert not funcs["main"][main_c]["declarations"]
     assert funcs["main"][main_c]["line"] == "8"
     assert funcs["main"][main_c]["signature"] == "int main(void);"
-    assert funcs["main"][main_c]["type"] == "global"
+    assert funcs["main"][main_c]["type"] == "extern"
     assert len(funcs["print"]) >= 2
 
 
@@ -31,7 +31,7 @@ def funcs_by_file_are_ok(funcs_by_file):
     assert funcs_by_file[zero_c]["zero"]["declarations"][zero_h]["line"] == "1"
     # TODO: Fix aspectator to print proper signatures without errors in it
     # assert funcs_by_file[zero_c]["zero"]["declarations"][zero_h]["signature"] == "int zero(void);"
-    assert funcs_by_file[zero_c]["zero"]["declarations"][zero_h]["type"] == "global"
+    assert funcs_by_file[zero_c]["zero"]["declarations"][zero_h]["type"] == "extern"
 
 
 def funcs_are_consistent(funcs, funcs_by_file):

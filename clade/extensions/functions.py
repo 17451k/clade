@@ -65,7 +65,7 @@ class Functions(Callgraph):
             return self.load_data(self.funcs_by_file_file)
 
     def __process_definitions(self):
-        for src_file, func, signature, def_line, func_type in self.extensions["Info"].iter_definitions():
+        for src_file, func, def_line, func_type, signature in self.extensions["Info"].iter_definitions():
             if func in self.funcs and src_file in self.funcs[func]:
                 self._error(
                     "Function is defined more than once: {!r} {!r}".format(
@@ -84,13 +84,13 @@ class Functions(Callgraph):
     def __process_declarations(self):
         def get_unknown_val(decl_file, decl_val):
             return {
-                "type": "global",
+                "type": "extern",
                 "line": None,
                 "signature": None,
                 "declarations": {decl_file: decl_val},
             }
 
-        for decl_file, decl_name, decl_signature, decl_line, decl_type in self.extensions["Info"].iter_declarations():
+        for decl_file, decl_name, decl_line, decl_type, decl_signature in self.extensions["Info"].iter_declarations():
             decl_val = {
                 "signature": decl_signature,
                 "line": decl_line,
@@ -116,7 +116,7 @@ class Functions(Callgraph):
                     src_file == decl_file
                     or self._t_unit_is_common(src_file, decl_file)
                     or (
-                        decl_type == "global"
+                        decl_type == "extern"
                         and self._files_are_linked(src_file, decl_file)
                     )
                 ):

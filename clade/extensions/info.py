@@ -348,17 +348,17 @@ class Info(Extension):
         self.log("Normalizing finished")
 
     def iter_definitions(self):
-        """Yield src_file, func, signature, def_line, func_type"""
+        """Yield src_file, func, def_line, func_type, signature"""
 
-        regex = re.compile(r"\"(.*?)\" (\S*) signature='([^']*)' (\S*) (\S*)")
+        regex = re.compile(r"\"(.*?)\" (\S*) (\S*) (\S*) ([^']*)\n")
 
         for content in self.__iter_file_regex(self.execution, regex):
             yield content
 
     def iter_declarations(self):
-        """Yield decl_file, decl_name, decl_signature, decl_line, decl_type"""
+        """Yield decl_file, decl_name, decl_line, decl_type, decl_signature"""
 
-        regex = re.compile(r"\"(.*?)\" (\S*) signature='([^']*)' (\S*) (\S*)")
+        regex = re.compile(r"\"(.*?)\" (\S*) (\S*) (\S*) ([^']*)\n")
 
         for content in self.__iter_file_regex(self.decl, regex):
             yield content
