@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import os
+import re
 
 
 from clade.extensions.abstract import Extension
@@ -155,19 +156,23 @@ class CrossRef(Callgraph):
                         name = sorted_locs[sorted_pos][1]
                         ctype = sorted_locs[sorted_pos][2]
 
-                        lowest_index = s.find(name)
-
-                        if lowest_index != -1:
-                            val = (line, lowest_index, lowest_index + len(name))
-                            if name in locations[ctype]:
-                                locations[ctype][name].append(val)
-                            else:
-                                locations[ctype][name] = [val]
-                        # TODO: there may be a function call inside macro expansion
+                        for lowest_index in self.__find_all(s, name):
+                            if lowest_index != -1:
+                                val = (line, lowest_index, lowest_index + len(name))
+                                if name in locations[ctype]:
+                                    locations[ctype][name].append(val)
+                                else:
+                                    locations[ctype][name] = [val]
+                            # TODO: there may be a function call inside macro expansion
 
                     sorted_pos += 1
 
         return locations
+
+    def __find_all(self, s, name):
+        for m in re.finditer(r"\w+", s):
+            if name == m.group(0):
+                yield m.start()
 
     def __gen_ref_to(self, locations):
         self.__gen_ref_to_func(locations)
