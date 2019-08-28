@@ -307,10 +307,7 @@ class Info(Extension):
                     else:
                         temp_fh.write('"{}" {}'.format(path, line))
 
-        seen.clear()
-
-        os.remove(file)
-        os.rename(new_file, file)
+        os.replace(new_file, file)
 
     def __find_cif_output(self):
         cif_output = []
