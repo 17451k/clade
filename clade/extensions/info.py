@@ -286,26 +286,27 @@ class Info(Extension):
         if file.endswith(expand):
             path, def_path = path.split("/CLADE-EXPAND")
 
-        seen = set()
-        new_file = file + ".tmp"
-
         with codecs.open(file, "r", encoding="utf8", errors="ignore") as fh:
-            with open(new_file, "w") as temp_fh:
-                for line in fh:
-                    if not line:
-                        continue
+            lines = fh.readlines()
 
-                    # Storing hash of string instead of string itself reduces memory usage by 30-40%
-                    h = hashlib.md5(line.encode("utf-8")).hexdigest()
-                    if h in seen:
-                        continue
+        seen = set()
+        new_lines = []
 
-                    seen.add(h)
+        for line in lines:
+            h = hashlib.md5(line.encode("utf-8")).hexdigest()
+            if h in seen:
+                continue
 
-                    if file.endswith(expand):
-                        temp_fh.write('"{}" "{}" {}'.format(path, def_path, line))
-                    else:
-                        temp_fh.write('"{}" {}'.format(path, line))
+            seen.add(h)
+
+            if file.endswith(expand):
+                new_lines.append('"{}" "{}" {}'.format(path, def_path, line))
+            else:
+                new_lines.append('"{}" {}'.format(path, line))
+
+        new_file = file + ".tmp"
+        with open(new_file, "w") as temp_fh:
+            temp_fh.writelines(new_lines)
 
         os.replace(new_file, file)
 
