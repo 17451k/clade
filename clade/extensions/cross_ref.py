@@ -157,12 +157,15 @@ class CrossRef(Callgraph):
                         ctype = sorted_locs[sorted_pos][2]
 
                         for lowest_index in self.__find_all(s, name):
-                            if lowest_index != -1:
-                                val = (line, lowest_index, lowest_index + len(name))
-                                if name in locations[ctype]:
-                                    locations[ctype][name].append(val)
-                                else:
-                                    locations[ctype][name] = [val]
+                            val = (line, lowest_index, lowest_index + len(name))
+                            if name in locations[ctype]:
+                                locations[ctype][name].append(val)
+                            else:
+                                locations[ctype][name] = [val]
+
+                            # Only one macro definition can be on a single line
+                            if ctype == "def_macro":
+                                break
                             # TODO: there may be a function call inside macro expansion
 
                     sorted_pos += 1
