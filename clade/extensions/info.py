@@ -329,7 +329,7 @@ class Info(Extension):
             max_workers=os.cpu_count()
         ) as p:
             # Current Info object may occupy a lot of memory due to various
-            # links to outher extension objects and large attributes
+            # links to other extension objects and large attributes
             empty_self = Info(os.path.dirname(self.work_dir), self.conf)
             empty_self.extensions["Storage"] = self.extensions["Storage"]
 
