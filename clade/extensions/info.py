@@ -326,9 +326,14 @@ class Info(Extension):
         with concurrent.futures.ProcessPoolExecutor(
             max_workers=os.cpu_count()
         ) as p:
+            # Current Info object may occupy a lot of memory due to various
+            # links to outher extension objects and large attributes
+            empty_self = Info(os.path.dirname(self.work_dir), self.conf)
+            empty_self.extensions["Storage"] = self.extensions["Storage"]
+
             init_global = os.path.basename(self.init_global)
             for file in [f for f in cif_output if not f.endswith(init_global)]:
-                p.submit(unwrap, self, file)
+                p.submit(unwrap, empty_self, file)
 
         # Join all cif output file into several big .txt files
         for file in self.files:
