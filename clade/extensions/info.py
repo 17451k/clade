@@ -23,6 +23,8 @@ import re
 import shlex
 import shutil
 import subprocess
+import sys
+import time
 
 from clade.extensions.abstract import Extension
 from clade.extensions.opts import filter_opts
@@ -331,9 +333,56 @@ class Info(Extension):
             empty_self = Info(os.path.dirname(self.work_dir), self.conf)
             empty_self.extensions["Storage"] = self.extensions["Storage"]
 
+            futures = []
+            finished_files = 0
+
             init_global = os.path.basename(self.init_global)
-            for file in [f for f in cif_output if not f.endswith(init_global)]:
-                p.submit(unwrap, empty_self, file)
+            files = [f for f in cif_output if not f.endswith(init_global)]
+            total_files = len(files)
+
+            for file in files:
+                f = p.submit(unwrap, empty_self, file)
+                futures.append(f)
+
+            while True:
+                if not futures:
+                    break
+
+                done_futures = [x for x in futures if x.done()]
+
+                # Remove all futures that are already completed
+                # to reduce memory usage
+                futures = [x for x in futures if not x.done()]
+
+                # Track progress (only if stdout is not redirected)
+                if total_files and sys.stdout.isatty() and self.conf["log_level"] in ["INFO", "DEBUG"]:
+                    finished_files += len(done_futures)
+
+                    msg = "\t [{:.0f}%] {} of {} files are normalized".format(
+                        finished_files / total_files * 100,
+                        finished_files,
+                        total_files,
+                    )
+                    print(msg, end="\r")
+
+                # Check return value of all finished futures
+                for f in done_futures:
+                    try:
+                        f.result()
+                    except Exception as e:
+                        self.error(
+                            "Something happened in the child process: {}".format(
+                                e
+                            )
+                        )
+
+                        raise RuntimeError
+
+                # Save a little bit of CPU time
+                time.sleep(0.1)
+
+        if total_files and sys.stdout.isatty() and self.conf["log_level"] in ["INFO", "DEBUG"]:
+            print(" " * 79, end="\r")
 
         # Join all cif output file into several big .txt files
         for file in self.files:
