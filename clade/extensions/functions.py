@@ -49,8 +49,11 @@ class Functions(Callgraph):
         self.dump_data(self.funcs, self.funcs_file)
         self.dump_data(self.funcs_by_file, self.funcs_by_file_file)
         self.dump_data_by_key(self.funcs_by_file, self.funcs_by_file_folder)
+
+        self.src_graph.clear()
         self.funcs.clear()
         self.funcs_by_file.clear()
+
         self.log("Parsing finished")
 
     def load_functions(self):

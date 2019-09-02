@@ -30,11 +30,6 @@ from clade.extensions.abstract import Extension
 from clade.extensions.opts import filter_opts
 
 
-# multiprocessing from Python 3.4 can't pickle Info._normalize_file directly
-def unwrap(self, file):
-    self._normalize_file(file)
-
-
 class Info(Extension):
     always_requires = ["SrcGraph", "Path", "Storage"]
     requires = always_requires + ["CC", "CL"]
@@ -264,54 +259,6 @@ class Info(Extension):
             log_fh.writelines(log)
             log_fh.write("\n\n")
 
-    def _normalize_file(self, file):
-        if not os.path.isfile(file):
-            return
-
-        storage = self.extensions["Storage"].get_storage_dir()
-
-        # Path to the source file is encoded in the path to the CIF output file
-        path = os.path.dirname(file)
-
-        path = path.replace(storage, "")
-        path = path.replace(self.cif_output_dir, "")
-
-        if "\\/" in path:
-            self.error(
-                "Normalized path looks weird: {!r}".format(
-                    path
-                )
-            )
-            raise RuntimeError
-
-        expand = os.path.basename(self.expand)
-        if file.endswith(expand):
-            path, def_path = path.split("/CLADE-EXPAND")
-
-        with codecs.open(file, "r", encoding="utf8", errors="ignore") as fh:
-            lines = fh.readlines()
-
-        seen = set()
-        new_lines = []
-
-        for line in lines:
-            h = hashlib.md5(line.encode("utf-8")).hexdigest()
-            if h in seen:
-                continue
-
-            seen.add(h)
-
-            if file.endswith(expand):
-                new_lines.append('"{}" "{}" {}'.format(path, def_path, line))
-            else:
-                new_lines.append('"{}" {}'.format(path, line))
-
-        new_file = file + ".tmp"
-        with open(new_file, "w") as temp_fh:
-            temp_fh.writelines(new_lines)
-
-        os.replace(new_file, file)
-
     def __find_cif_output(self):
         cif_output = []
 
@@ -328,11 +275,6 @@ class Info(Extension):
         with concurrent.futures.ProcessPoolExecutor(
             max_workers=os.cpu_count()
         ) as p:
-            # Current Info object may occupy a lot of memory due to various
-            # links to other extension objects and large attributes
-            empty_self = Info(os.path.dirname(self.work_dir), self.conf)
-            empty_self.extensions["Storage"] = self.extensions["Storage"]
-
             futures = []
             finished_files = 0
 
@@ -340,8 +282,11 @@ class Info(Extension):
             files = [f for f in cif_output if not f.endswith(init_global)]
             total_files = len(files)
 
+            storage = self.extensions["Storage"].get_storage_dir()
+            expand = os.path.basename(self.expand)
+
             for file in files:
-                f = p.submit(unwrap, empty_self, file)
+                f = p.submit(normalize_file, file, storage, self.cif_output_dir, expand)
                 futures.append(f)
 
             while True:
@@ -508,3 +453,68 @@ class Info(Extension):
         with open(file, "r") as f:
             for line in f:
                 yield line
+
+
+# Moving this function outside output_file class increases performance
+def normalize_file(file, storage, cif_output_dir, expand):
+    if not os.path.isfile(file):
+        return
+
+    # Path to the source file is encoded in the path to the CIF output file
+    path = os.path.dirname(file)
+
+    path = path.replace(storage, "")
+    path = path.replace(cif_output_dir, "")
+
+    if "\\/" in path:
+        raise "Normalized path looks weird: {!r}".format(path)
+
+    expand_file = True if file.endswith(expand) else False
+
+    if expand_file:
+        path, def_path = path.split("/CLADE-EXPAND")
+
+    seen = set()
+    new_file = file + ".tmp"
+
+    # Read large files (>= 100mb) line by line
+    if os.path.getsize(file) >= 104857600:
+        with codecs.open(file, "r", encoding="utf8", errors="ignore") as fh:
+            with open(new_file, "w") as new_fh:
+                for line in fh:
+                    if not line:
+                        continue
+
+                    # Storing hash of string instead of string itself reduces memory usage by 30-40%
+                    h = hashlib.md5(line.encode("utf-8")).hexdigest()
+                    if h in seen:
+                        continue
+
+                    seen.add(h)
+
+                    if expand_file:
+                        new_fh.write('"{}" "{}" {}'.format(path, def_path, line))
+                    else:
+                        new_fh.write('"{}" {}'.format(path, line))
+    else:
+        lines = []
+        with codecs.open(file, "r", encoding="utf8", errors="ignore") as fh:
+            lines = fh.readlines()
+
+            new_lines = []
+            for line in lines:
+                h = hashlib.md5(line.encode("utf-8")).hexdigest()
+                if h in seen:
+                    continue
+
+                seen.add(h)
+
+                if expand_file:
+                    new_lines.append('"{}" "{}" {}'.format(path, def_path, line))
+                else:
+                    new_lines.append('"{}" {}'.format(path, line))
+
+            with open(new_file, "w") as new_fh:
+                new_fh.writelines(new_lines)
+
+    os.replace(new_file, file)

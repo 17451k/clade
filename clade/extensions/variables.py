@@ -49,6 +49,9 @@ class Variables(Callgraph):
 
         self.dump_data_by_key(self.variables, self.variables_folder)
         self.dump_data(self.used_in_vars, self.used_in_vars_file, indent=4)
+
+        self.functions.clear()
+        self.src_graph.clear()
         self.variables.clear()
         self.used_in_vars.clear()
 

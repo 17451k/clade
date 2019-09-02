@@ -60,8 +60,12 @@ class Callgraph(Extension):
         self.dump_data_by_key(self.callgraph, self.callgraph_folder)
         self.dump_data(self.calls_by_ptr, self.calls_by_ptr_file)
         self.dump_data(self.used_in, self.used_in_file)
+
+        self.src_graph.clear()
+        self.funcs.clear()
         self.callgraph.clear()
         self.used_in.clear()
+
         self.log("Generating finished")
 
     def load_callgraph(self, files=None):
