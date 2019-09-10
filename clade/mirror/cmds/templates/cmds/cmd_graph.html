@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+{% load static %}
+
+<html>
+    <head>
+        <meta charset="utf-8">
+        <link rel="stylesheet" type="text/css" href="{% static 'cmds/css/pid_graph.css' %}">
+
+        <script src="{% static 'cmds/js/jquery-1.10.2.min.js' %}"></script>
+        <script src="{% static 'cmds/js/d3.v3.min.js' %}"></script>
+        <script src="{% static 'cmds/js/dndTree.js' %}"></script>
+
+        <script>
+            // Get JSON data
+            d3.json("{% url 'cmds:load_cmd_graph' cmd_id %}", function(error, treeData) {
+                drawGraph(error, treeData);
+            })
+        </script>
+    </head>
+    <body>
+        <div id="tree-container"></div>
+    </body>
+</html>

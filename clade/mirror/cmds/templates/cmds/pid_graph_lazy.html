@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+{% load static %}
+
+<html>
+    <head>
+        <meta charset="utf-8">
+        <link rel="stylesheet" type="text/css" href="{% static 'cmds/css/pid_graph_lazy.css' %}">
+
+        <script src="{% static 'cmds/js/jquery-1.10.2.min.js' %}"></script>
+        <script src="{% static 'cmds/js/d3.v3.min.js' %}"></script>
+
+        <script>
+            /*Copyright (c) 2013-2016, Rob Schmuecker
+            All rights reserved.
+
+            Redistribution and use in source and binary forms, with or without
+            modification, are permitted provided that the following conditions are met:
+
+            * Redistributions of source code must retain the above copyright notice, this
+            list of conditions and the following disclaimer.
+
+            * Redistributions in binary form must reproduce the above copyright notice,
+            this list of conditions and the following disclaimer in the documentation
+            and/or other materials provided with the distribution.
+
+            * The name Rob Schmuecker may not be used to endorse or promote products
+            derived from this software without specific prior written permission.
+
+            THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+            AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+            IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+            DISCLAIMED. IN NO EVENT SHALL MICHAEL BOSTOCK BE LIABLE FOR ANY DIRECT,
+            INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+            BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+            DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+            OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+            NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+            EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.*/
+
+            // https://gist.github.com/robschmuecker/7880033
+            // http://bl.ocks.org/robschmuecker/7880033
+
+            // modified: https://stackoverflow.com/questions/52959515/d3js-lazy-load-data-ondemand
+            // https://jsbin.com/safelufisi/edit?js,output
+
+            const isNotPresent = o => typeof o === 'undefined' || o == null
+            const isPresent = o => !isNotPresent(o)
+            const deepCopy = o => JSON.parse(JSON.stringify(o))
+
+            function lazyLoadChildren(d, recurseFlag, collapse) {
+                url = "{% url 'cmds:load_pid_graph_node' cmd_id %}"
+                url = url.replace("{{ cmd_id }}", d.id)
+
+                return new Promise(resolve => {
+                    d3.json(url, function(error, localTreeData) {
+                        const dynamicChildren = localTreeData[d.name]
+                        if (isNotPresent(d.children) && isNotPresent(d._children) && isPresent(dynamicChildren)) {
+                            d.children = deepCopy(dynamicChildren)
+                        }
+
+                        collapse(d)
+
+
+                        if (recurseFlag === true) {
+                            const promises = expand(d, recurseFlag);
+
+                            Promise.all(promises).then(() => {
+                                resolve("Done");
+                            })
+                        } else{
+                            resolve("Done");
+                        }
+                    })
+                })
+            }
+
+            $(document).ready(load)
+
+            function load() {
+
+                // Calculate total nodes, max label length
+                var maxLabelLength = 15; // <- this is the horizontal gap between nodes
+                // Misc. variables
+                var i = 0;
+                var duration = 750;
+                var root;
+
+                // size of the diagram
+                var viewerWidth = $(document).width();
+                var viewerHeight = $(document).height();
+
+                var tree = d3.layout.tree().size([viewerHeight, viewerWidth]);
+
+                // define a d3 diagonal projection for use by the node paths later on.
+                var diagonal = d3.svg.diagonal().projection(d => [d.y, d.x])
+
+                // Sort the tree initially incase the JSON isn't in a sorted order.
+                tree.sort((a, b) => a.name.localeCompare(b.name, 'en', {'sensitivity': 'base'}))
+
+                // Define the zoom function for the zoomable tree
+                function zoom() {
+                    svgGroup.attr("transform", `translate(${d3.event.translate})scale(${d3.event.scale})`);
+                }
+
+                // define the zoomListener which calls the zoom function on the "zoom" event constrained within the scaleExtents
+                var zoomListener = d3.behavior.zoom().scaleExtent([0.1, 3]).on("zoom", zoom);
+
+                // define the baseSvg, attaching a class for styling and the zoomListener
+                var baseSvg = d3.select("#tree-container")
+                    .append("svg")
+                    .attr("width", viewerWidth)
+                    .attr("height", viewerHeight)
+                    .attr("class", "overlay")
+                    .call(zoomListener);
+
+                // Function to center node when clicked/dropped so node doesn't get lost when collapsing/moving with large amount of children.
+
+                function centerNode(source) {
+                    scale = zoomListener.scale();
+                    x = -source.y0;
+                    y = -source.x0;
+                    x = x * scale + viewerWidth / 2;
+                    y = y * scale + viewerHeight / 2;
+                    d3.select('g').transition()
+                        .duration(duration)
+                        .attr("transform", "translate(" + x + "," + y + ")scale(" + scale + ")");
+                    zoomListener.scale(scale);
+                    zoomListener.translate([x, y]);
+                }
+
+                /* Toggle children function. */
+
+                function collapse(d, recurseFlag) {
+                    if (d.children) {
+                        d._children = d.children;
+                        if (recurseFlag === true) {
+                            d._children.forEach(x => collapse(x, recurseFlag));
+                        }
+                        d.children = null;
+                    }
+                }
+
+                function expand(d, recurseFlag) {
+                    const promises = []
+
+                    if (d._children) {
+                        d.children = d._children;
+
+                        // lazy load all children (collapsed)
+                        d.children.forEach(x => {
+                            promises.push(lazyLoadChildren(x, recurseFlag, collapse))
+                        })
+
+                        d._children = null;
+                    }
+
+                    return promises;
+                }
+
+                function toggleChildren(d) {
+                    promises = []
+
+                    if (d.children) {
+                        collapse(d, true)
+                    } else {
+                        promises = expand(d, false)
+                    }
+
+                    return promises;
+                }
+
+                function click(d) {
+                    const promises = toggleChildren(d);
+
+                    Promise.all(promises).then(() => {
+                        update(d);
+                        centerNode(d);
+                    })
+                }
+
+                function update(source) {
+                    // Compute the new height, function counts total children of root node and sets tree height accordingly.
+                    // This prevents the layout looking squashed when new nodes are made visible or looking sparse when nodes are removed
+                    // This makes the layout more consistent.
+                    var levelWidth = [1];
+                    var childCount = function(level, n) {
+
+                        if (n.children && n.children.length > 0) {
+                            if (levelWidth.length <= level + 1) levelWidth.push(0);
+
+                            levelWidth[level + 1] += n.children.length;
+                            n.children.forEach(function(d) {
+                                childCount(level + 1, d);
+                            });
+                        }
+                    };
+                    childCount(0, root);
+                    var newHeight = d3.max(levelWidth) * 25; // 25 pixels per line
+                    tree = tree.size([newHeight, viewerWidth]);
+
+                    // Compute the new tree layout.
+                    var nodes = tree.nodes(root), //.reverse(),
+                        links = tree.links(nodes);
+
+                    // Set widths between levels based on maxLabelLength.
+                    nodes.forEach(d => d.y = (d.depth * (maxLabelLength * 10))) //maxLabelLength * 10px
+
+                    // Update the nodes…
+                    node = svgGroup.selectAll("g.node").data(nodes, d => d.id || (d.id = ++i))
+
+                    // Enter any new nodes at the parent's previous position.
+                    var nodeEnter = node.enter().append("g")
+                        .attr("class", "node")
+                        .attr("transform", d => `translate(${source.y0},${source.x0})`)
+                        .on('click', click);
+
+                    nodeEnter.append("circle")
+                        .attr('class', 'nodeCircle')
+                        .attr("r", 0)
+                        .style("fill", d => d._children ? "lightsteelblue" : "#fff")
+
+                    nodeEnter.append("text")
+                        .attr("x", d => d.children || d._children ? -10 : 10)
+                        .attr("dy", ".35em")
+                        .attr('class', 'nodeText')
+                        .attr("text-anchor", d => d.children || d._children ? "end" : "start")
+                        .text(d => d.name)
+                        .style("fill-opacity", 0);
+
+                    // Update the text to reflect whether node has children or not.
+                    node.select('text')
+                        .attr("x", d => d.children || d._children ? -10 : 10)
+                        .attr("text-anchor", d => d.children || d._children ? "end" : "start")
+                        .text(d => d.name)
+
+                    // Change the circle fill depending on whether it has children and is collapsed
+                    node.select("circle.nodeCircle").attr("r", 5).style("fill", d => d._children ? "lightsteelblue" : "#fff")
+
+                    // Transition nodes to their new position.
+                    var nodeUpdate = node.transition().duration(duration).attr("transform", d => `translate(${d.y},${d.x})`)
+                    // Fade the text in
+                    nodeUpdate.select("text").style("fill-opacity", 1);
+
+                    // Transition exiting nodes to the parent's new position.
+                    var nodeExit = node.exit().transition()
+                        .duration(duration)
+                        .attr("transform", d => "translate(" + source.y + "," + source.x + ")")
+                        .remove();
+                    nodeExit.select("circle").attr("r", 0);
+                    nodeExit.select("text").style("fill-opacity", 0);
+
+                    // Update the links…
+                    var link = svgGroup.selectAll("path.link").data(links, d => d.target.id)
+
+                    // Enter any new links at the parent's previous position.
+                    link.enter().insert("path", "g")
+                        .attr("class", "link")
+                        .attr("d", d => {
+                            var o = {
+                                x: source.x0,
+                                y: source.y0
+                            };
+                            return diagonal({
+                                source: o,
+                                target: o
+                            });
+                        });
+
+                    // Transition links to their new position.
+                    link.transition()
+                        .duration(duration)
+                        .attr("d", diagonal);
+
+                    // Transition exiting nodes to the parent's new position.
+                    link.exit().transition()
+                        .duration(duration)
+                        .attr("d", d => {
+                            var o = {
+                                x: source.x,
+                                y: source.y
+                            };
+                            return diagonal({
+                                source: o,
+                                target: o
+                            });
+                        })
+                        .remove();
+
+                    // Stash the old positions for transition.
+                    nodes.forEach(d => {
+                        d.x0 = d.x;
+                        d.y0 = d.y;
+                    });
+                }
+
+                // Append a group which holds all nodes and which the zoom Listener can act upon.
+                var svgGroup = baseSvg.append("g");
+
+                // Define the root
+                d3.json("{% url 'cmds:load_pid_graph_lazy' cmd_id %}", function(error, treeData) {
+                    root = treeData;
+                    root.x0 = viewerHeight / 2;
+                    root.y0 = 0;
+
+                    // Initially, collapse all but the first two layers
+                    collapse(root, true)
+                    const promises = expand(root, false)
+
+                    Promise.all(promises).then(() => {
+                        // Layout the tree initially and center on the root node.
+                        update(root);
+                        centerNode(root);
+                    })
+
+                })
+            };
+        </script>
+    </head>
+    <body>
+        <div id="tree-container"></div>
+    </body>
+</html>

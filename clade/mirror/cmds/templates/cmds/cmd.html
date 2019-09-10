@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+
+{% load static %}
+
+<html>
+    <head>
+        <meta charset="utf-8">
+
+        <link rel="stylesheet" type="text/css" href="{% static 'cmds/css/table.css' %}">
+    </head>
+    <body>
+        <p>
+            <table>
+                <tbody>
+                    <tr>
+                        <td class="table_head_cmd">id</td>
+                        <td>{{ cmd_id }}</td>
+                    </tr>
+
+                    <tr>
+                        <td class="table_head_cmd">pid</td>
+                        <td><a href="{% url 'cmds:cmd' cmd_pid %}">{{ cmd_pid }}</a></td>
+                    </tr>
+
+                    <tr rowspan=2>
+                        <td class="table_head_cmd" rowspan=2>pid graph</td>
+                        <td><a href="{% url 'cmds:pid_graph_lazy' cmd_id %}">lazy graph</a></td>
+                    </tr>
+                    <tr>
+                        <td><a href="{% url 'cmds:pid_graph' cmd_id %}">graph</a></td>
+                    </tr>
+
+
+                    <tr>
+                        <td class="table_head_cmd">type</td>
+                        <td>{{ cmd_type }}</td>
+                    </tr>
+
+                    <tr>
+                        <td class="table_head_cmd">cwd</td>
+                        <td>{{ cmd_cwd }}</td>
+                    </tr>
+
+                    <tr>
+                        <td class="table_head_cmd">which</td>
+                        <td>{{ cmd_which }}</td>
+                    </tr>
+
+                    {% if cmd_ins %}
+                    <tr>
+                        <td class="table_head_cmd" rowspan={{ cmd_ins|length }}>in</td>
+                        <td>{{ cmd_ins.0 }}</td>
+                    </tr>
+
+                    {% for cmd_in in cmd_ins %} {% if not forloop.first %}
+                    <tr>
+                        <td>{{ cmd_in }}</td>
+                    </tr>
+                    {% endif %} {% endfor %} {% else %}
+                    <tr>
+                        <td class="table_head_cmd">in</td>
+                        <td>-</td>
+                    </tr>
+                    {% endif %} {% if cmd_outs %}
+                    <tr>
+                        <td class="table_head_cmd" rowspan={{ cmd_outs|length }}>out</td>
+                        <td>{{ cmd_outs.0 }}</td>
+                    </tr>
+
+                    {% for cmd_out in cmd_outs %} {% if not forloop.first %}
+                    <tr>
+                        <td>{{ cmd_out }}</td>
+                    </tr>
+                    {% endif %} {% endfor %} {% else %}
+                    <tr>
+                        <td class="table_head_cmd">out</td>
+                        <td>-</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </p>
+
+        <!-- <p>
+            <table>
+                <tbody>
+                    {% if cmd_opts %}
+                        <tr>
+                            <td class="table_head_cmd" rowspan={{ cmd_opts|length }}>options</td>
+                            <td>{{ cmd_opts.0 }}</td>
+                        </tr>
+
+                        {% for cmd_opt in cmd_opts %}
+                            {% if not forloop.first %}
+                            <tr>
+                                <td>{{ cmd_opt }}</td>
+                            </tr>
+                            {% endif %}
+                        {% endfor %}
+
+                    {% else %}
+                        <tr>
+                            <td class="table_head_cmd">options</td>
+                            <td>-</td>
+                        </tr>
+                    {% endif %}
+
+                </tbody>
+            </table>
+        </p> -->
+
+        <p>
+            <table>
+                <tbody>
+                    {% if cmd_raw %}
+                    <tr>
+                        <td class="table_head_cmd" rowspan={{ cmd_raw|length }}>command</td>
+                        <td>{{ cmd_raw.0 }}</td>
+                    </tr>
+
+                    {% for cmd_opt in cmd_raw %} {% if not forloop.first %}
+                    <tr>
+                        <td>{{ cmd_opt }}</td>
+                    </tr>
+                    {% endif %} {% endfor %} {% else %}
+                    <tr>
+                        <td class="table_head_cmd">options</td>
+                        <td>-</td>
+                    </tr>
+                    {% endif %}
+
+                </tbody>
+            </table>
+        </p>
+    </body>
+</html>

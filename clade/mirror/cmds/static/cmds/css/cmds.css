@@ -1,0 +1,15 @@
+/* https://colorhunt.co/palette/156759 = color palette*/
+
+.filter {
+    margin-bottom: 5px;
+}
+
+input[type=text] {
+    width: 160px;
+    padding: 2px 5px;
+    border: 1px solid #3c70a4;
+  }
+
+/* .parsed:hover {
+    background-color: #feed95;
+} */

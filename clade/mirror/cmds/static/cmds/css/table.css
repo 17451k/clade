@@ -1,0 +1,45 @@
+/* https://colorhunt.co/palette/156759 = color palette*/
+
+table {
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+
+table, th, td {
+    border: 1px solid black;
+}
+
+th, td {
+    padding: 5px;
+}
+
+.parsed {
+    background-color: #d9eeec;
+}
+
+.table_head, .table_head_cmd {
+    font-weight: bold;
+    /* font-size: 1.1em; */
+    font-family: Arial;
+    background-color: #3c70a4;
+    color: white;
+}
+
+.table_head_cmd {
+    font-weight: bold;
+    /* font-size: 1.1em; */
+    font-family: Arial;
+    background-color: #3c70a4;
+    color: white;
+    width: 80px;
+    text-align: center;
+}
+
+.table_head a:visited {
+    color: white;
+}
+
+.table_head a {
+    color: white;
+}

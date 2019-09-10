@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+
+{% load static %}
+
+<html>
+    <head>
+        <meta charset="utf-8">
+
+        <link rel="stylesheet" type="text/css" href="{% static 'cmds/css/table.css' %}">
+        <link rel="stylesheet" type="text/css" href="{% static 'cmds/css/cmds.css' %}">
+    </head>
+    <body>
+        <div class="pagination">
+            <span class="step-links">
+                {% if cmds.has_previous %}
+                    <a href="{{ base_href }}&page=1">&laquo; first</a>
+                    <a href="{{ base_href }}&page={{ cmds.previous_page_number }}">previous</a>
+                {% endif %}
+
+                <span class="current">
+                    Page {{ cmds.number }} of {{ cmds.paginator.num_pages }}.
+                </span> {% if cmds.has_next %}
+            <a href="{{ base_href }}&page={{ cmds.next_page_number }}">next</a>
+            <a href="{{ base_href }}&page={{ cmds.paginator.num_pages }}">last &raquo;</a> {% endif %}
+            </span>
+        </div>
+
+        <br>
+
+        <form>
+            <div class=filter>
+                <label for="cmd_id">pid:</label>
+                <input id="cmd_id" name="cmd_id" type="text" placeholder="id list (comma separated)" value={{ cmd_id_filter }}>
+            </div class=filter>
+
+            <div class=filter>
+                    <label for="cmd_pid">id:</label>
+                    <input id="cmd_pid" name="cmd_pid" type="text" placeholder="pid list (comma separated)" value={{ cmd_pid_filter }}>
+                </div class=filter>
+
+            <div class=filter>
+                <label for="which">which:</label>
+                <input id="which" name="which" type="text" placeholder="regular expression" value={{ which_filter }}>
+            </div class=filter>
+
+            <div class=filter>
+                <label for="command">command:</label>
+                <input id="command" name="command" type="text" placeholder="regular expression" value={{ command_filter }}>
+            </div>
+
+            <div class=filter>
+                <label for="parsed_only">parsed commands only:</label>
+                <input id="parsed_only" name="parsed_only" type="checkbox" {{ parsed_checked }}>
+            </div>
+
+            <div class=filter>
+                <input type="submit" value="Filter">
+            </div>
+        </form>
+
+        <br>
+
+        <table>
+            <thead>
+                <tr>
+                    <th class="table_head">id</th>
+                    <th class="table_head">pid</th>
+                    <th class="table_head">cwd</th>
+                    <th class="table_head">which</th>
+                    <th class="table_head">command</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cmd in cmds %}
+                <tr class={{ cmd.tr_class }} id="{{ cmd.id }}">
+                    <td class="table_head"><a href="{% url 'cmds:cmd' cmd.id %}">{{ cmd.id }}</a></td>
+                    <td><a href="?page={{ cmd.pid_href }}">{{ cmd.pid }}</a></td>
+                    <td>{{ cmd.cwd.path }}</td>
+                    <td><a href="{{ base_href }}&which={{ cmd.which.path }}">{{ cmd.which.path }}</a></td>
+                    <td>{{ cmd.command | join:" " }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </body>
+</html>
