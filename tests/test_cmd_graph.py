@@ -46,10 +46,9 @@ def test_cmd_graph_empty_requires(tmpdir, cmds_file):
     conf = {"CmdGraph.requires": []}
 
     c = Clade(tmpdir, cmds_file, conf)
-    e = c.parse("CmdGraph")
 
-    cmd_graph = e.load_cmd_graph()
-    assert not cmd_graph
+    with pytest.raises(RuntimeError):
+        c.parse("CmdGraph")
 
 
 @pytest.mark.parametrize("as_picture", [True, False])

@@ -106,7 +106,8 @@ class CmdGraph(Extension):
                 self.__print_cmd_graph()
                 self.__print_cmd_graph_with_files()
         else:
-            self.warning("Command graph is empty")
+            self.error("Command graph is empty")
+            raise RuntimeError
 
         self.graph.clear()
 

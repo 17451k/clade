@@ -187,7 +187,7 @@ def main(sys_args=sys.argv[1:]):
         if e.args:
             raise SystemExit(e)
         else:
-            raise SystemExit
+            raise SystemExit(-1)
 
     sys.exit(0)
 

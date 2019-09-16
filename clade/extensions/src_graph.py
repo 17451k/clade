@@ -61,7 +61,8 @@ class SrcGraph(Extension):
         self.dump_data_by_key(self.src_graph, self.src_graph_folder)
 
         if not self.src_graph:
-            self.warning("Source graph is empty")
+            self.error("Source graph is empty")
+            raise RuntimeError
 
         self.src_graph.clear()
 
