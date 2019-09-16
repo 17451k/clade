@@ -538,8 +538,10 @@ def filter_opts(opts, get_storage_path=None):
 
         if path:
             if (
-                not is_isysroot and get_storage_path and os.path.isabs(path)
-            ) or (is_isysroot and name == "-isysroot"):
+                get_storage_path
+                and os.path.isabs(path)
+                and (not is_isysroot or name == "-isysroot")
+            ):
                 opt = opt.replace(path, get_storage_path(path))
 
             filtered_opts.append(opt)
@@ -548,8 +550,10 @@ def filter_opts(opts, get_storage_path=None):
             path = next(opts)
 
             if (
-                not is_isysroot and get_storage_path and os.path.isabs(path)
-            ) or (is_isysroot and name == "-isysroot"):
+                get_storage_path
+                and os.path.isabs(path)
+                and (not is_isysroot or name == "-isysroot")
+            ):
                 path = get_storage_path(path)
 
             filtered_opts.append(path)
