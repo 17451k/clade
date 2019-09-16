@@ -164,14 +164,15 @@ def main(sys_args=sys.argv[1:]):
         r = c.intercept(conf["command"], use_wrappers=conf["use_wrappers"], append=args.append)
 
         if r:
-            c.logger.error("Build failed, but Clade can still proceed further")
+            # Clade can still proceed further
+            c.logger.error("Build failed with error code {}".format(r))
         else:
             c.logger.info("Build completed successfully")
 
     if args.intercept:
         if os.path.exists(conf["cmds_file"]):
             c.logger.info("Path to the file with intercepted commands: {!r}".format(conf["cmds_file"]))
-            return
+            sys.exit(r)
         else:
             c.logger.error("Something is wrong: file with intercepted commands is empty")
             sys.exit(-1)
@@ -187,6 +188,8 @@ def main(sys_args=sys.argv[1:]):
             raise SystemExit(e)
         else:
             raise SystemExit
+
+    sys.exit(0)
 
 
 if __name__ == "__main__":

@@ -26,8 +26,13 @@ test_project_make = ["make", "-C", test_project]
 def test_intercept(tmpdir):
     cmds_file = os.path.join(str(tmpdir), "cmds.txt")
 
-    if sys.platform != "darwin":
+    if sys.platform == "darwin":
+        return
+
+    with pytest.raises(SystemExit) as e:
         main(["--cmds", cmds_file, "-i"] + test_project_make)
+
+    assert "0" == str(e.value)
 
 
 def test_intercept_no_command():
@@ -38,7 +43,10 @@ def test_intercept_no_command():
 
 
 def test_main_cc(tmpdir, cmds_file):
-    main(["-w", str(tmpdir), "--cmds", cmds_file, "-e", "CC"])
+    with pytest.raises(SystemExit) as e:
+        main(["-w", str(tmpdir), "--cmds", cmds_file, "-e", "CC"])
+
+    assert "0" == str(e.value)
 
 
 def test_main_bad_conf(tmpdir, cmds_file):
