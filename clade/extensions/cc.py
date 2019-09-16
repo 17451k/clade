@@ -15,6 +15,7 @@
 
 import os
 import re
+import shlex
 import subprocess
 
 from clade.extensions.compiler import Compiler
@@ -123,9 +124,12 @@ class CC(Compiler):
                         break
                     dep_line = dep_line.lstrip(" ")
                     dep_line = dep_line.rstrip(" \\\n")
+
                     if not dep_line:
                         continue
-                    deps.extend(dep_line.split(" "))
+
+                    # Split with non-escaped space
+                    deps.extend(shlex.split(dep_line))
 
             os.remove(deps_file)
 
