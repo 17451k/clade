@@ -14,7 +14,6 @@
 # limitations under the License.
 
 import os
-import re
 import shlex
 import subprocess
 
@@ -111,29 +110,20 @@ class CC(Compiler):
 
         if os.path.isfile(deps_file):
             with open(deps_file, encoding="utf8") as fp:
-                match = re.match(r"[^:]+:(.+)", fp.readline())
-                if match:
-                    first_dep_line = match.group(1)
-                else:
-                    raise RuntimeError(
-                        "Dependencies file has unsupported format"
-                    )
+                for line in fp.readlines():
+                    line = line.lstrip(" ")
+                    line = line.rstrip(" \\\n")
 
-                for dep_line in [first_dep_line] + fp.readlines():
-                    if ":" in dep_line:
-                        break
-                    dep_line = dep_line.lstrip(" ")
-                    dep_line = dep_line.rstrip(" \\\n")
-
-                    if not dep_line:
+                    if not line:
                         continue
 
                     # Split with non-escaped space
-                    deps.extend(shlex.split(dep_line))
+                    deps.extend(shlex.split(line))
 
             os.remove(deps_file)
 
-        return deps
+        # Ignore first element (output file, .o)
+        return deps[1:]
 
     def is_bad(self, cmd):
         if super().is_bad(cmd):
