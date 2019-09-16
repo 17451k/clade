@@ -79,7 +79,10 @@ class CC(Compiler):
 
         for cmd_in in cmd["in"]:
             deps_file = self.__collect_deps(cmd_id, cmd, cmd_in)
-            deps.extend(self.__parse_deps(deps_file))
+
+            # Remove duplicates
+            for dep in [d for d in self.__parse_deps(deps_file) if d not in deps]:
+                deps.append(dep)
 
         return deps
 
