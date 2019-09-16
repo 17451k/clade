@@ -466,14 +466,7 @@ cl_opts = [
     "-U",
 ]
 
-cl_preprocessor_deps_opts = [
-    "/EP",
-    "-EP",
-    "/E",
-    "-E",
-    "/P",
-    "-P",
-]
+cl_preprocessor_deps_opts = ["/EP", "-EP", "/E", "-E", "/P", "-P"]
 
 requires_value = {
     "CC": set(gcc_opts + clang_opts),
@@ -491,7 +484,7 @@ cif_include_opts = [
     "-isystem",
     "-idirafter",
     "-imacros",
-    "-isysroot"
+    "-isysroot",
 ]
 
 gcc_optimization_opts = [
@@ -521,9 +514,9 @@ def filter_opts(opts, get_storage_path=None):
 
     filtered_opts = []
 
-    # Do not overwrite absolute paths within options except for the one corresponding to isysroot when this option is
-    # specified.
-    is_isysroot = any(opt.startswith('-isysroot') for opt in opts)
+    # Do not overwrite absolute paths within options except for the one
+    # corresponding to isysroot when this option is specified.
+    is_isysroot = any(opt.startswith("-isysroot") for opt in opts)
 
     opts = iter(opts)
     for opt in opts:
@@ -544,7 +537,9 @@ def filter_opts(opts, get_storage_path=None):
         path = m.group(2)
 
         if path:
-            if (not is_isysroot and get_storage_path and os.path.isabs(path)) or (is_isysroot and name == '-isysroot'):
+            if (
+                not is_isysroot and get_storage_path and os.path.isabs(path)
+            ) or (is_isysroot and name == "-isysroot"):
                 opt = opt.replace(path, get_storage_path(path))
 
             filtered_opts.append(opt)
@@ -552,7 +547,9 @@ def filter_opts(opts, get_storage_path=None):
             filtered_opts.append(opt)
             path = next(opts)
 
-            if (not is_isysroot and get_storage_path and os.path.isabs(path)) or (is_isysroot and name == '-isysroot'):
+            if (
+                not is_isysroot and get_storage_path and os.path.isabs(path)
+            ) or (is_isysroot and name == "-isysroot"):
                 path = get_storage_path(path)
 
             filtered_opts.append(path)
