@@ -491,6 +491,7 @@ cif_include_opts = [
     "-isystem",
     "-idirafter",
     "-imacros",
+    "-isysroot"
 ]
 
 gcc_optimization_opts = [
@@ -519,6 +520,11 @@ def filter_opts(opts, get_storage_path=None):
         return []
 
     filtered_opts = []
+
+    # Do not overwrite absolute paths within options except for the one corresponding to isysroot when this option is
+    # specified.
+    is_isysroot = any(opt.startswith('-isysroot') for opt in opts)
+
     opts = iter(opts)
     for opt in opts:
         if not s_regex.match(opt):
@@ -534,10 +540,11 @@ def filter_opts(opts, get_storage_path=None):
 
             continue
 
+        name = m.group(1)
         path = m.group(2)
 
         if path:
-            if get_storage_path and os.path.isabs(path):
+            if (not is_isysroot and get_storage_path and os.path.isabs(path)) or (is_isysroot and name == '-isysroot'):
                 opt = opt.replace(path, get_storage_path(path))
 
             filtered_opts.append(opt)
@@ -545,7 +552,7 @@ def filter_opts(opts, get_storage_path=None):
             filtered_opts.append(opt)
             path = next(opts)
 
-            if get_storage_path and os.path.isabs(path):
+            if (not is_isysroot and get_storage_path and os.path.isabs(path)) or (is_isysroot and name == '-isysroot'):
                 path = get_storage_path(path)
 
             filtered_opts.append(path)
