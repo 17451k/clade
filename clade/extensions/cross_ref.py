@@ -175,7 +175,7 @@ class CrossRef(Callgraph):
             return locations
         except UnicodeDecodeError:
             with open(file, "rb") as fh:
-                encoding = cchardet.detect(fh.read())
+                encoding = cchardet.detect(fh.read())["encoding"]
 
             return self.__parse_file(file, raw_locations, encoding=encoding)
 
