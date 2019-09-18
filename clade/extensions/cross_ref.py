@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import cchardet
+import codecs
 import os
 import re
 
@@ -146,38 +146,32 @@ class CrossRef(Callgraph):
         sorted_locs = sorted(raw_locations[file], key=lambda x: int(x[0]))
         sorted_pos = 0
 
-        try:
-            with open(storage_file, "r", encoding=encoding) as fp:
-                for i, s in enumerate(fp):
-                    if sorted_pos >= len(sorted_locs):
-                        break
+        with codecs.open(storage_file, "r", encoding="utf8", errors="ignore") as fp:
+            for i, s in enumerate(fp):
+                if sorted_pos >= len(sorted_locs):
+                    break
 
-                    while (sorted_pos < len(sorted_locs) and int(sorted_locs[sorted_pos][0]) <= i + 1):
-                        if i == int(sorted_locs[sorted_pos][0]) - 1:
-                            line = int(sorted_locs[sorted_pos][0])
-                            name = sorted_locs[sorted_pos][1]
-                            ctype = sorted_locs[sorted_pos][2]
+                while (sorted_pos < len(sorted_locs) and int(sorted_locs[sorted_pos][0]) <= i + 1):
+                    if i == int(sorted_locs[sorted_pos][0]) - 1:
+                        line = int(sorted_locs[sorted_pos][0])
+                        name = sorted_locs[sorted_pos][1]
+                        ctype = sorted_locs[sorted_pos][2]
 
-                            for lowest_index in self.__find_all(s, name):
-                                val = (line, lowest_index, lowest_index + len(name))
-                                if name in locations[ctype]:
-                                    locations[ctype][name].append(val)
-                                else:
-                                    locations[ctype][name] = [val]
+                        for lowest_index in self.__find_all(s, name):
+                            val = (line, lowest_index, lowest_index + len(name))
+                            if name in locations[ctype]:
+                                locations[ctype][name].append(val)
+                            else:
+                                locations[ctype][name] = [val]
 
-                                # Only one macro definition can be on a single line
-                                if ctype == "def_macro":
-                                    break
-                                # TODO: there may be a function call inside macro expansion
+                            # Only one macro definition can be on a single line
+                            if ctype == "def_macro":
+                                break
+                            # TODO: there may be a function call inside macro expansion
 
-                        sorted_pos += 1
+                    sorted_pos += 1
 
-            return locations
-        except UnicodeDecodeError:
-            with open(file, "rb") as fh:
-                encoding = cchardet.detect(fh.read())["encoding"]
-
-            return self.__parse_file(file, raw_locations, encoding=encoding)
+        return locations
 
     def __find_all(self, s, name):
         for m in re.finditer(r"\w+", s):
