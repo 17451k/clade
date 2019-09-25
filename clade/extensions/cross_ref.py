@@ -131,7 +131,7 @@ class CrossRef(Callgraph):
 
         return raw_locations
 
-    def __parse_file(self, file, raw_locations, encoding="utf8"):
+    def __parse_file(self, file, raw_locations, ignore_errors=False, encoding="utf8"):
         storage_file = self.extensions["Storage"].get_storage_path(file)
 
         if not os.path.exists(storage_file):
@@ -146,7 +146,12 @@ class CrossRef(Callgraph):
         sorted_locs = sorted(raw_locations[file], key=lambda x: int(x[0]))
         sorted_pos = 0
 
-        with codecs.open(storage_file, "r", encoding="utf8", errors="ignore") as fp:
+        try:
+            if ignore_errors:
+                fp = codecs.open(storage_file, "r", encoding=encoding, errors="ignore")
+            else:
+                fp = open(storage_file, "r", encoding=encoding)
+
             for i, s in enumerate(fp):
                 if sorted_pos >= len(sorted_locs):
                     break
@@ -171,7 +176,11 @@ class CrossRef(Callgraph):
 
                     sorted_pos += 1
 
-        return locations
+            return locations
+        except UnicodeDecodeError:
+            return self.__parse_file(file, raw_locations, ignore_errors=True)
+        finally:
+            fp.close()
 
     def __find_all(self, s, name):
         for m in re.finditer(r"\w+", s):
