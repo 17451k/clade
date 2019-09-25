@@ -21,7 +21,7 @@ from clade.extensions.abstract import Extension
 
 
 class Path(Extension):
-    __version__ = "1"
+    __version__ = "2"
 
     def __init__(self, work_dir, conf=None):
         super().__init__(work_dir, conf)
@@ -43,25 +43,38 @@ class Path(Extension):
 
         return npaths
 
-    def get_rel_path(self, path, cwd):
-        key = cwd.lower() + " " + path.lower()
-        npath = self.paths.get(key)
+    def get_rel_path(self, path, cwd, load_paths=False):
+        if load_paths:
+            self.paths = self.load_paths()
+
+        key = cwd + " " + path
+        # get data either by key, or by key.lower()
+        npath = self.paths.get(key, self.paths.get(key.lower()))
 
         if npath:
             return npath
-        else:
-            self.paths = self.load_paths()
-            return self.paths[key]
+        elif load_paths:
+            self.error("Can't find path {!r} in Paths".format(key))
+            raise RuntimeError
 
-    def get_abs_path(self, path):
-        key = path.lower()
-        npath = self.paths.get(key)
+        # self.paths may not contain all necessary data
+        return self.get_rel_path(path, cwd, load_paths=True)
+
+    def get_abs_path(self, path, load_paths=False):
+        if load_paths:
+            self.paths = self.load_paths()
+
+        key = path
+        npath = self.paths.get(key, self.paths.get(key.lower()))
 
         if npath:
             return npath
-        else:
-            self.paths = self.load_paths()
-            return self.paths[key]
+        elif load_paths:
+            self.error("Can't find path {!r} in Paths".format(key))
+            raise RuntimeError
+
+        # self.paths may not contain all necessary data
+        return self.get_abs_path(path, load_paths=True)
 
     def dump_paths(self):
         self.dump_data(self.paths, self.paths_file)
@@ -81,7 +94,10 @@ class Path(Extension):
     def normalize_rel_path(self, path, cwd):
         cwd = cwd.strip()
         path = path.strip()
-        key = cwd.lower() + " " + path.lower()
+
+        key = cwd + " " + path
+        if sys.platform == "win32":
+            key = key.lower()
 
         if not self.paths:
             self.paths = self.load_paths()
@@ -100,7 +116,10 @@ class Path(Extension):
 
     def normalize_abs_path(self, path):
         path = path.strip()
-        key = path.lower()
+
+        key = path
+        if sys.platform == "win32":
+            key = key.lower()
 
         if not self.paths:
             self.paths = self.load_paths()
