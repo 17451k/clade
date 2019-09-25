@@ -174,7 +174,7 @@ class CL(Compiler):
         with open(deps_file, "wb") as deps_fh:
             proc = subprocess.Popen(
                 deps_cmd,
-                stdout=subprocess.DEVNULL,
+                stdout=deps_fh,
                 stderr=deps_fh,
                 cwd=cmd["cwd"],
                 shell=True,
