@@ -370,6 +370,9 @@ class Extension(metaclass=abc.ABCMeta):
         version = pkg_resources.get_distribution("clade").version
         location = pkg_resources.get_distribution("clade").location
 
+        if not os.path.exists(os.path.join(location, ".git")):
+            return version
+
         try:
             desc = ["git", "describe", "--tags", "--dirty"]
             version = subprocess.check_output(
