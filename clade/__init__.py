@@ -333,13 +333,13 @@ class Clade:
         cmd = ext_obj.load_cmd_by_id(cmd_id)
 
         if with_opts:
-            cmd["opts"] = self.get_cmd_opts(cmd_id)
+            cmd["opts"] = self.get_cmd_opts(cmd_id, cmd_type=cmd_type)
 
         if with_raw:
-            cmd["command"] = self.get_cmd_raw(cmd_id)
+            cmd["command"] = self.get_cmd_raw(cmd_id, cmd_type=cmd_type)
 
         if with_deps:
-            cmd["deps"] = self.get_cmd_deps(cmd_id)
+            cmd["deps"] = self.get_cmd_deps(cmd_id, cmd_type=cmd_type)
 
         cmd = self.__normalize_cmd(cmd)
 
