@@ -271,9 +271,14 @@ class Info(Extension):
     def __normalize_cif_output(self, cif_output):
         self.log("Normalizing CIF output")
 
+        if self.conf.get("cpu_count"):
+            max_workers = self.conf.get("cpu_count", os.cpu_count())
+        else:
+            max_workers = os.cpu_count()
+
         # Normalize all small cif output files
         with concurrent.futures.ProcessPoolExecutor(
-            max_workers=os.cpu_count()
+            max_workers=max_workers
         ) as p:
             futures = []
             finished_files = 0
