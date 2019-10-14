@@ -320,9 +320,11 @@ class Clade:
 
         return self.cmd_graph[cmd_id]["type"]
 
-    def get_cmd(self, cmd_id, with_opts=False, with_raw=False, with_deps=False):
-        """Get command by its identifier."""
-        cmd_type = self.get_cmd_type(cmd_id)
+    def get_cmd(self, cmd_id, cmd_type=None, with_opts=False, with_raw=False, with_deps=False):
+        """Get command by its identifier and type (optionally)."""
+
+        if not cmd_type:
+            cmd_type = self.get_cmd_type(cmd_id)
 
         if with_deps and cmd_type not in ["CC", "CL"]:
             raise RuntimeError("Only compiler commands have dependencies")
@@ -343,23 +345,28 @@ class Clade:
 
         return cmd
 
-    def get_cmd_opts(self, cmd_id):
-        """Get list of options of a command by its identifier."""
-        cmd_type = self.get_cmd_type(cmd_id)
+    def get_cmd_opts(self, cmd_id, cmd_type=None):
+        """Get list of options of a command by its identifier and type (optionally)."""
+        if not cmd_type:
+            cmd_type = self.get_cmd_type(cmd_id)
+
         ext_obj = self.CmdGraph.get_ext_obj(cmd_type)
 
         return ext_obj.load_opts_by_id(cmd_id)
 
-    def get_cmd_raw(self, cmd_id):
-        """Get raw intercepted command by its identifier."""
-        cmd_type = self.get_cmd_type(cmd_id)
+    def get_cmd_raw(self, cmd_id, cmd_type=None):
+        """Get raw intercepted command by its identifier and type (optionally)."""
+        if not cmd_type:
+            cmd_type = self.get_cmd_type(cmd_id)
+
         ext_obj = self.CmdGraph.get_ext_obj(cmd_type)
 
         return ext_obj.load_raw_by_id(cmd_id)
 
-    def get_cmd_deps(self, cmd_id):
-        """Get list of dependencies of a compiler command by its identifier."""
-        cmd_type = self.get_cmd_type(cmd_id)
+    def get_cmd_deps(self, cmd_id, cmd_type=None):
+        """Get list of dependencies of a compiler command by its identifier and type (optionally)."""
+        if not cmd_type:
+            cmd_type = self.get_cmd_type(cmd_id)
 
         if cmd_type not in ["CC", "CL"]:
             raise RuntimeError("Only compiler commands have dependencies")
