@@ -108,7 +108,8 @@ def test_cc_ignore_cc1(tmpdir, cmds_file, ignore_cc1):
         if"-cc1" in cmd["opts"]:
             found_cc1 = True
 
-    assert ignore_cc1 != found_cc1
+    if ignore_cc1 or found_cc1:
+        assert ignore_cc1 != found_cc1
 
 
 @pytest.mark.parametrize("compile_only", [True, False])
