@@ -26,7 +26,7 @@ class CmdGraph(Extension):
     always_requires = ["PidGraph", "Path"]
     requires = always_requires + ["CC", "LD", "AR"]
 
-    __version__ = "1"
+    __version__ = "2"
 
     def __init__(self, work_dir, conf=None):
         conf = conf if conf else dict()
@@ -38,6 +38,7 @@ class CmdGraph(Extension):
 
         self.graph = dict()
         self.graph_file = "cmd_graph.json"
+        self.graph_folder = "cmd_graph"
 
         self.graph_dot = os.path.join(self.work_dir, "cmd_graph.dot")
         self.graph_with_files_dot = os.path.join(self.work_dir, "cmd_graph_with_files.dot")
@@ -45,6 +46,14 @@ class CmdGraph(Extension):
     def load_cmd_graph(self):
         """Load command graph."""
         return self.load_data(self.graph_file)
+
+    def load_cmd_graph_node(self, cmd_id):
+        """Load command graph node by command id."""
+        return self.load_data(os.path.join(self.graph_folder, "{}.json".format(cmd_id)))
+
+    def dump_cmd_graph_node(self, cmd_id):
+        """Dump command graph node by command id."""
+        self.dump_data(self.graph[cmd_id], os.path.join(self.graph_folder, "{}.json".format(cmd_id)))
 
     def load_all_cmds(self, with_opts=False, with_raw=False, filter_by_pid=False):
         cmds = list()
@@ -100,6 +109,9 @@ class CmdGraph(Extension):
             self.__add_to_graph(cmd)
 
         self.dump_data(self.graph, self.graph_file)
+
+        for cmd_id in self.graph:
+            self.dump_cmd_graph_node(cmd_id)
 
         if self.graph:
             if self.conf.get("CmdGraph.as_picture"):

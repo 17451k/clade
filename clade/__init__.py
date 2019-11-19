@@ -315,10 +315,10 @@ class Clade:
 
     def get_cmd_type(self, cmd_id):
         """Get type of a command by its identifier."""
-        if cmd_id not in self.cmd_graph:
+        try:
+            return self.CmdGraph.load_cmd_graph_node(cmd_id)["type"]
+        except FileNotFoundError:
             raise RuntimeError("Can't find {!r} id in the command graph".format(cmd_id))
-
-        return self.cmd_graph[cmd_id]["type"]
 
     def get_cmd(self, cmd_id, cmd_type=None, with_opts=False, with_raw=False, with_deps=False):
         """Get command by its identifier and type (optionally)."""
