@@ -202,7 +202,7 @@ class Callgraph(Extension):
                     self._error("Can't match definition for use: {} {}".format(func, context_file))
 
     @functools.lru_cache()
-    def _t_unit_is_common(self, file1, file2, cache=dict()):
+    def _t_unit_is_common(self, file1, file2):
         return (
             file1 in self.src_graph
             and file2 in self.src_graph
@@ -214,7 +214,7 @@ class Callgraph(Extension):
         )
 
     @functools.lru_cache()
-    def _files_are_linked(self, file1, file2, cache=dict()):
+    def _files_are_linked(self, file1, file2):
         return (
             file1 in self.src_graph
             and file2 in self.src_graph
