@@ -21,13 +21,13 @@ from clade.extensions.abstract import Extension
 
 
 class Path(Extension):
-    __version__ = "2"
+    __version__ = "3"
 
     def __init__(self, work_dir, conf=None):
         super().__init__(work_dir, conf)
 
         self.paths = dict()
-        self.paths_file = "paths.json"
+        self.paths_folder = self.work_dir
 
     @Extension.prepare
     def parse(self, cmds_file):
@@ -43,44 +43,33 @@ class Path(Extension):
 
         return npaths
 
-    def get_rel_path(self, path, cwd, load_paths=False):
-        if load_paths:
-            self.paths = self.load_paths()
-
+    def get_rel_path(self, path, cwd):
         key = cwd + " " + path
+
+        return self.__get_path_by_key(key, path)
+
+    def get_abs_path(self, path):
+        return self.__get_path_by_key(path, path)
+
+    def __get_path_by_key(self, key, orig_path):
+        if key not in self.paths and key.lower() not in self.paths:
+            self.paths.update(self.load_paths_by_key(key))
+
         # get data either by key, or by key.lower()
         npath = self.paths.get(key, self.paths.get(key.lower()))
 
-        if npath:
-            return npath
-        elif load_paths:
-            self.error("Can't find path {!r} in Paths".format(key))
+        if not npath:
+            npath = orig_path
+
+        if npath[0] != "/":
+            self.error("{!r} path is not normalized".format(npath))
             raise RuntimeError
 
-        # self.paths may not contain all necessary data
-        return self.get_rel_path(path, cwd, load_paths=True)
+        return npath
 
-    def get_abs_path(self, path, load_paths=False):
-        if load_paths:
-            self.paths = self.load_paths()
-
-        key = path
-        npath = self.paths.get(key, self.paths.get(key.lower()))
-
-        if npath:
-            return npath
-        elif load_paths:
-            self.error("Can't find path {!r} in Paths".format(key))
-            raise RuntimeError
-
-        # self.paths may not contain all necessary data
-        return self.get_abs_path(path, load_paths=True)
-
-    def dump_paths(self):
-        self.dump_data(self.paths, self.paths_file)
-
-    def load_paths(self):
-        return self.load_data(self.paths_file, raise_exception=False)
+    def load_paths_by_key(self, key):
+        """Load information about paths grouped by key."""
+        return self.load_data_by_key(self.paths_folder, [key, key.lower()])
 
     def normalize_rel_paths(self, paths, cwd):
         # TODO: check that paths is a list, not a string
@@ -99,9 +88,6 @@ class Path(Extension):
         if sys.platform == "win32":
             key = key.lower()
 
-        if not self.paths:
-            self.paths = self.load_paths()
-
         if key in self.paths:
             return self.paths[key]
 
@@ -111,7 +97,11 @@ class Path(Extension):
             abs_path = path
 
         npath = self.normalize_abs_path(abs_path)
-        self.paths[key] = npath
+
+        if path != npath:
+            self.paths[key] = npath
+            self.dump_data_by_key({key: npath}, self.paths_folder)
+
         return npath
 
     def normalize_abs_path(self, path):
@@ -120,9 +110,6 @@ class Path(Extension):
         key = path
         if sys.platform == "win32":
             key = key.lower()
-
-        if not self.paths:
-            self.paths = self.load_paths()
 
         if key in self.paths:
             return self.paths[key]
@@ -136,7 +123,10 @@ class Path(Extension):
             if drive:
                 npath = "/" + drive[:-1] + tail
 
-        self.paths[key] = npath
+        if path != npath:
+            self.paths[key] = npath
+            self.dump_data_by_key({key: npath}, self.paths_folder)
+
         return npath
 
     def __get_actual_filename(self, path):

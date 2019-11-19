@@ -96,8 +96,6 @@ class CmdGraph(Extension):
                 for src_file in self.extensions[cmd["type"]].load_deps_by_id(cmd["id"]):
                     self.extensions["Path"].normalize_rel_path(src_file, cmd["cwd"])
 
-        self.extensions["Path"].dump_paths()
-
     @Extension.prepare
     def parse(self, cmds_file):
         cmds = self.load_all_cmds()
