@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import os
+import pathlib
 
 from clade import Clade
 
@@ -27,3 +28,31 @@ def test_path(tmpdir, cmds_file):
 
     assert c.Path.get_abs_path(test_file_abs) == test_file_abs
     assert c.Path.normalize_rel_path(test_file_rel, os.getcwd()) == test_file_abs
+
+    # Clear cache
+    c.Path.paths = dict()
+
+    assert c.Path.get_abs_path(test_file_abs) == test_file_abs
+
+
+def test_path_capital(tmpdir, cmds_file):
+    c = Clade(tmpdir, cmds_file)
+    c.parse("SrcGraph")
+
+    test_small = pathlib.Path(tmpdir) / "test.c"
+    test_capital = pathlib.Path(tmpdir) / "TEST.c"
+
+    test_small.touch()
+    test_capital.touch()
+
+    c.Path.normalize_rel_path("TEST.c", str(tmpdir))
+    c.Path.normalize_rel_path("test.c", str(tmpdir))
+
+    assert "test.c" in c.Path.get_rel_path("test.c", str(tmpdir))
+    assert "TEST.c" in c.Path.get_rel_path("TEST.c", str(tmpdir))
+
+    # Clear cache
+    c.Path.paths = dict()
+
+    assert "test.c" in c.Path.get_rel_path("test.c", str(tmpdir))
+    assert "TEST.c" in c.Path.get_rel_path("TEST.c", str(tmpdir))

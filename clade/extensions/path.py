@@ -52,7 +52,7 @@ class Path(Extension):
         return self.__get_path_by_key(path, path)
 
     def __get_path_by_key(self, key, orig_path):
-        if key not in self.paths and key.lower() not in self.paths:
+        if key not in self.paths or key.lower() not in self.paths:
             self.paths.update(self.load_paths_by_key(key))
 
         # get data either by key, or by key.lower()
