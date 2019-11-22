@@ -31,7 +31,7 @@ def main(args=sys.argv[1:]):
     args = parser.parse_args(args)
 
     c = Clade(args.work_dir)
-    sys.exit(not c.is_work_dir_ok(log=True))
+    sys.exit(not c.work_dir_ok(log=True))
 
 
 if __name__ == "__main__":

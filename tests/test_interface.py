@@ -217,7 +217,7 @@ def test_add_meta_bad(tmpdir):
 def test_check_work_dir_fail(tmpdir):
     c = Clade(tmpdir)
 
-    assert not c.is_work_dir_ok()
+    assert not c.work_dir_ok()
 
 
 def test_cant_create_work_dir():
@@ -227,13 +227,13 @@ def test_cant_create_work_dir():
 
 
 def test_check_work_dir(clade_api: Clade):
-    assert clade_api.is_work_dir_ok(log=True)
+    assert clade_api.work_dir_ok(log=True)
 
 
 def test_check_work_dir_bad(tmpdir, cmds_file):
     c = Clade(tmpdir, cmds_file)
 
-    assert not c.is_work_dir_ok(log=True)
+    assert not c.work_dir_ok(log=True)
 
 
 def test_cross_ref(clade_api: Clade):

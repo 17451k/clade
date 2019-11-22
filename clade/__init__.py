@@ -748,7 +748,7 @@ class Clade:
 
         self.PidGraph.add_data_to_global_meta(key, data)
 
-    def is_work_dir_ok(self, log=False):
+    def work_dir_ok(self, log=False):
         """Check that Clade working directory exists and not corrupted.
 
         Returns:
@@ -775,8 +775,11 @@ class Clade:
             try:
                 ext_obj.check_corrupted()
             except RuntimeError:
-                if log:
-                    self.logger.error("Working directory of {!r} extension is corrupted".format(ext_obj.name))
+                return False
+
+            try:
+                ext_obj.check_ext_version()
+            except RuntimeError:
                 return False
 
         if log:

@@ -265,7 +265,7 @@ class Extension(metaclass=abc.ABCMeta):
 
         if stored_meta and self.ext_meta["version"] != stored_meta["version"]:
             self.error(
-                "Working directory was created by an older version of Clade and can't be used."
+                "Working directory was created by incompatible version of Clade and can't be used."
             )
             raise RuntimeError
 
