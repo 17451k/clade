@@ -73,7 +73,6 @@ class Extension(metaclass=abc.ABCMeta):
         logger.setLevel(self.conf.get("log_level", "INFO"))
 
         self.ext_meta = {"version": self.get_ext_version(), "corrupted": False}
-        self.ext_meta_file = ".meta.json"
         self.global_meta_file = os.path.abspath(
             os.path.join(str(work_dir), "meta.json")
         )
@@ -124,9 +123,6 @@ class Extension(metaclass=abc.ABCMeta):
                 self.ext_meta["time"] = str(
                     datetime.timedelta(seconds=(time.time() - time_start))
                 )
-
-                if os.path.exists(self.work_dir):
-                    self.dump_ext_meta()
 
                 if os.path.exists(os.path.dirname(self.work_dir)):
                     self.dump_global_meta(args[0])
@@ -261,7 +257,7 @@ class Extension(metaclass=abc.ABCMeta):
 
     def check_ext_version(self):
         """Check that working directory was creating with the extension of correct version."""
-        stored_meta = self.load_ext_meta()
+        stored_meta = self.load_global_meta().get(self.name)
 
         if stored_meta and self.ext_meta["version"] != stored_meta["version"]:
             self.error(
@@ -271,7 +267,7 @@ class Extension(metaclass=abc.ABCMeta):
 
     def check_corrupted(self):
         """Check that working directory is not corrupted."""
-        stored_meta = self.load_ext_meta()
+        stored_meta = self.load_global_meta().get(self.name)
 
         if stored_meta and stored_meta["corrupted"]:
             self.error("Working directory is corrupted and can't be used.")
@@ -309,12 +305,6 @@ class Extension(metaclass=abc.ABCMeta):
             opts.extend([k for k in self.conf if k.startswith(name + ".")])
 
         return opts
-
-    def load_ext_meta(self):
-        return self.load_data(self.ext_meta_file, raise_exception=False)
-
-    def dump_ext_meta(self):
-        self.dump_data(self.ext_meta, self.ext_meta_file)
 
     def load_global_meta(self):
         return self.load_data(self.global_meta_file, raise_exception=False)
