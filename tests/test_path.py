@@ -39,20 +39,22 @@ def test_path_capital(tmpdir, cmds_file):
     c = Clade(tmpdir, cmds_file)
     c.parse("SrcGraph")
 
+    tmpdir = str(tmpdir)
+
     test_small = pathlib.Path(tmpdir) / "test.c"
     test_capital = pathlib.Path(tmpdir) / "TEST.c"
 
     test_small.touch()
     test_capital.touch()
 
-    c.Path.normalize_rel_path("TEST.c", str(tmpdir))
-    c.Path.normalize_rel_path("test.c", str(tmpdir))
+    c.Path.normalize_rel_path("TEST.c", tmpdir)
+    c.Path.normalize_rel_path("test.c", tmpdir)
 
-    assert "test.c" in c.Path.get_rel_path("test.c", str(tmpdir))
-    assert "TEST.c" in c.Path.get_rel_path("TEST.c", str(tmpdir))
+    assert "test.c" in c.Path.get_rel_path("test.c", tmpdir)
+    assert "TEST.c" in c.Path.get_rel_path("TEST.c", tmpdir)
 
     # Clear cache
     c.Path.paths = dict()
 
-    assert "test.c" in c.Path.get_rel_path("test.c", str(tmpdir))
-    assert "TEST.c" in c.Path.get_rel_path("TEST.c", str(tmpdir))
+    assert "test.c" in c.Path.get_rel_path("test.c", tmpdir)
+    assert "TEST.c" in c.Path.get_rel_path("TEST.c", tmpdir)
