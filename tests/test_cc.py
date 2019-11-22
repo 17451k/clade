@@ -86,10 +86,10 @@ def test_cc_with_system_header_files(tmpdir, cmds_file, with_system_header_files
     for cmd in e.load_all_cmds(with_deps=True, compile_only=True):
         if not with_system_header_files:
             for file in cmd["deps"]:
-                assert not re.match(r"/usr", file)
+                assert not re.search(r"/usr", file)
         else:
             for file in cmd["deps"]:
-                if re.match(r"/usr", file):
+                if re.search(r"/usr", file):
                     break
             else:
                 assert False
