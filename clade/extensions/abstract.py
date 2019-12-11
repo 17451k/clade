@@ -67,6 +67,7 @@ class Extension(metaclass=abc.ABCMeta):
 
         if not hasattr(self, "requires"):
             self.requires = []
+        self.debug("Extension requirements: {!r}".format(self.requires))
 
         self.extensions = dict()
 
@@ -118,6 +119,7 @@ class Extension(metaclass=abc.ABCMeta):
                 raise
             finally:
                 if os.path.exists(self.temp_dir):
+                    self.debug("Removing temp directory: {!r}".format(self.temp_dir))
                     shutil.rmtree(self.temp_dir)
 
                 self.ext_meta["time"] = str(
@@ -147,11 +149,14 @@ class Extension(metaclass=abc.ABCMeta):
             message = "{!r} file is not found".format(file_name)
 
             if raise_exception:
-                raise FileNotFoundError(message)
+                self.error(message)
+                raise FileNotFoundError
+            else:
+                self.debug(message)
 
             return dict()
 
-        self.debug("Load {}".format(file_name))
+        self.debug("Loading {}".format(file_name))
         with open(file_name, "r") as fh:
             return ujson.load(fh)
 
@@ -163,7 +168,7 @@ class Extension(metaclass=abc.ABCMeta):
 
         os.makedirs(os.path.dirname(file_name), exist_ok=True)
 
-        self.debug("Dump {}".format(file_name))
+        self.debug("Dumping {}".format(file_name))
 
         try:
             with open(file_name, "w") as fh:
@@ -176,7 +181,7 @@ class Extension(metaclass=abc.ABCMeta):
                     escape_forward_slashes=False,
                 )
         except RecursionError:
-            # todo: This is a workaround but it is required rarely
+            # This is a workaround, but it is rarely required
             self.warning(
                 "Do not print data to file due to recursion limit {}".format(
                     file_name
@@ -195,6 +200,7 @@ class Extension(metaclass=abc.ABCMeta):
         data = dict()
 
         if files:
+            self.debug("Loading data from {!r}: {!r}".format(folder, files))
             for key in files:
                 file = os.path.join(
                     folder,
@@ -202,6 +208,7 @@ class Extension(metaclass=abc.ABCMeta):
                 )
                 data.update(self.load_data(file, raise_exception=False))
         else:
+            self.debug("Loading all data from {!r}".format(folder))
             for file in self.__get_all_files_in_folder(folder):
                 data.update(self.load_data(file, raise_exception=False))
 
@@ -217,6 +224,7 @@ class Extension(metaclass=abc.ABCMeta):
             )
 
         if files:
+            self.debug("Yielding data from {!r}: {!r}".format(folder, files))
             for key in files:
                 file = os.path.join(
                     folder,
@@ -227,6 +235,7 @@ class Extension(metaclass=abc.ABCMeta):
                 for key in data:
                     yield key, data
         else:
+            self.debug("Yielding all data from {!r}".format(folder))
             for file in self.__get_all_files_in_folder(folder):
                 data = self.load_data(file, raise_exception=False)
                 for key in data:
@@ -237,6 +246,8 @@ class Extension(metaclass=abc.ABCMeta):
 
     def dump_data_by_key(self, data, folder):
         """Dump data to multiple json files in the object working directory."""
+        self.debug("Dumping data to {!r}".format(folder))
+
         for key in data:
             to_dump = {key: data[key]}
 
