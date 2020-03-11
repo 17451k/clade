@@ -13,7 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import cchardet
+try:
+    import cchardet as chardet
+except ImportError:
+    import chardet
+
 import functools
 import os
 import shutil
@@ -70,7 +74,7 @@ class Storage(Extension):
                 content_bytes = fh.read()
 
             if not encoding:
-                detected = cchardet.detect(content_bytes)
+                detected = chardet.detect(content_bytes)
                 encoding = detected["encoding"]
                 confidence = detected["confidence"]
             else:
