@@ -153,7 +153,10 @@ def main(sys_args=sys.argv[1:]):
     except RuntimeError as e:
         raise SystemExit(e)
 
-    if os.path.isfile(conf["cmds_file"]) and not args.append:
+    if os.path.isfile(conf["cmds_file"]) and args.intercept and not args.append:
+        c.logger.info("File with intercepted commands already exists: {!r}".format(conf["cmds_file"]))
+        sys.exit(-1)
+    elif os.path.isfile(conf["cmds_file"]) and not args.append:
         c.logger.info("Skipping build and reusing {!r} file".format(conf["cmds_file"]))
     else:
         if not args.command:
