@@ -132,8 +132,11 @@ class CmdGraph(Extension):
             if i in out_dict
         ):
             in_id = out_dict[cmd_in]
-            self.graph[in_id]["used_by"].add(out_id)
-            self.graph[out_id]["using"].add(in_id)
+
+            if out_id not in self.graph[in_id]["used_by"]:
+                self.graph[in_id]["used_by"].append(out_id)
+            if in_id not in self.graph[out_id]["using"]:
+                self.graph[out_id]["using"].append(in_id)
 
         # Rewrite out_dict[cmd_out] values to keep the latest used command id
         for cmd_out in self.extensions["Path"].get_rel_paths(cmd["out"], cmd["cwd"]):
@@ -204,7 +207,7 @@ class CmdGraph(Extension):
 
     @staticmethod
     def __get_new_value(cmd_type):
-        return {"used_by": set(), "using": set(), "type": cmd_type}
+        return {"used_by": list(), "using": list(), "type": cmd_type}
 
     def get_ext_obj(self, ext_name):
         if ext_name not in self.extensions:
