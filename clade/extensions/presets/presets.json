@@ -153,5 +153,15 @@
             "Macros",
             "CrossRef"
         ]
+    },
+    "klever_busybox_linux": {
+        "extends": "busybox_linux",
+        "extensions": [
+            "Callgraph",
+            "Variables",
+            "Typedefs",
+            "Macros",
+            "CrossRef"
+        ]
     }
 }
