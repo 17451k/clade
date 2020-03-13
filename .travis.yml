@@ -13,7 +13,8 @@ install:
   - pip install -e .
 
 before_script:
-  - sudo apt-get install -y graphviz
+  - sudo apt-get update
+  - sudo apt-get install -y graphviz gcc-multilib
   - pip install coveralls pytest
   - curl -sSfL -o cif.tar.xz https://github.com/17451k/cif/releases/download/2020-03-13/cif-8c83608-2020-03-13-linux-x64.tar.xz
   - tar xf cif.tar.xz
