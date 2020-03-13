@@ -15,6 +15,7 @@
 
 import os
 import pytest
+import shutil
 
 from clade import Clade
 
@@ -53,6 +54,9 @@ def test_cmd_graph_empty_requires(tmpdir, cmds_file):
 
 @pytest.mark.parametrize("as_picture", [True, False])
 def test_cmd_graph_as_picture(tmpdir, cmds_file, as_picture):
+    if not shutil.which("dot"):
+        return
+
     conf = {"CmdGraph.as_picture": as_picture}
 
     c = Clade(tmpdir, cmds_file, conf)
