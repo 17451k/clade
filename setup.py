@@ -192,7 +192,7 @@ except ImportError:
 
 setuptools.setup(
     name="clade",
-    version="3.2.5",
+    version="3.2.6",
     author="Ilya Shchepetkov",
     author_email="shchepetkov@ispras.ru",
     url="https://github.com/17451k/clade",
@@ -224,6 +224,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: Implementation :: CPython",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: POSIX :: Linux",
