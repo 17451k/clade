@@ -4,8 +4,8 @@ on: [push, pull_request]
 
 jobs:
   build:
-
     runs-on: ${{ matrix.os }}
+
     strategy:
       matrix:
         python-version: [3.5, 3.6, 3.7, 3.8]
@@ -25,9 +25,18 @@ jobs:
         python -m pip install --upgrade pytest
         python -m pip install -e .
 
+    - name: Download CIF [Ubuntu]
+      if: startsWith(matrix.os, 'ubuntu')
+      run: |
+        curl -sSfL -o cif.tar.xz https://github.com/17451k/cif/releases/download/2020-03-13/cif-8c83608-2020-03-13-linux-x64.tar.xz
+
+    - name: Download CIF [macOS]
+      if: startsWith(matrix.os, 'macos')
+      run: |
+        curl -sSfL -o cif.tar.xz https://github.com/17451k/cif/releases/download/2020-03-13/cif-8c83608-2020-03-13-macos.tar.xz
+
     - name: Install CIF
       run: |
-        curl -sSfL -o cif.tar.xz https://github.com/17451k/cif/releases/download/2019-09-02/cif-20190902-linux-x64.tar.xz
         tar xf cif.tar.xz
 
     - name: Test with pytest
