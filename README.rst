@@ -1,7 +1,7 @@
 .. image:: https://travis-ci.org/17451k/clade.svg?branch=master
     :target: https://travis-ci.org/17451k/clade
     :alt: Build status
-.. image:: https://github.com/17451k/clade/workflows/Test/badge.svg
+.. image:: https://github.com/17451k/clade/workflows/test/badge.svg
     :target: https://travis-ci.org/17451k/clade
     :alt: Test status
 .. image:: https://coveralls.io/repos/github/17451k/clade/badge.svg?branch=master
