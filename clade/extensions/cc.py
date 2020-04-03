@@ -78,6 +78,7 @@ class CC(Compiler):
         deps = []
 
         for cmd_in in cmd["in"]:
+            self.debug("Collecting dependencies for {!r} file".format(cmd_in))
             deps_file = self.__collect_deps(cmd_id, cmd, cmd_in)
 
             # Remove duplicates
@@ -98,13 +99,16 @@ class CC(Compiler):
         command = [cmd["command"][0]] + opts + [cmd_in]
 
         # Do not execute a command that does not contain any input files
-        if "-" not in command and cmd["in"]:
+        if cmd["in"] and "-" not in cmd["in"]:
+            self.debug("Executing command: {!r}".format(command))
             subprocess.call(
                 command,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
                 cwd=cmd["cwd"],
             )
+        else:
+            self.debug("Command does not contain any input files, skipping")
 
         return deps_file
 
@@ -112,8 +116,10 @@ class CC(Compiler):
         deps = []
 
         if os.path.isfile(deps_file):
+            self.debug("Parsing dependencies file {!r}".format(deps_file))
             with open(deps_file, encoding="utf8") as fp:
                 for line in fp.readlines():
+                    self.debug("Line: {!r}".format(line))
                     line = line.lstrip(" ")
                     line = line.rstrip(" \\\n")
 
@@ -124,6 +130,8 @@ class CC(Compiler):
                     deps.extend(shlex.split(line))
 
             os.remove(deps_file)
+        else:
+            self.debug("File with dependencies does not exist")
 
         # Ignore first element (output file, .o)
         return deps[1:]
