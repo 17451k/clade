@@ -100,7 +100,10 @@ class CC(Compiler):
 
         # Do not execute a command that does not contain any input files
         if cmd["in"] and "-" not in cmd["in"]:
-            self.debug("Executing command: {!r}".format(command))
+            self.debug("CWD: {!r}".format(cmd["cwd"]))
+            self.debug("Executing command: {!r}".format(
+                " ".join([shlex.quote(x) for x in command]))
+            )
             subprocess.call(
                 command,
                 stdout=subprocess.DEVNULL,
