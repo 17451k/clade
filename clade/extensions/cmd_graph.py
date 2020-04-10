@@ -40,6 +40,8 @@ class CmdGraph(Extension):
         self.graph_file = "cmd_graph.json"
         self.graph_folder = "cmd_graph"
 
+        self.out_dict = dict()
+
         self.graph_dot = os.path.join(self.work_dir, "cmd_graph.dot")
         self.graph_with_files_dot = os.path.join(self.work_dir, "cmd_graph_with_files.dot")
 
@@ -121,7 +123,7 @@ class CmdGraph(Extension):
 
         self.graph.clear()
 
-    def __add_to_graph(self, cmd, out_dict=dict()):
+    def __add_to_graph(self, cmd):
         out_id = str(cmd["id"])
         if out_id not in self.graph:
             self.graph[out_id] = self.__get_new_value(cmd["type"])
@@ -129,9 +131,9 @@ class CmdGraph(Extension):
         for cmd_in in (
             i
             for i in self.extensions["Path"].get_rel_paths(cmd["in"], cmd["cwd"])
-            if i in out_dict
+            if i in self.out_dict
         ):
-            in_id = out_dict[cmd_in]
+            in_id = self.out_dict[cmd_in]
 
             if out_id not in self.graph[in_id]["used_by"]:
                 self.graph[in_id]["used_by"].append(out_id)
@@ -140,7 +142,7 @@ class CmdGraph(Extension):
 
         # Rewrite out_dict[cmd_out] values to keep the latest used command id
         for cmd_out in self.extensions["Path"].get_rel_paths(cmd["out"], cmd["cwd"]):
-            out_dict[cmd_out] = out_id
+            self.out_dict[cmd_out] = out_id
 
     def __print_cmd_graph(self):
         dot = Digraph(graph_attr={'rankdir': 'LR'}, node_attr={'shape': 'rectangle'})
