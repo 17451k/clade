@@ -52,10 +52,16 @@ class SrcGraph(Extension):
 
     @Extension.prepare
     def parse(self, cmds_file):
-        self.log("Parsing {} commands".format(len(list(self.load_all_cmds()))))
+        cmds_number = len(list(self.load_all_cmds()))
 
-        cmds_iter = self.load_all_cmds()
-        self.__generate_src_graph(cmds_iter)
+        if cmds_number:
+            self.log("Parsing {} commands".format(cmds_number))
+        else:
+            self.error("No commands to parse")
+            raise RuntimeError
+
+        cmds = self.load_all_cmds()
+        self.__generate_src_graph(cmds)
 
         if not self.src_graph:
             self.error("Source graph is empty")
