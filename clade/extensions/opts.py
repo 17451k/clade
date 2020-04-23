@@ -251,7 +251,6 @@ cc_preprocessor_opts = [
     "-MT",
     "-MQ",
     "-MD",
-    "-MMD",
     "-dependency-file",
 ]
 
