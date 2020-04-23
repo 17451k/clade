@@ -115,7 +115,8 @@ class Extension(metaclass=abc.ABCMeta):
             try:
                 return parse(self, *args, **kwargs)
             except Exception:
-                self.ext_meta["corrupted"] = True
+                if os.path.exists(self.work_dir):
+                    self.ext_meta["corrupted"] = True
                 raise
             finally:
                 if os.path.exists(self.temp_dir):
