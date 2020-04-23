@@ -56,13 +56,14 @@ class SrcGraph(Extension):
 
         cmds_iter = self.load_all_cmds()
         self.__generate_src_graph(cmds_iter)
-        self.dump_data(self.src_graph, self.src_graph_file)
-        self.dump_data(self.src_info, self.src_info_file)
-        self.dump_data_by_key(self.src_graph, self.src_graph_folder)
 
         if not self.src_graph:
             self.error("Source graph is empty")
             raise RuntimeError
+
+        self.dump_data(self.src_graph, self.src_graph_file)
+        self.dump_data(self.src_info, self.src_info_file)
+        self.dump_data_by_key(self.src_graph, self.src_graph_folder)
 
         self.src_graph.clear()
 
