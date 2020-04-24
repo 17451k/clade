@@ -18,6 +18,7 @@ import datetime
 import fnmatch
 import glob
 import hashlib
+import importlib
 import itertools
 import logging
 import platform
@@ -504,17 +505,15 @@ class Extension(metaclass=abc.ABCMeta):
         clade_modules = [x for x in sys.modules if x.startswith("clade")]
 
         """Import all Python modules located in 'extensions' folder."""
-        for root, _, filenames in os.walk(os.path.dirname(__file__)):
+        for _, _, filenames in os.walk(os.path.dirname(__file__)):
             for filename in fnmatch.filter(filenames, "*.py"):
-                module_name = os.path.splitext(os.path.basename(filename))[0]
+                module_name = "." + os.path.splitext(os.path.basename(filename))[0]
 
                 for module in clade_modules:
                     if module.endswith(module_name):
                         break
                 else:
-                    sys.path.insert(0, root)
-                    __import__(module_name)
-                    sys.path.pop(0)
+                    importlib.import_module(module_name, "clade.extensions")
 
     @staticmethod
     def find_subclass(ext_name):
