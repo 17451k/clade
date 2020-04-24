@@ -18,7 +18,6 @@ import os
 import unittest.mock
 
 from clade import Clade
-from clade.extensions.cc import CC
 
 
 def test_cc_parallel(tmpdir, cmds_file):
