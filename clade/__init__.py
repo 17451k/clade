@@ -82,7 +82,10 @@ class Clade:
 
     def __check_write_to_parent_dir(self, path):
         # dirname can be empty if cmds_file is located in the current directory
-        parent_path = "." if not os.path.dirname(path) else os.path.dirname(path)
+        parent_path = os.path.dirname(path)
+
+        if not parent_path:
+            parent_path = os.getcwd()
 
         self.__check_write_to_dir(parent_path)
 
@@ -97,7 +100,11 @@ class Clade:
         self.__check_write_to_parent_dir(self.cmds_file)
 
         # Create path to the cmds.txt file
-        cmds_file_dirname = "." if not os.path.dirname(self.cmds_file) else os.path.dirname(self.cmds_file)
+        cmds_file_dirname = os.path.dirname(self.cmds_file)
+
+        if not cmds_file_dirname:
+            cmds_file_dirname = os.getcwd()
+
         os.makedirs(cmds_file_dirname, exist_ok=True)
 
     def __dump_conf(self):
