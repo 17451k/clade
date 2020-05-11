@@ -463,7 +463,7 @@ class Clade:
         Args:
             file: A name of the source file from the source graph
         """
-        return (cmd_id for cmd_id in self.SrcGraph.load_src_graph([file])[file]['compiled_in'])
+        return (cmd_id for cmd_id in self.SrcGraph.load_src_graph([file])[file]["compiled_in"])
 
     def get_compilation_cmds_by_file(self, file):
         """Get list of compilation commands in which the file was compiled.
@@ -548,7 +548,7 @@ class Clade:
             files = set(files)
 
             if add_unknown:
-                files.add('unknown')
+                files.add("unknown")
 
         return self.Callgraph.load_callgraph(files)
 
@@ -585,7 +585,7 @@ class Clade:
             files = set(files)
 
             if add_unknown:
-                files.add('unknown')
+                files.add("unknown")
 
         return self.Functions.load_functions_by_file(files)
 
