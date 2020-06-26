@@ -117,11 +117,13 @@ class SrcGraph(Extension):
 
                 # compiled_in is a list of commands
                 # that compile 'rel_in' source file
-                if cmd_id not in self.src_graph[norm_in]["compiled_in"]:
-                    self.src_graph[norm_in]["compiled_in"].append(cmd_id)
-                self.src_graph[norm_in]["used_by"].extend(
-                    [x for x in used_by if x not in self.src_graph[norm_in]["used_by"]]
-                )
+                self.src_graph[norm_in]["compiled_in"].add(cmd_id)
+                self.src_graph[norm_in]["used_by"].update(used_by)
+
+        # Convert sets to lists for ujson
+        for file in self.src_graph:
+            self.src_graph[file]["compiled_in"] = list(self.src_graph[file]["compiled_in"])
+            self.src_graph[file]["used_by"] = list(self.src_graph[file]["used_by"])
 
     def __find_used_by(self, cmd_graph, cmd_id):
         used_by = set()
@@ -148,4 +150,4 @@ class SrcGraph(Extension):
 
     @staticmethod
     def __get_new_value():
-        return {"compiled_in": list(), "used_by": list()}
+        return {"compiled_in": set(), "used_by": set()}
