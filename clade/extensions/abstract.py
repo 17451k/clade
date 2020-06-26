@@ -339,14 +339,29 @@ class Extension(metaclass=abc.ABCMeta):
         elif self.name == "Path":
             stored_meta["build_dir"] = self.conf["build_dir"]
 
-        if "clade_version" not in stored_meta:
-            stored_meta["clade_version"] = Extension.get_clade_version()
+        if "versions" not in stored_meta:
+            stored_meta["versions"] = dict()
+
+        if "clade" not in stored_meta["versions"]:
+            stored_meta["versions"]["clade"] = Extension.get_clade_version()
+
+        if "python" not in stored_meta["versions"]:
+            stored_meta["versions"]["python"] = platform.python_version()
+
+        if "pip" not in stored_meta["versions"]:
+            stored_meta["versions"]["pip"] = pkg_resources.get_distribution("pip").version
+
+        if "gcc" not in stored_meta["versions"]:
+            stored_meta["versions"]["gcc"] = self.get_program_version("gcc")
+
+        if "cif" not in stored_meta["versions"]:
+            stored_meta["versions"]["cif"] = self.get_program_version("cif")
+
+        if "aspectator" not in stored_meta["versions"]:
+            stored_meta["versions"]["aspectator"] = self.get_program_version("aspectator")
 
         if "uuid" not in stored_meta:
             stored_meta["uuid"] = str(uuid.uuid4())
-
-        if "python_version" not in stored_meta:
-            stored_meta["python_version"] = platform.python_version()
 
         if "platform" not in stored_meta:
             stored_meta["platform"] = platform.platform()
@@ -380,6 +395,15 @@ class Extension(metaclass=abc.ABCMeta):
             desc = ["git", "describe", "--tags", "--dirty"]
             version = subprocess.check_output(
                 desc, cwd=location, stderr=subprocess.DEVNULL, universal_newlines=True
+            ).strip()
+        finally:
+            return version
+
+    def get_program_version(self, program, version_arg="--version"):
+        version = "unknown"
+        try:
+            version = subprocess.check_output(
+                [program, version_arg], stderr=subprocess.DEVNULL, universal_newlines=True
             ).strip()
         finally:
             return version
