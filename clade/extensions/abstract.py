@@ -24,6 +24,7 @@ import logging
 import platform
 import pkg_resources
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -357,9 +358,6 @@ class Extension(metaclass=abc.ABCMeta):
         if "cif" not in stored_meta["versions"]:
             stored_meta["versions"]["cif"] = self.get_program_version("cif")
 
-        if "aspectator" not in stored_meta["versions"]:
-            stored_meta["versions"]["aspectator"] = self.get_program_version("aspectator")
-
         if "uuid" not in stored_meta:
             stored_meta["uuid"] = str(uuid.uuid4())
 
@@ -406,6 +404,8 @@ class Extension(metaclass=abc.ABCMeta):
                 [program, version_arg], stderr=subprocess.DEVNULL, universal_newlines=True
             ).strip()
         finally:
+            if version.startswith("gcc"):
+                version = re.sub(r'\nCopyright[\s\S]*', '', version)
             return version
 
     def __get_cmd_chunk(self, cmds, chunk_size=1000):
