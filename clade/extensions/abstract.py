@@ -22,6 +22,7 @@ import importlib
 import itertools
 import logging
 import platform
+import peewee
 import pkg_resources
 import os
 import pickle
@@ -36,8 +37,10 @@ import uuid
 import zipfile
 
 from concurrent.futures import ProcessPoolExecutor
+from contextlib import contextmanager
 
 import clade.cmds
+import clade.extensions.model
 
 
 # Setup extensions logger
@@ -69,6 +72,9 @@ class Extension(metaclass=abc.ABCMeta):
         self.work_dir = os.path.join(self.clade_work_dir, self.name)
         self.conf = conf if conf else dict()
         self.temp_dir = ""
+
+        self.clade_db = os.path.join(work_dir, "clade.db")
+        self.init_db()
 
         if not hasattr(self, "requires"):
             self.requires = []
@@ -627,3 +633,37 @@ class Extension(metaclass=abc.ABCMeta):
         self.conf["log_level"] must be set to ERROR, WARNING, INFO or DEBUG in order to see the message.
         """
         logger.error("{}: {}".format(self.name, message))
+
+    def init_db(self):
+        db = clade.extensions.model.db
+        db.init(
+            self.clade_db,
+            pragmas={
+                "journal_mode": "wal",
+                "cache_size": 10000,
+                "foreign_keys": 1,
+            }
+        )
+
+        return db
+
+    @contextmanager
+    def connect(self, atomic=False):
+        try:
+            db = clade.extensions.model.db
+            connected = db.connect(reuse_if_open=True)
+
+            if atomic:
+                with db.atomic():
+                    yield db
+            else:
+                yield db
+        finally:
+            if connected:
+                db.close()
+
+    def insert_many(self, data, table, fields, batch_size=100):
+        with self.connect() as db:
+            with db.atomic():
+                for rows in peewee.chunked(data, batch_size):
+                    table.insert_many(rows, fields=fields).execute(db)
