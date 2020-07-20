@@ -247,7 +247,6 @@ cc_preprocessor_opts = [
     "-MM",
     "-MF",
     "-MG",
-    "-MP",
     "-MT",
     "-MQ",
     "-MD",
