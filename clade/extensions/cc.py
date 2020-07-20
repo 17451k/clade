@@ -125,6 +125,7 @@ class CC(Compiler):
                     self.debug("Line: {!r}".format(line))
                     line = line.lstrip(" ")
                     line = line.rstrip(" \\\n")
+                    line = line.rstrip(":")
 
                     if not line:
                         continue
