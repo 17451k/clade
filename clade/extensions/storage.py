@@ -109,6 +109,7 @@ class Storage(Extension):
 
     def get_storage_path(self, path):
         """Get path to the file or directory from the storage."""
+        path = os.path.normpath(path)
         return os.path.join(self.work_dir, path.lstrip(os.path.sep))
 
     @Extension.prepare
