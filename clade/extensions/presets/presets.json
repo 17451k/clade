@@ -154,6 +154,10 @@
             "CrossRef"
         ]
     },
+    "klever_linux_kernel_arm": {
+        "extends": "klever_linux_kernel",
+        "Info.cif": "arm-unknown-eabi-cif"
+    },
     "klever_busybox_linux": {
         "extends": "busybox_linux",
         "extensions": [
