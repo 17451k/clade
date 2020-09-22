@@ -498,7 +498,7 @@ gcc_optimization_opts = [
 
 cif_supported_opts = (
     ["-D", "-U", "-nostdinc", "-fshort-wchar"]
-    + gcc_optimization_opts
+    + ["{}$".format(opt) for opt in gcc_optimization_opts]
     + cif_include_opts
 )
 
