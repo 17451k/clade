@@ -172,7 +172,7 @@ class Info(Extension):
                 tmp_dir, os.path.basename(cmd_in.lstrip(os.sep)) + ".o"
             )
 
-            cif_env = dict()
+            cif_env = dict(os.environ)
             cif_env["CIF_INFO_DIR"] = self.cif_output_dir
             cif_env["C_FILE"] = norm_cmd_in
 
@@ -217,7 +217,7 @@ class Info(Extension):
                     stderr=subprocess.STDOUT,
                     cwd=cwd,
                     universal_newlines=True,
-                    env=os.environ.update(cif_env)
+                    env=cif_env
                 )
                 self.__save_log(cmd["id"], cwd, cif_args, cif_env, output, self.cif_log)
             except subprocess.CalledProcessError as e:
