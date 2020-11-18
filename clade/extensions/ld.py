@@ -13,6 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+import re
+
 from clade.extensions.common import Common
 
 
@@ -29,5 +32,71 @@ class LD(Common):
             self.dump_bad_cmd_by_id(parsed_cmd["id"], parsed_cmd)
             return
 
+        self.__parse_opts(parsed_cmd)
+
         self.debug("Parsed command: {}".format(parsed_cmd))
         self.dump_cmd_by_id(cmd["id"], parsed_cmd)
+
+    def __parse_opts(self, parsed_cmd):
+        archives = []
+
+        searchdirs = self.__get_searchdirs(parsed_cmd)
+
+        opts = iter(parsed_cmd["opts"])
+        for opt in opts:
+            if opt in ["-l", "--library"]:
+                name = next(opts)
+
+                self.__find_archive(name, searchdirs, parsed_cmd)
+            elif opt.startswith("-l") or opt.startswith("--library="):
+                name = re.sub(r"^-l", "", opt)
+                name = re.sub(r"^--library=", "", name)
+
+                self.__find_archive(name, searchdirs, parsed_cmd)
+
+        return archives
+
+    def __get_searchdirs(self, parsed_cmd):
+        # sysroot paths are not supported (searchdir begins with "=")
+        searchdirs = self.conf.get("LD.searchdirs", [])
+
+        opts = iter(parsed_cmd["opts"])
+        for opt in opts:
+            if opt in ["-L", "--library-path"]:
+                path = next(opts)
+
+                searchdirs.append(os.path.normpath(path))
+            elif opt.startswith("-L") or opt.startswith("--library-path="):
+                path = re.sub(r"^-L", "", opt)
+                path = re.sub(r"^--library-path=", "", path)
+
+                searchdirs.append(os.path.normpath(path))
+
+        return searchdirs
+
+    def __find_archive(self, name, searchdirs, parsed_cmd):
+        if not searchdirs:
+            self.warning("Search directories are empty")
+            return
+
+        names = []
+
+        if name.startswith(":"):
+            names.append(name[1:])
+        else:
+            names.append("lib" + name + ".so")
+            names.append("lib" + name + ".a")
+            names.append(name + ".a")
+
+        for searchdir in searchdirs:
+            for name in names:
+                archive = os.path.normpath(os.path.join(searchdir, name))
+                if os.path.exists(archive):
+                    if archive not in parsed_cmd["in"]:
+                        parsed_cmd["in"].append(archive)
+                    break
+            else:
+                continue
+            break
+        else:
+            self.warning("Couldn't find {!r} archive in {}".format(name, searchdirs))

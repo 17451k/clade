@@ -274,6 +274,8 @@ ld_gnu_opts = [
     "--out-implib",
     "--stack",
     "--subsystem",
+    "--library-path",
+    "--library",
     "-A",
     "-F",
     "-G",

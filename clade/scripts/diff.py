@@ -52,7 +52,6 @@ class Diff:
         self.compare_functions()
         self.compare_macros()
         self.compare_callgraphs()
-        pass
 
     def compare_extension_lists(self):
         a = self.__get_extension_list(self.work_dir1)
