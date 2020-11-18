@@ -503,7 +503,7 @@ class Extension(metaclass=abc.ABCMeta):
 
     @staticmethod
     def get_all_extensions():
-        """Get all extension lasses."""
+        """Get all extension classes."""
 
         Extension._import_extension_modules()
         return Extension.__get_all_subclasses(Extension)
