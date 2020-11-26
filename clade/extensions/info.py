@@ -345,7 +345,8 @@ class Info(Extension):
                         file_fh.write(output_fh.read())
 
         # Remove cif output directory
-        shutil.rmtree(self.cif_output_dir)
+        if os.path.exists(self.cif_output_dir):
+            shutil.rmtree(self.cif_output_dir)
 
         self.log("Normalizing finished")
 
