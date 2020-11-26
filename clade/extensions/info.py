@@ -172,9 +172,10 @@ class Info(Extension):
                 tmp_dir, os.path.basename(cmd_in.lstrip(os.sep)) + ".o"
             )
 
-            cif_env = dict(os.environ)
-            cif_env["CIF_INFO_DIR"] = self.cif_output_dir
-            cif_env["C_FILE"] = norm_cmd_in
+            cif_env = {
+                "CIF_INFO_DIR": self.cif_output_dir,
+                "C_FILE": norm_cmd_in
+            }
 
             cif_args = [
                 self.conf.get("Info.cif", "cif"),
@@ -210,6 +211,10 @@ class Info(Extension):
             cwd = self.extensions["Storage"].get_storage_path(cwd)
             os.makedirs(cwd, exist_ok=True)
 
+            # env is for subprocess
+            env = os.environ.copy()
+            env.update(cif_env)
+
             try:
                 self.debug(cif_args)
                 output = subprocess.check_output(
@@ -217,7 +222,7 @@ class Info(Extension):
                     stderr=subprocess.STDOUT,
                     cwd=cwd,
                     universal_newlines=True,
-                    env=cif_env
+                    env=env
                 )
                 self.__save_log(cmd["id"], cwd, cif_args, cif_env, output, self.cif_log)
             except subprocess.CalledProcessError as e:
