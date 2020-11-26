@@ -209,6 +209,7 @@ setuptools.setup(
             "clade-cmds-stats=clade.scripts.stats:print_cmds_stats",
             "clade-diff=clade.scripts.diff:main",
             "clade-check=clade.scripts.check:main",
+            "clade-trace=clade.scripts.tracer:main",
         ]
     },
     cmdclass={
