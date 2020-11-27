@@ -12,13 +12,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import argparse
 import collections
+import graphviz
 import os
 import re
 import sys
 
-import graphviz
+from typing import List
 
 from clade import Clade
 
@@ -50,15 +52,31 @@ class Tracer:
             raise RuntimeError("Specified functions were not found in the Clade build base")
         elif len(functions) < len(func_names):
             for func_name in [x for x in func_names if x not in [y.name for y in functions]]:
-                raise RuntimeError("{!r} function were not found in the Clade build base".format(func_name))
+                raise RuntimeError("{!r} function was not found in the Clade build base".format(func_name))
+
+        return functions
+
+    def find_functions_with_prefix(self, prefix):
+        functions = []
+
+        for func in self.clade.functions:
+            if re.search(prefix, func, flags=re.I):
+                for file in self.clade.functions[func]:
+                    functions.append(Function(func, file))
+
+        if not functions:
+            raise RuntimeError("Functions with prefix {!r} were not found in the Clade build base".format(prefix))
 
         return functions
 
     def trace(self, from_func: Function, to_func: Function):
+        return self.trace_list([from_func], [to_func])
+
+    def trace_list(self, from_funcs: List[Function], to_funcs: List[Function]):
         trace = dict()
 
         queue = collections.deque()
-        queue.append(from_func)
+        queue.extend(from_funcs)
         visited = set()
 
         while len(queue) > 0:
@@ -79,11 +97,11 @@ class Tracer:
                     else:
                         trace[func] = [called_func]
 
-                    if called_func != to_func and called_func not in visited:
+                    if called_func not in to_funcs and called_func not in visited:
                         queue.append(called_func)
 
         trace = self.__reverse_trace(trace)
-        trace = self.__filter_trace(trace, to_func)
+        trace = self.__filter_trace(trace, to_funcs)
         return trace
 
     def __reverse_trace(self, trace):
@@ -98,11 +116,11 @@ class Tracer:
 
         return reversed_trace
 
-    def __filter_trace(self, trace, to_func):
+    def __filter_trace(self, trace, to_funcs):
         filtered_trace = dict()
 
         queue = collections.deque()
-        queue.append(to_func)
+        queue.extend(to_funcs)
         visited = set()
 
         while len(queue) > 0:
