@@ -88,6 +88,7 @@ clang_opts = [
     "--stdlib",
     "--sysroot",
     "--system-header-prefix",
+    "--target",
     "--undefine-macro",
     "-F",
     "-I",
@@ -95,6 +96,8 @@ clang_opts = [
     "-MT",
     "-Wa-Wl-Wp-Xanalyzer",
     "-Xanalyzer",
+    "-Xarch_device",
+    "-Xarch_host",
     "-Xassembler",
     "-Xclang",
     "-Xcuda-fatbinary",
@@ -138,6 +141,7 @@ clang_opts = [
     "-diagnostic-log-file",
     "-dump-build-information",
     "-dwarf-debug-flags",
+    "-dwarf-debug-producer",
     "-dylib_file",
     "-error-on-deserialized-decl",
     "-exported_symbols_list",
@@ -149,6 +153,7 @@ clang_opts = [
     "-fdiagnostics-show-category",
     "-ferror-limit",
     "-filelist",
+    "-filetype",
     "-fmacro-backtrace-limit",
     "-fmessage-length",
     "-fmodule-cache-path",
@@ -156,6 +161,7 @@ clang_opts = [
     "-fmodule-name",
     "-fnew-alignment",
     "-force_load",
+    "-fprofile-remapping-file",
     "-framework",
     "-frewrite-map-file",
     "-ftabstop",
@@ -214,14 +220,23 @@ clang_opts = [
     "-read_only_relocs",
     "-resource-dir",
     "-rpath",
+    "-sectalign",
+    "-sectcreate",
+    "-sectobjectsymbols",
+    "-sectorder",
     "-seg_addr_table",
     "-seg_addr_table_filename",
+    "-segaddr",
+    "-segcreate",
+    "-segprot",
     "-segs_read_only_addr",
     "-segs_read_write_addr",
     "-serialize-diagnostic-file",
     "-serialize-diagnostics",
     "-stack-protector",
     "-stack-protector-buffer-size",
+    "-std",
+    "-stdlib",
     "-target",
     "-target-abi",
     "-target-cpu",
@@ -236,9 +251,7 @@ clang_opts = [
     "-weak_reference_mismatches",
     "-working-directory",
     "-x",
-    "-z",
-    "-dwarf-debug-producer",
-    "-filetype",
+    "-z"
 ]
 
 cc_preprocessor_opts = [
@@ -499,7 +512,7 @@ gcc_optimization_opts = [
 ]
 
 cif_supported_opts = (
-    ["-D", "-U", "-nostdinc", "-fshort-wchar", "-std"]
+    ["-D", "-U", "-nostdinc", "-fshort-wchar", "-std", "--std"]
     + ["{}$".format(opt) for opt in gcc_optimization_opts]
     + cif_include_opts
 )
