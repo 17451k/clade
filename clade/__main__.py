@@ -104,6 +104,10 @@ def parse_args(args):
         action="store_true",
     )
     parser.add_argument(
+        "--cif",
+        help="name or path of the CIF to use",
+    )
+    parser.add_argument(
         dest="command",
         nargs=argparse.REMAINDER,
         help="build command to run and intercept",
@@ -139,6 +143,8 @@ def prepare_conf(args):
     conf["use_wrappers"] = args.wrappers
     conf["preset"] = args.preset
     conf["command"] = args.command
+
+    conf["Info.cif"] = args.cif if args.cif else conf.get("Info.cif", "cif")
 
     return conf
 
