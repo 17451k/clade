@@ -35,6 +35,9 @@ class Storage(Extension):
     def parse(self, cmds_file):
         files_to_add = self.conf.get("Storage.files_to_add", [])
 
+        if files_to_add:
+            self.log("Saving files")
+
         for file in files_to_add:
             file = os.path.abspath(file)
             self.debug("Adding file: {!r}".format(file))
@@ -47,10 +50,13 @@ class Storage(Extension):
 
             if os.path.isfile(file):
                 self.add_file(file)
-            elif os.path.isdir(file):
-                for root, _, filenames in os.walk(file):
-                    for filename in filenames:
-                        self.add_file(os.path.join(root, filename))
+                continue
+
+            for root, _, filenames in os.walk(file):
+                for filename in filenames:
+                    filename = os.path.join(root, filename)
+                    if not filename.startswith(self.clade_work_dir):
+                        self.add_file(filename)
 
     def add_file(self, filename, storage_filename=None, encoding=None):
         """Add file to the storage.
@@ -78,6 +84,8 @@ class Storage(Extension):
             self.__copy_file(filename, dst, encoding=encoding)
         except FileNotFoundError as e:
             self.debug(e)
+        except (PermissionError, OSError) as e:
+            self.log(e)
         except shutil.SameFileError:
             pass
 
