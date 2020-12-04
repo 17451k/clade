@@ -45,7 +45,12 @@ class Storage(Extension):
                 )
                 raise RuntimeError
 
-            self.add_file(file)
+            if os.path.isfile(file):
+                self.add_file(file)
+            elif os.path.isdir(file):
+                for root, _, filenames in os.walk(file):
+                    for filename in filenames:
+                        self.add_file(os.path.join(root, filename))
 
     def add_file(self, filename, storage_filename=None, encoding=None):
         """Add file to the storage.
