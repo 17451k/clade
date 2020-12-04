@@ -55,7 +55,7 @@ class CC(Compiler):
         if self.conf.get(
             "Compiler.preprocess_cmds"
         ) and self.is_a_compilation_command(parsed_cmd):
-            pre = self.__preprocess_cmd(parsed_cmd)
+            pre = self.__preprocess_cmd(parsed_cmd, cmd["which"])
             self.debug("Preprocessed files: {}".format(pre))
             self.store_pre_files(pre, parsed_cmd["cwd"])
 
@@ -63,7 +63,7 @@ class CC(Compiler):
                 if os.path.exists(file):
                     os.remove(file)
 
-        deps = self.__get_deps(cmd_id, parsed_cmd)
+        deps = self.__get_deps(cmd_id, cmd["which"], parsed_cmd)
         self.debug("Dependencies: {}".format(deps))
         self.dump_deps_by_id(cmd_id, deps)
         self.dump_cmd_by_id(cmd_id, parsed_cmd)
@@ -73,13 +73,13 @@ class CC(Compiler):
         ) and self.is_a_compilation_command(parsed_cmd):
             self.store_deps_files(deps, parsed_cmd["cwd"])
 
-    def __get_deps(self, cmd_id, cmd):
+    def __get_deps(self, cmd_id, which, cmd):
         """Get a list of CC command dependencies."""
         deps = []
 
         for cmd_in in cmd["in"]:
             self.debug("Collecting dependencies for {!r} file".format(cmd_in))
-            deps_file = self.__collect_deps(cmd_id, cmd, cmd_in)
+            deps_file = self.__collect_deps(cmd_id, which, cmd, cmd_in)
 
             # Remove duplicates
             for dep in [d for d in self.__parse_deps(deps_file) if d not in deps]:
@@ -87,7 +87,7 @@ class CC(Compiler):
 
         return deps
 
-    def __collect_deps(self, cmd_id, cmd, cmd_in):
+    def __collect_deps(self, cmd_id, which, cmd, cmd_in):
         deps_file = os.path.join(self.temp_dir, "{}-deps.txt".format(cmd_id))
 
         if self.conf.get("CC.with_system_header_files"):
@@ -96,7 +96,7 @@ class CC(Compiler):
             additional_opts = ["-Wp,-MMD,{}".format(deps_file), "-MM"]
 
         opts = cmd["opts"] + additional_opts
-        command = [cmd["command"][0]] + opts + [cmd_in]
+        command = [which] + opts + [cmd_in]
 
         # Do not execute a command that does not contain any input files
         if cmd["in"] and "-" not in cmd["in"]:
@@ -165,7 +165,7 @@ class CC(Compiler):
 
         return True
 
-    def __preprocess_cmd(self, cmd):
+    def __preprocess_cmd(self, cmd, which):
         pre = []
 
         for cmd_in in cmd["in"]:
@@ -174,7 +174,7 @@ class CC(Compiler):
 
             pre_file = os.path.splitext(cmd_in)[0] + ".i"
             command = (
-                [cmd["command"][0]]
+                [which]
                 + cmd["opts"]
                 + ["-E"]
                 + [cmd_in]
