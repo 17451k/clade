@@ -31,6 +31,22 @@ class Storage(Extension):
 
     __version__ = "1"
 
+    @Extension.prepare
+    def parse(self, cmds_file):
+        files_to_add = self.conf.get("Storage.files_to_add", [])
+
+        for file in files_to_add:
+            file = os.path.abspath(file)
+            self.debug("Adding file: {!r}".format(file))
+
+            if not os.path.exists(file):
+                self.error(
+                    "File does not exist: {!r}".format(file)
+                )
+                raise RuntimeError
+
+            self.add_file(file)
+
     def add_file(self, filename, storage_filename=None, encoding=None):
         """Add file to the storage.
 
@@ -111,7 +127,3 @@ class Storage(Extension):
         """Get path to the file or directory from the storage."""
         path = os.path.normpath(path)
         return os.path.join(self.work_dir, path.lstrip(os.path.sep))
-
-    @Extension.prepare
-    def parse(self, cmd_file):
-        super().parse(cmd_file)
