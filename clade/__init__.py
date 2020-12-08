@@ -126,7 +126,7 @@ class Clade:
 
         self.__dump_conf()
 
-    def intercept(self, command, cwd=os.getcwd(), append=False, use_wrappers=False):
+    def intercept(self, command, cwd=os.getcwd(), append=False, use_wrappers=False, intercept_open=False):
         """Execute intercepting of build commands.
 
         Args:
@@ -141,7 +141,15 @@ class Clade:
 
         self.__prepare_to_intercept()
 
-        return intercept(command=command, cwd=cwd, output=self.cmds_file, append=append, use_wrappers=use_wrappers, conf=self.conf)
+        return intercept(
+            command=command,
+            cwd=cwd,
+            output=self.cmds_file,
+            append=append,
+            use_wrappers=use_wrappers,
+            intercept_open=intercept_open,
+            conf=self.conf
+        )
 
     def __get_ext_obj(self, ext_name):
         """Return object of specified extension."""

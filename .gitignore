@@ -6,6 +6,7 @@ debugger.exe
 parser.out
 parsetab.py
 *.i
+tests/test_project/clade
 
 # VS Code
 .vscode
