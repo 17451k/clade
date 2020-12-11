@@ -48,7 +48,7 @@ class Variables(Callgraph):
         self._clean_error_log()
 
         self.dump_data_by_key(self.variables, self.variables_folder)
-        self.dump_data(self.used_in_vars, self.used_in_vars_file, indent=4)
+        self.dump_variables_data(self.used_in_vars, self.used_in_vars_file, indent=4)
 
         self.functions.clear()
         self.src_graph.clear()
@@ -56,7 +56,7 @@ class Variables(Callgraph):
         self.used_in_vars.clear()
 
     # TODO: Remove this as problem with ujson dump will be solved
-    def dump_data(self, data, file_name, indent=0):
+    def dump_variables_data(self, data, file_name, indent=0):
         """Dump data to a json file in the object working directory."""
 
         if not os.path.isabs(file_name):

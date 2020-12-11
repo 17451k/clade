@@ -52,9 +52,11 @@ class CC(Compiler):
 
         self.debug("Parsed command: {}".format(parsed_cmd))
 
+        is_compilation_command = self.is_a_compilation_command(parsed_cmd)
+
         if self.conf.get(
             "Compiler.preprocess_cmds"
-        ) and self.is_a_compilation_command(parsed_cmd):
+        ) and is_compilation_command:
             pre = self.__preprocess_cmd(parsed_cmd, cmd["which"])
             self.debug("Preprocessed files: {}".format(pre))
             self.store_pre_files(pre, parsed_cmd["cwd"])
@@ -65,12 +67,12 @@ class CC(Compiler):
 
         deps = self.__get_deps(cmd_id, cmd["which"], parsed_cmd)
         self.debug("Dependencies: {}".format(deps))
-        self.dump_deps_by_id(cmd_id, deps)
+        self.dump_deps_by_id(cmd_id, deps, parsed_cmd["cwd"])
         self.dump_cmd_by_id(cmd_id, parsed_cmd)
 
         if self.conf.get(
             "Compiler.store_deps"
-        ) and self.is_a_compilation_command(parsed_cmd):
+        ) and is_compilation_command:
             self.store_deps_files(deps, parsed_cmd["cwd"])
 
     def __get_deps(self, cmd_id, which, cmd):

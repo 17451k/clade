@@ -13,15 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-
 from clade.extensions.abstract import Extension
 
 
 class SrcGraph(Extension):
     __version__ = "1"
 
-    always_requires = ["CmdGraph", "Path"]
+    always_requires = ["CmdGraph"]
     requires = always_requires + ["CC", "CL"]
 
     def __init__(self, work_dir, conf=None):
@@ -67,8 +65,8 @@ class SrcGraph(Extension):
             self.error("Source graph is empty")
             raise RuntimeError
 
-        self.dump_data(self.src_graph, self.src_graph_file)
-        self.dump_data(self.src_info, self.src_info_file)
+        self.dump_data(self.src_graph, self.src_graph_file, indent=4)
+        self.dump_data(self.src_info, self.src_info_file, indent=4)
         self.dump_data_by_key(self.src_graph, self.src_graph_folder)
 
         self.src_graph.clear()
@@ -103,22 +101,14 @@ class SrcGraph(Extension):
             used_by = self.__find_used_by(cmd_graph, cmd_id)
 
             for src_file in self.extensions[cmd_type].load_deps_by_id(cmd_id):
-                norm_in = self.extensions["Path"].get_rel_path(
-                    src_file, cmd["cwd"]
-                )
-
-                if norm_in not in self.src_graph:
-                    self.src_graph[norm_in] = self.__get_new_value()
-
-                    abs_src_file = os.path.join(cmd["cwd"], src_file)
-                    self.src_info[norm_in] = {
-                        "loc": self.__count_file_loc(abs_src_file),
-                    }
+                if src_file not in self.src_graph:
+                    self.src_graph[src_file] = self.__get_new_value()
+                    self.src_info[src_file] = {"loc": self.__count_file_loc(src_file)}
 
                 # compiled_in is a list of commands
                 # that compile 'rel_in' source file
-                self.src_graph[norm_in]["compiled_in"].add(cmd_id)
-                self.src_graph[norm_in]["used_by"].update(used_by)
+                self.src_graph[src_file]["compiled_in"].add(cmd_id)
+                self.src_graph[src_file]["used_by"].update(used_by)
 
         # Convert sets to lists for ujson
         for file in self.src_graph:

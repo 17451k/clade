@@ -24,6 +24,7 @@ import logging
 import platform
 import pkg_resources
 import os
+import pickle
 import re
 import shutil
 import subprocess
@@ -66,7 +67,7 @@ class Extension(metaclass=abc.ABCMeta):
         self.clade_work_dir = os.path.abspath(str(work_dir))
         self.work_dir = os.path.join(self.clade_work_dir, self.name)
         self.conf = conf if conf else dict()
-        self.temp_dir = None
+        self.temp_dir = ""
 
         if not hasattr(self, "requires"):
             self.requires = []
@@ -143,8 +144,8 @@ class Extension(metaclass=abc.ABCMeta):
     def get_build_dir(self, cmds_file):
         return clade.cmds.get_build_dir(cmds_file)
 
-    def load_data(self, file_name, raise_exception=True):
-        """Load json file by name."""
+    def load_data(self, file_name, raise_exception=True, format="json"):
+        """Load file by name."""
 
         if not os.path.isabs(file_name):
             file_name = os.path.join(self.work_dir, file_name)
@@ -160,12 +161,26 @@ class Extension(metaclass=abc.ABCMeta):
 
             return dict()
 
+        if format == "json":
+            return self.__load_data_json(file_name)
+        elif format == "pickle":
+            return self.__load_data_pickle(file_name)
+        else:
+            self.error("Unreckognised data format: {!r}".format(format))
+            raise ValueError
+
+    def __load_data_json(self, file_name, raise_exception=True):
         self.debug("Loading {}".format(file_name))
         with open(file_name, "r") as fh:
             return ujson.load(fh)
 
-    def dump_data(self, data, file_name, indent=4):
-        """Dump data to a json file in the object working directory."""
+    def __load_data_pickle(self, file_name, raise_exception=True):
+        self.debug("Loading {}".format(file_name))
+        with open(file_name, "rb") as fh:
+            return pickle.load(fh)
+
+    def dump_data(self, data, file_name, indent=4, format="json"):
+        """Dump data to a file in the object working directory."""
 
         if not os.path.isabs(file_name):
             file_name = os.path.join(self.work_dir, file_name)
@@ -174,6 +189,19 @@ class Extension(metaclass=abc.ABCMeta):
 
         self.debug("Dumping {}".format(file_name))
 
+        if format == "json":
+            self.__dump_data_json(data, file_name, indent=indent)
+        elif format == "pickle":
+            self.__dump_data_pickle(data, file_name)
+        else:
+            self.error("Unreckognised data format: {!r}".format(format))
+            raise ValueError
+
+    def __dump_data_pickle(self, data, file_name):
+        with open(file_name, "wb") as fh:
+            pickle.dump(data, fh, protocol=4)
+
+    def __dump_data_json(self, data, file_name, indent=0):
         try:
             with open(file_name, "w") as fh:
                 ujson.dump(
@@ -322,7 +350,7 @@ class Extension(metaclass=abc.ABCMeta):
         return opts
 
     def load_global_meta(self):
-        return self.load_data(self.global_meta_file, raise_exception=False)
+        return self.load_data(self.global_meta_file, raise_exception=False, format="json")
 
     def dump_global_meta(self, cmds_file):
         stored_meta = self.load_global_meta()
@@ -375,12 +403,12 @@ class Extension(metaclass=abc.ABCMeta):
         if "date" not in stored_meta:
             stored_meta["date"] = datetime.datetime.today().strftime('%Y-%m-%d %H:%M')
 
-        self.dump_data(stored_meta, self.global_meta_file)
+        self.dump_data(stored_meta, self.global_meta_file, indent=4, format="json")
 
     def add_data_to_global_meta(self, key, data):
         stored_meta = self.load_global_meta()
         stored_meta[key] = data
-        self.dump_data(stored_meta, self.global_meta_file)
+        self.dump_data(stored_meta, self.global_meta_file, indent=4, format="json")
 
     @staticmethod
     def get_clade_version():
@@ -420,6 +448,15 @@ class Extension(metaclass=abc.ABCMeta):
             else:
                 return
 
+    def __get_empty_obj(self, obj):
+        empty_self = obj.__class__(self.clade_work_dir, self.conf)
+        empty_self.temp_dir = self.temp_dir
+
+        for ext_name in obj.extensions:
+            empty_self.extensions[ext_name] = self.__get_empty_obj(obj.extensions[ext_name])
+
+        return empty_self
+
     def parse_cmds_in_parallel(self, cmds, unwrap, total_cmds=None):
         if os.environ.get("CLADE_DEBUG"):
             if total_cmds:
@@ -442,6 +479,11 @@ class Extension(metaclass=abc.ABCMeta):
         if total_cmds:
             self.log("Parsing {} commands".format(total_cmds))
 
+        # Passing "self" object to p.submit() can be very, very time consuming
+        # if self is rather big. So, here we create an empty object
+        # of the current type, and use it instead
+        empty_self = self.__get_empty_obj(self)
+
         with ProcessPoolExecutor(max_workers=max_workers) as p:
             chunk_size = 2000
             futures = []
@@ -452,7 +494,7 @@ class Extension(metaclass=abc.ABCMeta):
                 chunk_futures = []
 
                 for cmd in cmd_chunk:
-                    f = p.submit(unwrap, self, cmd)
+                    f = p.submit(unwrap, empty_self, cmd)
                     chunk_futures.append(f)
                     futures.append(f)
 
@@ -482,11 +524,7 @@ class Extension(metaclass=abc.ABCMeta):
                         try:
                             f.result()
                         except Exception as e:
-                            raise RuntimeError(
-                                "Something happened in the child process: {}".format(
-                                    e
-                                )
-                            )
+                            raise e
 
                     # Submit next chunk if the current one is almost processed
                     finished_chunk_cmds = len(

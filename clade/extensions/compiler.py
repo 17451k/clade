@@ -22,10 +22,13 @@ class Compiler(Common):
     """Parent class for all C compiler classes."""
 
     requires = Common.requires + ["Storage"]
-
     file_extensions = [".c", ".i"]
+    __version__ = "2"
 
-    __version__ = "1"
+    def __init__(self, work_dir, conf=None):
+        super().__init__(work_dir, conf)
+
+        self.deps_dir = "deps"
 
     def store_deps_files(self, deps, cwd):
         self.__store_src_files(deps, cwd, self.conf.get("Compiler.deps_encoding"))
@@ -40,11 +43,12 @@ class Compiler(Common):
 
             self.extensions["Storage"].add_file(file, encoding=None)
 
-    def load_deps_by_id(self, id):
-        return self.load_data(os.path.join("deps", "{}.json".format(id)))
+    def load_deps_by_id(self, cmd_id):
+        return self.load_data(os.path.join("deps", "{}.json".format(cmd_id)))
 
-    def dump_deps_by_id(self, id, deps):
-        self.dump_data(deps, os.path.join("deps", "{}.json".format(id)))
+    def dump_deps_by_id(self, cmd_id, deps, cwd):
+        deps = self.extensions["Path"].normalize_rel_paths(deps, cwd)
+        self.dump_data(deps, os.path.join(self.deps_dir, "{}.json".format(cmd_id)))
 
     def is_a_compilation_command(self, cmd):
         if any(

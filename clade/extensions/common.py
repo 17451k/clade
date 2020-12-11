@@ -36,9 +36,9 @@ class Common(Extension, metaclass=abc.ABCMeta):
         RuntimeError: Command can't be parsed as its type is not supported.
     """
 
-    requires = ["PidGraph"]
+    requires = ["PidGraph", "Path"]
 
-    __version__ = "1"
+    __version__ = "2"
 
     def __init__(self, work_dir, conf=None):
         super().__init__(work_dir, conf)
@@ -135,9 +135,13 @@ class Common(Extension, metaclass=abc.ABCMeta):
         )
 
     def dump_cmd_by_id(self, id, cmd):
+        cmd = self._normalize_paths(cmd)
+
         self.dump_opts_by_id(cmd["id"], cmd["opts"])
         del cmd["opts"]
-        self.dump_raw_by_id(cmd["id"], cmd["command"])
+
+        if self.conf.get("Common.dump_raw_cmds", False):
+            self.dump_raw_by_id(cmd["id"], cmd["command"])
         del cmd["command"]
 
         self.dump_data(cmd, os.path.join(self.cmds_dir, "{}.json".format(id)))
@@ -161,7 +165,9 @@ class Common(Extension, metaclass=abc.ABCMeta):
     def dump_bad_cmd_by_id(self, id, cmd):
         self.dump_opts_by_id(cmd["id"], cmd["opts"])
         del cmd["opts"]
-        self.dump_raw_by_id(cmd["id"], cmd["command"])
+
+        if self.conf.get("Common.dump_raw_cmds"):
+            self.dump_raw_by_id(cmd["id"], cmd["command"])
         del cmd["command"]
 
         self.dump_data(cmd, os.path.join(self.bad_dir, "{}.json".format(id)))
@@ -179,6 +185,13 @@ class Common(Extension, metaclass=abc.ABCMeta):
             os.path.splitext(os.path.basename(cmd_json))[0]
             for cmd_json in cmd_jsons
         ]
+
+    def _normalize_paths(self, cmd):
+        cmd["in"] = self.extensions["Path"].normalize_rel_paths(cmd["in"], cmd["cwd"])
+        cmd["out"] = self.extensions["Path"].normalize_rel_paths(cmd["out"], cmd["cwd"])
+        cmd["cwd"] = self.extensions["Path"].normalize_abs_path(cmd["cwd"])
+
+        return cmd
 
     def __merge_all_cmds(self):
         """Merge all parsed commands into a single json file."""

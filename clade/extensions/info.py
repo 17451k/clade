@@ -31,7 +31,7 @@ from clade.extensions.opts import filter_opts
 
 
 class Info(Extension):
-    always_requires = ["SrcGraph", "Path", "Storage"]
+    always_requires = ["SrcGraph", "Storage"]
     requires = always_requires + ["CC", "CL"]
 
     __version__ = "2"
@@ -152,29 +152,25 @@ class Info(Extension):
         )
 
         for cmd_in in cmd["in"]:
-            norm_cmd_in = self.extensions["Path"].get_rel_path(
-                cmd_in, cmd["cwd"]
-            )
-
-            cmd_in = self.extensions["Storage"].get_storage_path(norm_cmd_in)
+            storage_cmd_in = self.extensions["Storage"].get_storage_path(cmd_in)
 
             if use_pre:
                 cif_in = self.extensions[cmd["type"]].get_pre_file_by_path(
-                    norm_cmd_in, cmd["cwd"]
+                    cmd_in, cmd["cwd"]
                 )
             else:
-                cif_in = cmd_in
+                cif_in = storage_cmd_in
 
             if not os.path.exists(cif_in):
                 continue
 
             cif_out = os.path.join(
-                tmp_dir, os.path.basename(cmd_in.lstrip(os.sep)) + ".o"
+                tmp_dir, os.path.basename(storage_cmd_in.lstrip(os.sep)) + ".o"
             )
 
             cif_env = {
                 "CIF_INFO_DIR": self.cif_output_dir,
-                "C_FILE": norm_cmd_in
+                "C_FILE": cmd_in
             }
 
             cif_args = [
@@ -207,8 +203,7 @@ class Info(Extension):
                 cif_args.append("--")
                 cif_args.extend(opts)
 
-            cwd = self.extensions["Path"].get_abs_path(cmd["cwd"])
-            cwd = self.extensions["Storage"].get_storage_path(cwd)
+            cwd = self.extensions["Storage"].get_storage_path(cmd["cwd"])
             os.makedirs(cwd, exist_ok=True)
 
             # env is for subprocess

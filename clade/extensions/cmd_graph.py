@@ -23,7 +23,7 @@ from clade.extensions.abstract import Extension
 
 
 class CmdGraph(Extension):
-    always_requires = ["PidGraph", "Path"]
+    always_requires = ["PidGraph"]
     requires = always_requires + ["CC", "LD", "AR"]
 
     __version__ = "2"
@@ -74,9 +74,7 @@ class CmdGraph(Extension):
         return cmds
 
     def load_all_cmds_by_type(self, cmd_type, filter_by_pid=True):
-        ext_obj = self.get_ext_obj(cmd_type)
-
-        cmds = ext_obj.load_all_cmds(filter_by_pid=False)
+        cmds = self.get_ext_obj(cmd_type).load_all_cmds(filter_by_pid=False)
 
         if not filter_by_pid:
             return cmds
@@ -88,22 +86,10 @@ class CmdGraph(Extension):
 
         return [cmd for cmd in cmds if cmd["id"] in cmd_graph]
 
-    def normalize_all_paths(self, cmds):
-        for cmd in cmds:
-            self.extensions["Path"].normalize_abs_path(cmd["cwd"])
-            self.extensions["Path"].normalize_rel_paths(cmd["in"], cmd["cwd"])
-            self.extensions["Path"].normalize_rel_paths(cmd["out"], cmd["cwd"])
-
-            if hasattr(self.extensions[cmd["type"]], "load_deps_by_id"):
-                for src_file in self.extensions[cmd["type"]].load_deps_by_id(cmd["id"]):
-                    self.extensions["Path"].normalize_rel_path(src_file, cmd["cwd"])
-
     @Extension.prepare
     def parse(self, cmds_file):
         cmds = self.load_all_cmds()
         self.log("Parsing {} commands".format(len(cmds)))
-
-        self.normalize_all_paths(cmds)
 
         for cmd in sorted(cmds, key=lambda x: int(x["id"])):
             self.__add_to_graph(cmd)
@@ -128,11 +114,7 @@ class CmdGraph(Extension):
         if out_id not in self.graph:
             self.graph[out_id] = self.__get_new_value(cmd["type"])
 
-        for cmd_in in (
-            i
-            for i in self.extensions["Path"].get_rel_paths(cmd["in"], cmd["cwd"])
-            if i in self.out_dict
-        ):
+        for cmd_in in (i for i in cmd["in"] if i in self.out_dict):
             in_id = self.out_dict[cmd_in]
 
             if out_id not in self.graph[in_id]["used_by"]:
@@ -141,7 +123,7 @@ class CmdGraph(Extension):
                 self.graph[out_id]["using"].append(in_id)
 
         # Rewrite out_dict[cmd_out] values to keep the latest used command id
-        for cmd_out in self.extensions["Path"].get_rel_paths(cmd["out"], cmd["cwd"]):
+        for cmd_out in cmd["out"]:
             self.out_dict[cmd_out] = out_id
 
     def __print_cmd_graph(self):
@@ -172,10 +154,7 @@ class CmdGraph(Extension):
             if cmd_type in ["CC", "CL"]:
                 cmd["opts"] = self.extensions[cmd_type].load_opts_by_id(cmd_id)
 
-            for i, cmd_out in enumerate(self.extensions["Path"].get_rel_paths(
-                cmd["out"], cmd["cwd"])
-            ):
-                # TODO: Replace hash by file_id
+            for i, cmd_out in enumerate(cmd["out"]):
                 cmd_out_hash = hashlib.md5(cmd_out.encode("utf-8")).hexdigest()
 
                 if cmd_out not in added_nodes:
@@ -190,9 +169,7 @@ class CmdGraph(Extension):
                 else:
                     cmd_ins = cmd["in"]
 
-                for cmd_in in self.extensions["Path"].get_rel_paths(
-                    cmd_ins, cmd["cwd"]
-                ):
+                for cmd_in in cmd_ins:
                     cmd_in_hash = hashlib.md5(cmd_in.encode("utf-8")).hexdigest()
 
                     if cmd_in not in added_nodes:
