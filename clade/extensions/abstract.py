@@ -327,8 +327,7 @@ class Extension(metaclass=abc.ABCMeta):
             self.__dump_data_to_zip_fh(data, file_name, zip_fh)
 
     def __dump_data_to_zip_fh(self, data, file_name, zip_fh):
-        with zip_fh.open(file_name, "w") as fh:
-            fh.write(ujson.dumps(data).encode("utf-8"))
+        zip_fh.writestr(file_name, ujson.dumps(data).encode("utf-8"))
 
     def get_ext_version(self):
         version = self.__version__
