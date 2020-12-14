@@ -25,7 +25,7 @@ class CmdGraph(Extension):
     always_requires = ["PidGraph"]
     requires = always_requires + ["CC", "LD", "AR"]
 
-    __version__ = "2"
+    __version__ = "3"
 
     def __init__(self, work_dir, conf=None):
         conf = conf if conf else dict()
@@ -37,7 +37,9 @@ class CmdGraph(Extension):
 
         self.graph = dict()
         self.graph_file = "cmd_graph.json"
-        self.graph_folder = "cmd_graph"
+        
+        self.cmd_type = dict()
+        self.cmd_type_file = "cmd_type.json"
 
         self.out_dict = dict()
 
@@ -48,13 +50,9 @@ class CmdGraph(Extension):
         """Load command graph."""
         return self.load_data(self.graph_file)
 
-    def load_cmd_graph_node(self, cmd_id):
-        """Load command graph node by command id."""
-        return self.load_data(os.path.join(self.graph_folder, "{}.json".format(cmd_id)))
-
-    def dump_cmd_graph_node(self, cmd_id):
-        """Dump command graph node by command id."""
-        self.dump_data(self.graph[cmd_id], os.path.join(self.graph_folder, "{}.json".format(cmd_id)))
+    def load_cmd_type(self):
+        """Load information about command types."""
+        return self.load_data(self.cmd_type_file)
 
     def load_all_cmds(self, with_opts=False, with_raw=False, filter_by_pid=False):
         cmds = list()
@@ -94,9 +92,7 @@ class CmdGraph(Extension):
             self.__add_to_graph(cmd)
 
         self.dump_data(self.graph, self.graph_file)
-
-        for cmd_id in self.graph:
-            self.dump_cmd_graph_node(cmd_id)
+        self.dump_data(self.cmd_type, self.cmd_type_file)
 
         if self.graph:
             if self.conf.get("CmdGraph.as_picture"):
@@ -107,11 +103,14 @@ class CmdGraph(Extension):
             raise RuntimeError
 
         self.graph.clear()
+        self.cmd_type.clear()
 
     def __add_to_graph(self, cmd):
+        self.cmd_type[cmd["id"]] = cmd["type"]
+
         out_id = str(cmd["id"])
         if out_id not in self.graph:
-            self.graph[out_id] = self.__get_new_value(cmd["type"])
+            self.graph[out_id] = self.__get_new_value()
 
         for cmd_in in (i for i in cmd["in"] if i in self.out_dict):
             in_id = self.out_dict[cmd_in]
@@ -129,7 +128,7 @@ class CmdGraph(Extension):
         dot = Digraph(graph_attr={'rankdir': 'LR'}, node_attr={'shape': 'rectangle'})
 
         for cmd_id in self.graph:
-            cmd_type = self.graph[cmd_id]["type"]
+            cmd_type = self.cmd_type[cmd_id]
             cmd = self.extensions[cmd_type].load_cmd_by_id(cmd_id)
 
             cmd_node = "[{}] {}".format(cmd["id"], cmd_type)
@@ -145,9 +144,8 @@ class CmdGraph(Extension):
 
         added_nodes = dict()
 
-        graph = self.graph
-        for cmd_id in graph:
-            cmd_type = graph[cmd_id]["type"]
+        for cmd_id in self.graph:
+            cmd_type = self.cmd_type[cmd_id]
             cmd = self.extensions[cmd_type].load_cmd_by_id(cmd_id)
 
             if cmd_type in ["CC", "CL"]:
@@ -184,8 +182,8 @@ class CmdGraph(Extension):
         dot.render(self.graph_with_files_dot)
 
     @staticmethod
-    def __get_new_value(cmd_type):
-        return {"used_by": list(), "using": list(), "type": cmd_type}
+    def __get_new_value():
+        return {"used_by": list(), "using": list()}
 
     def get_ext_obj(self, ext_name):
         if ext_name not in self.extensions:

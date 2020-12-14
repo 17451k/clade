@@ -28,6 +28,7 @@ def test_cmd_graph_requires(tmpdir, cmds_file):
     e = c.parse("CmdGraph")
 
     cmd_graph = e.load_cmd_graph()
+    cmd_type = e.load_cmd_type()
 
     cmd_id = None
     for cmd in e.extensions["CC"].load_all_cmds():
@@ -36,7 +37,7 @@ def test_cmd_graph_requires(tmpdir, cmds_file):
 
     assert cmd_id
     assert cmd_graph
-    assert cmd_graph[cmd_id]["type"] == "CC"
+    assert cmd_type[cmd_id] == "CC"
     assert len(cmd_graph[cmd_id]["used_by"]) == 1
     assert cmd_graph[cmd_id]["using"] == []
 

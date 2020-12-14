@@ -60,6 +60,7 @@ class Clade:
         self.__prepare_to_init()
 
         self._cmd_graph = None
+        self._cmd_type = None
         self._src_graph = None
         self._src_info = None
         self._pid_graph = None
@@ -300,6 +301,14 @@ class Clade:
         return self._cmd_graph
 
     @property
+    def cmd_type(self):
+        """Information about command types."""
+        if not self._cmd_type:
+            self._cmd_type = self.CmdGraph.load_cmd_type()
+
+        return self._cmd_type
+
+    @property
     def cmd_ids(self):
         """List of identifiers of all parsed commands."""
         return self.cmd_graph.keys()
@@ -325,10 +334,7 @@ class Clade:
 
     def get_cmd_type(self, cmd_id):
         """Get type of a command by its identifier."""
-        try:
-            return self.CmdGraph.load_cmd_graph_node(cmd_id)["type"]
-        except FileNotFoundError:
-            raise RuntimeError("Can't find {!r} id in the command graph".format(cmd_id))
+        return self.cmd_type[cmd_id]
 
     def get_cmd(self, cmd_id, cmd_type=None, with_opts=False, with_raw=False, with_deps=False):
         """Get command by its identifier and type (optionally)."""
@@ -390,7 +396,7 @@ class Clade:
     def get_root_cmds(self, cmd_id):
         """Get list of identifiers of all root commands from a command graph of a given command identifier."""
         if cmd_id not in self.cmd_graph:
-            raise RuntimeError("Can't find {!r} id in the command graph".format(cmd_id))
+            raise KeyError("Can't find {!r} id in the command graph".format(cmd_id))
 
         using = self.cmd_graph[cmd_id]["using"]
 
@@ -407,7 +413,7 @@ class Clade:
     def get_leaf_cmds(self, cmd_id):
         """Get list of identifiers of all leaf commands from a command graph of a given command identifier."""
         if cmd_id not in self.cmd_graph:
-            raise RuntimeError("Can't find {!r} id in the command graph".format(cmd_id))
+            raise KeyError("Can't find {!r} id in the command graph".format(cmd_id))
 
         used_by = self.cmd_graph[cmd_id]["used_by"]
 
