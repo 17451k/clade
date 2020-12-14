@@ -127,13 +127,13 @@ class SrcGraph(Extension):
     def __count_file_loc(self, file):
         """Count number of lines of code in the file."""
         try:
+            i = -1
             with open(file, "rb") as f:
                 for i, _ in enumerate(f):
                     pass
+
+            # Returns 0 if file is empty
             return i + 1
-        except UnboundLocalError:
-            # File is empty
-            return 0
         except FileNotFoundError:
             self.warning("Cannot get size of file {}".format(file))
             return 0
