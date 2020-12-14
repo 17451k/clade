@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import hashlib
 import re
 import os
 
@@ -155,7 +154,7 @@ class CmdGraph(Extension):
                 cmd["opts"] = self.extensions[cmd_type].load_opts_by_id(cmd_id)
 
             for i, cmd_out in enumerate(cmd["out"]):
-                cmd_out_hash = hashlib.md5(cmd_out.encode("utf-8")).hexdigest()
+                cmd_out_hash = self._get_hash(cmd_out)
 
                 if cmd_out not in added_nodes:
                     dot.node(cmd_out_hash, label=re.escape(cmd_out))
@@ -170,7 +169,7 @@ class CmdGraph(Extension):
                     cmd_ins = cmd["in"]
 
                 for cmd_in in cmd_ins:
-                    cmd_in_hash = hashlib.md5(cmd_in.encode("utf-8")).hexdigest()
+                    cmd_in_hash = self._get_hash(cmd_in)
 
                     if cmd_in not in added_nodes:
                         dot.node(cmd_in_hash, label=re.escape(cmd_in))
