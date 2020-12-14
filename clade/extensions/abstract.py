@@ -230,17 +230,25 @@ class Extension(metaclass=abc.ABCMeta):
                 )
             )
 
+        if not os.path.isabs(archive):
+            archive = os.path.join(self.work_dir, archive)
+
+        if not os.path.exists(archive):
+            return dict()
+
         data = dict()
 
-        if keys:
-            self.debug("Loading data from {!r}: {!r}".format(archive, keys))
-            for key in keys:
-                file = self._get_hash(key)
-                data.update(self.load_data_from_zip(self._get_hash(key), archive, raise_exception=False))
-        else:
-            self.debug("Loading all data from {!r}".format(archive))
-            for file in self.__get_all_files_in_archive(archive):
-                data.update(self.load_data_from_zip(file, archive, raise_exception=False))
+
+        with zipfile.ZipFile(archive, "r") as zip_fh:
+            if keys:
+                self.debug("Loading data from {!r}: {!r}".format(archive, keys))
+                for key in keys:
+                    file = self._get_hash(key)
+                    data.update(self.__load_data_from_zip(self._get_hash(key), zip_fh, raise_exception=False))
+            else:
+                self.debug("Loading all data from {!r}".format(archive))
+                for file in self.__get_all_files_in_archive(zip_fh):
+                    data.update(self.__load_data_from_zip(file, zip_fh, raise_exception=False))
 
         return data
 
@@ -253,45 +261,55 @@ class Extension(metaclass=abc.ABCMeta):
                 )
             )
 
-        if keys:
-            self.debug("Yielding data from {!r}: {!r}".format(archive, keys))
-            for key in keys:
-                data = self.load_data_from_zip(self._get_hash(key), archive, raise_exception=False)
-
-                for key in data:
-                    yield key, data
-        else:
-            self.debug("Yielding all data from {!r}".format(archive))
-            for file in self.__get_all_files_in_archive(archive):
-                data = self.load_data_from_zip(file, archive, raise_exception=False)
-                for key in data:
-                    yield key, data
-
-    def __get_all_files_in_archive(self, archive):
         if not os.path.isabs(archive):
             archive = os.path.join(self.work_dir, archive)
 
         if not os.path.exists(archive):
-            return []
+            return dict()
 
         with zipfile.ZipFile(archive, "r") as zip_fh:
-            return zip_fh.namelist()
+            if keys:
+                self.debug("Yielding data from {!r}: {!r}".format(archive, keys))
+                for key in keys:
+                    data = self.__load_data_from_zip(self._get_hash(key), zip_fh, raise_exception=False)
+
+                    for key in data:
+                        yield key, data
+            else:
+                self.debug("Yielding all data from {!r}".format(archive))
+                for file in self.__get_all_files_in_archive(zip_fh):
+                    data = self.__load_data_from_zip(file, zip_fh, raise_exception=False)
+                    for key in data:
+                        yield key, data
+
+    def __get_all_files_in_archive(self, zip_fh):
+        return zip_fh.namelist()
 
     def dump_data_by_key(self, data, archive):
         """Dump data to multiple json files inside zip archive in the object working directory."""
+        if not os.path.isabs(archive):
+            archive = os.path.join(self.work_dir, archive)
+
+        os.makedirs(os.path.dirname(archive), exist_ok=True)
+
         self.debug("Dumping data to {!r}".format(archive))
 
-        for key in data:
-            self.dump_data_to_zip({key: data[key]}, self._get_hash(key), archive)
+        with zipfile.ZipFile(archive, "a", compression=zipfile.ZIP_STORED) as zip_fh:
+            for key in data:
+                self.__dump_data_to_zip_fh({key: data[key]}, self._get_hash(key), zip_fh)
 
     def load_data_from_zip(self, file_name, archive, raise_exception=True):
         if not os.path.isabs(archive):
             archive = os.path.join(self.work_dir, archive)
 
+        with zipfile.ZipFile(archive, "r") as zip_fh:
+            return self.__load_data_from_zip(file_name, zip_fh, raise_exception=raise_exception)
+
+
+    def __load_data_from_zip(self, file_name, zip_fh, raise_exception=True):
         try:
-            with zipfile.ZipFile(archive, "r") as zip_fh:
-                with zip_fh.open(file_name, "r") as fh:
-                    return ujson.loads(fh.read().decode("utf-8"))
+            with zip_fh.open(file_name, "r") as fh:
+                return ujson.loads(fh.read().decode("utf-8"))
         except (FileNotFoundError, KeyError) as e:
             if raise_exception:
                 self.error(e)
@@ -299,15 +317,18 @@ class Extension(metaclass=abc.ABCMeta):
 
             return dict()
 
-    def dump_data_to_zip(self, data, file_name, archive, format="json"):
+    def dump_data_to_zip(self, data, file_name, archive):
         if not os.path.isabs(archive):
             archive = os.path.join(self.work_dir, archive)
 
         os.makedirs(os.path.dirname(archive), exist_ok=True)
 
         with zipfile.ZipFile(archive, "a", compression=zipfile.ZIP_STORED) as zip_fh:
-            with zip_fh.open(file_name, "w") as fh:
-                fh.write(ujson.dumps(data).encode("utf-8"))
+            self.__dump_data_to_zip_fh(data, file_name, zip_fh)
+
+    def __dump_data_to_zip_fh(self, data, file_name, zip_fh):
+        with zip_fh.open(file_name, "w") as fh:
+            fh.write(ujson.dumps(data).encode("utf-8"))
 
     def get_ext_version(self):
         version = self.__version__
