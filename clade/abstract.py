@@ -55,7 +55,7 @@ class Intercept(metaclass=abc.ABCMeta):
         env = dict(os.environ)
 
         self.logger.debug("Set 'CLADE_INTERCEPT' environment variable value")
-        env["CLADE_INTERCEPT"] = self.output
+        env["CLADE_INTERCEPT"] = str(self.output)
 
         # Prepare environment variables for PID graph
         if self.append:
