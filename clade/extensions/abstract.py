@@ -33,6 +33,7 @@ import tempfile
 import time
 import ujson
 import uuid
+import zipfile
 
 from concurrent.futures import ProcessPoolExecutor
 
@@ -288,6 +289,16 @@ class Extension(metaclass=abc.ABCMeta):
             )
 
             self.dump_data(to_dump, file_name, indent=0)
+
+    def load_data_from_zip(self, file_name, zip_file_name):
+        with zipfile.ZipFile(zip_file_name, "r") as zip_fh:
+            with zip_fh.open(file_name, "к") as fh:
+                return ujson.loads(fh.read().decode("utf-8"))
+
+    def dump_data_to_zip(self, data, file_name, zip_file_name, format="json"):
+        with zipfile.ZipFile(zip_file_name, "a") as zip_fh:
+            with zip_fh.open(file_name, "w") as fh:
+                fh.write(ujson.dumps(data).encode("utf-8"))
 
     def get_ext_version(self):
         version = self.__version__
