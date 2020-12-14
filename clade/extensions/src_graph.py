@@ -32,7 +32,7 @@ class SrcGraph(Extension):
 
         self.src_graph = dict()
         self.src_graph_file = "src_graph.json"
-        self.src_graph_folder = "src_graph"
+        self.src_graph_archive = "src_graph.zip"
 
         self.src_info = dict()
         self.src_info_file = "src_info.json"
@@ -40,7 +40,7 @@ class SrcGraph(Extension):
     def load_src_graph(self, files=None):
         """Load source graph."""
         if files:
-            return self.load_data_by_key(self.src_graph_folder, files)
+            return self.load_data_by_key(self.src_graph_archive, files)
         else:
             return self.load_data(self.src_graph_file)
 
@@ -67,7 +67,7 @@ class SrcGraph(Extension):
 
         self.dump_data(self.src_graph, self.src_graph_file, indent=4)
         self.dump_data(self.src_info, self.src_info_file, indent=4)
-        self.dump_data_by_key(self.src_graph, self.src_graph_folder)
+        self.dump_data_by_key(self.src_graph, self.src_graph_archive)
 
         self.src_graph.clear()
 

@@ -61,7 +61,7 @@ class Extension(metaclass=abc.ABCMeta):
         FileNotFoundError: Cant find file with the build commands
     """
 
-    __version__ = "1"
+    __version__ = "2"
 
     def __init__(self, work_dir, conf=None):
         self.name = self.__class__.__name__
@@ -221,82 +221,91 @@ class Extension(metaclass=abc.ABCMeta):
                 )
             )
 
-    def load_data_by_key(self, folder, files=None):
-        """Load data stored in multiple json files using dump_data_by_key()."""
-        if files and not isinstance(files, list) and not isinstance(files, set):
+    def load_data_by_key(self, archive, keys=None):
+        """Load data stored in multiple json files inside zip archive using dump_data_by_key()."""
+        if keys and not isinstance(keys, list) and not isinstance(keys, set):
             raise TypeError(
                 "Provide a list or set of files to retrieve data but not {!r}".format(
-                    type(files).__name__
+                    type(keys).__name__
                 )
             )
 
         data = dict()
 
-        if files:
-            self.debug("Loading data from {!r}: {!r}".format(folder, files))
-            for key in files:
-                file = os.path.join(
-                    folder,
-                    hashlib.md5(key.encode("utf-8")).hexdigest() + ".json",
-                )
-                data.update(self.load_data(file, raise_exception=False))
+        if keys:
+            self.debug("Loading data from {!r}: {!r}".format(archive, keys))
+            for key in keys:
+                file = self._get_hash(key)
+                data.update(self.load_data_from_zip(self._get_hash(key), archive, raise_exception=False))
         else:
-            self.debug("Loading all data from {!r}".format(folder))
-            for file in self.__get_all_files_in_folder(folder):
-                data.update(self.load_data(file, raise_exception=False))
+            self.debug("Loading all data from {!r}".format(archive))
+            for file in self.__get_all_files_in_archive(archive):
+                data.update(self.load_data_from_zip(file, archive, raise_exception=False))
 
         return data
 
-    def yield_data_by_key(self, folder, files=None):
-        """Yield data stored in multiple json files using dump_data_by_key()."""
-        if files and not isinstance(files, list) and not isinstance(files, set):
+    def yield_data_by_key(self, archive, keys=None):
+        """Yield data stored in multiple json files inside zip archive using dump_data_by_key()."""
+        if keys and not isinstance(keys, list) and not isinstance(keys, set):
             raise TypeError(
                 "Provide a list or set of files to retrieve data but not {!r}".format(
-                    type(files).__name__
+                    type(keys).__name__
                 )
             )
 
-        if files:
-            self.debug("Yielding data from {!r}: {!r}".format(folder, files))
-            for key in files:
-                file = os.path.join(
-                    folder,
-                    hashlib.md5(key.encode("utf-8")).hexdigest() + ".json",
-                )
+        if keys:
+            self.debug("Yielding data from {!r}: {!r}".format(archive, keys))
+            for key in keys:
+                data = self.load_data_from_zip(self._get_hash(key), archive, raise_exception=False)
 
-                data = self.load_data(file, raise_exception=False)
                 for key in data:
                     yield key, data
         else:
-            self.debug("Yielding all data from {!r}".format(folder))
-            for file in self.__get_all_files_in_folder(folder):
-                data = self.load_data(file, raise_exception=False)
+            self.debug("Yielding all data from {!r}".format(archive))
+            for file in self.__get_all_files_in_archive(archive):
+                data = self.load_data_from_zip(file, archive, raise_exception=False)
                 for key in data:
                     yield key, data
 
-    def __get_all_files_in_folder(self, folder):
-        return glob.glob(os.path.join(self.work_dir, folder, "*"))
+    def __get_all_files_in_archive(self, archive):
+        if not os.path.isabs(archive):
+            archive = os.path.join(self.work_dir, archive)
 
-    def dump_data_by_key(self, data, folder):
-        """Dump data to multiple json files in the object working directory."""
-        self.debug("Dumping data to {!r}".format(folder))
+        if not os.path.exists(archive):
+            return []
+
+        with zipfile.ZipFile(archive, "r") as zip_fh:
+            return zip_fh.namelist()
+
+    def dump_data_by_key(self, data, archive):
+        """Dump data to multiple json files inside zip archive in the object working directory."""
+        self.debug("Dumping data to {!r}".format(archive))
 
         for key in data:
-            to_dump = {key: data[key]}
+            self.dump_data_to_zip({key: data[key]}, self._get_hash(key), archive)
 
-            file_name = os.path.join(
-                folder, hashlib.md5(key.encode("utf-8")).hexdigest() + ".json"
-            )
+    def load_data_from_zip(self, file_name, archive, raise_exception=True):
+        if not os.path.isabs(archive):
+            archive = os.path.join(self.work_dir, archive)
 
-            self.dump_data(to_dump, file_name, indent=0)
+        try:
+            with zipfile.ZipFile(archive, "r") as zip_fh:
+                with zip_fh.open(file_name, "r") as fh:
+                    return ujson.loads(fh.read().decode("utf-8"))
+        except (FileNotFoundError, KeyError) as e:
+            if raise_exception:
+                self.error(e)
+                raise RuntimeError
 
-    def load_data_from_zip(self, file_name, zip_file_name):
-        with zipfile.ZipFile(zip_file_name, "r") as zip_fh:
-            with zip_fh.open(file_name, "к") as fh:
-                return ujson.loads(fh.read().decode("utf-8"))
+            return dict()
 
-    def dump_data_to_zip(self, data, file_name, zip_file_name, format="json"):
-        with zipfile.ZipFile(zip_file_name, "a") as zip_fh:
+    def dump_data_to_zip(self, data, file_name, archive, format="json"):
+        if not os.path.isabs(archive):
+            archive = os.path.join(self.work_dir, archive)
+
+        os.makedirs(os.path.dirname(archive), exist_ok=True)
+
+        with zipfile.ZipFile(archive, "a", compression=zipfile.ZIP_STORED) as zip_fh:
             with zip_fh.open(file_name, "w") as fh:
                 fh.write(ujson.dumps(data).encode("utf-8"))
 
@@ -627,3 +636,6 @@ class Extension(metaclass=abc.ABCMeta):
         self.conf["log_level"] must be set to ERROR, WARNING, INFO or DEBUG in order to see the message.
         """
         logger.error("{}: {}".format(self.name, message))
+
+    def _get_hash(self, key):
+        return hashlib.md5(key.encode("utf-8")).hexdigest()

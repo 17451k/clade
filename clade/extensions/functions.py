@@ -33,7 +33,7 @@ class Functions(Callgraph):
 
         self.funcs_by_file = nested_dict()
         self.funcs_by_file_file = "functions_by_file.json"
-        self.funcs_by_file_folder = "functions_by_file"
+        self.funcs_by_file_archive = "functions_by_file.zip"
 
     @Extension.prepare
     def parse(self, cmds_file):
@@ -48,7 +48,7 @@ class Functions(Callgraph):
 
         self.dump_data(self.funcs, self.funcs_file)
         self.dump_data(self.funcs_by_file, self.funcs_by_file_file)
-        self.dump_data_by_key(self.funcs_by_file, self.funcs_by_file_folder)
+        self.dump_data_by_key(self.funcs_by_file, self.funcs_by_file_archive)
 
         self.src_graph.clear()
         self.funcs.clear()
@@ -63,7 +63,7 @@ class Functions(Callgraph):
     def load_functions_by_file(self, files=None):
         """Load information about functions grouped by files."""
         if files:
-            return self.load_data_by_key(self.funcs_by_file_folder, files)
+            return self.load_data_by_key(self.funcs_by_file_archive, files)
         else:
             return self.load_data(self.funcs_by_file_file)
 

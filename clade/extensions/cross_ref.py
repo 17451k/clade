@@ -33,8 +33,10 @@ class CrossRef(Callgraph):
 
         self.funcs = None
 
-        self.ref_to_folder = "ref_to"
-        self.ref_from_folder = "ref_from"
+        self.ref_to_macro_archive = "ref_to_macro.zip"
+        self.ref_to_func_archive = "ref_to_func.zip"
+        self.ref_from_macro_archive = "ref_from_macro.zip"
+        self.ref_from_func_archive = "ref_from_func.zip"
 
     @Extension.prepare
     def parse(self, cmds_file):
@@ -59,11 +61,31 @@ class CrossRef(Callgraph):
 
     def load_ref_to_by_file(self, files=None):
         """Load references to definitions and declarations grouped by files."""
-        return self.load_data_by_key(self.ref_to_folder, files)
+        macro_data = self.load_data_by_key(self.ref_to_macro_archive, files)
+        func_data = self.load_data_by_key(self.ref_to_func_archive, files)
+
+        for file in func_data:
+            if file not in macro_data:
+                macro_data[file] = func_data[file]
+            else:
+                macro_data[file].update(func_data[file])
+
+        return macro_data
 
     def load_ref_from_by_file(self, files=None):
         """Load references to usages grouped by files."""
-        return self.load_data_by_key(self.ref_from_folder, files)
+        macro_data = self.load_data_by_key(self.ref_from_macro_archive, files)
+        func_data = self.load_data_by_key(self.ref_from_func_archive, files)
+
+        for file in func_data:
+            if file not in macro_data:
+                macro_data[file] = func_data[file]
+                continue
+
+            if "call" in func_data[file]:
+                macro_data[file]["call"] = func_data[file]["call"]
+
+        return macro_data
 
     def __get_raw_locations(self):
         raw_locations = nested_dict()
@@ -238,7 +260,7 @@ class CrossRef(Callgraph):
                         else:
                             ref_to[context_file]["decl_func"] = [val]
 
-            self.__dump_ref_to(ref_to)
+            self.__dump_ref_to(ref_to, self.ref_to_func_archive)
 
     def __gen_ref_to_macro(self, locations):
         for exp_file, expansions in self.extensions["Macros"].yield_expansions():
@@ -262,20 +284,13 @@ class CrossRef(Callgraph):
                         else:
                             ref_to[exp_file]["def_macro"] = [val]
 
-            self.__dump_ref_to(ref_to)
+            self.__dump_ref_to(ref_to, self.ref_to_macro_archive)
 
-    def __dump_ref_to(self, ref_to):
+    def __dump_ref_to(self, ref_to, archive):
         if not ref_to:
             return
 
-        local_ref_to = self.load_ref_to_by_file(list(ref_to))
-
-        for file in ref_to:
-            if file not in local_ref_to:
-                continue
-            ref_to[file].update(local_ref_to[file])
-
-        self.dump_data_by_key(ref_to, self.ref_to_folder)
+        self.dump_data_by_key(ref_to, archive)
 
     def __gen_ref_from(self, locations):
         self.__gen_ref_from_func(locations)
@@ -313,7 +328,7 @@ class CrossRef(Callgraph):
                                 else:
                                     ref_from[decl_file]["call"] = [val]
 
-            self.__dump_ref_from(ref_from)
+            self.__dump_ref_from(ref_from, self.ref_from_func_archive)
 
     def __get_context_locs(self, file, func, callgraph):
         locs = []
@@ -353,28 +368,10 @@ class CrossRef(Callgraph):
                         else:
                             ref_from[def_file]["expand"] = [val]
 
-            self.__dump_ref_from(ref_from)
+            self.__dump_ref_from(ref_from, self.ref_from_macro_archive)
 
-    def __dump_ref_from(self, ref_from):
+    def __dump_ref_from(self, ref_from, archive):
         if not ref_from:
             return
 
-        local_ref_from = self.load_ref_from_by_file(list(ref_from))
-
-        for file in ref_from:
-            if file not in local_ref_from:
-                continue
-
-            if "call" in local_ref_from[file]:
-                if ref_from[file]["call"]:
-                    ref_from[file]["call"].extend(local_ref_from[file]["call"])
-                else:
-                    ref_from[file]["call"] = local_ref_from[file]["call"]
-
-            if "expand" in local_ref_from[file]:
-                if ref_from[file]["expand"]:
-                    ref_from[file]["expand"].extend(local_ref_from[file]["expand"])
-                else:
-                    ref_from[file]["expand"] = local_ref_from[file]["expand"]
-
-        self.dump_data_by_key(ref_from, self.ref_from_folder)
+        self.dump_data_by_key(ref_from, archive)
