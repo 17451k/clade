@@ -41,7 +41,7 @@ def test_cc_parallel_with_exception(tmpdir, cmds_file):
             result_mock.side_effect = Exception
 
             c = Clade(tmpdir, cmds_file)
-            with pytest.raises(RuntimeError):
+            with pytest.raises(Exception):
                 c.parse("CC")
     finally:
         os.environ["CLADE_DEBUG"] = "1"

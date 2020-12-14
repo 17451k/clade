@@ -26,13 +26,7 @@ def test_path(tmpdir, cmds_file):
     c = Clade(tmpdir, cmds_file)
     c.parse("SrcGraph")
 
-    assert c.Path.get_abs_path(test_file_abs) == test_file_abs
     assert c.Path.normalize_rel_path(test_file_rel, os.getcwd()) == test_file_abs
-
-    # Clear cache
-    c.Path.paths = dict()
-
-    assert c.Path.get_abs_path(test_file_abs) == test_file_abs
 
 
 def test_path_capital(tmpdir, cmds_file):
@@ -47,14 +41,5 @@ def test_path_capital(tmpdir, cmds_file):
     test_small.touch()
     test_capital.touch()
 
-    c.Path.normalize_rel_path("TEST.c", tmpdir)
-    c.Path.normalize_rel_path("test.c", tmpdir)
-
-    assert "test.c" in c.Path.get_rel_path("test.c", tmpdir)
-    assert "TEST.c" in c.Path.get_rel_path("TEST.c", tmpdir)
-
-    # Clear cache
-    c.Path.paths = dict()
-
-    assert "test.c" in c.Path.get_rel_path("test.c", tmpdir)
-    assert "TEST.c" in c.Path.get_rel_path("TEST.c", tmpdir)
+    assert "test.c" in c.Path.normalize_rel_path("test.c", tmpdir)
+    assert "TEST.c" in c.Path.normalize_rel_path("TEST.c", tmpdir)

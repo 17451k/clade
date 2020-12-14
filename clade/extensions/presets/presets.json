@@ -36,7 +36,6 @@
         "Common.filter": [],
         "Common.filter_in": [],
         "Common.filter_out": [],
-        "Common.dump_raw_cmds": false,
         "Info.extra_CIF_opts": [],
         "Info.use_preprocessed_files": false,
         "Info.cif": "cif",

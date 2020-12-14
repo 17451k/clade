@@ -139,16 +139,14 @@ class Common(Extension, metaclass=abc.ABCMeta):
 
         self.dump_opts_by_id(cmd["id"], cmd["opts"])
         del cmd["opts"]
-
-        if self.conf.get("Common.dump_raw_cmds", False):
-            self.dump_raw_by_id(cmd["id"], cmd["command"])
+        self.dump_raw_by_id(cmd["id"], cmd["command"])
         del cmd["command"]
 
         self.dump_data(cmd, os.path.join(self.cmds_dir, "{}.json".format(id)))
 
     def load_raw_by_id(self, id):
         raw_file = os.path.join(self.raw_dir, "{}.json".format(id))
-        return self.load_data(raw_file, raise_exception=False)
+        return self.load_data(raw_file, raise_exception=True)
 
     def dump_raw_by_id(self, id, raw_command):
         self.dump_data(
@@ -165,9 +163,7 @@ class Common(Extension, metaclass=abc.ABCMeta):
     def dump_bad_cmd_by_id(self, id, cmd):
         self.dump_opts_by_id(cmd["id"], cmd["opts"])
         del cmd["opts"]
-
-        if self.conf.get("Common.dump_raw_cmds"):
-            self.dump_raw_by_id(cmd["id"], cmd["command"])
+        self.dump_raw_by_id(cmd["id"], cmd["command"])
         del cmd["command"]
 
         self.dump_data(cmd, os.path.join(self.bad_dir, "{}.json".format(id)))
