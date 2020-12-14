@@ -18,6 +18,7 @@
 #ifndef DATA_H
 #define DATA_H
 
-extern void intercept_call(const char *path, char const *const argv[]);
+extern void intercept_exec_call(const char *path, char const *const argv[]);
+extern void intercept_open_call(const char *path, int flags);
 
 #endif /* DATA_H */

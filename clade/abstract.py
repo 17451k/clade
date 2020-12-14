@@ -39,23 +39,32 @@ class Intercept(metaclass=abc.ABCMeta):
         RuntimeError: Clade installation is corrupted, or intercepting process failed
     """
 
-    def __init__(self, command, cwd=os.getcwd(), output="cmds.txt", append=False, conf=None):
+    def __init__(self, command, cwd=os.getcwd(), output: str = "cmds.txt", append=False, intercept_open=False, conf=None):
         self.command = command
         self.cwd = cwd
         self.output = os.path.abspath(output)
+        self.output_open = os.path.join(os.path.dirname(self.output), "open.txt")
         self.append = append
+        self.intercept_open = intercept_open
         self.conf = conf if conf else dict()
         self.logger = get_logger("Intercept", self.conf)
         self.env = self._setup_env()
 
-        if not self.append and os.path.exists(self.output):
-            os.remove(self.output)
+        if not self.append:
+            if os.path.exists(self.output):
+                os.remove(self.output)
+            if os.path.exists(self.output_open):
+                os.remove(self.output_open)
 
     def _setup_env(self):
         env = dict(os.environ)
 
         self.logger.debug("Set 'CLADE_INTERCEPT' environment variable value")
         env["CLADE_INTERCEPT"] = str(self.output)
+
+        if self.intercept_open:
+            self.logger.debug("Set 'CLADE_INTERCEPT_OPEN' environment variable value")
+            env["CLADE_INTERCEPT_OPEN"] = self.output_open
 
         # Prepare environment variables for PID graph
         if self.append:

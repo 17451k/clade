@@ -92,6 +92,13 @@ def parse_args(args):
         action="store_true",
     )
     parser.add_argument(
+        "-io",
+        "--intercept-open",
+        help="also intercept open() calls",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
         "-a",
         "--append",
         help="append intercepted commands to existing cmds.txt file",
@@ -170,7 +177,7 @@ def main(sys_args=sys.argv[1:]):
             sys.exit(-1)
 
         c.logger.info("Starting build")
-        r = c.intercept(conf["command"], use_wrappers=conf["use_wrappers"], append=args.append)
+        r = c.intercept(conf["command"], use_wrappers=conf["use_wrappers"], append=args.append, intercept_open=args.intercept_open)
 
         if r:
             # Clade can still proceed further

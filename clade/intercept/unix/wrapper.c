@@ -47,7 +47,7 @@ int main(int argc, char **argv, char **envp) {
 
             // strip wrapper_postfix extension
             which[strlen(which) - strlen(wrapper_postfix)] = 0;
-            intercept_call(which, (char const *const *)argv);
+            intercept_exec_call(which, (char const *const *)argv);
         }
 
         // First argument must be a valid path, not just a filename
@@ -64,7 +64,7 @@ int main(int argc, char **argv, char **envp) {
             exit(EXIT_FAILURE);
         }
 
-        intercept_call(which, (char const *const *)argv);
+        intercept_exec_call(which, (char const *const *)argv);
 
         // First argument must be a valid path, not just a filename
         argv[0] = which;
