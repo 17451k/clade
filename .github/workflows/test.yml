@@ -34,12 +34,12 @@ jobs:
     - name: Download CIF [Ubuntu]
       if: startsWith(matrix.os, 'ubuntu')
       run: |
-        curl -sSfL -o cif.tar.xz https://github.com/17451k/cif/releases/download/2020-04-24/cif-914c8f86-2020-04-24-linux-x64.tar.xz
+        curl -sSfL -o cif.tar.xz https://github.com/17451k/cif/releases/download/2020-12-14/cif-ad20f36-2020-12-14-linux-x86_64.tar.xz
 
     - name: Download CIF [macOS]
       if: startsWith(matrix.os, 'macos')
       run: |
-        curl -sSfL -o cif.tar.xz https://github.com/17451k/cif/releases/download/2020-04-24/cif-914c8f86-2020-04-24-macos.tar.xz
+        curl -sSfL -o cif.tar.xz https://github.com/17451k/cif/releases/download/2020-12-14/cif-ad20f36-2020-12-14-macos-x86_64.tar.xz
 
     - name: Install CIF
       run: |
