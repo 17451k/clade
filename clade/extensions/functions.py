@@ -54,8 +54,6 @@ class Functions(Callgraph):
         self.funcs.clear()
         self.funcs_by_file.clear()
 
-        self.log("Parsing finished")
-
     def load_functions(self):
         """Load information about functions."""
         return self.load_data(self.funcs_file)

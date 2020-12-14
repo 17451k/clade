@@ -35,8 +35,6 @@ class Typedefs(Extension):
         self.dump_data_by_key(self.typedefs, self.typedefs_archive)
         self.typedefs.clear()
 
-        self.log("Parsing finished")
-
     def __process_typedefs(self):
         for scope_file, declaration in self.extensions["Info"].iter_typedefs():
             if scope_file not in self.typedefs:

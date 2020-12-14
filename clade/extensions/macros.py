@@ -50,8 +50,6 @@ class Macros(Extension):
         self.dump_data_by_key(self.exps, self.exps_archive)
         self.exps.clear()
 
-        self.log("Parsing finished")
-
     def __process_macros_definitions(self):
         for file, macro, line in self.extensions["Info"].iter_macros_definitions():
             self.macros[file][macro][line] = nested_dict()

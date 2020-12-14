@@ -66,8 +66,6 @@ class Callgraph(Extension):
         self.callgraph.clear()
         self.used_in.clear()
 
-        self.log("Generating finished")
-
     def load_callgraph(self, files=None):
         return self.load_data_by_key(self.callgraph_archive, files)
 

@@ -128,9 +128,15 @@ class Extension(metaclass=abc.ABCMeta):
                     self.debug("Removing temp directory: {!r}".format(self.temp_dir))
                     shutil.rmtree(self.temp_dir)
 
-                self.ext_meta["time"] = str(
-                    datetime.timedelta(seconds=(time.time() - time_start))
-                )
+                delta = datetime.timedelta(seconds=(time.time() - time_start))
+                delta_str = str(delta).split(".")[0]
+
+                self.ext_meta["time"] = delta_str
+
+                # 5 is an arbitrary threshold to supress printing unnessesary
+                # log messages for extensions that finished quickly
+                if delta.seconds > 5:
+                    self.log("Finished in {}".format(delta_str))
 
                 if os.path.exists(os.path.dirname(self.work_dir)):
                     self.dump_global_meta(args[0])

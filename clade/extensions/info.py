@@ -348,8 +348,6 @@ class Info(Extension):
         if os.path.exists(self.cif_output_dir):
             shutil.rmtree(self.cif_output_dir)
 
-        self.log("Normalizing finished")
-
     def iter_definitions(self):
         """Yield src_file, func, def_line, func_type, signature"""
 

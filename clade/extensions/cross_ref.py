@@ -57,8 +57,6 @@ class CrossRef(Callgraph):
         self.log("Calculating 'from' references")
         self.__gen_ref_from(locations)
 
-        self.log("Calculating finished")
-
     def load_ref_to_by_file(self, files=None):
         """Load references to definitions and declarations grouped by files."""
         macro_data = self.load_data_by_key(self.ref_to_macro_archive, files)
