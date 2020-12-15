@@ -14,7 +14,10 @@
 # limitations under the License.
 
 import logging
+import pkg_resources
 import os
+import re
+import subprocess
 import sys
 import ujson
 
@@ -58,3 +61,29 @@ def merge_preset_to_conf(preset_name, conf):
     preset_conf.update(conf)
 
     return preset_conf
+
+def get_clade_version():
+    version = pkg_resources.get_distribution("clade").version
+    location = pkg_resources.get_distribution("clade").location
+
+    if not os.path.exists(os.path.join(location, ".git")):
+        return version
+
+    try:
+        desc = ["git", "describe", "--tags", "--dirty"]
+        version = subprocess.check_output(
+            desc, cwd=location, stderr=subprocess.DEVNULL, universal_newlines=True
+        ).strip()
+    finally:
+        return version
+
+def get_program_version(program, version_arg="--version"):
+    version = "unknown"
+    try:
+        version = subprocess.check_output(
+            [program, version_arg], stderr=subprocess.DEVNULL, universal_newlines=True
+        ).strip()
+    finally:
+        if version.startswith("gcc"):
+            version = re.sub(r'\nCopyright[\s\S]*', '', version)
+        return version

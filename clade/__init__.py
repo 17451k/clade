@@ -20,7 +20,7 @@ import shutil
 from clade.utils import get_logger, merge_preset_to_conf
 from clade.intercept import intercept
 from clade.extensions.abstract import Extension
-from clade.extensions.utils import nested_dict, traverse
+from clade.types.nested_dict import nested_dict, traverse
 
 
 class Clade:

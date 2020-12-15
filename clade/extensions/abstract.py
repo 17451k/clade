@@ -17,17 +17,15 @@ import abc
 import datetime
 import fnmatch
 import glob
-import hashlib
 import importlib
 import itertools
+import pkg_resources
 import logging
 import platform
-import pkg_resources
 import os
 import pickle
 import re
 import shutil
-import subprocess
 import sys
 import tempfile
 import time
@@ -37,7 +35,9 @@ import zipfile
 
 from concurrent.futures import ProcessPoolExecutor
 
-import clade.cmds
+from clade.cmds import get_build_dir
+from clade.extensions.utils import get_string_hash, yield_chunk
+from clade.utils import get_clade_version, get_program_version
 
 
 # Setup extensions logger
@@ -148,9 +148,6 @@ class Extension(metaclass=abc.ABCMeta):
         """Parse intercepted commands."""
         pass
 
-    def get_build_dir(self, cmds_file):
-        return clade.cmds.get_build_dir(cmds_file)
-
     def load_data(self, file_name, raise_exception=True, format="json"):
         """Load file by name."""
 
@@ -249,8 +246,8 @@ class Extension(metaclass=abc.ABCMeta):
             if keys:
                 self.debug("Loading data from {!r}: {!r}".format(archive, keys))
                 for key in keys:
-                    file = self._get_hash(key)
-                    data.update(self.__load_data_from_zip(self._get_hash(key), zip_fh, raise_exception=False))
+                    file = get_string_hash(key)
+                    data.update(self.__load_data_from_zip(get_string_hash(key), zip_fh, raise_exception=False))
             else:
                 self.debug("Loading all data from {!r}".format(archive))
                 for file in self.__get_all_files_in_archive(zip_fh):
@@ -277,7 +274,7 @@ class Extension(metaclass=abc.ABCMeta):
             if keys:
                 self.debug("Yielding data from {!r}: {!r}".format(archive, keys))
                 for key in keys:
-                    data = self.__load_data_from_zip(self._get_hash(key), zip_fh, raise_exception=False)
+                    data = self.__load_data_from_zip(get_string_hash(key), zip_fh, raise_exception=False)
 
                     for key in data:
                         yield key, data
@@ -302,7 +299,7 @@ class Extension(metaclass=abc.ABCMeta):
 
         with zipfile.ZipFile(archive, "a", compression=zipfile.ZIP_STORED) as zip_fh:
             for key in data:
-                self.__dump_data_to_zip_fh({key: data[key]}, self._get_hash(key), zip_fh)
+                self.__dump_data_to_zip_fh({key: data[key]}, get_string_hash(key), zip_fh)
 
     def load_data_from_zip(self, file_name, archive, raise_exception=True):
         if not os.path.isabs(archive):
@@ -411,7 +408,7 @@ class Extension(metaclass=abc.ABCMeta):
                 stored_meta["conf"][key] = self.conf[key]
 
         if "build_dir" not in stored_meta:
-            stored_meta["build_dir"] = self.get_build_dir(cmds_file)
+            stored_meta["build_dir"] = get_build_dir(cmds_file)
         elif self.name == "Path":
             stored_meta["build_dir"] = self.conf["build_dir"]
 
@@ -419,7 +416,7 @@ class Extension(metaclass=abc.ABCMeta):
             stored_meta["versions"] = dict()
 
         if "clade" not in stored_meta["versions"]:
-            stored_meta["versions"]["clade"] = Extension.get_clade_version()
+            stored_meta["versions"]["clade"] = get_clade_version()
 
         if "python" not in stored_meta["versions"]:
             stored_meta["versions"]["python"] = platform.python_version()
@@ -428,10 +425,10 @@ class Extension(metaclass=abc.ABCMeta):
             stored_meta["versions"]["pip"] = pkg_resources.get_distribution("pip").version
 
         if "gcc" not in stored_meta["versions"]:
-            stored_meta["versions"]["gcc"] = self.get_program_version("gcc")
+            stored_meta["versions"]["gcc"] = get_program_version("gcc")
 
         if "cif" not in stored_meta["versions"]:
-            stored_meta["versions"]["cif"] = self.get_program_version("cif")
+            stored_meta["versions"]["cif"] = get_program_version("cif")
 
         if "uuid" not in stored_meta:
             stored_meta["uuid"] = str(uuid.uuid4())
@@ -455,44 +452,6 @@ class Extension(metaclass=abc.ABCMeta):
         stored_meta = self.load_global_meta()
         stored_meta[key] = data
         self.dump_data(stored_meta, self.global_meta_file, indent=4, format="json")
-
-    @staticmethod
-    def get_clade_version():
-        version = pkg_resources.get_distribution("clade").version
-        location = pkg_resources.get_distribution("clade").location
-
-        if not os.path.exists(os.path.join(location, ".git")):
-            return version
-
-        try:
-            desc = ["git", "describe", "--tags", "--dirty"]
-            version = subprocess.check_output(
-                desc, cwd=location, stderr=subprocess.DEVNULL, universal_newlines=True
-            ).strip()
-        finally:
-            return version
-
-    def get_program_version(self, program, version_arg="--version"):
-        version = "unknown"
-        try:
-            version = subprocess.check_output(
-                [program, version_arg], stderr=subprocess.DEVNULL, universal_newlines=True
-            ).strip()
-        finally:
-            if version.startswith("gcc"):
-                version = re.sub(r'\nCopyright[\s\S]*', '', version)
-            return version
-
-    def __get_cmd_chunk(self, cmds, chunk_size=1000):
-        cmds_it = iter(cmds)
-
-        while True:
-            piece = list(itertools.islice(cmds_it, chunk_size))
-
-            if piece:
-                yield piece
-            else:
-                return
 
     def __get_empty_obj(self, obj):
         empty_self = obj.__class__(self.clade_work_dir, self.conf)
@@ -536,7 +495,7 @@ class Extension(metaclass=abc.ABCMeta):
             finished_cmds = 0
 
             # Submit commands to executor in chunks
-            for cmd_chunk in self.__get_cmd_chunk(cmds, chunk_size=chunk_size):
+            for cmd_chunk in yield_chunk(cmds, chunk_size=chunk_size):
                 chunk_futures = []
 
                 for cmd in cmd_chunk:
@@ -594,18 +553,18 @@ class Extension(metaclass=abc.ABCMeta):
         return Extension.__get_all_subclasses(Extension)
 
     @staticmethod
-    def __get_all_subclasses(cls):
+    def __get_all_subclasses(parent_cls):
         """Get all subclasses of a given class."""
 
-        for subclass in cls.__subclasses__():
+        for subclass in parent_cls.__subclasses__():
             yield subclass
             yield from Extension.__get_all_subclasses(subclass)
 
     @staticmethod
-    def __get_all_parents(cls):
-        """Get all subclasses of a given class."""
+    def __get_all_parents(child_cls):
+        """Get all parents of a given class."""
 
-        for parent in cls.__bases__:
+        for parent in child_cls.__bases__:
             yield parent
             yield from Extension.__get_all_parents(parent)
 
@@ -662,6 +621,3 @@ class Extension(metaclass=abc.ABCMeta):
         self.conf["log_level"] must be set to ERROR, WARNING, INFO or DEBUG in order to see the message.
         """
         logger.error("{}: {}".format(self.name, message))
-
-    def _get_hash(self, key):
-        return hashlib.md5(key.encode("utf-8")).hexdigest()

@@ -15,7 +15,7 @@
 
 from clade.extensions.abstract import Extension
 from clade.extensions.callgraph import Callgraph
-from clade.extensions.utils import nested_dict, traverse
+from clade.types.nested_dict import nested_dict, traverse
 
 
 class Functions(Callgraph):

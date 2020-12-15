@@ -20,6 +20,7 @@ import sys
 
 from typing import List
 
+from clade.cmds import get_build_dir
 from clade.extensions.abstract import Extension
 
 
@@ -28,7 +29,7 @@ class Path(Extension):
 
     @Extension.prepare
     def parse(self, cmds_file):
-        build_cwd = self.get_build_dir(cmds_file)
+        build_cwd = get_build_dir(cmds_file)
         self.conf["build_dir"] = self.normalize_abs_path(build_cwd)
 
     def normalize_rel_paths(self, paths: List[str], cwd: str) -> List[str]:

@@ -13,58 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import collections
+import hashlib
+import itertools
+
+def get_string_hash(key):
+    return hashlib.md5(key.encode("utf-8")).hexdigest()
 
 
-def nested_dict():
-    return collections.defaultdict(nested_dict)
+def yield_chunk(container, chunk_size=1000):
+    it = iter(container)
 
+    while True:
+        piece = list(itertools.islice(it, chunk_size))
 
-def traverse(ndict, depth, restrict=None, allow_smaller=False):
-    """Traverse nested dictionary and yield list of its elements.
-
-    Args:
-        depth: limit depth of the dictionary to traverse.
-        restrict: ability to restrict output by specifying the exact value
-                  that must be at a specified position of the output list.
-                  Example: restrict={3: "calls"}.
-        allow_smaller: allow to return list of the size smaller then required
-                       (if the dictionary is not uniform).
-    """
-
-    if not restrict:
-        restrict = dict()
-
-    for l in __traverse(ndict, depth):
-        if not restrict:
-            if allow_smaller or len(l) == depth:
-                yield l
-            continue
-
-        allow = True
-
-        for key in restrict:
-            if key <= len(l) and l[key - 1] != restrict[key]:
-                allow = False
-
-        if allow and (allow_smaller or len(l) == depth):
-            yield l
-
-
-def __traverse(ndict, depth):
-    if depth == 0:
-        return []
-
-    if not isinstance(ndict, dict):
-        yield [ndict]
-        return
-
-    for key in ndict:
-        r = False
-
-        for l in __traverse(ndict[key], depth - 1):
-            yield [key] + l
-            r = True
-
-        if not r:
-            yield [key]
+        if piece:
+            yield piece
+        else:
+            return
