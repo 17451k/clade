@@ -26,6 +26,8 @@ import subprocess
 import sys
 import time
 
+from typing import List, Any
+
 from clade.extensions.abstract import Extension
 from clade.extensions.opts import filter_opts
 
@@ -40,7 +42,8 @@ class Info(Extension):
         if not conf:
             conf = dict()
 
-        # Without this option it will be difficult to link data coming from Info and by CC extensions
+        # Without this option it will be difficult to link data
+        # coming from Info and by CC extensions
         conf["CC.with_system_header_files"] = True
 
         if "SrcGraph.requires" in conf:
@@ -100,15 +103,7 @@ class Info(Extension):
 
     @Extension.prepare
     def parse(self, cmds_file):
-        if not shutil.which(self.conf.get("Info.cif", "cif")):
-            raise RuntimeError("Can't find CIF in PATH")
-
-        # Check that CIF was not added in PATH via relative path
-        current_dir = os.getcwd()
-        os.chdir(self.temp_dir)
-        if not shutil.which(self.conf.get("Info.cif", "cif")):
-            raise RuntimeError("Path to CIF must be absolute")
-        os.chdir(current_dir)
+        self.__check_cif()
 
         cmds = list(self.extensions["SrcGraph"].load_all_cmds())
 
@@ -135,9 +130,20 @@ class Info(Extension):
         if not os.path.exists(self.err_log):
             self.log("CIF finished without errors")
         else:
-            self.log("CIF finished with errors. Log: {}".format(self.err_log))
+            self.log("CIF finished with errors")
 
         self.__normalize_cif_output(cif_output)
+
+    def __check_cif(self):
+        if not shutil.which(self.conf.get("Info.cif", "cif")):
+            raise RuntimeError("Can't find CIF in PATH")
+
+        # Check that CIF was not added in PATH via relative path
+        current_dir = os.getcwd()
+        os.chdir(self.temp_dir)
+        if not shutil.which(self.conf.get("Info.cif", "cif")):
+            raise RuntimeError("Path to CIF must be absolute")
+        os.chdir(current_dir)
 
     def _run_cif(self, cmd):
         if self.__is_cmd_bad_for_cif(cmd):
@@ -378,10 +384,11 @@ class Info(Extension):
         regex = re.compile(r'\"(.*?)\" (\S*) (\S*) (\S*) (\S*) (.*)')
         args_regex = re.compile(r"actual_arg_func_name(\d+)=\s*(\w+)\s*")
 
-        for content in self.__iter_file_regex(self.call, regex):
-            content = list(content)
+        for orig_content in self.__iter_file_regex(self.call, regex):
+            content: List[Any] = list(orig_content)
 
-            # Last element should be args
+            # Replace last element of content list (string with arguments)
+            # with list of these arguments
             content[-1] = args_regex.findall(content[-1])
 
             yield content
@@ -416,12 +423,13 @@ class Info(Extension):
         regex = re.compile(r'\"(.*?)\" \"(.*?)\" (\S*) (\S*) (\S*)(.*)')
         arg_regex = re.compile(r' actual_arg\d+=(.*)')
 
-        for content in self.__iter_file_regex(self.expand, regex):
-            content = list(content)
+        for orig_content in self.__iter_file_regex(self.expand, regex):
+            content: List[Any] = list(orig_content)
 
             args = list()
 
-            # Last element should be args
+            # Replace last element of content list (string with arguments)
+            # with list of these arguments
             if content[-1]:
                 for arg in content[-1].split(','):
                     m_arg = arg_regex.match(arg)
@@ -470,8 +478,11 @@ def normalize_file(file, storage, cif_output_dir, expand):
     path = path.replace(storage, "")
     path = path.replace(cif_output_dir, "")
 
+    # Path to the defenition of macro expansion
+    def_path = None
+
     if "\\/" in path:
-        raise "Normalized path looks weird: {!r}".format(path)
+        raise RuntimeError("Normalized path looks weird: {!r}".format(path))
 
     expand_file = True if file.endswith(expand) else False
 
