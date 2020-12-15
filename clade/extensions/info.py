@@ -25,6 +25,7 @@ import shutil
 import subprocess
 import sys
 import time
+import zipfile
 
 from typing import List, Any
 
@@ -56,27 +57,27 @@ class Info(Extension):
         )
 
         # Info about function definitions
-        self.execution = os.path.join(self.work_dir, "execution.txt")
+        self.execution = os.path.join(self.work_dir, "execution.zip")
         # Info about function calls
-        self.call = os.path.join(self.work_dir, "call.txt")
+        self.call = os.path.join(self.work_dir, "call.zip")
         # Info about function declarations
-        self.decl = os.path.join(self.work_dir, "declare_func.txt")
+        self.decl = os.path.join(self.work_dir, "declare_func.zip")
         # Info about function calls via a function pointer
-        self.callp = os.path.join(self.work_dir, "callp.txt")
+        self.callp = os.path.join(self.work_dir, "callp.zip")
         # Info about using function names in pointers (in function context only)
-        self.use_func = os.path.join(self.work_dir, "use_func.txt")
+        self.use_func = os.path.join(self.work_dir, "use_func.zip")
         # Info about using global variables in function context
-        self.use_var = os.path.join(self.work_dir, "use_var.txt")
+        self.use_var = os.path.join(self.work_dir, "use_var.zip")
         # Info about init values of global variables
-        self.init_global = os.path.join(self.work_dir, "init_global.txt")
+        self.init_global = os.path.join(self.work_dir, "init_global.zip")
         # Info about macro functions
-        self.define = os.path.join(self.work_dir, "define.txt")
+        self.define = os.path.join(self.work_dir, "define.zip")
         # Info about macros
-        self.expand = os.path.join(self.work_dir, "expand.txt")
+        self.expand = os.path.join(self.work_dir, "expand.zip")
         # Info about exported functions (Linux kernel only)
-        self.exported = os.path.join(self.work_dir, "exported.txt")
+        self.exported = os.path.join(self.work_dir, "exported.zip")
         # Info about typedefs
-        self.typedefs = os.path.join(self.work_dir, "typedefs.txt")
+        self.typedefs = os.path.join(self.work_dir, "typedefs.zip")
 
         self.files = [
             self.execution,
@@ -342,17 +343,27 @@ class Info(Extension):
 
         # Join all cif output file into several big .txt files
         for file in self.files:
-            output_type = os.path.basename(file)
+            output_type = os.path.basename(file).replace(".zip", ".txt")
 
-            for output_file in [f for f in cif_output if f.endswith(output_type)]:
-                with open(file, "a") as file_fh:
-                    with open(output_file, "r") as output_fh:
-                        # This files should be fairly small
-                        file_fh.write(output_fh.read())
+            with zipfile.ZipFile(file, "w") as zip_fh:
+                for output_file in [f for f in cif_output if f.endswith(output_type)]:
+                    # Remove unnecessary prefixes from path inside archive
+                    arcname = output_file.replace(storage, "")
+                    arcname = arcname.replace(self.cif_output_dir, "")
+
+                    zip_fh.write(output_file, arcname=arcname)
 
         # Remove cif output directory
         if os.path.exists(self.cif_output_dir):
             shutil.rmtree(self.cif_output_dir)
+
+    def iter_init_global(self):
+        """Yield data from init_global.zip"""
+        with zipfile.ZipFile(self.init_global, "r") as zip_fh:
+            for file in zip_fh.namelist():
+                with zip_fh.open(file, "r") as f:
+                    for line in f:
+                        yield line.decode("utf-8")
 
     def iter_definitions(self):
         """Yield src_file, func, def_line, func_type, signature"""
@@ -448,46 +459,46 @@ class Info(Extension):
         for content in self.__iter_file_regex(self.typedefs, regex):
             yield content
 
-    def __iter_file_regex(self, file, regex):
-        for line in self.__iter_file(file):
-            m = regex.match(line)
+    def __iter_file_regex(self, archive, regex):
+        with zipfile.ZipFile(archive, "r") as zip_fh:
+            for file in zip_fh.namelist():
+                for line in self.__iter_file(file, zip_fh):
+                    m = regex.match(line)
 
-            if not m:
-                self.error("CIF output has unexpected format: {!r}".format(line))
-                raise SyntaxError
+                    if not m:
+                        self.error("CIF output has unexpected format: {!r}".format(line))
+                        raise SyntaxError
 
-            yield m.groups()
+                    yield m.groups()
 
-    def __iter_file(self, file):
-        if not os.path.isfile(file):
-            return []
+    def __iter_file(self, file, zip_fh):
+        # Path to the source file is encoded in the path to the CIF output file
+        path = os.path.dirname(file)
 
-        with open(file, "r") as f:
+        if "\\/" in path:
+            raise RuntimeError("Normalized path looks weird: {!r}".format(path))
+
+        # Path to the defenition of macro expansion
+        def_path = None
+
+        expand_file = True if file.endswith("expand.txt") else False
+
+        if expand_file:
+            path, def_path = path.split("/CLADE-EXPAND")
+
+        with zip_fh.open(file, "r") as f:
             for line in f:
-                yield line
+                # paths inside archives do not start with /, so we fix it
+                if expand_file:
+                    yield '"/{}" "{}" {}'.format(path, def_path, line.decode("utf-8"))
+                else:
+                    yield '"/{}" {}'.format(path, line.decode("utf-8"))
 
 
 # Moving this function outside output_file class increases performance
 def normalize_file(file, storage, cif_output_dir, expand):
     if not os.path.isfile(file):
         return
-
-    # Path to the source file is encoded in the path to the CIF output file
-    path = os.path.dirname(file)
-
-    path = path.replace(storage, "")
-    path = path.replace(cif_output_dir, "")
-
-    # Path to the defenition of macro expansion
-    def_path = None
-
-    if "\\/" in path:
-        raise RuntimeError("Normalized path looks weird: {!r}".format(path))
-
-    expand_file = True if file.endswith(expand) else False
-
-    if expand_file:
-        path, def_path = path.split("/CLADE-EXPAND")
 
     seen = set()
     new_file = file + ".tmp"
@@ -507,10 +518,7 @@ def normalize_file(file, storage, cif_output_dir, expand):
 
                     seen.add(h)
 
-                    if expand_file:
-                        new_fh.write('"{}" "{}" {}'.format(path, def_path, line))
-                    else:
-                        new_fh.write('"{}" {}'.format(path, line))
+                    new_fh.write(line)
     else:
         lines = []
         with codecs.open(file, "r", encoding="utf8", errors="ignore") as fh:
@@ -524,10 +532,7 @@ def normalize_file(file, storage, cif_output_dir, expand):
 
                 seen.add(h)
 
-                if expand_file:
-                    new_lines.append('"{}" "{}" {}'.format(path, def_path, line))
-                else:
-                    new_lines.append('"{}" {}'.format(path, line))
+                new_lines.append(line)
 
             with open(new_file, "w") as new_fh:
                 new_fh.writelines(new_lines)

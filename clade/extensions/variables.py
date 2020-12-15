@@ -74,14 +74,17 @@ class Variables(Callgraph):
             self.warning("Do not print data to file due to recursion limit {}".format(file_name))
 
     def __process_init_global(self):
-        init_global = self.extensions["Info"].init_global
-
-        if not os.path.isfile(init_global):
+        if not os.path.isfile(self.extensions["Info"].init_global):
             self.log("There is no global variables to parse")
             return
 
         self.log("Parsing global variables initializations")
-        self.variables = parse_variables_initializations(init_global, self.functions, self.__process_callv, self.work_dir)
+        self.variables = parse_variables_initializations(
+            self.extensions["Info"].iter_init_global,
+            self.functions,
+            self.__process_callv,
+            self.work_dir
+        )
 
     def __process_callv(self, functions, context_file):
         if not functions:
