@@ -124,3 +124,6 @@ ENV/
 # cProfile
 prof
 *.prof
+
+# pyright
+pyrightconfig.json
