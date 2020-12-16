@@ -43,7 +43,7 @@ class CL(Compiler):
         parsed_cmd = self.__parse_opts(cmd)
 
         if self.is_bad(parsed_cmd):
-            self.dump_bad_cmd_by_id(cmd["id"], parsed_cmd)
+            self.dump_bad_cmd_id(cmd["id"])
             return
 
         deps = set(self.__get_deps(cmd["id"], parsed_cmd) + parsed_cmd["in"])

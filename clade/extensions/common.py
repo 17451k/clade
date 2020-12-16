@@ -38,7 +38,7 @@ class Common(Extension, metaclass=abc.ABCMeta):
 
     requires = ["PidGraph", "Path"]
 
-    __version__ = "2"
+    __version__ = "3"
 
     def __init__(self, work_dir, conf=None):
         super().__init__(work_dir, conf)
@@ -46,7 +46,8 @@ class Common(Extension, metaclass=abc.ABCMeta):
         self.raw_dir = "raw"
         self.opts_dir = "opts"
         self.cmds_dir = "cmds"
-        self.bad_dir = "bad"
+
+        self.bad_ids = os.path.join(self.work_dir, "bad_ids.txt")
 
         cmd_filter = self.conf.get("Common.filter", [])
         cmd_filter_in = self.conf.get("Common.filter_in", [])
@@ -160,27 +161,18 @@ class Common(Extension, metaclass=abc.ABCMeta):
     def dump_opts_by_id(self, id, opts):
         self.dump_data(opts, os.path.join(self.opts_dir, "{}.json".format(id)))
 
-    def dump_bad_cmd_by_id(self, id, cmd):
-        self.dump_opts_by_id(cmd["id"], cmd["opts"])
-        del cmd["opts"]
-        self.dump_raw_by_id(cmd["id"], cmd["command"])
-        del cmd["command"]
+    def dump_bad_cmd_id(self, cmd_id):
+        os.makedirs(os.path.dirname(self.bad_ids), exist_ok=True)
 
-        self.dump_data(cmd, os.path.join(self.bad_dir, "{}.json".format(id)))
-
-    def load_bad_cmd_by_id(self, id):
-        # Warning: bad commands do not have dependencies
-        return self.load_data(os.path.join(self.bad_dir, "{}.json".format(id)))
+        with open(self.bad_ids, "a") as fh:
+            fh.write("{}\n".format(cmd_id))
 
     def get_bad_ids(self):
-        cmd_jsons = glob.glob(
-            os.path.join(self.work_dir, self.bad_dir, "*[0-9].json")
-        )
+        if not os.path.exists(self.bad_ids):
+            return []
 
-        return [
-            os.path.splitext(os.path.basename(cmd_json))[0]
-            for cmd_json in cmd_jsons
-        ]
+        with open(self.bad_ids, "r") as fh:
+            return fh.readlines()
 
     def _normalize_paths(self, cmd):
         cmd["in"] = self.extensions["Path"].normalize_rel_paths(cmd["in"], cmd["cwd"])

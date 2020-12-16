@@ -70,7 +70,7 @@ class Copy(Common):
                 parsed_cmd["out"].append(cmd_out)
 
         if self.is_bad(parsed_cmd):
-            self.dump_bad_cmd_by_id(cmd["id"], parsed_cmd)
+            self.dump_bad_cmd_id(cmd["id"])
             return
 
         self.debug("Parsed command: {}".format(parsed_cmd))
