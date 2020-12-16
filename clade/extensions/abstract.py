@@ -16,15 +16,12 @@
 import abc
 import datetime
 import fnmatch
-import glob
 import importlib
-import itertools
 import pkg_resources
 import logging
 import platform
 import os
 import pickle
-import re
 import shutil
 import sys
 import tempfile
@@ -307,7 +304,6 @@ class Extension(metaclass=abc.ABCMeta):
 
         with zipfile.ZipFile(archive, "r") as zip_fh:
             return self.__load_data_from_zip(file_name, zip_fh, raise_exception=raise_exception)
-
 
     def __load_data_from_zip(self, file_name, zip_fh, raise_exception=True):
         try:
