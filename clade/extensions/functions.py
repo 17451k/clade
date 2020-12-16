@@ -48,7 +48,7 @@ class Functions(Callgraph):
 
         self.dump_data(self.funcs, self.funcs_file)
         self.dump_data(self.funcs_by_file, self.funcs_by_file_file)
-        self.dump_data_by_path(self.funcs_by_file, self.funcs_by_file_archive)
+        self.dump_data_by_key(self.funcs_by_file, self.funcs_by_file_archive)
 
         self.src_graph.clear()
         self.funcs.clear()
@@ -61,7 +61,7 @@ class Functions(Callgraph):
     def load_functions_by_file(self, files=None):
         """Load information about functions grouped by files."""
         if files:
-            return self.load_data_by_path(self.funcs_by_file_archive, files)
+            return self.load_data_by_key(self.funcs_by_file_archive, files)
         else:
             return self.load_data(self.funcs_by_file_file)
 

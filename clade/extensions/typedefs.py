@@ -32,7 +32,7 @@ class Typedefs(Extension):
         self.log("Parsing typedefs")
 
         self.__process_typedefs()
-        self.dump_data_by_path(self.typedefs, self.typedefs_archive)
+        self.dump_data_by_key(self.typedefs, self.typedefs_archive)
         self.typedefs.clear()
 
     def __process_typedefs(self):
@@ -43,4 +43,4 @@ class Typedefs(Extension):
                 self.typedefs[scope_file].append(declaration)
 
     def load_typedefs(self, files=None):
-        return self.load_data_by_path(self.typedefs_archive, files)
+        return self.load_data_by_key(self.typedefs_archive, files)
