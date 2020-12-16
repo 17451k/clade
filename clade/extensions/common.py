@@ -153,9 +153,17 @@ class Common(Extension, metaclass=abc.ABCMeta):
 
     def load_opts_by_id(self, id):
         opts_file = os.path.join(self.opts_dir, "{}.json".format(id))
-        return self.load_data(opts_file, raise_exception=False)
+        opts = self.load_data(opts_file, raise_exception=False)
+
+        # if load_data can't find file, it returns empty dict()
+        # but opts must be a list
+        return opts if opts else []
 
     def dump_opts_by_id(self, id, opts):
+        # Do not dump options if they are empty
+        if not opts:
+            return
+
         self.dump_data(opts, os.path.join(self.opts_dir, "{}.json".format(id)))
 
     def dump_bad_cmd_id(self, cmd_id):

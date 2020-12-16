@@ -44,9 +44,18 @@ class Compiler(Common):
             self.extensions["Storage"].add_file(file, encoding=None)
 
     def load_deps_by_id(self, cmd_id):
-        return self.load_data(os.path.join("deps", "{}.json".format(cmd_id)))
+        deps_file = os.path.join("deps", "{}.json".format(cmd_id))
+        deps = self.load_data(deps_file, raise_exception=False)
+
+        # if load_data can't find file, it returns empty dict()
+        # but deps must be a list
+        return deps if deps else []
 
     def dump_deps_by_id(self, cmd_id, deps, cwd):
+        # Do not dump deps if they are empty
+        if not deps:
+            return
+
         deps = self.extensions["Path"].normalize_rel_paths(deps, cwd)
         self.dump_data(deps, os.path.join(self.deps_dir, "{}.json".format(cmd_id)))
 
