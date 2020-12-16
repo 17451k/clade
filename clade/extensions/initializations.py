@@ -374,7 +374,7 @@ def parse_variables_initializations(iter_init_global, callgraph_functions, commi
     global callgraph_update_method
     functions = callgraph_functions
     callgraph_update_method = commit_method
-    
+
     data = ''.join(list(iter_init_global())) + '\n'
 
     return parse_declaration(data, work_dir)
