@@ -396,7 +396,7 @@ class Info(Extension):
         args_regex = re.compile(r"actual_arg_func_name(\d+)=\s*(\w+)\s*")
 
         for orig_content in self.__iter_file_regex(self.call, regex):
-            content: List[Any] = list(orig_content)
+            content = list(orig_content)
 
             # Replace last element of content list (string with arguments)
             # with list of these arguments
@@ -435,7 +435,7 @@ class Info(Extension):
         arg_regex = re.compile(r' actual_arg\d+=(.*)')
 
         for orig_content in self.__iter_file_regex(self.expand, regex):
-            content: List[Any] = list(orig_content)
+            content = list(orig_content)
 
             args = list()
 
