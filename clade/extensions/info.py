@@ -290,7 +290,7 @@ class Info(Extension):
             futures = []
             finished_files = 0
 
-            init_global = os.path.basename(self.init_global)
+            init_global = os.path.basename(self.init_global).replace(".zip", ".txt")
             files = [f for f in cif_output if not f.endswith(init_global)]
             total_files = len(files)
 
