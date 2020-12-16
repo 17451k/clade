@@ -77,9 +77,6 @@ class Common(Extension, metaclass=abc.ABCMeta):
 
         self.__merge_all_cmds()
 
-        if os.path.exists(self.temp_dir):
-            shutil.rmtree(self.temp_dir)
-
     def __terminate_workers(self, cmds_queue, cmd_workers, cmd_workers_num):
         # Terminate all workers.
         for i in range(cmd_workers_num):
