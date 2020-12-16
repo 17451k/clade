@@ -238,7 +238,6 @@ class Extension(metaclass=abc.ABCMeta):
 
         data = dict()
 
-
         with zipfile.ZipFile(archive, "r") as zip_fh:
             if keys:
                 self.debug("Loading data from {!r}: {!r}".format(archive, keys))
