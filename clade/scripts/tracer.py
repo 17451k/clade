@@ -104,7 +104,8 @@ class Tracer:
         trace = self.__filter_trace(trace, to_funcs)
         return trace
 
-    def __reverse_trace(self, trace):
+    @staticmethod
+    def __reverse_trace(trace):
         reversed_trace = dict()
 
         for func in trace:
@@ -116,7 +117,8 @@ class Tracer:
 
         return reversed_trace
 
-    def __filter_trace(self, trace, to_funcs):
+    @staticmethod
+    def __filter_trace(trace, to_funcs):
         filtered_trace = dict()
 
         queue = collections.deque()
