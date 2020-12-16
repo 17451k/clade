@@ -57,7 +57,7 @@ class Callgraph(Extension):
         self.__process_functions_usages()
         self._clean_error_log()
 
-        self.dump_data_by_key(self.callgraph, self.callgraph_archive)
+        self.dump_data_by_path(self.callgraph, self.callgraph_archive)
         self.dump_data(self.calls_by_ptr, self.calls_by_ptr_file)
         self.dump_data(self.used_in, self.used_in_file)
 
@@ -67,10 +67,10 @@ class Callgraph(Extension):
         self.used_in.clear()
 
     def load_callgraph(self, files=None):
-        return self.load_data_by_key(self.callgraph_archive, files)
+        return self.load_data_by_path(self.callgraph_archive, files)
 
     def yield_callgraph(self, files=None):
-        yield from self.yield_data_by_key(self.callgraph_archive, files)
+        yield from self.yield_data_by_path(self.callgraph_archive, files)
 
     def load_calls_by_ptr(self):
         return self.load_data(self.calls_by_ptr_file)

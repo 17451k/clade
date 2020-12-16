@@ -59,8 +59,8 @@ class CrossRef(Callgraph):
 
     def load_ref_to_by_file(self, files=None):
         """Load references to definitions and declarations grouped by files."""
-        macro_data = self.load_data_by_key(self.ref_to_macro_archive, files)
-        func_data = self.load_data_by_key(self.ref_to_func_archive, files)
+        macro_data = self.load_data_by_path(self.ref_to_macro_archive, files)
+        func_data = self.load_data_by_path(self.ref_to_func_archive, files)
 
         for file in func_data:
             if file not in macro_data:
@@ -72,8 +72,8 @@ class CrossRef(Callgraph):
 
     def load_ref_from_by_file(self, files=None):
         """Load references to usages grouped by files."""
-        macro_data = self.load_data_by_key(self.ref_from_macro_archive, files)
-        func_data = self.load_data_by_key(self.ref_from_func_archive, files)
+        macro_data = self.load_data_by_path(self.ref_from_macro_archive, files)
+        func_data = self.load_data_by_path(self.ref_from_func_archive, files)
 
         for file in func_data:
             if file not in macro_data:
@@ -288,7 +288,7 @@ class CrossRef(Callgraph):
         if not ref_to:
             return
 
-        self.dump_data_by_key(ref_to, archive)
+        self.dump_data_by_path(ref_to, archive)
 
     def __gen_ref_from(self, locations):
         self.__gen_ref_from_func(locations)
@@ -372,4 +372,4 @@ class CrossRef(Callgraph):
         if not ref_from:
             return
 
-        self.dump_data_by_key(ref_from, archive)
+        self.dump_data_by_path(ref_from, archive)

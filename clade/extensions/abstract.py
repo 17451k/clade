@@ -223,35 +223,29 @@ class Extension(metaclass=abc.ABCMeta):
 
     def load_data_by_key(self, archive, keys=None):
         """Load data stored in multiple json files inside zip archive using dump_data_by_key()."""
-        if keys and not isinstance(keys, list) and not isinstance(keys, set):
-            raise TypeError(
-                "Provide a list or set of files to retrieve data but not {!r}".format(
-                    type(keys).__name__
-                )
-            )
+        return self.__load_data_by(archive=archive, keys=keys, by_type="key")
 
-        if not os.path.isabs(archive):
-            archive = os.path.join(self.work_dir, archive)
+    def load_data_by_path(self, archive, keys=None):
+        """Load data stored in multiple json files inside zip archive using dump_data_by_path()."""
+        return self.__load_data_by(archive=archive, keys=keys, by_type="path")
 
-        if not os.path.exists(archive):
-            return dict()
+    def yield_data_by_key(self, archive, keys=None):
+        """Yield data stored in multiple json files inside zip archive using dump_data_by_key()."""
+        yield from self.__yield_data_by(archive, keys=keys, by_type="key")
 
+    def yield_data_by_path(self, archive, keys=None):
+        """Yield data stored in multiple json files inside zip archive using dump_data_by_path()."""
+        yield from self.__yield_data_by(archive, keys=keys, by_type="path")
+
+    def __load_data_by(self, archive, keys=None, by_type=None):
         data = dict()
 
-        with zipfile.ZipFile(archive, "r") as zip_fh:
-            if keys:
-                self.debug("Loading data from {!r}: {!r}".format(archive, keys))
-                for key in keys:
-                    file = get_string_hash(key)
-                    data.update(self.__load_data_from_zip(get_string_hash(key), zip_fh, raise_exception=False))
-            else:
-                self.debug("Loading all data from {!r}".format(archive))
-                for file in self.__get_all_files_in_archive(zip_fh):
-                    data.update(self.__load_data_from_zip(file, zip_fh, raise_exception=False))
+        for key, value in self.__yield_data_by(archive=archive, keys=keys, by_type=by_type):
+            data.update(value)
 
         return data
 
-    def yield_data_by_key(self, archive, keys=None):
+    def __yield_data_by(self, archive, keys=None, by_type=None):
         """Yield data stored in multiple json files inside zip archive using dump_data_by_key()."""
         if keys and not isinstance(keys, list) and not isinstance(keys, set):
             raise TypeError(
@@ -270,7 +264,13 @@ class Extension(metaclass=abc.ABCMeta):
             if keys:
                 self.debug("Yielding data from {!r}: {!r}".format(archive, keys))
                 for key in keys:
-                    data = self.__load_data_from_zip(get_string_hash(key), zip_fh, raise_exception=False)
+                    if by_type == "key":
+                        data = self.__load_data_from_zip(get_string_hash(key), zip_fh, raise_exception=False)
+                    elif by_type == "path":
+                        data = self.__load_data_from_zip(key, zip_fh, raise_exception=False)
+                        data = {key: data}
+                    else:
+                        raise RuntimeError("Unsupported type")
 
                     for key in data:
                         yield key, data
@@ -278,6 +278,10 @@ class Extension(metaclass=abc.ABCMeta):
                 self.debug("Yielding all data from {!r}".format(archive))
                 for file in self.__get_all_files_in_archive(zip_fh):
                     data = self.__load_data_from_zip(file, zip_fh, raise_exception=False)
+
+                    if by_type == "path":
+                        data = {file: data}
+
                     for key in data:
                         yield key, data
 
@@ -286,6 +290,12 @@ class Extension(metaclass=abc.ABCMeta):
 
     def dump_data_by_key(self, data, archive):
         """Dump data to multiple json files inside zip archive in the object working directory."""
+        self.__dump_data_by(data, archive, by_type="key")
+
+    def dump_data_by_path(self, data, archive):
+        self.__dump_data_by(data, archive, by_type="path")
+
+    def __dump_data_by(self, data, archive, by_type=None):
         if not os.path.isabs(archive):
             archive = os.path.join(self.work_dir, archive)
 
@@ -295,7 +305,12 @@ class Extension(metaclass=abc.ABCMeta):
 
         with zipfile.ZipFile(archive, "a", compression=zipfile.ZIP_STORED) as zip_fh:
             for key in data:
-                self.__dump_data_to_zip_fh({key: data[key]}, get_string_hash(key), zip_fh)
+                if by_type == "key":
+                    self.__dump_data_to_zip_fh({key: data[key]}, get_string_hash(key), zip_fh)
+                elif by_type == "path":
+                    self.__dump_data_to_zip_fh(data[key], key, zip_fh)
+                else:
+                    raise RuntimeError("Unsopported type")
 
     def load_data_from_zip(self, file_name, archive, raise_exception=True):
         if not os.path.isabs(archive):
