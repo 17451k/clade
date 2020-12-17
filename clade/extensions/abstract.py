@@ -328,6 +328,9 @@ class Extension(metaclass=abc.ABCMeta):
 
     def check_corrupted(self):
         """Check that working directory is not corrupted."""
+        if not os.path.exists(self.work_dir):
+            return
+
         stored_meta = self.load_global_meta().get(self.name)
 
         if stored_meta and stored_meta["corrupted"]:
