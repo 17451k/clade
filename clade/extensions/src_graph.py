@@ -31,7 +31,6 @@ class SrcGraph(Extension):
         super().__init__(work_dir, conf)
 
         self.src_graph = dict()
-        self.src_graph_file = "src_graph.json"
         self.src_graph_archive = "src_graph.zip"
 
         self.src_info = dict()
@@ -39,10 +38,7 @@ class SrcGraph(Extension):
 
     def load_src_graph(self, files=None):
         """Load source graph."""
-        if files:
-            return self.load_data_by_key(self.src_graph_archive, files)
-        else:
-            return self.load_data(self.src_graph_file)
+        return self.load_data_by_key(self.src_graph_archive, files)
 
     def load_src_info(self):
         """Load information about source files."""
@@ -65,7 +61,6 @@ class SrcGraph(Extension):
             self.error("Source graph is empty")
             raise RuntimeError
 
-        self.dump_data(self.src_graph, self.src_graph_file, indent=4)
         self.dump_data(self.src_info, self.src_info_file, indent=4)
         self.dump_data_by_key(self.src_graph, self.src_graph_archive)
 

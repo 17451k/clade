@@ -33,7 +33,7 @@ import zipfile
 from concurrent.futures import ProcessPoolExecutor
 
 from clade.cmds import get_build_dir
-from clade.extensions.utils import get_string_hash, yield_chunk
+from clade.extensions.utils import yield_chunk
 from clade.utils import get_clade_version, get_program_version
 
 
