@@ -17,7 +17,7 @@ import os
 import pytest
 import shutil
 
-from clade.cmds import iter_cmds, iter_cmds_by_which, open_cmds_file, get_build_dir, get_last_id, get_stats
+from clade.cmds import iter_cmds, iter_cmds_by_which, open_cmds_file, get_build_dir, get_last_id, get_stats, join_cmd, get_all_cmds
 from clade.scripts.stats import print_cmds_stats
 
 # TODO: Replace >= by ==
@@ -58,3 +58,17 @@ def test_print_stats(cmds_file):
 def test_print_stats_bad():
     with pytest.raises(SystemExit):
         print_cmds_stats([])
+
+
+def test_join_cmd(cmds_file):
+    with open(cmds_file, "r") as cmds_fh:
+        for cmd in iter_cmds(cmds_file):
+            assert join_cmd(cmd) == cmds_fh.readline().strip()
+
+
+def test_get_all_cmds(cmds_file):
+    cmds = []
+    for cmd in iter_cmds(cmds_file):
+        cmds.append(cmd)
+
+    assert cmds == get_all_cmds(cmds_file)
