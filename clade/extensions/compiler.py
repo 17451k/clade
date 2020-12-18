@@ -22,7 +22,11 @@ class Compiler(Common):
     """Parent class for all C compiler classes."""
 
     requires = Common.requires + ["Storage"]
-    file_extensions = [".c", ".i"]
+    file_extensions = [
+        ".c", ".i",
+        ".cpp", ".C", ".cc", ".cxx", "c++"  # C++
+    ]
+
     __version__ = "2"
 
     def __init__(self, work_dir, conf=None):

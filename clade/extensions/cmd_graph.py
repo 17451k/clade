@@ -24,7 +24,7 @@ from clade.extensions.utils import get_string_hash
 
 class CmdGraph(Extension):
     always_requires = ["PidGraph"]
-    requires = always_requires + ["CC", "LD", "AR"]
+    requires = always_requires  # exact list is specified in preset.json
 
     __version__ = "3"
 

@@ -483,6 +483,7 @@ cl_preprocessor_deps_opts = ["/EP", "-EP", "/E", "-E", "/P", "-P"]
 
 requires_value = {
     "CC": set(gcc_opts + clang_opts),
+    "CXX": set(gcc_opts + clang_opts),
     "LD": set(ld_gnu_opts + ld_osx_opts),
     "AS": set(as_gnu_opts + as_osx_opts),
     "Objcopy": set(objcopy_opts),

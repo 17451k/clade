@@ -17,7 +17,6 @@ import abc
 import glob
 import os
 import re
-import shutil
 import sys
 
 from clade.extensions.abstract import Extension

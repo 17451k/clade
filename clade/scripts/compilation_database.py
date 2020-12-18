@@ -95,6 +95,8 @@ def main(args=sys.argv[1:]):
     args = parse_args(args, work_dir)
     conf = prepare_conf(args)
 
+    conf["SrcGraph.requires"] = ["CC", "CL", "CXX"]
+
     try:
         c = Clade(work_dir, args.cmds, conf, args.preset)
     except RuntimeError as e:

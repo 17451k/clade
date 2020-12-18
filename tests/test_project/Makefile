@@ -12,3 +12,4 @@ all:
 	-objcopy main.o zero.o --strip-all
 	-ld main.o -o main.o2 -g -l interceptor -linterceptor -L../../clade/intercept -L clade/intercept
 	-rm main zero.txt zero.o* main.o* zero.a
+	g++ zero.c main.c -o /dev/null -D TEST_MACRO -O3
