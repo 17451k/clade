@@ -27,8 +27,12 @@ def test_storage(tmpdir):
 
     c.add_file_to_storage(__file__)
     c.add_file_to_storage("do_not_exist.c")
-    assert os.path.exists(os.path.join(c.storage_dir, __file__))
-    assert c.get_storage_path(__file__)
+
+    storage_path = c.get_storage_path(__file__)
+
+    assert storage_path
+    assert os.path.exists(storage_path)
+    assert storage_path.startswith(c.storage_dir)
 
     # Test possible race condition
     with unittest.mock.patch("shutil.copyfile") as copyfile_mock:
@@ -42,3 +46,21 @@ def test_storage_with_conversion(tmpdir):
     with unittest.mock.patch("os.replace") as replace_mock:
         replace_mock.side_effect = OSError
         c.add_file_to_storage(test_file)
+
+
+def test_files_to_add(tmpdir, cmds_file):
+    c = Clade(tmpdir, cmds_file, conf={"Storage.files_to_add": [__file__]})
+    c.parse("Storage")
+
+    storage_path = c.get_storage_path(__file__)
+    assert storage_path
+    assert os.path.exists(storage_path)
+
+
+def test_folders_to_add(tmpdir, cmds_file):
+    c = Clade(tmpdir, cmds_file, conf={"Storage.files_to_add": [os.path.dirname(__file__)]})
+    c.parse("Storage")
+
+    storage_path = c.get_storage_path(__file__)
+    assert storage_path
+    assert os.path.exists(storage_path)
