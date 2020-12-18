@@ -38,7 +38,7 @@ class Tracer:
         if not self.clade.work_dir_ok():
             raise RuntimeError("Specified Clade build base is not valid")
 
-    def find_functions(self, func_names):
+    def find_functions(self, func_names: List[str]):
         functions = []
 
         s_regex = re.compile("^" + ("$|^".join(func_names)) + "$")
