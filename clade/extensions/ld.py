@@ -65,11 +65,13 @@ class LD(Common):
             if opt in ["-L", "--library-path"]:
                 path = next(opts)
 
-                searchdirs.append(os.path.normpath(path))
+                path = os.path.normpath(os.path.join(parsed_cmd["cwd"], path))
+                searchdirs.append(path)
             elif opt.startswith("-L") or opt.startswith("--library-path="):
                 path = re.sub(r"^-L", "", opt)
                 path = re.sub(r"^--library-path=", "", path)
 
+                path = os.path.normpath(os.path.join(parsed_cmd["cwd"], path))
                 searchdirs.append(os.path.normpath(path))
 
         return searchdirs
@@ -84,6 +86,7 @@ class LD(Common):
         if name.startswith(":"):
             names.append(name[1:])
         else:
+            names.append("lib" + name + ".dylib")  # macOS
             names.append("lib" + name + ".so")
             names.append("lib" + name + ".a")
             names.append(name + ".a")

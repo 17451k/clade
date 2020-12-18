@@ -32,7 +32,7 @@ def test_ld(tmpdir, cmds_file):
                 target_cmd = cmd
 
     assert len(cmds) >= 1
-    assert len(target_cmd["in"]) == 1
+    assert len(target_cmd["in"]) == 2
     assert len(target_cmd["out"]) == 1
-    assert len(target_cmd["opts"]) == 1
-    assert len(target_cmd["command"]) == 5
+    assert len(target_cmd["opts"]) == 7
+    assert len(target_cmd["command"]) == 11
