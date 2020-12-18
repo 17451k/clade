@@ -73,8 +73,13 @@ class PathTree:
     def keys(self):
         return [x for x in self.__deep_iter()]
 
-    def update(self, new_data):
-        self.data.update(new_data)
+    def update(self, path_tree):
+        raise NotImplementedError
+
+        # if path_tree contains "/usr", and self contains "/usr/local" paths
+        # then the following line of code will overwrite it:
+        # self.data.update(path_tree.data)
+        # TODO: fix it
 
     def get(self, key, default_value=None):
         try:
