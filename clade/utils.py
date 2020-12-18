@@ -62,6 +62,7 @@ def merge_preset_to_conf(preset_name, conf):
 
     return preset_conf
 
+
 def get_clade_version():
     version = pkg_resources.get_distribution("clade").version
     location = pkg_resources.get_distribution("clade").location
@@ -76,6 +77,7 @@ def get_clade_version():
         ).strip()
     finally:
         return version
+
 
 def get_program_version(program, version_arg="--version"):
     version = "unknown"
