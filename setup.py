@@ -198,7 +198,7 @@ setuptools.setup(
     url="https://github.com/17451k/clade",
     license="LICENSE.txt",
     description="Clade is a tool for extracting information about software build process and source code",
-    long_description=open("README.rst", encoding="utf8").read(),
+    long_description=open("README.md", encoding="utf8").read(),
     python_requires=">=3.5",
     packages=["clade"],
     package_data={"clade": package_files("clade")},
