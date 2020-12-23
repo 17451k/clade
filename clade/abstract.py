@@ -47,6 +47,8 @@ class Intercept(metaclass=abc.ABCMeta):
         self.append = append
         self.intercept_open = intercept_open
         self.conf = conf if conf else dict()
+
+        self.clade_if_file = None
         self.logger = get_logger("Intercept", self.conf)
         self.env = self._setup_env()
 
@@ -72,9 +74,12 @@ class Intercept(metaclass=abc.ABCMeta):
         else:
             last_used_id = "0"
 
-        f = tempfile.NamedTemporaryFile(delete=False)
-        f.write(last_used_id.encode())
-        env["CLADE_ID_FILE"] = f.name
+        f = tempfile.NamedTemporaryFile(mode="w", delete=False)
+        f.write(last_used_id)
+        f.flush()
+
+        self.clade_if_file = f.name
+        env["CLADE_ID_FILE"] = self.clade_if_file
         env["CLADE_PARENT_ID"] = "0"
 
         return env
@@ -117,4 +122,9 @@ class Intercept(metaclass=abc.ABCMeta):
 
         shell_command = " ".join([shlex.quote(x) for x in self.command])
         self.logger.debug("Execute {!r} command".format(shell_command))
-        return subprocess.call(shell_command, env=self.env, shell=True, cwd=self.cwd)
+        r = subprocess.call(shell_command, env=self.env, shell=True, cwd=self.cwd)
+
+        if self.clade_if_file and os.path.exists(self.clade_if_file):
+            os.remove(self.clade_if_file)
+
+        return r
