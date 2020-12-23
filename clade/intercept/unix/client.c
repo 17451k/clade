@@ -40,11 +40,14 @@ static void send_data_unix(const char *msg, char *address) {
         exit(EXIT_FAILURE);
     }
 
-    write(sockfd, msg, strlen(msg));
+    ssize_t  r = write(sockfd, msg, strlen(msg));
+
+    if (r == -1) {
+        perror("Failed to write to the socket");
+    }
 
     // We need to wait until the server finished message processing and close the socket
     char buf[1024];
-    ssize_t r;
     while ((r = read(sockfd, buf, sizeof(buf)-1)) > 0) {}
 }
 
@@ -69,11 +72,14 @@ static void send_data_inet(const char *msg, char *host, char *port) {
         exit(EXIT_FAILURE);
     }
 
-    write(sockfd, msg, strlen(msg));
+    ssize_t r = write(sockfd, msg, strlen(msg));
+
+    if (r == -1) {
+        perror("Failed to write to the socket");
+    }
 
     // We need to wait until the server finished message processing and close the socket
     char buf[1024];
-    ssize_t r;
     while ((r = read(sockfd, buf, sizeof(buf)-1)) > 0) {}
 }
 

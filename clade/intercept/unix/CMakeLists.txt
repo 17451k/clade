@@ -5,7 +5,6 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 add_compile_options(
     -Wall
     -Wextra
-    -Werror
     -Wno-unused-parameter
     -O3
 )
