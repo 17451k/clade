@@ -44,7 +44,7 @@ static char **copy_envp(char **envp) {
 }
 
 static int find_parent_id(char **envp) {
-    int key_len = strlen(key);
+    size_t key_len = strlen(key);
     int envp_len = get_envp_len(envp);
 
     int i;

@@ -111,7 +111,7 @@ int open(const char *pathname, int flags, ...) {
     if (flags & O_CREAT) {
         va_list args;
         va_start(args, flags);
-        mode_t mode = va_arg(args, mode_t);
+        mode_t mode = va_arg(args, int);
         va_end(args);
         return open_real(pathname, flags, mode);
     } else {
@@ -130,7 +130,7 @@ int open64(const char *pathname, int flags, ...) {
     if (flags & O_CREAT) {
         va_list args;
         va_start(args, flags);
-        mode_t mode = va_arg(args, mode_t);
+        mode_t mode = va_arg(args, int);
         va_end(args);
         return open_real(pathname, flags, mode);
     } else {

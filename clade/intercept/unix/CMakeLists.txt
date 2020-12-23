@@ -2,6 +2,14 @@ cmake_minimum_required(VERSION 3.3)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+add_compile_options(
+    -Wall
+    -Wextra
+    -Werror
+    -Wno-unused-parameter
+    -O3
+)
+
 add_library(data STATIC data.c)
 add_library(which STATIC which.c)
 add_library(env STATIC env.c)

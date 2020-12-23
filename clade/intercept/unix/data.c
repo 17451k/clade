@@ -28,7 +28,7 @@
 #define DELIMITER "||"
 
 static void expand_newlines(char *dest, const char *src) {
-    for (int i = 0; i < strlen(src); i++) {
+    for (size_t i = 0; i < strlen(src); i++) {
         switch(src[i]) {
             case '\n':
                 dest += sprintf(dest, "\\n");

@@ -40,7 +40,7 @@ static void send_data_unix(const char *msg, char *address) {
         exit(EXIT_FAILURE);
     }
 
-    int ret = write(sockfd, msg, strlen(msg));
+    write(sockfd, msg, strlen(msg));
 
     // We need to wait until the server finished message processing and close the socket
     char buf[1024];
@@ -69,7 +69,7 @@ static void send_data_inet(const char *msg, char *host, char *port) {
         exit(EXIT_FAILURE);
     }
 
-    int ret = write(sockfd, msg, strlen(msg));
+    write(sockfd, msg, strlen(msg));
 
     // We need to wait until the server finished message processing and close the socket
     char buf[1024];
@@ -77,7 +77,7 @@ static void send_data_inet(const char *msg, char *host, char *port) {
     while ((r = read(sockfd, buf, sizeof(buf)-1)) > 0) {}
 }
 
-char *send_data(const char *msg) {
+void send_data(const char *msg) {
     char* host = getenv("CLADE_INET_HOST");
     char* port = getenv("CLADE_INET_PORT");
     char* address = getenv("CLADE_UNIX_ADDRESS");
@@ -95,4 +95,3 @@ char *send_data(const char *msg) {
         exit(EXIT_FAILURE);
     }
 }
-
