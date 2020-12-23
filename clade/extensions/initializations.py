@@ -35,7 +35,7 @@ t_ignore = ''
 tmp_value_cache = set()
 functions = None
 callgraph_update_method = None
-function_name_re = re.compile("\(?\s*&?\s*(\w+)\s*\)?$")
+function_name_re = re.compile(r"\(?\s*&?\s*(\w+)\s*\)?$")
 
 
 def t_DECLARATION(t):
