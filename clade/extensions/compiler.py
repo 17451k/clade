@@ -32,7 +32,13 @@ class Compiler(Common):
     def __init__(self, work_dir, conf=None):
         super().__init__(work_dir, conf)
 
-        self.deps_dir = "deps"
+        self.deps_dir = os.path.join(self.work_dir, "deps")
+
+    def parse(self, cmds_file, which_list):
+        super().parse(cmds_file, which_list)
+
+        if os.path.exists(self.cmds_file) and not os.path.exists(self.deps_dir):
+            self.warning("All files with dependencies are empty")
 
     def store_deps_files(self, deps, cwd):
         self.__store_src_files(deps, cwd, self.conf.get("Compiler.deps_encoding"))

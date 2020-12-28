@@ -46,6 +46,8 @@ class Common(Extension, metaclass=abc.ABCMeta):
         self.opts_dir = "opts"
         self.cmds_dir = "cmds"
 
+        self.cmds_file = os.path.join(self.work_dir, "cmds.json")
+
         self.bad_ids = os.path.join(self.work_dir, "bad_ids.txt")
 
         cmd_filter = self.conf.get("Common.filter", [])
@@ -201,13 +203,13 @@ class Common(Extension, metaclass=abc.ABCMeta):
             self.debug("No commands were parsed")
             return
 
-        self.dump_data(merged_cmds, "cmds.json")
+        self.dump_data(merged_cmds, self.cmds_file)
 
     def load_all_cmds(
         self, with_opts=False, with_raw=False, filter_by_pid=True
     ):
         """Load all parsed commands."""
-        cmds = self.load_data("cmds.json", raise_exception=False)
+        cmds = self.load_data(self.cmds_file, raise_exception=False)
 
         if filter_by_pid and self.conf.get(
             "PidGraph.filter_cmds_by_pid", True
