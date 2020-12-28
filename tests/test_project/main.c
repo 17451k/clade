@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "zero.h"
 
-static void print(char *msg) {
+static void print(const char *msg) {
     printf("%s\n", msg);
 }
 
