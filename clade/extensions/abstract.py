@@ -67,13 +67,13 @@ class Extension(metaclass=abc.ABCMeta):
         self.conf = conf if conf else dict()
         self.temp_dir = ""
 
+        logger.setLevel(self.conf.get("log_level", "INFO"))
+
         if not hasattr(self, "requires"):
             self.requires = []
         self.debug("Extension requirements: {!r}".format(self.requires))
 
         self.extensions = dict()
-
-        logger.setLevel(self.conf.get("log_level", "INFO"))
 
         self.ext_meta = {"version": self.get_ext_version(), "corrupted": False}
         self.global_meta_file = os.path.abspath(
@@ -584,18 +584,18 @@ class Extension(metaclass=abc.ABCMeta):
 
         WARNING: debug messages can have a great impact on the performance.
         """
-        logger.debug("{}: {}".format(self.name, message))
+        logger.debug("{}: [DEBUG] {}".format(self.name, message))
 
     def warning(self, message):
         """Print warning message.
 
         self.conf["log_level"] must be set to WARNING, INFO or DEBUG in order to see the message.
         """
-        logger.warning("{}: {}".format(self.name, message))
+        logger.warning("{}: [WARNING] {}".format(self.name, message))
 
     def error(self, message):
         """Print error message.
 
         self.conf["log_level"] must be set to ERROR, WARNING, INFO or DEBUG in order to see the message.
         """
-        logger.error("{}: {}".format(self.name, message))
+        logger.error("{}: [ERROR] {}".format(self.name, message))
