@@ -27,8 +27,6 @@ import sys
 import time
 import zipfile
 
-from typing import List, Any
-
 from clade.extensions.abstract import Extension
 from clade.extensions.opts import filter_opts
 
