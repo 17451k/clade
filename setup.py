@@ -36,18 +36,26 @@ def build_target(target, build_dir, src_dir, options=None, quiet=False):
     if not options:
         options = []
 
+    # CentOS has 2 different cmake packages: cmake2 and cmake3
+    # Executable named "cmake" can point to cmake2 package,
+    # which is unsupported by Clade, so we need to try cmake3 first
+    if shutil.which("cmake3"):
+        cmake = "cmake3"
+    else:
+        cmake = "cmake"
+
     os.makedirs(build_dir, exist_ok=True)
 
     try:
         subprocess.check_output(
-            ["cmake", src_dir] + options,
+            [cmake, src_dir] + options,
             stderr=subprocess.STDOUT,
             cwd=build_dir,
             universal_newlines=True,
         )
         subprocess.check_output(
             [
-                "cmake",
+                cmake,
                 "--build",
                 ".",
                 "--target",
