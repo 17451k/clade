@@ -16,6 +16,7 @@
         "Compiler.preprocess_cmds": false,
         "Compiler.extra_preprocessor_opts": [],
         "Storage.convert_to_utf8": false,
+        "Storage.decoding_errors": "strict",
         "Storage.files_to_add": [],
         "CmdGraph.requires": [
             "AR",

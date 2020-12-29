@@ -124,7 +124,10 @@ class Storage(Extension):
             ) as f:
                 # Encode file content to utf-8
                 try:
-                    content_bytes = content_bytes.decode(encoding).encode("utf-8")
+                    content_bytes = content_bytes.decode(
+                        encoding,
+                        self.conf.get("Storage.decoding_errors", "strict")
+                    ).encode("utf-8")
                 except UnicodeDecodeError:
                     # If user-specified encoding failed, try automatic detection
                     if confidence == 1:
