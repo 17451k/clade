@@ -8,7 +8,6 @@
         "Wrapper.recursive_wrap": false,
         "CC.ignore_cc1": true,
         "CC.with_system_header_files": true,
-        "CL.deps_encoding": null,
         "CL.pre_encoding": null,
         "LD.searchdirs": [],
         "Compiler.deps_encoding": null,
