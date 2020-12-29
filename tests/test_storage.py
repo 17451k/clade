@@ -49,7 +49,7 @@ def test_storage_encoding(tmpdir):
 
     bstr = "мир".encode("cp1251")
 
-    test_file = os.path.join(tmpdir, "test")
+    test_file = os.path.join(str(tmpdir), "test")
     with open(test_file, "wb") as fh:
         fh.write(bstr)
 
