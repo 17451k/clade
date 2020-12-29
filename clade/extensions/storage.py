@@ -131,7 +131,7 @@ class Storage(Extension):
                 except UnicodeDecodeError:
                     # If user-specified encoding failed, try automatic detection
                     if confidence == 1:
-                        self.__copy_file(self, filename, dst)
+                        self.__copy_file(filename, dst)
                     # else: raise original exception
                     else:
                         raise

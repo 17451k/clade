@@ -42,3 +42,15 @@ def test_storage_with_conversion(tmpdir):
     with unittest.mock.patch("os.replace") as replace_mock:
         replace_mock.side_effect = OSError
         c.add_file_to_storage(test_file)
+
+
+def test_storage_encoding(tmpdir):
+    c = Clade(tmpdir, conf={"Storage.convert_to_utf8": True})
+
+    bstr = "мир".encode("cp1251")
+
+    test_file = os.path.join(tmpdir, "test")
+    with open(test_file, "wb") as fh:
+        fh.write(bstr)
+
+    c.add_file_to_storage(test_file, encoding="utf8")
