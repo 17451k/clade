@@ -33,12 +33,12 @@ class Compiler(Common):
     def store_pre_files(self, deps, cwd, encoding=None):
         self.__store_src_files(deps, cwd, encoding)
 
-    def __store_src_files(self, deps, cwd, encodng=None):
+    def __store_src_files(self, deps, cwd, encoding=None):
         for file in deps:
             if not os.path.isabs(file):
                 file = os.path.join(cwd, file)
 
-            self.extensions["Storage"].add_file(file, encoding=None)
+            self.extensions["Storage"].add_file(file, encoding=encoding)
 
     def load_deps_by_id(self, id):
         return self.load_data(os.path.join("deps", "{}.json".format(id)))
