@@ -200,7 +200,7 @@ except ImportError:
 
 setuptools.setup(
     name="clade",
-    version="3.2.17",
+    version="3.3rc1",
     author="Ilya Shchepetkov",
     author_email="shchepetkov@ispras.ru",
     url="https://github.com/17451k/clade",
