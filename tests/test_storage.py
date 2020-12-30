@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import os
+import pytest
 import shutil
 import unittest.mock
 
@@ -44,7 +45,8 @@ def test_storage_with_conversion(tmpdir):
         c.add_file_to_storage(test_file)
 
 
-def test_storage_encoding(tmpdir):
+@pytest.mark.parametrize("encoding", ["cp1251", "utf8"])
+def test_storage_encoding(tmpdir, encoding):
     c = Clade(tmpdir, conf={"Storage.convert_to_utf8": True})
 
     bstr = "мир".encode("cp1251")
@@ -53,4 +55,4 @@ def test_storage_encoding(tmpdir):
     with open(test_file, "wb") as fh:
         fh.write(bstr)
 
-    c.add_file_to_storage(test_file, encoding="utf8")
+    c.add_file_to_storage(test_file, encoding=encoding)
