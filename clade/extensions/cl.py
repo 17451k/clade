@@ -207,8 +207,8 @@ class CL(Compiler):
 
             os.remove(deps_file)
 
-        if self.conf.get("CL.deps_encoding"):
-            encoding = self.conf.get("CL.deps_encoding")
+        if self.conf.get("Compiler.deps_encoding"):
+            encoding = self.conf.get("Compiler.deps_encoding")
         else:
             encoding = chardet.detect(output_bytes)["encoding"]
 

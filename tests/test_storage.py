@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import os
+import pytest
 import shutil
 import unittest.mock
 
@@ -64,3 +65,16 @@ def test_folders_to_add(tmpdir, cmds_file):
     storage_path = c.get_storage_path(__file__)
     assert storage_path
     assert os.path.exists(storage_path)
+
+
+@pytest.mark.parametrize("encoding", ["cp1251", "utf8"])
+def test_storage_encoding(tmpdir, encoding):
+    c = Clade(tmpdir, conf={"Storage.convert_to_utf8": True})
+
+    bstr = "мир".encode("cp1251")
+
+    test_file = os.path.join(str(tmpdir), "test")
+    with open(test_file, "wb") as fh:
+        fh.write(bstr)
+
+    c.add_file_to_storage(test_file, encoding=encoding)
