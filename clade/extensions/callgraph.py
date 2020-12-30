@@ -82,7 +82,13 @@ class Callgraph(Extension):
         is_bad = re.compile(r'__bad')
 
         for context_file, context_func, func, call_line, call_type, args in self.extensions["Info"].iter_calls():
+            # args are excluded from the debug log
+            self.debug("Processing function calls: " + " ".join(
+                [context_file, context_func, func, call_line, call_type])
+            )
+
             if self.is_builtin.match(func) or (is_bad.match(func) and func not in self.callgraph):
+                self.debug("Function {} is bad".format(func))
                 continue
 
             # For each function call there can be many definitions with the same name, defined in different
@@ -127,6 +133,10 @@ class Callgraph(Extension):
                 if args:
                     call_val["args"] = args
 
+                self.debug("Fuction {} from {} is called in {}:{} in {}".format(
+                    func, possible_file, context_file, call_line, context_func
+                ))
+
                 self.callgraph[possible_file][func]['called_in'][context_file][context_func][call_line] = call_val
 
                 # Create reversed callgraph
@@ -144,6 +154,10 @@ class Callgraph(Extension):
 
     def __process_calls_by_pointers(self):
         for context_file, context_func, func_ptr, call_line in self.extensions["Info"].iter_calls_by_pointers():
+            self.debug("Processing calls by pointers: " + " ".join(
+                [context_file, context_func, func_ptr, call_line])
+            )
+
             if func_ptr not in self.calls_by_ptr[context_file][context_func]:
                 self.calls_by_ptr[context_file][context_func][func_ptr] = [call_line]
             else:
@@ -151,6 +165,10 @@ class Callgraph(Extension):
 
     def __process_functions_usages(self):
         for context_file, context_func, func, line in self.extensions["Info"].iter_functions_usages():
+            self.debug("Processing function usages: " + " ".join(
+                [context_file, context_func, func, line])
+            )
+
             if self.is_builtin.match(func):
                 continue
 
@@ -201,7 +219,7 @@ class Callgraph(Extension):
 
     @functools.lru_cache()
     def _t_unit_is_common(self, file1, file2):
-        return (
+        r = (
             file1 in self.src_graph
             and file2 in self.src_graph
             and len(
@@ -211,9 +229,15 @@ class Callgraph(Extension):
             > 0
         )
 
+        self.debug("{!r} and {!r} are from the same translation unit".format(
+            file1, file2)
+        )
+
+        return r
+
     @functools.lru_cache()
     def _files_are_linked(self, file1, file2):
-        return (
+        r = (
             file1 in self.src_graph
             and file2 in self.src_graph
             and len(
@@ -223,8 +247,13 @@ class Callgraph(Extension):
             > 0
         )
 
+        self.debug("{!r} and {!r} are linked".format(file1, file2))
+
+        return r
+
     def _error(self, msg):
         """Print an error message."""
+        self.debug(msg)
 
         os.makedirs(self.work_dir, exist_ok=True)
 

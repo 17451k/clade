@@ -49,7 +49,7 @@ class Intercept(metaclass=abc.ABCMeta):
         self.conf = conf if conf else dict()
 
         self.clade_if_file = None
-        self.logger = get_logger("Intercept", self.conf)
+        self.logger = get_logger("Intercept", conf=self.conf)
         self.env = self._setup_env()
 
         if not self.append:

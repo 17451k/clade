@@ -52,10 +52,20 @@ class Macros(Extension):
 
     def __process_macros_definitions(self):
         for file, macro, line in self.extensions["Info"].iter_macros_definitions():
+            self.debug("Processing definition: " + " ".join(
+                [file, macro, line])
+            )
+
             self.macros[file][macro][line] = nested_dict()
 
     def __process_macros_expansions(self):
         for exp_file, def_file, macro, exp_line, def_line, args in self.extensions["Info"].iter_macros_expansions():
+            # args are excluded from the debug log
+
+            self.debug("Processing expansions: " + " ".join(
+                [exp_file, def_file, macro, exp_line, def_line])
+            )
+
             if def_file not in self.macros:
                 def_file = "unknown"
 

@@ -56,6 +56,8 @@ class PidGraph(Extension):
         self.pid_by_id.clear()
 
     def __print_pid_graph(self, cmds_file):
+        self.debug("Preparing dot file")
+
         dot = Digraph(graph_attr={'rankdir': 'LR'}, node_attr={'shape': 'rectangle'})
 
         cmds = list(iter_cmds(cmds_file))
@@ -68,6 +70,7 @@ class PidGraph(Extension):
             for parent_cmd in [x for x in cmds if x["id"] == cmd["pid"]]:
                 dot.edge(parent_cmd["id"], cmd["id"])
 
+        self.debug("Rendering dot file")
         dot.render(self.graph_dot)
 
     def load_pid_graph(self):
@@ -91,5 +94,7 @@ class PidGraph(Extension):
                 filtered_cmds.append(cmd)
 
             parsed_ids.add(cmd["id"])
+
+        self.debug("Filtered out commands: {}".format(list(parsed_ids)))
 
         return filtered_cmds

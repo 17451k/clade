@@ -110,6 +110,13 @@ class SrcGraph(Extension):
             self.src_graph[file]["compiled_in"] = list(self.src_graph[file]["compiled_in"])
             self.src_graph[file]["used_by"] = list(self.src_graph[file]["used_by"])
 
+            self.debug("{!r} file is compiled in {}".format(
+                file, self.src_graph[file]["compiled_in"]
+            ))
+            self.debug("{!r} file is used by {}".format(
+                file, self.src_graph[file]["used_by"]
+            ))
+
     def __find_used_by(self, cmd_graph, cmd_id):
         used_by = set()
 

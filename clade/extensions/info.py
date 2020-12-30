@@ -216,7 +216,6 @@ class Info(Extension):
             env.update(cif_env)
 
             try:
-                self.debug(cif_args)
                 output = subprocess.check_output(
                     cif_args,
                     stderr=subprocess.STDOUT,
@@ -235,13 +234,16 @@ class Info(Extension):
 
     def __is_cmd_bad_for_cif(self, cmd):
         if not cmd["in"]:
+            self.debug("Command {} is bad for CIF".format(cmd))
             return True
 
         for cif_in in cmd["in"]:
             if cif_in == "-" or cif_in == "/dev/null":
+                self.debug("Command {} is bad for CIF".format(cmd))
                 return True
             elif re.search(r"\.[sS]$", cif_in):
                 # Assembler files are not supported
+                self.debug("Command {} is bad for CIF".format(cmd))
                 return True
 
         return False

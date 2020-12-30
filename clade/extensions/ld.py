@@ -34,7 +34,6 @@ class LD(Common):
 
         self.__parse_opts(parsed_cmd)
 
-        self.debug("Parsed command: {}".format(parsed_cmd))
         self.dump_cmd_by_id(cmd["id"], parsed_cmd)
 
     def __parse_opts(self, parsed_cmd):

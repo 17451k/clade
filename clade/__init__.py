@@ -43,7 +43,6 @@ class Clade:
 
     def __init__(self, work_dir="clade", cmds_file=None, conf=None, preset="base"):
         self.work_dir = os.path.abspath(str(work_dir))
-        self.logger = get_logger("clade-api", with_name=False, conf=conf)
 
         if not cmds_file:
             self.cmds_file = os.path.join(self.work_dir, "cmds.txt")
@@ -58,6 +57,9 @@ class Clade:
         self.extensions = dict()
 
         self.__prepare_to_init()
+
+        # logger needs working directory, so it must be created after cleaning
+        self.logger = get_logger("clade-api", with_name=False, conf=self.conf)
 
         self._cmd_graph = None
         self._cmd_type = None
@@ -209,6 +211,8 @@ class Clade:
         ext_objs = self.__get_ext_obj_list(ext_names)
 
         for ext_obj in ext_objs:
+            ext_obj.debug("Extension requirements: {!r}".format(ext_obj.requires))
+
             if clean and ext_obj.name in ext_names and os.path.isdir(ext_obj.work_dir):
                 shutil.rmtree(ext_obj.work_dir)
 

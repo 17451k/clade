@@ -66,6 +66,8 @@ class CmdGraph(Extension):
                 cmds.append(cmd)
             bad_ids.extend(self.extensions[ext_name].get_bad_ids())
 
+        self.debug("All bad commands: {}".format(bad_ids))
+
         if self.conf.get("PidGraph.filter_cmds_by_pid", True) or filter_by_pid:
             cmds = self.extensions["PidGraph"].filter_cmds_by_pid(cmds, parsed_ids=bad_ids)
 
@@ -126,6 +128,8 @@ class CmdGraph(Extension):
             self.out_dict[cmd_out] = out_id
 
     def __print_cmd_graph(self):
+        self.debug("Preparing dot file")
+
         dot = Digraph(graph_attr={'rankdir': 'LR'}, node_attr={'shape': 'rectangle'})
 
         for cmd_id in self.graph:
@@ -138,9 +142,12 @@ class CmdGraph(Extension):
             for using_id in self.graph[cmd_id]["using"]:
                 dot.edge(using_id, cmd_id)
 
+        self.debug("Rendering dot file")
         dot.render(self.graph_dot)
 
     def __print_cmd_graph_with_files(self):
+        self.debug("Preparing dot file")
+
         dot = Digraph(graph_attr={"rankdir": "LR"}, node_attr={"shape": "rectangle"})
 
         added_nodes = dict()
@@ -180,6 +187,7 @@ class CmdGraph(Extension):
                         label="{}({})".format(cmd_type, cmd_id),
                     )
 
+        self.debug("Rendering dot file")
         dot.render(self.graph_with_files_dot)
 
     @staticmethod

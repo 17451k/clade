@@ -47,10 +47,8 @@ class CL(Compiler):
             return
 
         deps = set(self.__get_deps(cmd["id"], parsed_cmd) + parsed_cmd["in"])
-        self.debug("Dependencies: {}".format(deps))
         self.dump_deps_by_id(cmd["id"], deps, parsed_cmd["cwd"])
 
-        self.debug("Parsed command: {}".format(parsed_cmd))
         self.dump_cmd_by_id(cmd["id"], parsed_cmd)
 
         if self.conf.get(

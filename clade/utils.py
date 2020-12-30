@@ -28,14 +28,27 @@ def get_logger(name, with_name=True, conf=None):
 
     logger = logging.getLogger(name)
 
-    handler = logging.StreamHandler(stream=sys.stdout)
+    if logger.handlers:
+        return logger
 
     if with_name:
-        handler.setFormatter(logging.Formatter("%(asctime)s clade {}: %(message)s".format(name), "%H:%M:%S"))
+        formatter = logging.Formatter("%(asctime)s clade {}: %(message)s".format(name), "%H:%M:%S")
     else:
-        handler.setFormatter(logging.Formatter("%(asctime)s clade: %(message)s", "%H:%M:%S"))
+        formatter = logging.Formatter("%(asctime)s clade: %(message)s", "%H:%M:%S")
 
-    logger.addHandler(handler)
+    stream_handler = logging.StreamHandler(stream=sys.stdout)
+    stream_handler.setFormatter(formatter)
+    logger.addHandler(stream_handler)
+
+    if conf.get("work_dir"):
+        log_file = os.path.join(conf["work_dir"], "clade.log")
+        log_file = os.path.abspath(log_file)
+        os.makedirs(os.path.dirname(log_file), exist_ok=True)
+
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+
     logger.setLevel(conf.get("log_level", "INFO"))
 
     return logger

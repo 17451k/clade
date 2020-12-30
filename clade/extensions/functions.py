@@ -62,6 +62,9 @@ class Functions(Callgraph):
 
     def __process_definitions(self):
         for src_file, func, def_line, func_type, signature in self.extensions["Info"].iter_definitions():
+            self.debug("Processing definition: " + " ".join(
+                [src_file, func, def_line, func_type, signature])
+            )
             if func in self.funcs and src_file in self.funcs[func]:
                 self._error(
                     "Function is defined more than once: {!r} {!r}".format(
@@ -87,6 +90,10 @@ class Functions(Callgraph):
             }
 
         for decl_file, decl_name, decl_line, decl_type, decl_signature in self.extensions["Info"].iter_declarations():
+            self.debug("Processing declaration: " + " ".join(
+                [decl_file, decl_name, decl_line, decl_type, decl_signature])
+            )
+
             decl_val = {
                 "signature": decl_signature,
                 "line": decl_line,
@@ -138,6 +145,10 @@ class Functions(Callgraph):
 
     def __process_exported(self):
         for src_file, func in self.extensions["Info"].iter_exported():
+            self.debug("Processing exported functions: " + " ".join(
+                [src_file, func])
+            )
+
             # Variables can also be exported
             if func not in self.funcs:
                 continue

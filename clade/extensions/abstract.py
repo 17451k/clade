@@ -18,7 +18,6 @@ import datetime
 import fnmatch
 import importlib
 import pkg_resources
-import logging
 import platform
 import os
 import pickle
@@ -34,16 +33,7 @@ from concurrent.futures import ProcessPoolExecutor
 
 from clade.cmds import get_build_dir
 from clade.extensions.utils import yield_chunk
-from clade.utils import get_clade_version, get_program_version
-
-
-# Setup extensions logger
-logger = logging.getLogger("Clade")
-handler = logging.StreamHandler(stream=sys.stdout)
-handler.setFormatter(
-    logging.Formatter("%(asctime)s clade %(message)s", "%H:%M:%S")
-)
-logger.addHandler(handler)
+from clade.utils import get_clade_version, get_program_version, get_logger
 
 
 class Extension(metaclass=abc.ABCMeta):
@@ -64,14 +54,13 @@ class Extension(metaclass=abc.ABCMeta):
         self.name = self.__class__.__name__
         self.clade_work_dir = os.path.abspath(str(work_dir))
         self.work_dir = os.path.join(self.clade_work_dir, self.name)
-        self.conf = conf if conf else dict()
         self.temp_dir = ""
 
-        logger.setLevel(self.conf.get("log_level", "INFO"))
+        self.conf = conf if conf else dict()
+        self.logger = get_logger("clade", with_name=False, conf=self.conf)
 
         if not hasattr(self, "requires"):
             self.requires = []
-        self.debug("Extension requirements: {!r}".format(self.requires))
 
         self.extensions = dict()
 
@@ -86,9 +75,6 @@ class Extension(metaclass=abc.ABCMeta):
             except FileNotFoundError:
                 pass
             self.conf["force_meta_deleted"] = True
-
-        self.debug("Extension version: {}".format(self.ext_meta["version"]))
-        self.debug("Working directory: {}".format(self.work_dir))
 
     def is_parsed(self):
         """Returns True if build commands are already parsed."""
@@ -162,6 +148,8 @@ class Extension(metaclass=abc.ABCMeta):
 
             return dict()
 
+        self.debug("Loading {!r}".format(file_name))
+
         if format == "json":
             return self.__load_data_json(file_name)
         elif format == "pickle":
@@ -171,12 +159,10 @@ class Extension(metaclass=abc.ABCMeta):
             raise ValueError
 
     def __load_data_json(self, file_name, raise_exception=True):
-        self.debug("Loading {}".format(file_name))
         with open(file_name, "r") as fh:
             return ujson.load(fh)
 
     def __load_data_pickle(self, file_name, raise_exception=True):
-        self.debug("Loading {}".format(file_name))
         with open(file_name, "rb") as fh:
             return pickle.load(fh)
 
@@ -188,7 +174,7 @@ class Extension(metaclass=abc.ABCMeta):
 
         os.makedirs(os.path.dirname(file_name), exist_ok=True)
 
-        self.debug("Dumping {}".format(file_name))
+        self.debug("Dumping {!r}".format(file_name))
 
         if format == "json":
             self.__dump_data_json(data, file_name, indent=indent)
@@ -216,7 +202,7 @@ class Extension(metaclass=abc.ABCMeta):
         except RecursionError:
             # This is a workaround, but it is rarely required
             self.warning(
-                "Do not print data to file due to recursion limit {}".format(
+                "Do not print data to file due to recursion limit {!r}".format(
                     file_name
                 )
             )
@@ -247,6 +233,7 @@ class Extension(metaclass=abc.ABCMeta):
             archive = os.path.join(self.work_dir, archive)
 
         if not os.path.exists(archive):
+            self.debug("{!r} file is not found".format(archive))
             return
 
         with zipfile.ZipFile(archive, "r") as zip_fh:
@@ -281,6 +268,8 @@ class Extension(metaclass=abc.ABCMeta):
         if not os.path.isabs(archive):
             archive = os.path.join(self.work_dir, archive)
 
+        self.debug("Loading {!r} from {!r}".format(file_name, archive))
+
         with zipfile.ZipFile(archive, "r") as zip_fh:
             return self.__load_data_from_zip(file_name, zip_fh, raise_exception=raise_exception)
 
@@ -298,6 +287,8 @@ class Extension(metaclass=abc.ABCMeta):
     def dump_data_to_zip(self, data, file_name, archive):
         if not os.path.isabs(archive):
             archive = os.path.join(self.work_dir, archive)
+
+        self.debug("Dumping {!r} to {!r}".format(file_name, archive))
 
         os.makedirs(os.path.dirname(archive), exist_ok=True)
 
@@ -449,10 +440,7 @@ class Extension(metaclass=abc.ABCMeta):
                 unwrap(self, cmd)
             return
 
-        if self.conf.get("cpu_count"):
-            max_workers = self.conf.get("cpu_count")
-        else:
-            max_workers = os.cpu_count()
+        max_workers = self.conf.get("cpu_count", os.cpu_count())
 
         # cmds is eather list, tuple or generator
         if type(cmds) is list or type(cmds) is tuple:
@@ -568,14 +556,14 @@ class Extension(metaclass=abc.ABCMeta):
             if ext_name == ext_class.__name__:
                 return ext_class
         else:
-            raise NotImplementedError("Can't find '{}' class".format(ext_name))
+            raise NotImplementedError("Can't find {!r} class".format(ext_name))
 
     def log(self, message):
         """Print debug message.
 
         self.conf["log_level"] must be set to INFO or DEBUG in order to see the message.
         """
-        logger.info("{}: {}".format(self.name, message))
+        self.logger.info("{}: {}".format(self.name, message))
 
     def debug(self, message):
         """Print debug message.
@@ -584,18 +572,18 @@ class Extension(metaclass=abc.ABCMeta):
 
         WARNING: debug messages can have a great impact on the performance.
         """
-        logger.debug("{}: [DEBUG] {}".format(self.name, message))
+        self.logger.debug("{}: [DEBUG] {}".format(self.name, message))
 
     def warning(self, message):
         """Print warning message.
 
         self.conf["log_level"] must be set to WARNING, INFO or DEBUG in order to see the message.
         """
-        logger.warning("{}: [WARNING] {}".format(self.name, message))
+        self.logger.warning("{}: [WARNING] {}".format(self.name, message))
 
     def error(self, message):
         """Print error message.
 
         self.conf["log_level"] must be set to ERROR, WARNING, INFO or DEBUG in order to see the message.
         """
-        logger.error("{}: [ERROR] {}".format(self.name, message))
+        self.logger.error("{}: [ERROR] {}".format(self.name, message))

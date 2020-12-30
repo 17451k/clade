@@ -67,6 +67,7 @@ class Compiler(Common):
             return
 
         deps = self.extensions["Path"].normalize_rel_paths(deps, cwd)
+        self.debug("Dependencies of command {}: {}".format(cmd_id, deps))
         self.dump_data(deps, os.path.join(self.deps_dir, "{}.json".format(cmd_id)))
 
     def is_a_compilation_command(self, cmd):
@@ -79,6 +80,7 @@ class Compiler(Common):
         ):
             return True
 
+        self.debug("{} is not a compilation command".format(cmd))
         return False
 
     def load_all_cmds(self, filter_by_pid=True, with_opts=False, with_raw=False, with_deps=False, compile_only=False):
@@ -120,6 +122,7 @@ class Compiler(Common):
             if os.path.exists(pre_file):
                 pre_files.append(pre_file)
 
+        self.debug("Getting preprocessed files: {}".format(pre_files))
         return pre_files
 
     def get_pre_file_by_path(self, path, cwd):
@@ -131,4 +134,5 @@ class Compiler(Common):
         pre_file = os.path.splitext(abs_path)[0] + ".i"
         pre_file = self.extensions["Storage"].get_storage_path(pre_file)
 
+        self.debug("Getting preprocessed file: {}".format(pre_file))
         return pre_file

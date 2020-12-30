@@ -22,9 +22,12 @@ import sys
 from clade.extensions.abstract import Extension
 from clade.extensions.opts import requires_value
 from clade.cmds import iter_cmds_by_which, number_of_cmds_by_which
+from clade.utils import get_logger
 
 
 def unwrap(self, cmd):
+    # Subprocesses need to setup logger again
+    self.logger = get_logger("clade", with_name=False, conf=self.conf)
     return self.parse_cmd(cmd)
 
 
@@ -78,15 +81,6 @@ class Common(Extension, metaclass=abc.ABCMeta):
 
         self.__merge_all_cmds()
 
-    def __terminate_workers(self, cmds_queue, cmd_workers, cmd_workers_num):
-        # Terminate all workers.
-        for i in range(cmd_workers_num):
-            cmds_queue.put(None)
-
-        # Wait for all workers do finish their operation
-        for i in range(cmd_workers_num):
-            cmd_workers[i].join()
-
     def _get_cmd_dict(self, cmd):
         return {
             "id": cmd["id"],
@@ -135,6 +129,7 @@ class Common(Extension, metaclass=abc.ABCMeta):
 
     def dump_cmd_by_id(self, id, cmd):
         cmd = self._normalize_paths(cmd)
+        self.debug("Parsed command {}".format(cmd))
 
         self.dump_opts_by_id(cmd["id"], cmd["opts"])
         del cmd["opts"]
@@ -178,7 +173,7 @@ class Common(Extension, metaclass=abc.ABCMeta):
             return []
 
         with open(self.bad_ids, "r") as fh:
-            return fh.readlines()
+            return fh.read().splitlines()
 
     def _normalize_paths(self, cmd):
         cmd["in"] = self.extensions["Path"].normalize_rel_paths(cmd["in"], cmd["cwd"])
@@ -189,6 +184,7 @@ class Common(Extension, metaclass=abc.ABCMeta):
 
     def __merge_all_cmds(self):
         """Merge all parsed commands into a single json file."""
+        self.debug("Merging all parsed commands")
         cmd_jsons = glob.glob(
             os.path.join(self.work_dir, self.cmds_dir, "*[0-9].json")
         )
@@ -215,6 +211,7 @@ class Common(Extension, metaclass=abc.ABCMeta):
             "PidGraph.filter_cmds_by_pid", True
         ):
             bad_ids = self.get_bad_ids()
+            self.debug("Bad commands: {}".format(bad_ids))
             cmds = self.extensions["PidGraph"].filter_cmds_by_pid(cmds, parsed_ids=bad_ids)
 
         if with_opts:
@@ -238,6 +235,7 @@ class Common(Extension, metaclass=abc.ABCMeta):
                 if self.regex_in and self.regex_in.search(cmd_in)
             )
         ):
+            self.debug("Command {} is bad".format(cmd))
             return True
 
         cmd_outs = [os.path.join(cmd["cwd"], cmd_out) for cmd_out in cmd["out"]]
@@ -248,6 +246,7 @@ class Common(Extension, metaclass=abc.ABCMeta):
                 if self.regex_out and self.regex_out.search(cmd_out)
             )
         ):
+            self.debug("Command {} is bad".format(cmd))
             return True
 
         return False

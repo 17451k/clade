@@ -40,7 +40,7 @@ class Storage(Extension):
 
         for file in files_to_add:
             file = os.path.abspath(file)
-            self.debug("Adding file: {!r}".format(file))
+            self.debug("Saving {!r} to the Storage".format(file))
 
             if not os.path.exists(file):
                 self.error(
@@ -97,6 +97,7 @@ class Storage(Extension):
         os.makedirs(os.path.dirname(dst), exist_ok=True)
 
         if not self.conf.get("Storage.convert_to_utf8"):
+            self.debug("Storing {!r}".format(filename))
             shutil.copyfile(filename, dst)
         else:
             with open(filename, "rb") as fh:
@@ -118,6 +119,10 @@ class Storage(Extension):
                 )
                 shutil.copyfile(filename, dst)
                 return
+
+            self.debug("Trying to store {!r}. Detected encoding: {} (confidence = {})".format(
+                filename, encoding, confidence
+            ))
 
             with tempfile.NamedTemporaryFile(
                 mode="wb", delete=False
