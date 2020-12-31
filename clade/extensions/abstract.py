@@ -57,7 +57,8 @@ class Extension(metaclass=abc.ABCMeta):
         self.temp_dir = ""
 
         self.conf = conf if conf else dict()
-        self.logger = get_logger("clade", with_name=False, conf=self.conf)
+
+        self.logger = None
 
         if not hasattr(self, "requires"):
             self.requires = []
@@ -563,6 +564,7 @@ class Extension(metaclass=abc.ABCMeta):
 
         self.conf["log_level"] must be set to INFO or DEBUG in order to see the message.
         """
+        self.__get_logger()
         self.logger.info("{}: {}".format(self.name, message))
 
     def debug(self, message):
@@ -572,6 +574,7 @@ class Extension(metaclass=abc.ABCMeta):
 
         WARNING: debug messages can have a great impact on the performance.
         """
+        self.__get_logger()
         self.logger.debug("{}: [DEBUG] {}".format(self.name, message))
 
     def warning(self, message):
@@ -579,6 +582,7 @@ class Extension(metaclass=abc.ABCMeta):
 
         self.conf["log_level"] must be set to WARNING, INFO or DEBUG in order to see the message.
         """
+        self.__get_logger()
         self.logger.warning("{}: [WARNING] {}".format(self.name, message))
 
     def error(self, message):
@@ -586,4 +590,14 @@ class Extension(metaclass=abc.ABCMeta):
 
         self.conf["log_level"] must be set to ERROR, WARNING, INFO or DEBUG in order to see the message.
         """
+        self.__get_logger()
         self.logger.error("{}: [ERROR] {}".format(self.name, message))
+
+    def __get_logger(self):
+        # Initializing logger this way serves two purposes:
+        #   - as a workaround for multiprocessing not supporting passing logger
+        #     objects in Python 3.5 and 3.6
+        #   - and to setup logger in subprocesses
+
+        if not self.logger:
+            self.logger = get_logger("clade", with_name=False, conf=self.conf)

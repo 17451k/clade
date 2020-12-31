@@ -22,12 +22,9 @@ import sys
 from clade.extensions.abstract import Extension
 from clade.extensions.opts import requires_value
 from clade.cmds import iter_cmds_by_which, number_of_cmds_by_which
-from clade.utils import get_logger
 
 
 def unwrap(self, cmd):
-    # Subprocesses need to setup logger again
-    self.logger = get_logger("clade", with_name=False, conf=self.conf)
     return self.parse_cmd(cmd)
 
 
