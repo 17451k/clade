@@ -105,6 +105,10 @@ def main(args=sys.argv[1:]):
     if args.command and not os.path.isfile(args.cmds):
         c.intercept(args.command, use_wrappers=args.wrappers)
 
+    if not os.path.exists(args.cmds):
+        print("Something is wrong: file with intercepted commands is empty")
+        sys.exit(-1)
+
     c.parse("CDB")
 
     shutil.rmtree(work_dir)
