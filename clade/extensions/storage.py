@@ -75,7 +75,7 @@ class Storage(Extension):
             else self.extensions["Path"].normalize_abs_path(filename)
         )
 
-        dst = self.work_dir + os.sep + storage_filename
+        dst = os.path.normpath(self.work_dir + os.sep + storage_filename)
 
         if self.__path_exists(dst):
             return
@@ -88,6 +88,8 @@ class Storage(Extension):
             self.log(e)
         except shutil.SameFileError:
             pass
+
+        return dst
 
     @functools.lru_cache(maxsize=30000)
     def __path_exists(self, path):
@@ -144,6 +146,11 @@ class Storage(Extension):
                 # Convert CRLF line endings to LF
                 content_bytes = content_bytes.replace(b"\r\n", b"\n")
                 f.write(content_bytes)
+
+            try:
+                shutil.copymode(filename, f.name)
+            except Exception:
+                self.warning("Couldn't set permissions for {!r}".format(filename))
 
             try:
                 os.replace(f.name, dst)
