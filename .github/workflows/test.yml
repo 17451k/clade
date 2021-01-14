@@ -43,12 +43,12 @@ jobs:
         curl -sSfL -o cif.tar.xz https://github.com/17451k/cif/releases/download/2020-12-14/cif-ad20f36-2020-12-14-macos-x86_64.tar.xz
 
     - name: Install CIF
-      if: ! startsWith(matrix.os, 'windows')
+      if: "!startsWith(matrix.os, 'windows')"
       run: |
         tar xf cif.tar.xz
 
     - name: Test with pytest
-      if: ! startsWith(matrix.os, 'windows')
+      if: "!startsWith(matrix.os, 'windows')"
       run: |
         PATH=$GITHUB_WORKSPACE/cif/bin:$PATH pytest
 
