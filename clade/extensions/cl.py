@@ -20,6 +20,7 @@ except ImportError:
 
 import os
 import re
+import shlex
 import subprocess
 
 from clade.extensions.compiler import Compiler
@@ -65,6 +66,7 @@ class CL(Compiler):
             )
 
         opts = iter(cmd["command"][1:])
+        input_opts = ["/Tc", "-Tc", "/Tp", "-Tp"]
 
         for opt in opts:
             if opt in requires_value[self.name]:
@@ -77,8 +79,16 @@ class CL(Compiler):
                         if not val:
                             break
                         parsed_cmd["opts"].append(val)
+
+                if opt in input_opts:
+                    parsed_cmd["in"].append(val)
             elif re.search(r"^[/-]", opt):
                 parsed_cmd["opts"].append(opt)
+
+                for prefix in input_opts:
+                    if opt.startswith(prefix):
+                        # All these options has length of 3
+                        parsed_cmd["in"].append(opt[3:])
             else:
                 parsed_cmd["in"].append(opt)
 
@@ -173,9 +183,19 @@ class CL(Compiler):
             + self.conf.get("Compiler.extra_preprocessor_opts", [])
         )
 
+        self.debug("CWD: {!r}".format(cmd["cwd"]))
+        self.debug("Executing command: {!r}".format(
+            " ".join([shlex.quote(x) for x in deps_cmd]))
+        )
+
+        if not os.path.exists(cmd["cwd"]):
+            self.warning("CWD for command {!r} was deleted after build".format(cmd_id))
+            return deps_file
+
         with open(deps_file, "wb") as deps_fh:
             proc = subprocess.Popen(
-                deps_cmd,
+                # deps_cmd,
+                ["dir"],
                 stdout=deps_fh,
                 stderr=deps_fh,
                 cwd=cmd["cwd"],
@@ -199,11 +219,13 @@ class CL(Compiler):
         deps = list()
         output_bytes = None
 
-        if os.path.exists(deps_file):
-            with open(deps_file, "rb") as deps_fh:
-                output_bytes = deps_fh.read()
+        if not os.path.exists(deps_file):
+            return deps
 
-            os.remove(deps_file)
+        with open(deps_file, "rb") as deps_fh:
+            output_bytes = deps_fh.read()
+
+        os.remove(deps_file)
 
         if self.conf.get("Compiler.deps_encoding"):
             encoding = self.conf.get("Compiler.deps_encoding")

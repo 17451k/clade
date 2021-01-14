@@ -105,6 +105,11 @@ class CC(Compiler):
             self.debug("Executing command: {!r}".format(
                 " ".join([shlex.quote(x) for x in command]))
             )
+
+            if not os.path.exists(cmd["cwd"]):
+                self.warning("CWD for command {!r} was deleted after build".format(cmd_id))
+                return deps_file
+
             subprocess.call(
                 command,
                 stdout=subprocess.DEVNULL,
@@ -194,6 +199,10 @@ class CC(Compiler):
             self.debug("Executing command: {!r}".format(
                 " ".join([shlex.quote(x) for x in command]))
             )
+
+            if not os.path.exists(cmd["cwd"]):
+                self.warning("CWD for command {!r} was deleted after build".format(cmd["id"]))
+                return pre
 
             r = subprocess.check_call(
                 command, cwd=cmd["cwd"], stderr=subprocess.DEVNULL
