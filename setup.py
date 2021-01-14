@@ -44,6 +44,9 @@ def build_target(target, build_dir, src_dir, options=None, quiet=False):
     else:
         cmake = "cmake"
 
+    if not shutil.which(cmake):
+        raise RuntimeError("Can't find cmake")
+
     os.makedirs(build_dir, exist_ok=True)
 
     try:
