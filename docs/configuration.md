@@ -50,7 +50,7 @@ For example, `CC` extension have the following list:
 ]
 ```
 
-Obviously, execution of `/usr/bin/gcc*`will be matched, as well as
+Obviously, execution of `/usr/bin/gcc` will be matched, as well as
 `/usr/bin/clang`, or `/usr/local/bin/powerpc-elf-gcc-7`, so all such commands
 will be treated as compilation commands and parsed accordingly.
 Sometimes this list is not enough, so there is an option to change it:
@@ -81,7 +81,7 @@ respectively pdf files containing Graphviz output will appear.
 ## List of commands to parse
 
 If you want to generate `command graph`, or `source graph`, or `call graph`,
-then you need to specify which commands to parse via "CmdGraph.requires"
+then you need to specify which commands to parse via `CmdGraph.requires`
 option. By default all commands that are supported now are parsed,
 but you can reduce their number:
 
@@ -93,15 +93,15 @@ but you can reduce their number:
 
 ## Presets
 
-There is predefined set of options for the following projects that can be used
-in addition to user-defined configuration:
+There is a predefined set of options for the following projects that can be used
+in addition to the user-defined configuration:
 
 * Linux kernel (preset linux_kernel)
 * Busybox (preset busybox_linux)
-* Apache (presetsapache_linux)
+* Apache (preset apache_linux)
 
-If you want to execute Clade on one of these projects then it might be a *good
-idea* to use this presets, since they will definitely save you from having
+If you want to execute Clade on one of these projects, then it might be a
+*good idea* to use these presets, since they will definitely save you from having
 to deal with various problems and mess with the configuration:
 
 ``` shell

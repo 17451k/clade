@@ -85,23 +85,24 @@ There is an alternative intercepting method that is based on
 $ clade -i -wr make
 ```
 
-Clade scans PATH environment variable to detect available
+Clade scans `PATH` environment variable to detect available
 executable files.
 Then it creates a temporary directory and creates
 wrappers for all this executables.
 Each wrapper simply logs arguments with which it was called and
 then executes original executable.
 To ensure that wrapper will be called instead of the original command
-Clade adds this temporary directory to the PATH.
+Clade adds this temporary directory to the `PATH`.
 
 This method can't intercept commands that are executed
-bypassing the PATH environment variable: for example, *gcc* command can be
-intercepted, but calling directly to */usr/bin/gcc* cannot.
-If you need to intercept such commands you may use "Wrapper.wrap_list"
-configuration option (read about configuration in the configuration_ section).
-Files specified in "Wrapper.wrap_list" will be temporarily replaced
+bypassing the PATH environment variable: for example, `gcc` command can be
+intercepted, but directl call of `/usr/bin/gcc` cannot be.
+If you need to intercept such commands you may use `Wrapper.wrap_list`
+configuration option (read about configuration in the
+[configuration](configuration.md) section).
+Files specified in `Wrapper.wrap_list` will be temporarily replaced
 by wrappers (in some cases it may require administrative privileges).
-It is possible to specify directories in "Wrapper.wrap_list":
+It is possible to specify directories in `Wrapper.wrap_list`:
 in that case all executable files in them will be replaced by wrappers.
 
 You can intercept build commands with wrappers from a python script:
@@ -144,7 +145,7 @@ c = Clade(cmds_file="cmds.txt")
 c.intercept(command=["msbuild", "MyProject.sln])
 ```
 
-## Content of *cmds.txt* file
+## Content of cmds.txt file
 
 Let's look at the simple makefile:
 
@@ -154,8 +155,8 @@ all:
     rm main
 ```
 
-If we try to intercept *make all* command,
-the following *cmds.txt* file will be produced (on macOS):
+If we try to intercept `make all` command,
+the following `clade/cmds.txt` file will be produced (on macOS):
 
 ```
 /work/simple_make||0||/usr/bin/make||make||all
@@ -169,9 +170,9 @@ the following *cmds.txt* file will be produced (on macOS):
 /work/simple_make||2||/bin/rm||rm||main
 ```
 
-You can try to use *cmds.txt* file directly, but its format is not quite
+You can try to use `cmds.txt` file directly, but its format is not quite
 user-friendly and is subject to change.
-It is a good idea not to rely on the format of *cmds.txt* file
+It is a good idea not to rely on the format of `cmds.txt` file
 and use the interface module instead:
 
 ``` python
@@ -179,8 +180,8 @@ from clade.cmds import get_all_cmds
 cmds = get_all_cmds("cmds.txt")
 ```
 
-where *cmds* is a list of dictionaries representing each intercepted command.
-For example, dictionary that represents *gcc* command from the above makefile
+where `cmds` is a list of dictionaries representing each intercepted command.
+For example, dictionary that represents `gcc` command from the above makefile
 looks like this:
 
 ``` json
@@ -211,57 +212,62 @@ where:
   as a result of this command.
 
 It should be noted that all other functionality available in Clade use
-*cmds.txt* file as input.
+`cmds.txt` file as an input.
 Due to this you do not need to rebuild your project every time you want
-to use it - you can just use previously generated *cmds.txt* file.
+to use it - you can just use previously generated `cmds.txt` file.
 
 ## Parsing of intercepted commands
 
-Build command intercepting is performed internally by the *clade* command, so
-in most cases you do not need to thing about it.
+Build command intercepting is performed internally by the `clade` command, so
+in most cases you do not need to think about it.
 Once build commands are intercepted they can be parsed to search for input
 and output files, and options. Currently there are *extensions* in Clade
 for parsing following commands:
 
 * C compilation commands (cc, gcc, clang, various cross compilers);
-* linker commands (ld);
+* C++ compilation commands;
+* Microsoft CL compilation commands;
+* linker commands (ld, ld.lld, link);
 * assembler commands (as);
 * archive commands (ar);
-* move commands (mv);
-* object copy commands (objcopy, Linux only);
-* Microsoft CL compilation commands;
-* Microsoft linker commands;
+* move commands (mv, cmd.exe -c);
+* object copy commands (objcopy);
 
-These extensions can be executed from command line through *clade -e EXTENSION_NAME*,
-where EXTENSION_NAME can be CC, LD, AS, AR, MV, Objcopy, CL, or Link, like this:
+These extensions can be executed from command line through `clade -e EXTENSION_NAME`,
+where EXTENSION_NAME can be CC, CXX, LD, AS, AR, MV, Objcopy, CL, or Link, like this:
 
 ``` shell
 $ clade -e CC make
 ```
 
-As a result, a working directory named *clade* will be created:
+As a result, a working directory named `clade` will be created:
 
 ```
 clade/
 ├── cmds.txt
+├── clade.log
+├── conf.json
+├── meta.json
 ├── CC/
 │   ├── cmds.json
+│   ├── bad_ids.txt
 │   ├── cmds/
 │   ├── deps/
 │   ├── opts/
 │   └── raw/
 ├── PidGraph/
-└── Storage/
+├── Storage/
+└── ...
 ```
 
 Top-level directories are in turn working directories of corresponding
-extensions that were executed inside *clade* command.
-*CC* extension is the one we wanted to execute, but there are also
-other extensions - *PidGraph* and *Storage* - that were executed implicitly
-by *CC* because it depends on the results of their work.
+extensions that were executed inside `clade` command.
+`CC` extension is the one we wanted to execute, but there are also
+other extensions - `PidGraph` and `Storage` - that were executed implicitly
+by `CC` because it depends on the results of their work.
 Let's skip them for now.
 
-Inside *CC* directory there is a bunch of other directories and *cmds.json*
+Inside `CC` directory there is a bunch of other directories and `cmds.json`
 file with parsed compilation commands.
 Again, it is a list of dictionaries representing each parsed command.
 Let's look at the parsed command from the above example:
@@ -271,10 +277,10 @@ Let's look at the parsed command from the above example:
     "cwd":"/work/simple_make",
     "id":"3",
     "in":[
-        "main.c"
+        "/work/simple_make/main.c"
     ],
     "out":[
-        "main"
+        "/work/simple_make/main"
     ]
 }
 ```
@@ -286,8 +292,8 @@ the directory where the command was executed.
 Using the identifier of the command it is possible to get some additional information,
 like its options.
 Options of all parsed commands are located in the separated json files
-inside *opts* folder.
-Options of the command with *id="3"* are located in the *opts/3.json* file
+inside `opts` folder.
+Options of the command with `id="3"` are located in the `opts/3.json` file
 and look like this:
 
 ``` json
@@ -296,10 +302,10 @@ and look like this:
 ]
 ```
 
-Raw unparsed commands are located in the *raw* folder.
-Its structure resembles the structure of the *opts* folder, so the
-raw command of the command with id = 3 is located in the "raw/3.json file
-and look like this:
+Raw unparsed commands are located in the `raw` folder.
+Its structure resembles the structure of the `opts` folder, so the
+raw command of the command with `id="3"` is located in the `raw/3.json` file
+and looks like this:
 
 ``` json
 [
@@ -311,13 +317,13 @@ and look like this:
 ],
 ```
 
-*CC* extension also identify *dependencies* of the main source file
+`CC` extension also identify *dependencies* of the main source file
 for each compilation command.
 Dependencies are the names of all included header files,
 even ones included indirectly.
-Clade stores them inside *deps* subfolder.
-For example, dependencies of the parsed command with *id="3"* can be found
-in *deps/3.json* file:
+Clade stores them inside `deps` subfolder.
+For example, dependencies of the parsed command with `id="3"` can be found
+in `deps/3.json*` file:
 
 ``` json
 [
@@ -336,7 +342,7 @@ in *deps/3.json* file:
     "/usr/include/sys/_types/_int32_t.h",
     "/usr/include/sys/_pthread/_pthread_types.h",
     "/usr/include/sys/_types/_int8_t.h",
-    "main.c",
+    "/work/simple_make/main.c",
     "/usr/include/sys/_types/_int16_t.h",
     "/usr/include/sys/_types/_uintptr_t.h",
     "/usr/include/sys/_types/_null.h",
@@ -359,9 +365,9 @@ in *deps/3.json* file:
 
 Besides dependencies, all other parsed commands (ld, mv, and so on)
 will also look this way: as a list of dictionaries representing each
-parsed command, with "id", "in", "out" and "cwd" fields.
+parsed command, with `"id"`, `"in"`, `"out"` and `"cwd"` fields.
 
-All data generated by *CC* extension (and by all other extensions, of course)
+All data generated by `CC` extension (and by all other extensions, of course)
 can also be used through Python interface:
 
 ``` python
@@ -385,13 +391,13 @@ for cmd in c.get_all_cmds_by_type("CC"):
 ## Pid graph
 
 Each intercepted command, except for the first one, is executed by another,
-parent command. For example, *gcc* internally executes
-*cc1* and *as* commands, so *gcc* is their parent.
+parent command. For example, `gcc` internally executes
+`cc1` and `as` commands, so `gcc` is their parent.
 Clade knows about this connection and tracks it by assigning to each intercepted
-command two attributes: a unique identifier (id) and identifier of its parent
-(pid).
+command two attributes: a unique identifier (`id`) and identifier of its parent
+(`pid`).
 This information is stored in the *pid graph* and can be obtained using
-*PidGraph* extension:
+`PidGraph` extension:
 
 ``` shell
 $ clade -e PidGraph make
@@ -404,7 +410,7 @@ clade
        └── pid_graph.json
 ```
 
-Two files will be generated. First one - *pid_by_id.json* - is a simple
+Two files will be generated. First one - `pid_by_id.json` - is a simple
 mapping from ids to their pids and looks like this:
 
 ``` json
@@ -417,7 +423,7 @@ mapping from ids to their pids and looks like this:
 }
 ```
 
-Another one - *pid_graph.json* - stores information about all parent commands
+Another one - `pid_graph.json` - stores information about all parent commands
 for a given id:
 
 ``` json
@@ -446,7 +452,7 @@ pid_by_id = c.pid_by_id
 ```
 
 Other extensions use *pid graph* to filter *duplicate* commands.
-For example, on macOS executing "*gcc main.c*" command leads to the
+For example, on macOS executing `gcc main.c` command leads to the
 chain of execution of the following commands:
 
 * /usr/bin/gcc main.c
@@ -473,13 +479,13 @@ Note: *pid graph* can be used with any project
 
 Clade can connect commands by their input and output files.
 This information is stored in the *command graph* and can be obtained using
-*CmdGraph* extension.
+`CmdGraph` extension.
 
-To appear in the *command graph* an intercepted command needs to be parsed
+To appear in the *command graph*, an intercepted command needs to be parsed
 to search for input and output files.
-By default commands parsed by *CC*, *LD*, *MV*, "AR", "AS", "Objcopy"
-extensions are parsed and appeared in the *command graph*.
-This behavior can be changed via configuration, which will be described below.
+By default all commands that Clade knows about are parsed and appeared
+in the *command graph*.
+This behavior can be changed via [configuration](configuration.md).
 
 Let's consider the following makefile:
 
@@ -490,7 +496,7 @@ all:
     mv main.o main           # id = 3
 ```
 
-Using *CmdGraph* these commands can be connected:
+Using `CmdGraph` these commands can be connected:
 
 ``` shell
 $ clade -e CmdGraph make
@@ -498,7 +504,8 @@ $ clade -e CmdGraph make
 clade/
 ├── cmds.txt
 ├── CmdGraph/
-│   └── cmd_graph.json
+│   ├── cmd_graph.json
+│   └── cmd_type.json
 ├── CC/
 ├── LD/
 ├── MV/
@@ -506,26 +513,33 @@ clade/
 └── Storage/
 ```
 
-where *cmd_graph.json* looks like this (commands are represented by their
+where `cmd_graph.json` looks like this (commands are represented by their
 identifiers and the type of extensions that parsed it):
 
 ``` json
 {
     "1":{
-        "type": "CC",
         "used_by": ["2", "3"],
         "using": []
     },
     "2":{
-        "type": "AS",
         "used_by": ["3"],
         "using": ["1"]
     },
     "3":{
-        "type": "MV",
         "used_by": [],
         "using": ["1", "2"]
     }
+}
+```
+
+and `cmd_type.json` looks like this:
+
+``` json
+{
+    "1": "CC",
+    "2": "AS",
+    "3": "MV"
 }
 ```
 
@@ -540,6 +554,7 @@ c = Clade(work_dir="clade", cmds_file="cmds.txt")
 
 # Get the command graph
 cmd_graph = c.cmd_graph
+cmd_type = c.cmd_type
 ```
 
 *Command graph* can be visualized with Graphviz using one of
@@ -552,7 +567,7 @@ the configuration options:
 For a given source file Clade can show in which commands this file
 is compiled, and in which commands it is indirectly used.
 This information is called *source graph* and can be generated
-using *SrcGraph* extension:
+using `SrcGraph` extension:
 
 ``` shell
 $ clade -e SrcGraph make
@@ -560,7 +575,8 @@ $ clade -e SrcGraph make
 clade/
 ├── cmds.txt
 ├── SrcGraph/
-│   └── src_graph.json
+│   ├── src_graph.zip
+│   └── src_info.json
 ├── CmdGraph/
 ├── CC/
 ├── LD/
@@ -570,7 +586,8 @@ clade/
 ```
 
 *Source graph* for the Makefile presented in the *command graph* section above
-will be located in the *src_graph.json* file and look like this:
+will be located in the `src_graph.zip` archive and contain multiple files that,
+when combined, looks like this:
 
 ``` json
 {
@@ -595,8 +612,9 @@ will be located in the *src_graph.json* file and look like this:
 For simplicity information about other files has been removed from
 the presented *source graph*.
 As always, commands are represented through their unique identifiers.
-*loc* field contains information about the size of the source file:
-number of the lines of code.
+
+`src_info.json` contains information about the size of the source file
+in lines of code.
 
 *Source graph* can be used through Python interface:
 
@@ -609,40 +627,22 @@ c = Clade(work_dir="clade", cmds_file="cmds.txt")
 
 # Get the source graph
 src_graph = c.src_graph
+src_info = c.src_info
 ```
 
 ## Call graph
 
-Clade can generate function *call graph* for a given project written in C.
-This requires CIF installed on your computer, and path to its bin directory
-added to the PATH environment variable.
+Clade can generate function *call graph* for a given project written in `C`.
+This requires `CIF` installed on your computer, and path to its bin directory
+added to the `PATH` environment variable.
 
-*Call graph* can be generated using *Callgraph* extension:
+*Call graph* can be generated using `Callgraph` extension:
 
 ``` shell
 $ clade -e Callgraph cmds.txt
-
-clade/
-├── cmds.txt
-├── Callgraph/
-│   ├── callgraph/
-│   ├── callgraph.json
-│   ├── calls_by_ptr.json
-│   ├── used_in.json
-│   └── err.log
-├── CC/
-├── LD/
-├── MV/
-├── PidGraph/
-├── Info/
-├── Functions/
-│   ├── functions_by_file/
-│   ├── functions_by_file.json
-│   └── functions.json
-└── Storage/
 ```
 
-*Call graph* itself is stored inside *callgraph.json* file and can be
+*Call graph* itself is stored inside `Callgraph/callgraph.zip` file and can be
 rather large. Let's look at a small part of the call graph generated for
 the Linux kernel:
 
@@ -673,19 +673,19 @@ the Linux kernel:
 }
 ```
 
-There is "drivers/net/usb/asix_common.c" file with definition of the
-"asix_get_phy_addr" function. This function is called in the
-"drivers/net/usb/asix_devices.c" file by "ax88172_bind" function on line
-"242" and by "ax88178_bind" function on line "809". "match_type" is an internal
-information needed for debug purposes. Also this function calls "asix_read_phy_addr"
-file from the "drivers/net/usb/asix_common.c" file on the line "235".
+There is `drivers/net/usb/asix_common.c` file with definition of the
+`asix_get_phy_addr` function. This function is called in the
+`drivers/net/usb/asix_devices.c` file by `ax88172_bind` function on line
+`242` and by `ax88178_bind` function on line `809`. `match_type` is an internal
+information needed for debug purposes. Also, this function calls `asix_read_phy_addr`
+file from the `drivers/net/usb/asix_common.c` file on the line `235`.
 
-All functions that call "asix_get_phy_addr" function or are called by it are
+All functions that call `asix_get_phy_addr` function or are called by it are
 also present in the *call graph*, but were excluded from the above example.
 
-*Callgraph* extension uses "Function" extension to get information about
+`Callgraph` extension uses `Function` extension to get information about
 function definitions and declarations.
-They are stored in the *functions.json* file:
+They are stored in the *Functions/functions.zip* file:
 
 ``` json
 {
@@ -709,10 +709,11 @@ For each function definition there is information about corresponding
 declaration, line numbers in which the definition and declaration are located,
 function signature and type (global or static).
 
-*Callgraph* and *Functions* can be used through Python interface:
+`Callgraph` and `Functions` can be used through Python interface:
 
 ``` python
 from clade import Clade
+from clade.types.nested_dict import traverse
 
 # Initialize interface class with a path to the working directory
 # and a path to the file with intercepted commands
@@ -721,19 +722,13 @@ c = Clade(work_dir="clade", cmds_file="cmds.txt")
 # Get the call graph
 callgraph = c.callgraph
 
-# Usage looks quite ugly, yes
-# This will be improved
-for file in callgraph:
-    for func in callgraph[file]:
-        for caller_file in callgraph[file][func]["called_in"]:
-            for caller_func in callgraph[file][func]["called_in"][caller_file]:
-                for call_line in callgraph[file][func]["called_in"][caller_file][caller_func]:
-                    ...
 
-        for called_file in callgraph[file][func]["calls"]:
-            for called_func in callgraph[file][func]["calls"][called_file]:
-                for call_line in callgraph[file][func]["calls"][called_file][called_func]:
-                    ...
+for file, func in traverse(self.callgraph, 2):
+    for caller_file, caller_func, call_line in traverse(callgraph[file][func]["called_in"], 3):
+        ...
+
+    for called_file, called_func, call_line in traverse(callgraph[file][func]["calls"], 3):
+        ...
 
 functions = c.functions
 # The usage is quite similar, so it is omitted
@@ -743,24 +738,24 @@ functions = c.functions
 
 Command line tool for generating compilation database has a different
 interface, compared to most other command line tools available in Clade.
-Compilation database can be generated using *clade-cdb* command:
+Compilation database can be generated using `clade-cdb` command:
 
 ``` shell
 $ clade-cdb make
 ```
 
-where *make* should be replaced by your project build command.
-As a result your project will be build and the *compile_commands.json*
+where `make` should be replaced by your project build command.
+As a result your project will be build and the `compile_commands.json`
 file will be created in the current directory.
 
-If you have *cmds.txt* file you can skip the build process and get
-*compile_comands.json* much faster:
+If you have `cmds.txt` file you can skip the build process and get
+`compile_comands.json` much faster:
 
 ``` shell
 $ clade-cdb --cmds cmds.txt
 ```
 
-Other options are available through --help option.
+Other options are available through `--help` option.
 
 *Compilation database* can be used through Python interface:
 

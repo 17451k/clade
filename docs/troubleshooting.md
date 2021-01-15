@@ -44,14 +44,14 @@ identify a command as a compilation command. You can help it by specifying
 is `~/.local/bin/c_compiler`, than `CC.which_list` may be set like this:
 
 ```
-"CC.which_list": ["^.*?c_compiler$"]
+"CC.which_list": ["c_compiler$"]
 ```
 
 If you want to parse not only commands executed by your compiler, but by system
-*gcc* as well, then you can add it to the list too:
+`gcc` as well, then you can add it to the list too:
 
 ```
-"CC.which_list": ["^.*?c_compiler$", ""^.*gcc$"]
+"CC.which_list": ["c_compiler$", ""gcc$"]
 ```
 
 How to set configuration option is described in the [configuration](configuration.md) section of
