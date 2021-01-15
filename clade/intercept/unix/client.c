@@ -40,11 +40,14 @@ static void send_data_unix(const char *msg, char *address) {
         exit(EXIT_FAILURE);
     }
 
-    int ret = write(sockfd, msg, strlen(msg));
+    ssize_t  r = write(sockfd, msg, strlen(msg));
+
+    if (r == -1) {
+        perror("Failed to write to the socket");
+    }
 
     // We need to wait until the server finished message processing and close the socket
     char buf[1024];
-    ssize_t r;
     while ((r = read(sockfd, buf, sizeof(buf)-1)) > 0) {}
 }
 
@@ -69,15 +72,18 @@ static void send_data_inet(const char *msg, char *host, char *port) {
         exit(EXIT_FAILURE);
     }
 
-    int ret = write(sockfd, msg, strlen(msg));
+    ssize_t r = write(sockfd, msg, strlen(msg));
+
+    if (r == -1) {
+        perror("Failed to write to the socket");
+    }
 
     // We need to wait until the server finished message processing and close the socket
     char buf[1024];
-    ssize_t r;
     while ((r = read(sockfd, buf, sizeof(buf)-1)) > 0) {}
 }
 
-char *send_data(const char *msg) {
+void send_data(const char *msg) {
     char* host = getenv("CLADE_INET_HOST");
     char* port = getenv("CLADE_INET_PORT");
     char* address = getenv("CLADE_UNIX_ADDRESS");
@@ -95,4 +101,3 @@ char *send_data(const char *msg) {
         exit(EXIT_FAILURE);
     }
 }
-

@@ -14,12 +14,14 @@
 # limitations under the License.
 
 import argparse
+import datetime
 import os
 import sys
+import time
 import ujson
 
 from clade import Clade
-from clade.extensions.abstract import Extension
+from clade.utils import get_clade_version
 
 
 def parse_args(args):
@@ -92,6 +94,13 @@ def parse_args(args):
         action="store_true",
     )
     parser.add_argument(
+        "-io",
+        "--intercept-open",
+        help="also intercept open() calls",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
         "-a",
         "--append",
         help="append intercepted commands to existing cmds.txt file",
@@ -116,7 +125,7 @@ def parse_args(args):
     args = parser.parse_args(args)
 
     if args.version:
-        print("Clade", Extension.get_clade_version())
+        print("Clade", get_clade_version())
         sys.exit()
 
     if not args.cmds:
@@ -162,7 +171,7 @@ def main(sys_args=sys.argv[1:]):
     if os.path.isfile(conf["cmds_file"]) and args.intercept and not args.append:
         c.logger.info("File with intercepted commands already exists: {!r}".format(conf["cmds_file"]))
         sys.exit(-1)
-    elif os.path.isfile(conf["cmds_file"]) and not args.append:
+    elif os.path.isfile(conf["cmds_file"]) and not args.intercept and not args.append:
         c.logger.info("Skipping build and reusing {!r} file".format(conf["cmds_file"]))
     else:
         if not args.command:
@@ -170,28 +179,33 @@ def main(sys_args=sys.argv[1:]):
             sys.exit(-1)
 
         c.logger.info("Starting build")
-        r = c.intercept(conf["command"], use_wrappers=conf["use_wrappers"], append=args.append)
+        build_time_start = time.time()
+        r = c.intercept(conf["command"], use_wrappers=conf["use_wrappers"], append=args.append, intercept_open=args.intercept_open)
 
-        if r:
-            # Clade can still proceed further
-            c.logger.error("Build failed with error code {}".format(r))
-        else:
-            c.logger.info("Build completed successfully")
+        build_delta = datetime.timedelta(seconds=(time.time() - build_time_start))
+        build_delta_str = str(build_delta).split(".")[0]
 
-    if args.intercept:
-        if os.path.exists(conf["cmds_file"]):
+        # Clade can still proceed further if exit code != 0
+        c.logger.error("Build finished in {} with exit code {}".format(build_delta_str, r))
+
+        if args.intercept and os.path.exists(conf["cmds_file"]):
             c.logger.info("Path to the file with intercepted commands: {!r}".format(conf["cmds_file"]))
             sys.exit(r)
-        else:
-            c.logger.error("Something is wrong: file with intercepted commands is empty")
-            sys.exit(-1)
+
+    if not os.path.exists(conf["cmds_file"]):
+        c.logger.error("Something is wrong: file with intercepted commands is empty")
+        sys.exit(-1)
 
     try:
         extensions = args.extension if args.extension else c.conf["extensions"]
 
         c.logger.info("Executing extensions")
+        ext_time_start = time.time()
         c.parse_list(extensions, args.force_exts)
-        c.logger.info("Executing extensions finished")
+
+        ext_delta = datetime.timedelta(seconds=(time.time() - ext_time_start))
+        ext_delta_str = str(ext_delta).split(".")[0]
+        c.logger.info("Extensions finished in {}".format(ext_delta_str))
     except RuntimeError as e:
         if e.args:
             raise SystemExit(e)

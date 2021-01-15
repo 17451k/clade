@@ -40,7 +40,7 @@ class Storage(Extension):
 
         for file in files_to_add:
             file = os.path.abspath(file)
-            self.debug("Adding file: {!r}".format(file))
+            self.debug("Saving {!r} to the Storage".format(file))
 
             if not os.path.exists(file):
                 self.error(
@@ -75,7 +75,7 @@ class Storage(Extension):
             else self.extensions["Path"].normalize_abs_path(filename)
         )
 
-        dst = self.work_dir + os.sep + storage_filename
+        dst = os.path.normpath(self.work_dir + os.sep + storage_filename)
 
         if self.__path_exists(dst):
             return
@@ -89,6 +89,8 @@ class Storage(Extension):
         except shutil.SameFileError:
             pass
 
+        return dst
+
     @functools.lru_cache(maxsize=30000)
     def __path_exists(self, path):
         return os.path.exists(path)
@@ -97,6 +99,7 @@ class Storage(Extension):
         os.makedirs(os.path.dirname(dst), exist_ok=True)
 
         if not self.conf.get("Storage.convert_to_utf8"):
+            self.debug("Storing {!r}".format(filename))
             shutil.copyfile(filename, dst)
         else:
             with open(filename, "rb") as fh:
@@ -118,6 +121,10 @@ class Storage(Extension):
                 )
                 shutil.copyfile(filename, dst)
                 return
+
+            self.debug("Trying to store {!r}. Detected encoding: {} (confidence = {})".format(
+                filename, encoding, confidence
+            ))
 
             with tempfile.NamedTemporaryFile(
                 mode="wb", delete=False
@@ -141,6 +148,11 @@ class Storage(Extension):
                 f.write(content_bytes)
 
             try:
+                shutil.copymode(filename, f.name)
+            except Exception:
+                self.warning("Couldn't set permissions for {!r}".format(filename))
+
+            try:
                 os.replace(f.name, dst)
             except OSError:
                 os.remove(f.name)
@@ -148,7 +160,7 @@ class Storage(Extension):
     def get_storage_dir(self):
         return self.work_dir
 
-    def get_storage_path(self, path):
+    def get_storage_path(self, path) -> str:
         """Get path to the file or directory from the storage."""
         path = os.path.normpath(path)
         return os.path.join(self.work_dir, path.lstrip(os.path.sep))

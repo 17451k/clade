@@ -20,7 +20,7 @@ import re
 
 from clade.extensions.abstract import Extension
 from clade.extensions.callgraph import Callgraph
-from clade.extensions.utils import nested_dict, traverse
+from clade.types.nested_dict import nested_dict, traverse
 
 
 class CrossRef(Callgraph):
@@ -33,8 +33,10 @@ class CrossRef(Callgraph):
 
         self.funcs = None
 
-        self.ref_to_folder = "ref_to"
-        self.ref_from_folder = "ref_from"
+        self.ref_to_macro_archive = "ref_to_macro.zip"
+        self.ref_to_func_archive = "ref_to_func.zip"
+        self.ref_from_macro_archive = "ref_from_macro.zip"
+        self.ref_from_func_archive = "ref_from_func.zip"
 
     @Extension.prepare
     def parse(self, cmds_file):
@@ -55,15 +57,33 @@ class CrossRef(Callgraph):
         self.log("Calculating 'from' references")
         self.__gen_ref_from(locations)
 
-        self.log("Calculating finished")
-
     def load_ref_to_by_file(self, files=None):
         """Load references to definitions and declarations grouped by files."""
-        return self.load_data_by_key(self.ref_to_folder, files)
+        macro_data = self.load_data_by_key(self.ref_to_macro_archive, files)
+        func_data = self.load_data_by_key(self.ref_to_func_archive, files)
+
+        for file in func_data:
+            if file not in macro_data:
+                macro_data[file] = func_data[file]
+            else:
+                macro_data[file].update(func_data[file])
+
+        return macro_data
 
     def load_ref_from_by_file(self, files=None):
         """Load references to usages grouped by files."""
-        return self.load_data_by_key(self.ref_from_folder, files)
+        macro_data = self.load_data_by_key(self.ref_from_macro_archive, files)
+        func_data = self.load_data_by_key(self.ref_from_func_archive, files)
+
+        for file in func_data:
+            if file not in macro_data:
+                macro_data[file] = func_data[file]
+                continue
+
+            if "call" in func_data[file]:
+                macro_data[file]["call"] = func_data[file]["call"]
+
+        return macro_data
 
     def __get_raw_locations(self):
         raw_locations = nested_dict()
@@ -192,6 +212,8 @@ class CrossRef(Callgraph):
         self.__gen_ref_to_macro(locations)
 
     def __gen_ref_to_func(self, locations):
+        ref_to = nested_dict()
+
         for context_file, callgraph in self.extensions["Callgraph"].yield_callgraph():
             calls = set()
 
@@ -210,8 +232,6 @@ class CrossRef(Callgraph):
                         continue
 
                     calls.add((file, func))
-
-            ref_to = nested_dict()
 
             for file, func in calls:
                 loc_list = locations[context_file]["call"][func]
@@ -238,14 +258,14 @@ class CrossRef(Callgraph):
                         else:
                             ref_to[context_file]["decl_func"] = [val]
 
-            self.__dump_ref_to(ref_to)
+        self.__dump_ref_to(ref_to, self.ref_to_func_archive)
 
     def __gen_ref_to_macro(self, locations):
+        ref_to = nested_dict()
+
         for exp_file, expansions in self.extensions["Macros"].yield_expansions():
             if exp_file == "unknown" or "expand" not in locations[exp_file]:
                 continue
-
-            ref_to = nested_dict()
 
             for macro, loc_list in traverse(locations[exp_file]["expand"], 2):
                 for loc_el in loc_list:
@@ -262,29 +282,22 @@ class CrossRef(Callgraph):
                         else:
                             ref_to[exp_file]["def_macro"] = [val]
 
-            self.__dump_ref_to(ref_to)
+        self.__dump_ref_to(ref_to, self.ref_to_macro_archive)
 
-    def __dump_ref_to(self, ref_to):
+    def __dump_ref_to(self, ref_to, archive):
         if not ref_to:
             return
 
-        local_ref_to = self.load_ref_to_by_file(list(ref_to))
-
-        for file in ref_to:
-            if file not in local_ref_to:
-                continue
-            ref_to[file].update(local_ref_to[file])
-
-        self.dump_data_by_key(ref_to, self.ref_to_folder)
+        self.dump_data_by_key(ref_to, archive)
 
     def __gen_ref_from(self, locations):
         self.__gen_ref_from_func(locations)
         self.__gen_ref_from_macro(locations)
 
     def __gen_ref_from_func(self, locations):
-        for file, callgraph in self.extensions["Callgraph"].yield_callgraph():
-            ref_from = nested_dict()
+        ref_from = nested_dict()
 
+        for file, callgraph in self.extensions["Callgraph"].yield_callgraph():
             for func in self.funcs[file]:
                 context_locs = self.__get_context_locs(file, func, callgraph)
 
@@ -313,7 +326,7 @@ class CrossRef(Callgraph):
                                 else:
                                     ref_from[decl_file]["call"] = [val]
 
-            self.__dump_ref_from(ref_from)
+        self.__dump_ref_from(ref_from, self.ref_from_func_archive)
 
     def __get_context_locs(self, file, func, callgraph):
         locs = []
@@ -334,11 +347,11 @@ class CrossRef(Callgraph):
         return locs
 
     def __gen_ref_from_macro(self, locations):
+        ref_from = nested_dict()
+
         for def_file, macros in self.extensions["Macros"].yield_macros():
             if def_file == "unknown" or "def_macro" not in locations[def_file]:
                 continue
-
-            ref_from = nested_dict()
 
             for macro, loc_list in traverse(locations[def_file]["def_macro"], 2):
                 for loc_el in loc_list:
@@ -353,28 +366,10 @@ class CrossRef(Callgraph):
                         else:
                             ref_from[def_file]["expand"] = [val]
 
-            self.__dump_ref_from(ref_from)
+        self.__dump_ref_from(ref_from, self.ref_from_macro_archive)
 
-    def __dump_ref_from(self, ref_from):
+    def __dump_ref_from(self, ref_from, archive):
         if not ref_from:
             return
 
-        local_ref_from = self.load_ref_from_by_file(list(ref_from))
-
-        for file in ref_from:
-            if file not in local_ref_from:
-                continue
-
-            if "call" in local_ref_from[file]:
-                if ref_from[file]["call"]:
-                    ref_from[file]["call"].extend(local_ref_from[file]["call"])
-                else:
-                    ref_from[file]["call"] = local_ref_from[file]["call"]
-
-            if "expand" in local_ref_from[file]:
-                if ref_from[file]["expand"]:
-                    ref_from[file]["expand"].extend(local_ref_from[file]["expand"])
-                else:
-                    ref_from[file]["expand"] = local_ref_from[file]["expand"]
-
-        self.dump_data_by_key(ref_from, self.ref_from_folder)
+        self.dump_data_by_key(ref_from, archive)

@@ -20,7 +20,7 @@ import shutil
 from clade.utils import get_logger, merge_preset_to_conf
 from clade.intercept import intercept
 from clade.extensions.abstract import Extension
-from clade.extensions.utils import nested_dict, traverse
+from clade.types.nested_dict import nested_dict, traverse
 
 
 class Clade:
@@ -43,7 +43,6 @@ class Clade:
 
     def __init__(self, work_dir="clade", cmds_file=None, conf=None, preset="base"):
         self.work_dir = os.path.abspath(str(work_dir))
-        self.logger = get_logger("clade-api", with_name=False, conf=conf)
 
         if not cmds_file:
             self.cmds_file = os.path.join(self.work_dir, "cmds.txt")
@@ -59,7 +58,11 @@ class Clade:
 
         self.__prepare_to_init()
 
+        # logger needs working directory, so it must be created after cleaning
+        self.logger = get_logger("clade-api", with_name=False, conf=self.conf)
+
         self._cmd_graph = None
+        self._cmd_type = None
         self._src_graph = None
         self._src_info = None
         self._pid_graph = None
@@ -126,7 +129,7 @@ class Clade:
 
         self.__dump_conf()
 
-    def intercept(self, command, cwd=os.getcwd(), append=False, use_wrappers=False):
+    def intercept(self, command, cwd=os.getcwd(), append=False, use_wrappers=False, intercept_open=False):
         """Execute intercepting of build commands.
 
         Args:
@@ -141,7 +144,15 @@ class Clade:
 
         self.__prepare_to_intercept()
 
-        return intercept(command=command, cwd=cwd, output=self.cmds_file, append=append, use_wrappers=use_wrappers, conf=self.conf)
+        return intercept(
+            command=command,
+            cwd=cwd,
+            output=self.cmds_file,
+            append=append,
+            use_wrappers=use_wrappers,
+            intercept_open=intercept_open,
+            conf=self.conf
+        )
 
     def __get_ext_obj(self, ext_name):
         """Return object of specified extension."""
@@ -200,6 +211,8 @@ class Clade:
         ext_objs = self.__get_ext_obj_list(ext_names)
 
         for ext_obj in ext_objs:
+            ext_obj.debug("Extension requirements: {!r}".format(ext_obj.requires))
+
             if clean and ext_obj.name in ext_names and os.path.isdir(ext_obj.work_dir):
                 shutil.rmtree(ext_obj.work_dir)
 
@@ -292,6 +305,14 @@ class Clade:
         return self._cmd_graph
 
     @property
+    def cmd_type(self):
+        """Information about command types."""
+        if not self._cmd_type:
+            self._cmd_type = self.CmdGraph.load_cmd_type()
+
+        return self._cmd_type
+
+    @property
     def cmd_ids(self):
         """List of identifiers of all parsed commands."""
         return self.cmd_graph.keys()
@@ -299,33 +320,25 @@ class Clade:
     @property
     def cmds(self):
         """List of all parsed commands."""
-        cmds = self.CmdGraph.load_all_cmds()
-        return [self.__normalize_cmd(cmd) for cmd in cmds]
+        return self.CmdGraph.load_all_cmds()
 
     def get_cmds(self, with_opts=False, with_raw=False):
         """Get list with all parsed commands."""
-        cmds = self.CmdGraph.load_all_cmds(with_opts=with_opts, with_raw=with_raw)
-        return [self.__normalize_cmd(cmd) for cmd in cmds]
+        return self.CmdGraph.load_all_cmds(with_opts=with_opts, with_raw=with_raw)
 
     @property
     def compilation_cmds(self):
         """List of all parsed compilation commands (C projects only)."""
-        cmds = self.SrcGraph.load_all_cmds()
-        return [self.__normalize_cmd(cmd) for cmd in cmds]
+        return self.SrcGraph.load_all_cmds()
 
     def get_compilation_cmds(self, with_opts=False, with_raw=False, with_deps=False):
         """Get list with all parsed compilation commands (C projects only)."""
-        cmds = self.SrcGraph.load_all_cmds(
+        return self.SrcGraph.load_all_cmds(
             with_opts=with_opts, with_raw=with_raw, with_deps=with_deps)
-
-        return [self.__normalize_cmd(cmd) for cmd in cmds]
 
     def get_cmd_type(self, cmd_id):
         """Get type of a command by its identifier."""
-        try:
-            return self.CmdGraph.load_cmd_graph_node(cmd_id)["type"]
-        except FileNotFoundError:
-            raise RuntimeError("Can't find {!r} id in the command graph".format(cmd_id))
+        return self.cmd_type[cmd_id]
 
     def get_cmd(self, cmd_id, cmd_type=None, with_opts=False, with_raw=False, with_deps=False):
         """Get command by its identifier and type (optionally)."""
@@ -347,8 +360,6 @@ class Clade:
 
         if with_deps:
             cmd["deps"] = self.get_cmd_deps(cmd_id, cmd_type=cmd_type)
-
-        cmd = self.__normalize_cmd(cmd)
 
         return cmd
 
@@ -380,19 +391,16 @@ class Clade:
 
         cc_obj = self.CmdGraph.get_ext_obj(cmd_type)
 
-        deps = cc_obj.load_deps_by_id(cmd_id)
-        cwd = cc_obj.load_cmd_by_id(cmd_id)["cwd"]
-        return self.__normalize_deps(deps, cwd)
+        return cc_obj.load_deps_by_id(cmd_id)
 
     def get_all_cmds_by_type(self, cmd_type):
         """Get list of all parsed commands filtered by their type."""
-        cmds = self.CmdGraph.load_all_cmds_by_type(cmd_type)
-        return [self.__normalize_cmd(cmd) for cmd in cmds]
+        return self.CmdGraph.load_all_cmds_by_type(cmd_type)
 
     def get_root_cmds(self, cmd_id):
         """Get list of identifiers of all root commands from a command graph of a given command identifier."""
         if cmd_id not in self.cmd_graph:
-            raise RuntimeError("Can't find {!r} id in the command graph".format(cmd_id))
+            raise KeyError("Can't find {!r} id in the command graph".format(cmd_id))
 
         using = self.cmd_graph[cmd_id]["using"]
 
@@ -409,7 +417,7 @@ class Clade:
     def get_leaf_cmds(self, cmd_id):
         """Get list of identifiers of all leaf commands from a command graph of a given command identifier."""
         if cmd_id not in self.cmd_graph:
-            raise RuntimeError("Can't find {!r} id in the command graph".format(cmd_id))
+            raise KeyError("Can't find {!r} id in the command graph".format(cmd_id))
 
         used_by = self.cmd_graph[cmd_id]["used_by"]
 
@@ -518,7 +526,7 @@ class Clade:
                       option
         """
 
-        self.Storage.add_file(file, storage_filename=storage_filename, encoding=encoding)
+        return self.Storage.add_file(file, storage_filename=storage_filename, encoding=encoding)
 
     def get_storage_path(self, path):
         """Get path to the file or directory from the storage."""
@@ -703,23 +711,6 @@ class Clade:
     def Path(self):
         """Object of "Path" extension."""
         return self.__get_ext_obj("Path")
-
-    def __normalize_cmd(self, cmd):
-        if "cwd" in cmd and "in" in cmd:
-            cmd["in"] = [self.Path.get_rel_path(cmd_in, cmd["cwd"]) for cmd_in in cmd["in"]]
-
-        if "cwd" in cmd and "out" in cmd:
-            cmd["out"] = [self.Path.get_rel_path(cmd_out, cmd["cwd"]) for cmd_out in cmd["out"]]
-
-        # deps are normalized separately
-
-        if "cwd" in cmd:
-            cmd["cwd"] = self.Path.get_abs_path(cmd["cwd"])
-
-        return cmd
-
-    def __normalize_deps(self, deps, cwd):
-        return [self.Path.get_rel_path(d, cwd) for d in deps]
 
     def get_meta(self):
         """Get meta information about Clade working directory"""

@@ -44,7 +44,7 @@ static char **copy_envp(char **envp) {
 }
 
 static int find_parent_id(char **envp) {
-    int key_len = strlen(key);
+    size_t key_len = strlen(key);
     int envp_len = get_envp_len(envp);
 
     int i;
@@ -86,7 +86,30 @@ void update_environ(char **envp) {
     setenv(key, strchr(envp[i], '=') + 1, 1);
 }
 
-static int get_cmd_id() {
+static int get_cmd_id_and_update() {
+    int id = get_cmd_id();
+
+    id++;
+
+    char *id_file = getenv("CLADE_ID_FILE");
+    FILE *f = fopen(id_file, "w");
+    if (!f) {
+        fprintf(stderr, "Couldn't open %s file for write\n", id_file);
+        exit(EXIT_FAILURE);
+    }
+
+    int ret = fprintf(f, "%d", id);
+    if (ret <= 0) {
+        fprintf(stderr, "Couldn't write data to file %s\n", id_file);
+        exit(EXIT_FAILURE);
+    }
+
+    fclose(f);
+
+    return id;
+}
+
+int get_cmd_id() {
     char *id_file = getenv("CLADE_ID_FILE");
 
     FILE *f = fopen(id_file, "r");
@@ -104,33 +127,28 @@ static int get_cmd_id() {
 
     fclose(f);
 
-    id++;
-
-    f = fopen(id_file, "w");
-    if (!f) {
-        fprintf(stderr, "Couldn't open %s file for write\n", id_file);
-        exit(EXIT_FAILURE);
-    }
-
-    ret = fprintf(f, "%d", id);
-    if (ret <= 0) {
-        fprintf(stderr, "Couldn't write data to file %s\n", id_file);
-        exit(EXIT_FAILURE);
-    }
-
-    fclose(f);
-
     return id;
 }
 
 char *get_parent_id() {
     char *parent_id = strdup(getenv(key));
 
-    int new_parent_id = get_cmd_id();
+    int new_parent_id = get_cmd_id_and_update();
     char new_clade_id[50]; // 50 should be enough
 
     sprintf(new_clade_id, "%d", new_parent_id);
     setenv(key, new_clade_id, 1);
 
     return parent_id;
+}
+
+extern char *getenv_or_fail(const char *name) {
+    char *value = getenv(name);
+
+    if (!value) {
+        fprintf(stderr, "Environment is not prepared: %s is not specified\n", name);
+        exit(EXIT_FAILURE);
+    }
+
+    return value;
 }

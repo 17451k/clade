@@ -47,16 +47,16 @@ class CC(Compiler):
                 parsed_cmd["out"].append(cmd_out)
 
         if self.is_bad(parsed_cmd):
-            self.dump_bad_cmd_by_id(cmd_id, parsed_cmd)
+            self.dump_bad_cmd_id(cmd_id)
             return
 
-        self.debug("Parsed command: {}".format(parsed_cmd))
+        is_compilation_command = self.is_a_compilation_command(parsed_cmd)
 
         if self.conf.get(
             "Compiler.preprocess_cmds"
-        ) and self.is_a_compilation_command(parsed_cmd):
+        ) and is_compilation_command:
             pre = self.__preprocess_cmd(parsed_cmd, cmd["which"])
-            self.debug("Preprocessed files: {}".format(pre))
+            self.debug("Preprocessed files of command {}: {}".format(cmd["id"], pre))
             self.store_pre_files(pre, parsed_cmd["cwd"])
 
             for file in pre:
@@ -64,13 +64,12 @@ class CC(Compiler):
                     os.remove(file)
 
         deps = self.__get_deps(cmd_id, cmd["which"], parsed_cmd)
-        self.debug("Dependencies: {}".format(deps))
-        self.dump_deps_by_id(cmd_id, deps)
+        self.dump_deps_by_id(cmd_id, deps, parsed_cmd["cwd"])
         self.dump_cmd_by_id(cmd_id, parsed_cmd)
 
         if self.conf.get(
             "Compiler.store_deps"
-        ) and self.is_a_compilation_command(parsed_cmd):
+        ) and is_compilation_command:
             self.store_deps_files(deps, parsed_cmd["cwd"])
 
     def __get_deps(self, cmd_id, which, cmd):
@@ -78,7 +77,9 @@ class CC(Compiler):
         deps = []
 
         for cmd_in in cmd["in"]:
-            self.debug("Collecting dependencies for {!r} file".format(cmd_in))
+            self.debug("Collecting dependencies for {!r} from command {}".format(
+                cmd_in, cmd_id
+            ))
             deps_file = self.__collect_deps(cmd_id, which, cmd, cmd_in)
 
             # Remove duplicates
@@ -104,6 +105,11 @@ class CC(Compiler):
             self.debug("Executing command: {!r}".format(
                 " ".join([shlex.quote(x) for x in command]))
             )
+
+            if not os.path.exists(cmd["cwd"]):
+                self.warning("CWD for command {!r} was deleted after build".format(cmd_id))
+                return deps_file
+
             subprocess.call(
                 command,
                 stdout=subprocess.DEVNULL,
@@ -111,7 +117,7 @@ class CC(Compiler):
                 cwd=cmd["cwd"],
             )
         else:
-            self.debug("Command does not contain any input files, skipping")
+            self.debug("Command {} does not contain any input files".format(cmd_id))
 
         return deps_file
 
@@ -142,11 +148,13 @@ class CC(Compiler):
 
     def is_bad(self, cmd):
         if super().is_bad(cmd):
+            self.debug("Command {} is bad".format(cmd))
             return True
 
         if self.conf.get("CC.ignore_cc1", True) and (
             "-cc1" in cmd["opts"] or cmd["command"][0].endswith("cc1")
         ):
+            self.debug("Command {} is bad".format(cmd))
             return True
 
         return False
@@ -161,6 +169,7 @@ class CC(Compiler):
             opts = cmd["opts"]
 
         if set(opts).intersection(cc_preprocessor_opts):
+            self.debug("{} is not a compilation command".format(cmd))
             return False
 
         return True
@@ -172,6 +181,10 @@ class CC(Compiler):
             if not os.path.isabs(cmd_in):
                 cmd_in = os.path.join(cmd["cwd"], cmd_in)
 
+            self.debug("Preprocessing {!r} from command {}".format(
+                cmd_in, cmd["id"]
+            ))
+
             pre_file = os.path.splitext(cmd_in)[0] + ".i"
             command = (
                 [which]
@@ -181,6 +194,15 @@ class CC(Compiler):
                 + ["-o", pre_file]
                 + self.conf.get("Compiler.extra_preprocessor_opts", [])
             )
+
+            self.debug("CWD: {!r}".format(cmd["cwd"]))
+            self.debug("Executing command: {!r}".format(
+                " ".join([shlex.quote(x) for x in command]))
+            )
+
+            if not os.path.exists(cmd["cwd"]):
+                self.warning("CWD for command {!r} was deleted after build".format(cmd["id"]))
+                return pre
 
             r = subprocess.check_call(
                 command, cwd=cmd["cwd"], stderr=subprocess.DEVNULL

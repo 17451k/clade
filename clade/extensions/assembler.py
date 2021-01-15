@@ -26,8 +26,7 @@ class AS(Common):
         parsed_cmd = super().parse_cmd(cmd, self.name)
 
         if self.is_bad(parsed_cmd):
-            self.dump_bad_cmd_by_id(parsed_cmd["id"], parsed_cmd)
+            self.dump_bad_cmd_id(parsed_cmd["id"])
             return
 
-        self.debug("Parsed command: {}".format(parsed_cmd))
         self.dump_cmd_by_id(cmd["id"], parsed_cmd)

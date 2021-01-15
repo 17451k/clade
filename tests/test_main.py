@@ -38,22 +38,19 @@ def test_intercept(tmpdir):
 def test_intercept_no_command():
     with pytest.raises(SystemExit) as e:
         main(["-i"])
-
-    assert "-1" == str(e.value)
+        assert "-1" == str(e.value)
 
 
 def test_main_cc(tmpdir, cmds_file):
     with pytest.raises(SystemExit) as e:
         main(["-w", str(tmpdir), "--cmds", cmds_file, "-e", "CC"])
-
-    assert "0" == str(e.value)
+        assert "0" == str(e.value)
 
 
 def test_main_bad_conf(tmpdir, cmds_file):
     with pytest.raises(SystemExit) as e:
         main(["-w", str(tmpdir), "--cmds", cmds_file, "-c", "does_not_exist.conf"])
-
-    assert "-1" == str(e.value)
+        assert "-1" == str(e.value)
 
 
 def test_main_bad_preset(tmpdir, cmds_file):

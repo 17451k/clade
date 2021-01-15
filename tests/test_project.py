@@ -18,3 +18,4 @@ import os
 zero_c = os.path.abspath("tests/test_project/zero.c")
 zero_h = os.path.abspath("tests/test_project/zero.h")
 main_c = os.path.abspath("tests/test_project/main.c")
+tmp_main = os.path.abspath("tests/test_project/tmp_main")

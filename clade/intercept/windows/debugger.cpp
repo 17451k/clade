@@ -19,7 +19,6 @@
 #include <sstream>
 #include <fstream>
 #include <string>
-#include <vector>
 #include <algorithm>
 #include <locale>
 #include <codecvt>
@@ -180,7 +179,7 @@ wchar_t *GetPathToProcExecutable(HANDLE hProcess)
     return which;
 }
 
-bool IsFileExist(const wchar_t *fileName)
+bool IsFileExist(std::wstring& fileName)
 {
     return !!std::ifstream(fileName);
 }
@@ -196,7 +195,7 @@ wchar_t *ProcessCommandFiles(const wchar_t *_cmdLine)
     // All of them must be read. and they content must be inserted in the command line string
     while ((beginning = cmdLine.find(L"@", beginning)) != std::wstring::npos)
     {
-        wchar_t *endSymbols = L" ";
+        const wchar_t *endSymbols = L" ";
 
         // Sometimes command files are escaped, like this: @"path/to the/file.rsp"
         // Then last symbols should be '" '
@@ -214,7 +213,6 @@ wchar_t *ProcessCommandFiles(const wchar_t *_cmdLine)
             end = wcslen(_cmdLine) - wcslen(endSymbols) + 1;
         }
 
-        wchar_t *fileName = new wchar_t[cmdLine.length() + 1];
         size_t fileNameBeginning = beginning + 1;
         size_t fileNameLen = end - fileNameBeginning + 1;
 
@@ -224,7 +222,7 @@ wchar_t *ProcessCommandFiles(const wchar_t *_cmdLine)
             fileNameLen = fileNameLen - 2;
         }
 
-        std::wcscpy(fileName, cmdLine.substr(fileNameBeginning, fileNameLen).c_str());
+        std::wstring fileName = cmdLine.substr(fileNameBeginning, fileNameLen);
 
         // If file does not exist than it is not a command file
         if (!IsFileExist(fileName))
@@ -272,8 +270,7 @@ wchar_t *ProcessCommandFiles(const wchar_t *_cmdLine)
                 replacement += L" " + line;
         }
 
-        const wchar_t *commandFileContent = replacement.c_str();
-        cmdLine.replace(beginning, end - beginning + 1, commandFileContent);
+        cmdLine.replace(beginning, end - beginning + 1, replacement);
     }
 
     wchar_t *cmdLineRet = new wchar_t[cmdLine.length() + 1];
@@ -303,8 +300,8 @@ void HandleCreateProcess(CREATE_PROCESS_DEBUG_INFO const &createProcess, PBI &pb
     wchar_t **cmdList;
     int nArgs;
 
-    cmdLine = ProcessCommandFiles(cmdLine);
-    cmdList = CommandLineToArgvW(cmdLine, &nArgs);
+    wchar_t *processedCmdLine = ProcessCommandFiles(cmdLine);
+    cmdList = CommandLineToArgvW(processedCmdLine, &nArgs);
 
     if (!cmdList)
     {
@@ -330,6 +327,7 @@ void HandleCreateProcess(CREATE_PROCESS_DEBUG_INFO const &createProcess, PBI &pb
     }
 
     delete[] cmdLine;
+    delete[] processedCmdLine;
     delete[] curDirPath;
     delete[] which;
     LocalFree(cmdList);
@@ -339,19 +337,17 @@ void HandleCreateProcess(CREATE_PROCESS_DEBUG_INFO const &createProcess, PBI &pb
         CloseHandle(createProcess.hFile);
 }
 
-void EnterDebugLoop()
+void EnterDebugLoop(DWORD build_pid)
 {
-    // Store ids of all currently debugging processes
-    // Stop debugging once this array is empty
-    std::vector<DWORD> processIds;
     // Store map of windows process ids to my custom process ids
-    std::map<int, int> pidGraph;
+    std::map<ULONG_PTR, int> pidGraph;
     // Current maximum parent process id
     int max_pid = 0;
 
+    DEBUG_EVENT DebugEvent;
+
     while (TRUE)
     {
-        DEBUG_EVENT DebugEvent;
         WaitForDebugEvent(&DebugEvent, INFINITE);
 
         if (DebugEvent.dwDebugEventCode == CREATE_PROCESS_DEBUG_EVENT)
@@ -361,37 +357,25 @@ void EnterDebugLoop()
             // Add first PPID to the map and assign 0 as its value
             auto search = pidGraph.find(pbi.InheritedFromUniqueProcessId);
             if (search == pidGraph.end()) {
-                pidGraph.insert({pbi.InheritedFromUniqueProcessId, max_pid});
-                max_pid++;
+                pidGraph[pbi.InheritedFromUniqueProcessId] = max_pid++;
             }
 
             /// Add PID to the map and assign max_pid as its value
-            search = pidGraph.find(pbi.UniqueProcessId);
-            if (search == pidGraph.end()) {
-                pidGraph.insert({pbi.UniqueProcessId, max_pid});
-                max_pid++;
-            } else {
-                // Update existing value with the new one
-                // since UniqueProcessId process is already deleted
-                search->second = max_pid;
-                max_pid++;
-            }
+            pidGraph[pbi.UniqueProcessId] = max_pid++;
 
-            processIds.push_back(DebugEvent.dwProcessId);
             HandleCreateProcess(DebugEvent.u.CreateProcessInfo, pbi, pidGraph.at(pbi.InheritedFromUniqueProcessId));
         }
         else if (DebugEvent.dwDebugEventCode == EXIT_PROCESS_DEBUG_EVENT)
         {
-            for (auto it = processIds.begin(); it != processIds.end();)
-            {
-                if (*it == DebugEvent.dwProcessId)
-                    it = processIds.erase(it);
-                else
-                    ++it;
-            }
-
-            if (!processIds.size())
+            // Stop debugging once main build process is finished
+            if (DebugEvent.dwProcessId == build_pid)
                 return;
+        }
+        else if (DebugEvent.dwDebugEventCode == LOAD_DLL_DEBUG_EVENT)
+        {
+            // close the handle to the loaded DLL.
+            if (DebugEvent.u.LoadDll.hFile)
+                CloseHandle(DebugEvent.u.LoadDll.hFile);
         }
 
         DWORD continueStatus = DBG_CONTINUE;
@@ -405,19 +389,21 @@ void EnterDebugLoop()
     }
 }
 
-void CreateProcessToDebug(int argc, wchar_t **argv)
+DWORD CreateProcessToDebug(int argc, wchar_t **argv)
 {
     // Make a single string from argv[] array
-    std::wstring cmdLine = L"C:\\windows\\system32\\cmd.exe /c";
+    std::wstringstream cmdLine;
+
+    cmdLine << L"C:\\windows\\system32\\cmd.exe /c";
+
     for (int i = 0; i < argc; i++)
     {
-        if (!cmdLine.empty())
-            cmdLine += ' ';
+        cmdLine << ' ';
 
         if (wcschr(argv[i], ' '))
-            cmdLine += '"' + argv[i] + '"';
+            cmdLine << '"' << argv[i] << '"';
         else
-            cmdLine += argv[i];
+            cmdLine << argv[i];
     }
 
     // Some structs necessary to perform CreateProcess call
@@ -430,16 +416,17 @@ void CreateProcessToDebug(int argc, wchar_t **argv)
 
     // TODO: Check why handle inheritance is set to TRUE
     // Create new process
-    if (!CreateProcessW(NULL,                                   // No module name (use command line)
-                        const_cast<wchar_t *>(cmdLine.c_str()), // Command line
-                        NULL,                                   // Process handle not inheritable
-                        NULL,                                   // Thread handle not inheritable
-                        TRUE,                                   // Set handle inheritance to TRUE
-                        DEBUG_PROCESS,                          // Process creation flags. DEBUG_PROCESS allows to debug created process and all its childs
-                        NULL,                                   // Use parent's environment block
-                        NULL,                                   // Use parent's starting directory
-                        &si,                                    // Pointer to STARTUPINFO structure
-                        &pi))                                   // Pointer to PROCESS_INFORMATION structure
+    if (!CreateProcessW(
+        NULL,                                           // No module name (use command line)
+        const_cast<wchar_t *>(cmdLine.str().c_str()),   // Command line
+        NULL,                                           // Process handle not inheritable
+        NULL,                                           // Thread handle not inheritable
+        TRUE,                                           // Set handle inheritance to TRUE
+        DEBUG_PROCESS,                                  // Process creation flags. DEBUG_PROCESS allows to debug created process and all its childs
+        NULL,                                           // Use parent's environment block
+        NULL,                                           // Use parent's starting directory
+        &si,                                            // Pointer to STARTUPINFO structure
+        &pi))                                           // Pointer to PROCESS_INFORMATION structure
     {
         std::cerr << "CreateProcess failed: error code " << GetLastError() << std::endl;
         exit(EXIT_FAILURE);
@@ -449,6 +436,9 @@ void CreateProcessToDebug(int argc, wchar_t **argv)
     // as the debug API will provide them, so we close these handles immediately.
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
+
+    // Return process ID of the main build process
+    return pi.dwProcessId;
 }
 
 int wmain(int argc, wchar_t **argv)
@@ -466,8 +456,8 @@ int wmain(int argc, wchar_t **argv)
     // that are enabled when process runs in debug mode
     _putenv("_NO_DEBUG_HEAP=1");
 
-    CreateProcessToDebug(argc, argv);
-    EnterDebugLoop();
+    DWORD pid = CreateProcessToDebug(argc, argv);
+    EnterDebugLoop(pid);
 
     return 0;
 }

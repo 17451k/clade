@@ -46,8 +46,7 @@ class MV(Common):
                 parsed_cmd["out"].append(os.path.normpath(opt))
 
         if self.is_bad(parsed_cmd):
-            self.dump_bad_cmd_by_id(cmd["id"], parsed_cmd)
+            self.dump_bad_cmd_id(cmd["id"])
             return
 
-        self.debug("Parsed command: {}".format(parsed_cmd))
         self.dump_cmd_by_id(cmd["id"], parsed_cmd)

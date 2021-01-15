@@ -35,7 +35,7 @@ t_ignore = ''
 tmp_value_cache = set()
 functions = None
 callgraph_update_method = None
-function_name_re = re.compile("\(?\s*&?\s*(\w+)\s*\)?$")
+function_name_re = re.compile(r"\(?\s*&?\s*(\w+)\s*\)?$")
 
 
 def t_DECLARATION(t):
@@ -369,12 +369,12 @@ def parse_declaration(string, work_dir):
     return __parser.parse(string, lexer=__lexer)
 
 
-def parse_variables_initializations(filename, callgraph_functions, commit_method, work_dir):
+def parse_variables_initializations(iter_init_global, callgraph_functions, commit_method, work_dir):
     global functions
     global callgraph_update_method
     functions = callgraph_functions
     callgraph_update_method = commit_method
-    with open(filename, 'r') as fp:
-        data = fp.read() + '\n'
+
+    data = ''.join(list(iter_init_global())) + '\n'
 
     return parse_declaration(data, work_dir)

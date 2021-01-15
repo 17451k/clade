@@ -3,7 +3,6 @@ language: python
 dist: xenial
 
 python:
-  - "3.4"
   - "3.5"
   - "3.6"
   - "3.7"
@@ -15,8 +14,8 @@ install:
 before_script:
   - sudo apt-get update
   - sudo apt-get install -y graphviz gcc-multilib
-  - pip install coveralls pytest
-  - curl -sSfL -o cif.tar.xz https://github.com/17451k/cif/releases/download/2020-03-13/cif-8c83608-2020-03-13-linux-x64.tar.xz
+  - pip install --upgrade pip coveralls pytest
+  - curl -sSfL -o cif.tar.xz https://github.com/17451k/cif/releases/download/2020-12-14/cif-ad20f36-2020-12-14-linux-x86_64.tar.xz
   - tar xf cif.tar.xz
 
 script:

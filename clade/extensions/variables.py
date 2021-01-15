@@ -31,7 +31,7 @@ class Variables(Callgraph):
         super().__init__(work_dir, conf)
 
         self.variables = dict()
-        self.variables_folder = "variables"
+        self.variables_archive = "variables.zip"
 
         self.used_in_vars = dict()
         self.used_in_vars_file = "used_in_vars.json"
@@ -47,8 +47,8 @@ class Variables(Callgraph):
         self.__process_init_global()
         self._clean_error_log()
 
-        self.dump_data_by_key(self.variables, self.variables_folder)
-        self.dump_data(self.used_in_vars, self.used_in_vars_file, indent=4)
+        self.dump_data_by_key(self.variables, self.variables_archive)
+        self.dump_variables_data(self.used_in_vars, self.used_in_vars_file, indent=4)
 
         self.functions.clear()
         self.src_graph.clear()
@@ -56,7 +56,7 @@ class Variables(Callgraph):
         self.used_in_vars.clear()
 
     # TODO: Remove this as problem with ujson dump will be solved
-    def dump_data(self, data, file_name, indent=0):
+    def dump_variables_data(self, data, file_name, indent=0):
         """Dump data to a json file in the object working directory."""
 
         if not os.path.isabs(file_name):
@@ -74,15 +74,17 @@ class Variables(Callgraph):
             self.warning("Do not print data to file due to recursion limit {}".format(file_name))
 
     def __process_init_global(self):
-        init_global = self.extensions["Info"].init_global
-
-        if not os.path.isfile(init_global):
+        if not os.path.isfile(self.extensions["Info"].init_global):
             self.log("There is no global variables to parse")
             return
 
         self.log("Parsing global variables initializations")
-        self.variables = parse_variables_initializations(init_global, self.functions, self.__process_callv, self.work_dir)
-        self.log("Parsing finished")
+        self.variables = parse_variables_initializations(
+            self.extensions["Info"].iter_init_global,
+            self.functions,
+            self.__process_callv,
+            self.work_dir
+        )
 
     def __process_callv(self, functions, context_file):
         if not functions:
@@ -123,7 +125,7 @@ class Variables(Callgraph):
                     self.used_in_vars[func][possible_file].append(context_file)
 
     def load_variables(self, files=None):
-        return self.load_data_by_key(self.variables_folder, files)
+        return self.load_data_by_key(self.variables_archive, files)
 
     def load_used_in_vars(self):
         return self.load_data(self.used_in_vars_file)

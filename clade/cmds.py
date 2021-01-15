@@ -93,7 +93,7 @@ def get_first_cmd(cmds_file):
     return next(iter_cmds(cmds_file))
 
 
-def get_build_dir(cmds_file):
+def get_build_dir(cmds_file) -> str:
     """Get the working directory in which build process occurred."""
     first_cmd = get_first_cmd(cmds_file)
     return first_cmd["cwd"]
@@ -110,7 +110,7 @@ def get_last_cmd(cmds_file):
     return last_cmd
 
 
-def get_last_id(cmds_file, raise_exception=False):
+def get_last_id(cmds_file, raise_exception=False) -> str:
     """Get last used id."""
     try:
         last_cmd = get_last_cmd(cmds_file)
@@ -123,8 +123,7 @@ def get_last_id(cmds_file, raise_exception=False):
 
 def get_all_cmds(cmds_file):
     """Get list of all intercepted build commands."""
-    with open_cmds_file(cmds_file) as cmds_fp:
-        return list(iter_cmds(cmds_fp))
+    return list(iter_cmds(cmds_file))
 
 
 def get_stats(cmds_file):

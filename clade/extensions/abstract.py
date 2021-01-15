@@ -16,35 +16,24 @@
 import abc
 import datetime
 import fnmatch
-import glob
-import hashlib
 import importlib
-import itertools
-import logging
-import platform
 import pkg_resources
+import platform
 import os
-import re
+import pickle
 import shutil
-import subprocess
 import sys
 import tempfile
 import time
 import ujson
 import uuid
+import zipfile
 
 from concurrent.futures import ProcessPoolExecutor
 
-import clade.cmds
-
-
-# Setup extensions logger
-logger = logging.getLogger("Clade")
-handler = logging.StreamHandler(stream=sys.stdout)
-handler.setFormatter(
-    logging.Formatter("%(asctime)s clade %(message)s", "%H:%M:%S")
-)
-logger.addHandler(handler)
+from clade.cmds import get_build_dir
+from clade.extensions.utils import yield_chunk
+from clade.utils import get_clade_version, get_program_version, get_logger
 
 
 class Extension(metaclass=abc.ABCMeta):
@@ -59,22 +48,22 @@ class Extension(metaclass=abc.ABCMeta):
         FileNotFoundError: Cant find file with the build commands
     """
 
-    __version__ = "1"
+    __version__ = "2"
 
     def __init__(self, work_dir, conf=None):
         self.name = self.__class__.__name__
         self.clade_work_dir = os.path.abspath(str(work_dir))
         self.work_dir = os.path.join(self.clade_work_dir, self.name)
+        self.temp_dir = ""
+
         self.conf = conf if conf else dict()
-        self.temp_dir = None
+
+        self.logger = None
 
         if not hasattr(self, "requires"):
             self.requires = []
-        self.debug("Extension requirements: {!r}".format(self.requires))
 
         self.extensions = dict()
-
-        logger.setLevel(self.conf.get("log_level", "INFO"))
 
         self.ext_meta = {"version": self.get_ext_version(), "corrupted": False}
         self.global_meta_file = os.path.abspath(
@@ -87,9 +76,6 @@ class Extension(metaclass=abc.ABCMeta):
             except FileNotFoundError:
                 pass
             self.conf["force_meta_deleted"] = True
-
-        self.debug("Extension version: {}".format(self.ext_meta["version"]))
-        self.debug("Working directory: {}".format(self.work_dir))
 
     def is_parsed(self):
         """Returns True if build commands are already parsed."""
@@ -126,9 +112,15 @@ class Extension(metaclass=abc.ABCMeta):
                     self.debug("Removing temp directory: {!r}".format(self.temp_dir))
                     shutil.rmtree(self.temp_dir)
 
-                self.ext_meta["time"] = str(
-                    datetime.timedelta(seconds=(time.time() - time_start))
-                )
+                delta = datetime.timedelta(seconds=(time.time() - time_start))
+                delta_str = str(delta).split(".")[0]
+
+                self.ext_meta["time"] = delta_str
+
+                # 5 is an arbitrary threshold to supress printing unnessesary
+                # log messages for extensions that finished quickly
+                if delta.seconds > 5:
+                    self.log("Finished in {}".format(delta_str))
 
                 if os.path.exists(os.path.dirname(self.work_dir)):
                     self.dump_global_meta(args[0])
@@ -140,11 +132,8 @@ class Extension(metaclass=abc.ABCMeta):
         """Parse intercepted commands."""
         pass
 
-    def get_build_dir(self, cmds_file):
-        return clade.cmds.get_build_dir(cmds_file)
-
-    def load_data(self, file_name, raise_exception=True):
-        """Load json file by name."""
+    def load_data(self, file_name, raise_exception=True, format="json"):
+        """Load file by name."""
 
         if not os.path.isabs(file_name):
             file_name = os.path.join(self.work_dir, file_name)
@@ -160,20 +149,47 @@ class Extension(metaclass=abc.ABCMeta):
 
             return dict()
 
-        self.debug("Loading {}".format(file_name))
+        self.debug("Loading {!r}".format(file_name))
+
+        if format == "json":
+            return self.__load_data_json(file_name)
+        elif format == "pickle":
+            return self.__load_data_pickle(file_name)
+        else:
+            self.error("Unreckognised data format: {!r}".format(format))
+            raise ValueError
+
+    def __load_data_json(self, file_name, raise_exception=True):
         with open(file_name, "r") as fh:
             return ujson.load(fh)
 
-    def dump_data(self, data, file_name, indent=4):
-        """Dump data to a json file in the object working directory."""
+    def __load_data_pickle(self, file_name, raise_exception=True):
+        with open(file_name, "rb") as fh:
+            return pickle.load(fh)
+
+    def dump_data(self, data, file_name, indent=4, format="json"):
+        """Dump data to a file in the object working directory."""
 
         if not os.path.isabs(file_name):
             file_name = os.path.join(self.work_dir, file_name)
 
         os.makedirs(os.path.dirname(file_name), exist_ok=True)
 
-        self.debug("Dumping {}".format(file_name))
+        self.debug("Dumping {!r}".format(file_name))
 
+        if format == "json":
+            self.__dump_data_json(data, file_name, indent=indent)
+        elif format == "pickle":
+            self.__dump_data_pickle(data, file_name)
+        else:
+            self.error("Unreckognised data format: {!r}".format(format))
+            raise ValueError
+
+    def __dump_data_pickle(self, data, file_name):
+        with open(file_name, "wb") as fh:
+            pickle.dump(data, fh, protocol=4)
+
+    def __dump_data_json(self, data, file_name, indent=0):
         try:
             with open(file_name, "w") as fh:
                 ujson.dump(
@@ -187,79 +203,101 @@ class Extension(metaclass=abc.ABCMeta):
         except RecursionError:
             # This is a workaround, but it is rarely required
             self.warning(
-                "Do not print data to file due to recursion limit {}".format(
+                "Do not print data to file due to recursion limit {!r}".format(
                     file_name
                 )
             )
 
-    def load_data_by_key(self, folder, files=None):
-        """Load data stored in multiple json files using dump_data_by_key()."""
-        if files and not isinstance(files, list) and not isinstance(files, set):
-            raise TypeError(
-                "Provide a list or set of files to retrieve data but not {!r}".format(
-                    type(files).__name__
-                )
-            )
-
+    def load_data_by_key(self, archive, keys=None):
+        """Load data stored in multiple json files inside zip archive using dump_data_by_key()."""
         data = dict()
 
-        if files:
-            self.debug("Loading data from {!r}: {!r}".format(folder, files))
-            for key in files:
-                file = os.path.join(
-                    folder,
-                    hashlib.md5(key.encode("utf-8")).hexdigest() + ".json",
-                )
-                data.update(self.load_data(file, raise_exception=False))
-        else:
-            self.debug("Loading all data from {!r}".format(folder))
-            for file in self.__get_all_files_in_folder(folder):
-                data.update(self.load_data(file, raise_exception=False))
+        for key, value in self.__yield_data_by_key(archive=archive, keys=keys):
+            data.update(value)
 
         return data
 
-    def yield_data_by_key(self, folder, files=None):
-        """Yield data stored in multiple json files using dump_data_by_key()."""
-        if files and not isinstance(files, list) and not isinstance(files, set):
+    def yield_data_by_key(self, archive, keys=None):
+        """Yield data stored in multiple json files inside zip archive using dump_data_by_key()."""
+        yield from self.__yield_data_by_key(archive, keys=keys)
+
+    def __yield_data_by_key(self, archive, keys=None):
+        """Yield data stored in multiple json files inside zip archive using dump_data_by_key()."""
+        if keys and not isinstance(keys, list) and not isinstance(keys, set):
             raise TypeError(
                 "Provide a list or set of files to retrieve data but not {!r}".format(
-                    type(files).__name__
+                    type(keys).__name__
                 )
             )
 
-        if files:
-            self.debug("Yielding data from {!r}: {!r}".format(folder, files))
-            for key in files:
-                file = os.path.join(
-                    folder,
-                    hashlib.md5(key.encode("utf-8")).hexdigest() + ".json",
-                )
+        if not os.path.isabs(archive):
+            archive = os.path.join(self.work_dir, archive)
 
-                data = self.load_data(file, raise_exception=False)
-                for key in data:
-                    yield key, data
-        else:
-            self.debug("Yielding all data from {!r}".format(folder))
-            for file in self.__get_all_files_in_folder(folder):
-                data = self.load_data(file, raise_exception=False)
-                for key in data:
-                    yield key, data
+        if not os.path.exists(archive):
+            self.debug("{!r} file is not found".format(archive))
+            return
 
-    def __get_all_files_in_folder(self, folder):
-        return glob.glob(os.path.join(self.work_dir, folder, "*"))
+        with zipfile.ZipFile(archive, "r") as zip_fh:
+            if keys:
+                self.debug("Yielding data from {!r}: {!r}".format(archive, keys))
+                for key in keys:
+                    data = self.__load_data_from_zip(key, zip_fh, raise_exception=False)
+                    yield key, {key: data}
+            else:
+                self.debug("Yielding all data from {!r}".format(archive))
+                for file in self.__get_all_files_in_archive(zip_fh):
+                    data = self.__load_data_from_zip(file, zip_fh, raise_exception=False)
+                    yield file, {file: data}
 
-    def dump_data_by_key(self, data, folder):
-        """Dump data to multiple json files in the object working directory."""
-        self.debug("Dumping data to {!r}".format(folder))
+    def __get_all_files_in_archive(self, zip_fh):
+        return zip_fh.namelist()
 
-        for key in data:
-            to_dump = {key: data[key]}
+    def dump_data_by_key(self, data, archive):
+        """Dump data to multiple json files inside zip archive in the object working directory."""
+        if not os.path.isabs(archive):
+            archive = os.path.join(self.work_dir, archive)
 
-            file_name = os.path.join(
-                folder, hashlib.md5(key.encode("utf-8")).hexdigest() + ".json"
-            )
+        os.makedirs(os.path.dirname(archive), exist_ok=True)
 
-            self.dump_data(to_dump, file_name, indent=0)
+        self.debug("Dumping data to {!r}".format(archive))
+
+        with zipfile.ZipFile(archive, "a", compression=zipfile.ZIP_STORED) as zip_fh:
+            for key in data:
+                self.__dump_data_to_zip_fh(data[key], key, zip_fh)
+
+    def load_data_from_zip(self, file_name, archive, raise_exception=True):
+        if not os.path.isabs(archive):
+            archive = os.path.join(self.work_dir, archive)
+
+        self.debug("Loading {!r} from {!r}".format(file_name, archive))
+
+        with zipfile.ZipFile(archive, "r") as zip_fh:
+            return self.__load_data_from_zip(file_name, zip_fh, raise_exception=raise_exception)
+
+    def __load_data_from_zip(self, file_name, zip_fh, raise_exception=True):
+        try:
+            with zip_fh.open(file_name, "r") as fh:
+                return ujson.loads(fh.read().decode("utf-8"))
+        except (FileNotFoundError, KeyError) as e:
+            if raise_exception:
+                self.error(e)
+                raise RuntimeError
+
+            return dict()
+
+    def dump_data_to_zip(self, data, file_name, archive):
+        if not os.path.isabs(archive):
+            archive = os.path.join(self.work_dir, archive)
+
+        self.debug("Dumping {!r} to {!r}".format(file_name, archive))
+
+        os.makedirs(os.path.dirname(archive), exist_ok=True)
+
+        with zipfile.ZipFile(archive, "a", compression=zipfile.ZIP_STORED) as zip_fh:
+            self.__dump_data_to_zip_fh(data, file_name, zip_fh)
+
+    def __dump_data_to_zip_fh(self, data, file_name, zip_fh):
+        zip_fh.writestr(file_name, ujson.dumps(data).encode("utf-8"))
 
     def get_ext_version(self):
         version = self.__version__
@@ -282,6 +320,9 @@ class Extension(metaclass=abc.ABCMeta):
 
     def check_corrupted(self):
         """Check that working directory is not corrupted."""
+        if not os.path.exists(self.work_dir):
+            return
+
         stored_meta = self.load_global_meta().get(self.name)
 
         if stored_meta and stored_meta["corrupted"]:
@@ -322,7 +363,7 @@ class Extension(metaclass=abc.ABCMeta):
         return opts
 
     def load_global_meta(self):
-        return self.load_data(self.global_meta_file, raise_exception=False)
+        return self.load_data(self.global_meta_file, raise_exception=False, format="json")
 
     def dump_global_meta(self, cmds_file):
         stored_meta = self.load_global_meta()
@@ -337,7 +378,7 @@ class Extension(metaclass=abc.ABCMeta):
                 stored_meta["conf"][key] = self.conf[key]
 
         if "build_dir" not in stored_meta:
-            stored_meta["build_dir"] = self.get_build_dir(cmds_file)
+            stored_meta["build_dir"] = get_build_dir(cmds_file)
         elif self.name == "Path":
             stored_meta["build_dir"] = self.conf["build_dir"]
 
@@ -345,7 +386,7 @@ class Extension(metaclass=abc.ABCMeta):
             stored_meta["versions"] = dict()
 
         if "clade" not in stored_meta["versions"]:
-            stored_meta["versions"]["clade"] = Extension.get_clade_version()
+            stored_meta["versions"]["clade"] = get_clade_version()
 
         if "python" not in stored_meta["versions"]:
             stored_meta["versions"]["python"] = platform.python_version()
@@ -354,10 +395,10 @@ class Extension(metaclass=abc.ABCMeta):
             stored_meta["versions"]["pip"] = pkg_resources.get_distribution("pip").version
 
         if "gcc" not in stored_meta["versions"]:
-            stored_meta["versions"]["gcc"] = self.get_program_version("gcc")
+            stored_meta["versions"]["gcc"] = get_program_version("gcc")
 
         if "cif" not in stored_meta["versions"]:
-            stored_meta["versions"]["cif"] = self.get_program_version("cif")
+            stored_meta["versions"]["cif"] = get_program_version("cif")
 
         if "uuid" not in stored_meta:
             stored_meta["uuid"] = str(uuid.uuid4())
@@ -375,50 +416,21 @@ class Extension(metaclass=abc.ABCMeta):
         if "date" not in stored_meta:
             stored_meta["date"] = datetime.datetime.today().strftime('%Y-%m-%d %H:%M')
 
-        self.dump_data(stored_meta, self.global_meta_file)
+        self.dump_data(stored_meta, self.global_meta_file, indent=4, format="json")
 
     def add_data_to_global_meta(self, key, data):
         stored_meta = self.load_global_meta()
         stored_meta[key] = data
-        self.dump_data(stored_meta, self.global_meta_file)
+        self.dump_data(stored_meta, self.global_meta_file, indent=4, format="json")
 
-    @staticmethod
-    def get_clade_version():
-        version = pkg_resources.get_distribution("clade").version
-        location = pkg_resources.get_distribution("clade").location
+    def __get_empty_obj(self, obj):
+        empty_self = obj.__class__(self.clade_work_dir, self.conf)
+        empty_self.temp_dir = self.temp_dir
 
-        if not os.path.exists(os.path.join(location, ".git")):
-            return version
+        for ext_name in obj.extensions:
+            empty_self.extensions[ext_name] = self.__get_empty_obj(obj.extensions[ext_name])
 
-        try:
-            desc = ["git", "describe", "--tags", "--dirty"]
-            version = subprocess.check_output(
-                desc, cwd=location, stderr=subprocess.DEVNULL, universal_newlines=True
-            ).strip()
-        finally:
-            return version
-
-    def get_program_version(self, program, version_arg="--version"):
-        version = "unknown"
-        try:
-            version = subprocess.check_output(
-                [program, version_arg], stderr=subprocess.DEVNULL, universal_newlines=True
-            ).strip()
-        finally:
-            if version.startswith("gcc"):
-                version = re.sub(r'\nCopyright[\s\S]*', '', version)
-            return version
-
-    def __get_cmd_chunk(self, cmds, chunk_size=1000):
-        cmds_it = iter(cmds)
-
-        while True:
-            piece = list(itertools.islice(cmds_it, chunk_size))
-
-            if piece:
-                yield piece
-            else:
-                return
+        return empty_self
 
     def parse_cmds_in_parallel(self, cmds, unwrap, total_cmds=None):
         if os.environ.get("CLADE_DEBUG"):
@@ -429,10 +441,7 @@ class Extension(metaclass=abc.ABCMeta):
                 unwrap(self, cmd)
             return
 
-        if self.conf.get("cpu_count"):
-            max_workers = self.conf.get("cpu_count")
-        else:
-            max_workers = os.cpu_count()
+        max_workers = self.conf.get("cpu_count", os.cpu_count())
 
         # cmds is eather list, tuple or generator
         if type(cmds) is list or type(cmds) is tuple:
@@ -442,17 +451,22 @@ class Extension(metaclass=abc.ABCMeta):
         if total_cmds:
             self.log("Parsing {} commands".format(total_cmds))
 
+        # Passing "self" object to p.submit() can be very, very time consuming
+        # if self is rather big. So, here we create an empty object
+        # of the current type, and use it instead
+        empty_self = self.__get_empty_obj(self)
+
         with ProcessPoolExecutor(max_workers=max_workers) as p:
             chunk_size = 2000
             futures = []
             finished_cmds = 0
 
             # Submit commands to executor in chunks
-            for cmd_chunk in self.__get_cmd_chunk(cmds, chunk_size=chunk_size):
+            for cmd_chunk in yield_chunk(cmds, chunk_size=chunk_size):
                 chunk_futures = []
 
                 for cmd in cmd_chunk:
-                    f = p.submit(unwrap, self, cmd)
+                    f = p.submit(unwrap, empty_self, cmd)
                     chunk_futures.append(f)
                     futures.append(f)
 
@@ -482,11 +496,7 @@ class Extension(metaclass=abc.ABCMeta):
                         try:
                             f.result()
                         except Exception as e:
-                            raise RuntimeError(
-                                "Something happened in the child process: {}".format(
-                                    e
-                                )
-                            )
+                            raise e
 
                     # Submit next chunk if the current one is almost processed
                     finished_chunk_cmds = len(
@@ -510,18 +520,18 @@ class Extension(metaclass=abc.ABCMeta):
         return Extension.__get_all_subclasses(Extension)
 
     @staticmethod
-    def __get_all_subclasses(cls):
+    def __get_all_subclasses(parent_cls):
         """Get all subclasses of a given class."""
 
-        for subclass in cls.__subclasses__():
+        for subclass in parent_cls.__subclasses__():
             yield subclass
             yield from Extension.__get_all_subclasses(subclass)
 
     @staticmethod
-    def __get_all_parents(cls):
-        """Get all subclasses of a given class."""
+    def __get_all_parents(child_cls):
+        """Get all parents of a given class."""
 
-        for parent in cls.__bases__:
+        for parent in child_cls.__bases__:
             yield parent
             yield from Extension.__get_all_parents(parent)
 
@@ -547,14 +557,15 @@ class Extension(metaclass=abc.ABCMeta):
             if ext_name == ext_class.__name__:
                 return ext_class
         else:
-            raise NotImplementedError("Can't find '{}' class".format(ext_name))
+            raise NotImplementedError("Can't find {!r} class".format(ext_name))
 
     def log(self, message):
         """Print debug message.
 
         self.conf["log_level"] must be set to INFO or DEBUG in order to see the message.
         """
-        logger.info("{}: {}".format(self.name, message))
+        self.__get_logger()
+        self.logger.info("{}: {}".format(self.name, message))
 
     def debug(self, message):
         """Print debug message.
@@ -563,18 +574,30 @@ class Extension(metaclass=abc.ABCMeta):
 
         WARNING: debug messages can have a great impact on the performance.
         """
-        logger.debug("{}: {}".format(self.name, message))
+        self.__get_logger()
+        self.logger.debug("{}: [DEBUG] {}".format(self.name, message))
 
     def warning(self, message):
         """Print warning message.
 
         self.conf["log_level"] must be set to WARNING, INFO or DEBUG in order to see the message.
         """
-        logger.warning("{}: {}".format(self.name, message))
+        self.__get_logger()
+        self.logger.warning("{}: [WARNING] {}".format(self.name, message))
 
     def error(self, message):
         """Print error message.
 
         self.conf["log_level"] must be set to ERROR, WARNING, INFO or DEBUG in order to see the message.
         """
-        logger.error("{}: {}".format(self.name, message))
+        self.__get_logger()
+        self.logger.error("{}: [ERROR] {}".format(self.name, message))
+
+    def __get_logger(self):
+        # Initializing logger this way serves two purposes:
+        #   - as a workaround for multiprocessing not supporting passing logger
+        #     objects in Python 3.5 and 3.6
+        #   - and to setup logger in subprocesses
+
+        if not self.logger:
+            self.logger = get_logger("clade", with_name=False, conf=self.conf)

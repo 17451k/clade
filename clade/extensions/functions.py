@@ -15,7 +15,7 @@
 
 from clade.extensions.abstract import Extension
 from clade.extensions.callgraph import Callgraph
-from clade.extensions.utils import nested_dict, traverse
+from clade.types.nested_dict import nested_dict, traverse
 
 
 class Functions(Callgraph):
@@ -29,11 +29,10 @@ class Functions(Callgraph):
         self.src_graph = dict()
 
         self.funcs = nested_dict()
-        self.funcs_file = "functions.json"
+        self.funcs_archive = "functions.zip"
 
         self.funcs_by_file = nested_dict()
-        self.funcs_by_file_file = "functions_by_file.json"
-        self.funcs_by_file_folder = "functions_by_file"
+        self.funcs_by_file_archive = "functions_by_file.zip"
 
     @Extension.prepare
     def parse(self, cmds_file):
@@ -46,29 +45,26 @@ class Functions(Callgraph):
         self.__group_functions_by_file()
         self._clean_error_log()
 
-        self.dump_data(self.funcs, self.funcs_file)
-        self.dump_data(self.funcs_by_file, self.funcs_by_file_file)
-        self.dump_data_by_key(self.funcs_by_file, self.funcs_by_file_folder)
+        self.dump_data_by_key(self.funcs, self.funcs_archive)
+        self.dump_data_by_key(self.funcs_by_file, self.funcs_by_file_archive)
 
         self.src_graph.clear()
         self.funcs.clear()
         self.funcs_by_file.clear()
 
-        self.log("Parsing finished")
-
-    def load_functions(self):
+    def load_functions(self, funcs=None):
         """Load information about functions."""
-        return self.load_data(self.funcs_file)
+        return self.load_data_by_key(self.funcs_archive, funcs)
 
     def load_functions_by_file(self, files=None):
         """Load information about functions grouped by files."""
-        if files:
-            return self.load_data_by_key(self.funcs_by_file_folder, files)
-        else:
-            return self.load_data(self.funcs_by_file_file)
+        return self.load_data_by_key(self.funcs_by_file_archive, files)
 
     def __process_definitions(self):
         for src_file, func, def_line, func_type, signature in self.extensions["Info"].iter_definitions():
+            self.debug("Processing definition: " + " ".join(
+                [src_file, func, def_line, func_type, signature])
+            )
             if func in self.funcs and src_file in self.funcs[func]:
                 self._error(
                     "Function is defined more than once: {!r} {!r}".format(
@@ -94,6 +90,10 @@ class Functions(Callgraph):
             }
 
         for decl_file, decl_name, decl_line, decl_type, decl_signature in self.extensions["Info"].iter_declarations():
+            self.debug("Processing declaration: " + " ".join(
+                [decl_file, decl_name, decl_line, decl_type, decl_signature])
+            )
+
             decl_val = {
                 "signature": decl_signature,
                 "line": decl_line,
@@ -145,6 +145,10 @@ class Functions(Callgraph):
 
     def __process_exported(self):
         for src_file, func in self.extensions["Info"].iter_exported():
+            self.debug("Processing exported functions: " + " ".join(
+                [src_file, func])
+            )
+
             # Variables can also be exported
             if func not in self.funcs:
                 continue

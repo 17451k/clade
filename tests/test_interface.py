@@ -86,13 +86,13 @@ def test_cmd_graph(clade_api: Clade):
         assert len(root_cmds) >= len(c.cmd_graph[cmd_id]["using"])
         assert len(c.get_leaf_cmds(cmd_id)) >= len(c.cmd_graph[cmd_id]["used_by"])
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(KeyError):
         assert c.get_cmd_type("-1")
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(KeyError):
         assert c.get_root_cmds("-1")
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(KeyError):
         assert c.get_leaf_cmds("-1")
 
 

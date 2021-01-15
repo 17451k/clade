@@ -83,7 +83,7 @@ class PreprocessServer:
     def __init__(self, conf, output):
         self.conf = conf
         self.output = output
-        self.logger = get_logger("Server", self.conf)
+        self.logger = get_logger("Server", conf=self.conf)
         self.server = self.__prepare()
         self.env = self.__setup_env()
 

@@ -21,7 +21,7 @@ from clade.libinterceptor import Libinterceptor
 from clade.wrapper import Wrapper
 
 
-def intercept(command, cwd=os.getcwd(), output="cmds.txt", append=False, conf=None, use_wrappers=True):
+def intercept(command, cwd=os.getcwd(), output="cmds.txt", append=False, conf=None, use_wrappers=True, intercept_open=False):
     if sys.platform in ["linux", "darwin"] and use_wrappers:
         cl = Wrapper
     elif sys.platform in ["linux", "darwin"] and not use_wrappers:
@@ -31,5 +31,5 @@ def intercept(command, cwd=os.getcwd(), output="cmds.txt", append=False, conf=No
     else:
         sys.exit("Your platform {!r} is not supported yet.".format(sys.platform))
 
-    i = cl(command=command, cwd=cwd, output=output, append=append, conf=conf)
+    i = cl(command=command, cwd=cwd, output=output, append=append, intercept_open=intercept_open, conf=conf)
     return i.execute()

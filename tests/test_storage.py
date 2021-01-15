@@ -16,6 +16,7 @@
 import os
 import pytest
 import shutil
+import stat
 import unittest.mock
 
 from clade import Clade
@@ -26,10 +27,15 @@ test_file = os.path.abspath("tests/test_project/main.c")
 def test_storage(tmpdir):
     c = Clade(tmpdir)
 
-    c.add_file_to_storage(__file__)
+    returned_storage_path = c.add_file_to_storage(__file__)
     c.add_file_to_storage("do_not_exist.c")
-    assert os.path.exists(os.path.join(c.storage_dir, __file__))
-    assert c.get_storage_path(__file__)
+
+    storage_path = c.get_storage_path(__file__)
+
+    assert storage_path
+    assert os.path.exists(storage_path)
+    assert storage_path.startswith(c.storage_dir)
+    assert returned_storage_path == storage_path
 
     # Test possible race condition
     with unittest.mock.patch("shutil.copyfile") as copyfile_mock:
@@ -45,6 +51,24 @@ def test_storage_with_conversion(tmpdir):
         c.add_file_to_storage(test_file)
 
 
+def test_files_to_add(tmpdir, cmds_file):
+    c = Clade(tmpdir, cmds_file, conf={"Storage.files_to_add": [__file__]})
+    c.parse("Storage")
+
+    storage_path = c.get_storage_path(__file__)
+    assert storage_path
+    assert os.path.exists(storage_path)
+
+
+def test_folders_to_add(tmpdir, cmds_file):
+    c = Clade(tmpdir, cmds_file, conf={"Storage.files_to_add": [os.path.dirname(__file__)]})
+    c.parse("Storage")
+
+    storage_path = c.get_storage_path(__file__)
+    assert storage_path
+    assert os.path.exists(storage_path)
+
+
 @pytest.mark.parametrize("encoding", ["cp1251", "utf8"])
 def test_storage_encoding(tmpdir, encoding):
     c = Clade(tmpdir, conf={"Storage.convert_to_utf8": True})
@@ -56,3 +80,10 @@ def test_storage_encoding(tmpdir, encoding):
         fh.write(bstr)
 
     c.add_file_to_storage(test_file, encoding=encoding)
+
+
+@pytest.mark.parametrize("convert", [False, True])
+def test_storage_permissions(tmpdir, convert):
+    c = Clade(tmpdir, conf={"Storage.convert_to_utf8": convert})
+    storage_path = c.add_file_to_storage(__file__)
+    assert os.stat(storage_path)[stat.ST_MODE] == os.stat(__file__)[stat.ST_MODE]
