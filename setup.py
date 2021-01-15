@@ -203,13 +203,14 @@ except ImportError:
 
 setuptools.setup(
     name="clade",
-    version="3.3",
+    version="3.3.1",
     author="Ilya Shchepetkov",
     author_email="shchepetkov@ispras.ru",
     url="https://github.com/17451k/clade",
     license="LICENSE.txt",
     description="Clade is a tool for extracting information about software build process and source code",
     long_description=open("README.md", encoding="utf8").read(),
+    long_description_content_type="text/markdown",
     python_requires=">=3.5",
     packages=["clade"],
     package_data={"clade": package_files("clade")},
