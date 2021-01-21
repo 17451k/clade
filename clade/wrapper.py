@@ -28,7 +28,7 @@ class Wrapper(Intercept):
 
         self.wrappers_dir = tempfile.mkdtemp()
 
-        super().__init__(command, cwd, output, append, conf)
+        super().__init__(command, cwd=cwd, output=output, append=append, intercept_open=intercept_open, conf=conf)
 
         self.wrapper = self.__find_wrapper()
         self.wrapper_postfix = ".clade"

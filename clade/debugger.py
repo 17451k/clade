@@ -27,7 +27,7 @@ class Debugger(Intercept):
         if intercept_open:
             raise RuntimeError("debugger can't be used to intercept open()")
 
-        super().__init__(command, cwd, output, append, conf)
+        super().__init__(command, cwd=cwd, output=output, append=append, intercept_open=intercept_open, conf=conf)
 
         # self.conf["Intercept.preprocess"] = self.conf.get("Intercept.preprocess", True)
         self.debugger = self.__find_debugger()
