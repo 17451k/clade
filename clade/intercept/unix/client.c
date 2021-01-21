@@ -24,6 +24,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include "env.h"
+
 static void send_data_unix(const char *msg, char *address) {
     int sockfd;
 
@@ -84,9 +86,9 @@ static void send_data_inet(const char *msg, char *host, char *port) {
 }
 
 void send_data(const char *msg) {
-    char* host = getenv("CLADE_INET_HOST");
-    char* port = getenv("CLADE_INET_PORT");
-    char* address = getenv("CLADE_UNIX_ADDRESS");
+    char* host = getenv(CLADE_INET_HOST_ENV);
+    char* port = getenv(CLADE_INET_PORT_ENV);
+    char* address = getenv(CLADE_UNIX_ADDRESS_ENV);
 
     // Use UNIX sockets if address is not NULL
     if (address) {

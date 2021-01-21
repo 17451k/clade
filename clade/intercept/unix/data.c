@@ -151,14 +151,14 @@ static void store_data(const char *data, const char *data_file) {
 }
 
 void intercept_exec_call(const char *path, char const *const argv[]) {
-    char *data_file = getenv_or_fail("CLADE_INTERCEPT");
+    char *data_file = getenv_or_fail(CLADE_INTERCEPT_EXEC_ENV);
 
     clade_lock();
 
     // Data with intercepted command which will be stored
     char *data = prepare_exec_data(path, argv);
 
-    if (getenv("CLADE_PREPROCESS"))
+    if (getenv(CLADE_PREPROCESS_ENV))
         send_data(data);
     else
         store_data(data, data_file);
@@ -169,7 +169,7 @@ void intercept_exec_call(const char *path, char const *const argv[]) {
 }
 
 void intercept_open_call(const char *path, int flags) {
-    char *data_file = getenv_or_fail("CLADE_INTERCEPT_OPEN");
+    char *data_file = getenv_or_fail(CLADE_INTERCEPT_OPEN_ENV);
 
     clade_lock();
 

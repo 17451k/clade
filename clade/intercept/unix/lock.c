@@ -7,7 +7,7 @@
 static FILE *f;
 
 void clade_lock(void) {
-    char *id_file = getenv_or_fail("CLADE_ID_FILE");
+    char *id_file = getenv_or_fail(CLADE_ID_FILE_ENV);
 
     f = fopen(id_file, "r");
     if (!f) {

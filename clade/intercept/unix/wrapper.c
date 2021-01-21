@@ -21,6 +21,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "env.h"
 #include "data.h"
 #include "which.h"
 
@@ -37,7 +38,7 @@ int main(int argc, char **argv, char **envp) {
      */
     if(access(original_exe, F_OK) != -1) {
         // Intercept call only if clade-intercept is working
-        if (getenv("CLADE_INTERCEPT")) {
+        if (getenv(CLADE_INTERCEPT_EXEC_ENV)) {
             char *which = realpath(original_exe, NULL);
 
             if (!which) {
@@ -64,7 +65,9 @@ int main(int argc, char **argv, char **envp) {
             exit(EXIT_FAILURE);
         }
 
-        intercept_exec_call(which, (char const *const *)argv);
+        if (getenv(CLADE_INTERCEPT_EXEC_ENV)) {
+            intercept_exec_call(which, (char const *const *)argv);
+        }
 
         // First argument must be a valid path, not just a filename
         argv[0] = which;

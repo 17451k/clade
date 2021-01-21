@@ -41,7 +41,7 @@ pid_t vfork() {
 int execve(const char *path, char *const argv[], char *const envp[]) {
     int (*execve_real)(const char *, char *const *, char *const *) = dlsym(RTLD_NEXT, "execve");
 
-    if (! intercepted) {
+    if (!intercepted && getenv(CLADE_INTERCEPT_EXEC_ENV)) {
         // Extract some data from envp
         update_environ((char **)envp);
         // Store information about intercepted call
@@ -60,7 +60,7 @@ int execve(const char *path, char *const argv[], char *const envp[]) {
 int execvp(const char *filename, char *const argv[]) {
     int (*execvp_real)(const char *, char *const *) = dlsym(RTLD_NEXT, "execvp");
 
-    if (! intercepted) {
+    if (!intercepted && getenv(CLADE_INTERCEPT_EXEC_ENV)) {
         intercept_exec_call(filename, (char const *const *)argv);
         // DO NOT change value of intercepted to TRUE here
     }
@@ -73,7 +73,9 @@ int execv(const char *filename, char *const argv[]) {
 
     // DO NOT check if (! intercepted) here: it will result in command loss
     // Also DO NOT change value of intercepted to TRUE for the same reason
-    intercept_exec_call(filename, (char const *const *)argv);
+    if (getenv(CLADE_INTERCEPT_EXEC_ENV)) {
+        intercept_exec_call(filename, (char const *const *)argv);
+    }
     // BUT we need to change it for macOS to avoid duplicating commands
     #ifdef __APPLE__
     intercepted = true;
@@ -89,7 +91,7 @@ int posix_spawn(pid_t *restrict pid, const char *restrict path, const posix_spaw
                 const posix_spawnattr_t *restrict, char *const *restrict, char *const *restrict) = dlsym(RTLD_NEXT, "posix_spawn");
 
     // DO NOT check if (! intercepted) here: it will result in command loss
-    if ((access(path, F_OK ) != -1) && argv) {
+    if ((access(path, F_OK ) != -1) && getenv(CLADE_INTERCEPT_EXEC_ENV) && argv) {
         update_environ((char **)envp);
         intercept_exec_call(path, (char const *const *)argv);
         intercepted = true;
@@ -104,8 +106,9 @@ int posix_spawn(pid_t *restrict pid, const char *restrict path, const posix_spaw
 int open(const char *pathname, int flags, ...) {
     int (*open_real)(const char *, int, ...) = dlsym(RTLD_NEXT, "open");
 
-    if (getenv("CLADE_INTERCEPT_OPEN"))
+    if (getenv(CLADE_INTERCEPT_OPEN_ENV)) {
         intercept_open_call(pathname, flags);
+    }
 
     // If O_CREAT is used to create a file, the file access mode must be given.
     if (flags & O_CREAT) {
@@ -123,8 +126,9 @@ int open(const char *pathname, int flags, ...) {
 int open64(const char *pathname, int flags, ...) {
     int (*open_real)(const char *, int, ...) = dlsym(RTLD_NEXT, "open64");
 
-    if (getenv("CLADE_INTERCEPT_OPEN"))
+    if (getenv(CLADE_INTERCEPT_OPEN_ENV)) {
         intercept_open_call(pathname, flags);
+    }
 
     // If O_CREAT is used to create a file, the file access mode must be given.
     if (flags & O_CREAT) {
