@@ -58,6 +58,13 @@ def parse_args(args, work_dir):
         help="path to the file with intercepted commands",
     )
     parser.add_argument(
+        "-f",
+        "--filter",
+        help="filter irrelevant options",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
         dest="command", nargs=argparse.REMAINDER, help="build command to run"
     )
 
@@ -86,6 +93,7 @@ def prepare_conf(args):
     conf["log_level"] = "ERROR"
     conf["preset"] = args.preset
     conf["CDB.output"] = os.path.abspath(args.output)
+    conf["CDB.filter_opts"] = args.filter
 
     return conf
 

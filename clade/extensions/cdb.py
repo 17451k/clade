@@ -16,10 +16,11 @@
 import os
 
 from clade.extensions.abstract import Extension
+from clade.extensions.opts import filter_opts
 
 
 class CDB(Extension):
-    requires = ["SrcGraph"]
+    requires = ["SrcGraph", "Storage"]
 
     __version__ = "1"
 
@@ -43,7 +44,14 @@ class CDB(Extension):
 
         for cmd in cmds:
             for i, cmd_in in enumerate(cmd["in"]):
-                arguments = [cmd["command"][0]] + cmd["opts"] + [cmd_in]
+                if self.conf.get("CDB.filter_opts", False):
+                    opts = filter_opts(
+                        cmd["opts"], self.extensions["Storage"].get_storage_path
+                    )
+                else:
+                    opts = cmd["opts"]
+
+                arguments = [cmd["command"][0]] + opts + [cmd_in]
                 if cmd["out"]:
                     if "-c" in cmd["opts"]:
                         arguments.extend(["-o", cmd["out"][i]])

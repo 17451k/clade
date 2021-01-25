@@ -14,15 +14,17 @@
 # limitations under the License.
 
 import os
+import pytest
 
 from clade import Clade
 from clade.scripts.compilation_database import main
 
 
-def test_cdb(tmpdir, cmds_file):
+@pytest.mark.parametrize("filter_opts", [True, False])
+def test_cdb(tmpdir, cmds_file, filter_opts):
     cdb_json = os.path.join(str(tmpdir), "cdb.json")
 
-    c = Clade(tmpdir, cmds_file, conf={"CDB.output": cdb_json})
+    c = Clade(tmpdir, cmds_file, conf={"CDB.output": cdb_json, "CDB.filter_opts": filter_opts})
     e = c.parse("CDB")
 
     cdb = e.load_cdb()
@@ -38,6 +40,9 @@ def test_cdb(tmpdir, cmds_file):
 
         for arg in cmd["arguments"]:
             assert isinstance(arg, str)
+
+        if filter_opts:
+            assert "-fsyntax-only" not in cmd["arguments"]
 
 
 def test_cdb_main(tmpdir, cmds_file):

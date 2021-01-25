@@ -43,6 +43,7 @@
         "Info.aspectator": null,
         "PidGraph.as_picture": false,
         "PidGraph.filter_cmds_by_pid": true,
+        "CDB.filter_opts": false,
         "AR.which_list": [
             "(/|-)ar$"
         ],
