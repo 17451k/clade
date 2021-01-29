@@ -52,16 +52,16 @@ class CDB(Extension):
                 arguments = [cmd["command"][0]] + opts + [cmd_in]
                 if cmd["out"]:
                     if "-c" in cmd["opts"]:
-                        arguments.extend(["-o", cmd["out"][i]])
+                        cmd_out = cmd["out"][i]
                     else:
-                        arguments.extend(["-o", cmd["out"][0]])
+                        cmd_out = cmd["out"][0]
+
+                    arguments.extend(["-o", cmd_out])
+                else:
+                    cmd_out = None
 
                 self.cdb.append(
-                    {
-                        "directory": cmd["cwd"],
-                        "arguments": arguments,
-                        "file": cmd_in,
-                    }
+                    self.__get_cdb_dict(cmd["cwd"], arguments, cmd_in, cmd_out)
                 )
 
         self.dump_data(self.cdb, self.cdb_file)
@@ -69,3 +69,15 @@ class CDB(Extension):
     def load_cdb(self):
         """Load compilation database."""
         return self.load_data(self.cdb_file)
+
+    def __get_cdb_dict(self, cwd, arguments, file, output=None):
+        cdb_dict = {
+            "directory": cwd,
+            "arguments": arguments,
+            "file": file,
+        }
+
+        if output:
+            cdb_dict["output"] = output
+
+        return cdb_dict
