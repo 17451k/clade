@@ -23,14 +23,18 @@ class AR(Common):
         super().parse(cmds_file, self.conf.get("AR.which_list", []))
 
     def parse_cmd(self, cmd):
-        parsed_cmd = {
-            "id": cmd["id"],
-            "in": cmd["command"][3:],
-            "out": [cmd["command"][2]],
-            "opts": [cmd["command"][1]],
-            "cwd": cmd["cwd"],
-            "command": cmd["command"],
-        }
+        try:
+            parsed_cmd = {
+                "id": cmd["id"],
+                "in": cmd["command"][3:],
+                "out": [cmd["command"][2]],
+                "opts": [cmd["command"][1]],
+                "cwd": cmd["cwd"],
+                "command": cmd["command"],
+            }
+        except IndexError:
+            self.error("Something is wrong with the following command: {}".format(cmd))
+            return
 
         if self.is_bad(parsed_cmd):
             self.dump_bad_cmd_id(cmd["id"])
