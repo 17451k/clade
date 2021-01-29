@@ -44,6 +44,9 @@ class CDB(Extension):
 
         for cmd in cmds:
             for i, cmd_in in enumerate(cmd["in"]):
+                if not os.path.exists(cmd_in):
+                    continue
+
                 if self.conf.get("CDB.filter_opts", False):
                     opts = filter_opts(cmd["opts"])
                 else:
