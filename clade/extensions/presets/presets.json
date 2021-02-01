@@ -32,8 +32,7 @@
         "CmdGraph.as_picture": false,
         "SrcGraph.requires": [
             "CC",
-            "CL",
-            "CXX"
+            "CL"
         ],
         "Common.filter": [],
         "Common.filter_in": [],
@@ -89,9 +88,6 @@
     },
     "linux_kernel": {
         "extends": "base",
-        "SrcGraph.requires": [
-            "CC"
-        ],
         "CmdGraph.requires": [
             "AR",
             "CC",
