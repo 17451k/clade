@@ -488,7 +488,7 @@ requires_value = {
     "Link": set(),
 }
 
-cif_include_opts = [
+include_opts = [
     "-include",
     "-I",
     "-iquote",
@@ -513,14 +513,23 @@ cif_supported_opts = (
     ["-D", "-U", "-nostdinc", "-fshort-wchar", "-std", "--std", "-c"]
     + ["-mbig-endian", "-mlittle-endian", "-mabi"]  # arm
     + ["{}$".format(opt) for opt in gcc_optimization_opts]
-    + cif_include_opts
+    + include_opts
 )
 
-i_regex = re.compile("(" + "|".join(cif_include_opts) + ")=?(.*)")
-s_regex = re.compile("|".join(cif_supported_opts))
+clang_supported_ipts = (
+    cif_supported_opts + ["--target", "--sysroot", "-target"]
+)
+
+i_regex = re.compile("(" + "|".join(include_opts) + ")=?(.*)")
+cif_s_regex = re.compile("|".join(cif_supported_opts))
+clang_s_regex = re.compile("|".join(clang_supported_ipts))
 
 
-def filter_opts(opts, get_storage_path=None):
+def filter_opts_for_clang(opts, get_storage_path=None):
+    return filter_opts(opts, get_storage_path=get_storage_path, s_regex=clang_s_regex)
+
+
+def filter_opts(opts, get_storage_path=None, s_regex=cif_s_regex):
     if not cif_supported_opts:
         return []
 

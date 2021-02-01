@@ -16,7 +16,7 @@
 import os
 
 from clade.extensions.abstract import Extension
-from clade.extensions.opts import filter_opts
+from clade.extensions.opts import filter_opts_for_clang
 
 
 class CDB(Extension):
@@ -48,7 +48,7 @@ class CDB(Extension):
                     continue
 
                 if self.conf.get("CDB.filter_opts", False):
-                    opts = filter_opts(cmd["opts"])
+                    opts = filter_opts_for_clang(cmd["opts"])
                 else:
                     opts = cmd["opts"]
 
