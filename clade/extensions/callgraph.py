@@ -57,6 +57,10 @@ class Callgraph(Extension):
         self.__process_functions_usages()
         self._clean_error_log()
 
+        if not self.callgraph:
+            self.error("Callgraph is empty")
+            raise RuntimeError
+
         self.dump_data_by_key(self.callgraph, self.callgraph_archive)
         self.dump_data(self.calls_by_ptr, self.calls_by_ptr_file)
         self.dump_data(self.used_in, self.used_in_file)
