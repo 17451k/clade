@@ -1,6 +1,4 @@
-[![Build status](https://travis-ci.org/17451k/clade.svg?branch=master)](https://travis-ci.org/17451k/clade)
 [![GitHub Actions status](https://github.com/17451k/clade/workflows/test/badge.svg)](https://github.com/17451k/clade/actions?query=workflow%3Atest)
-[![Code coverage information](https://coveralls.io/repos/github/17451k/clade/badge.svg?branch=master)](https://coveralls.io/github/17451k/clade?branch=master)
 [![Supported Versions of Python](https://img.shields.io/pypi/pyversions/clade.svg)](https://pypi.org/project/clade)
 [![PyPI package version](https://img.shields.io/pypi/v/clade.svg)](https://pypi.org/project/clade)
 
