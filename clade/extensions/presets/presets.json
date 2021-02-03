@@ -11,6 +11,7 @@
         "CL.pre_encoding": null,
         "LD.searchdirs": [],
         "Compiler.deps_encoding": null,
+        "Compiler.get_deps": true,
         "Compiler.store_deps": true,
         "Compiler.preprocess_cmds": false,
         "Compiler.extra_preprocessor_opts": [],

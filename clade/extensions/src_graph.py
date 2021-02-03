@@ -95,7 +95,12 @@ class SrcGraph(Extension):
             # output of the command with ID=cmd_id
             used_by = self.__find_used_by(cmd_graph, cmd_id)
 
-            for src_file in self.extensions[cmd_type].load_deps_by_id(cmd_id):
+            if self.conf.get("Compiler.get_deps"):
+                src_files = self.extensions[cmd_type].load_deps_by_id(cmd_id)
+            else:
+                src_files = cmd["in"]
+
+            for src_file in src_files:
                 if src_file not in self.src_graph:
                     self.src_graph[src_file] = self.__get_new_value()
                     self.src_info[src_file] = {"loc": self.__count_file_loc(src_file)}

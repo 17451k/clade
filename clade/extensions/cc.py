@@ -63,14 +63,16 @@ class CC(Compiler):
                 if os.path.exists(file):
                     os.remove(file)
 
-        deps = self.__get_deps(cmd_id, cmd["which"], parsed_cmd)
-        self.dump_deps_by_id(cmd_id, deps, parsed_cmd["cwd"])
-        self.dump_cmd_by_id(cmd_id, parsed_cmd)
+        if self.conf.get("Compiler.get_deps"):
+            deps = self.__get_deps(cmd_id, cmd["which"], parsed_cmd)
+            self.dump_deps_by_id(cmd_id, deps, parsed_cmd["cwd"])
 
-        if self.conf.get(
-            "Compiler.store_deps"
-        ) and is_compilation_command:
-            self.store_deps_files(deps, parsed_cmd["cwd"])
+            if self.conf.get(
+                "Compiler.store_deps"
+            ) and is_compilation_command:
+                self.store_deps_files(deps, parsed_cmd["cwd"])
+
+        self.dump_cmd_by_id(cmd_id, parsed_cmd)
 
     def __get_deps(self, cmd_id, which, cmd):
         """Get a list of CC command dependencies."""

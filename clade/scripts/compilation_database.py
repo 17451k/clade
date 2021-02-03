@@ -94,6 +94,8 @@ def prepare_conf(args):
     conf["preset"] = args.preset
     conf["CDB.output"] = os.path.abspath(args.output)
     conf["CDB.filter_opts"] = args.filter
+    conf["SrcGraph.requires"] = ["CC", "CL", "CXX"]
+    conf["Compiler.get_deps"] = False
 
     return conf
 
@@ -102,8 +104,6 @@ def main(args=sys.argv[1:]):
     work_dir = tempfile.mkdtemp()
     args = parse_args(args, work_dir)
     conf = prepare_conf(args)
-
-    conf["SrcGraph.requires"] = ["CC", "CL", "CXX"]
 
     try:
         c = Clade(work_dir, args.cmds, conf, args.preset)

@@ -47,15 +47,16 @@ class CL(Compiler):
             self.dump_bad_cmd_id(cmd["id"])
             return
 
-        deps = set(self.__get_deps(cmd["id"], parsed_cmd) + parsed_cmd["in"])
-        self.dump_deps_by_id(cmd["id"], deps, parsed_cmd["cwd"])
+        if self.conf.get("Compiler.get_deps"):
+            deps = set(self.__get_deps(cmd["id"], parsed_cmd) + parsed_cmd["in"])
+            self.dump_deps_by_id(cmd["id"], deps, parsed_cmd["cwd"])
+
+            if self.conf.get(
+                "Compiler.store_deps"
+            ) and self.is_a_compilation_command(parsed_cmd):
+                self.store_deps_files(deps, parsed_cmd["cwd"])
 
         self.dump_cmd_by_id(cmd["id"], parsed_cmd)
-
-        if self.conf.get(
-            "Compiler.store_deps"
-        ) and self.is_a_compilation_command(parsed_cmd):
-            self.store_deps_files(deps, parsed_cmd["cwd"])
 
     def __parse_opts(self, cmd):
         parsed_cmd = self._get_cmd_dict(cmd)
