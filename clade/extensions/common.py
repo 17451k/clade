@@ -85,7 +85,7 @@ class Common(Extension, metaclass=abc.ABCMeta):
             "out": [],
             "opts": [],
             "cwd": cmd["cwd"],
-            "command": [cmd["which"]] + cmd["command"][1:],
+            "command": [os.path.normpath(cmd["which"])] + cmd["command"][1:],
         }
 
     def parse_cmd(self, cmd, cmd_type):
