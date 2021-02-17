@@ -37,9 +37,24 @@ pid_t vfork() {
     return fork();
 }
 
+extern char **environ;
+char **clade_environ;
+
+void on_load(void) __attribute__((constructor));
+
+void on_load(void) {
+    if (!clade_environ)
+        clade_environ = copy_envp(environ);
+}
+
 // This wrapper will be executed instead of original execve() by using LD_PRELOAD ability.
 int execve(const char *path, char *const argv[], char *const envp[]) {
     int (*execve_real)(const char *, char *const *, char *const *) = dlsym(RTLD_NEXT, "execve");
+
+    // Add Clade environment variables from clade_environ to environ if they were absent
+    if (!getenv(CLADE_INTERCEPT_EXEC_ENV)) {
+        update_environ(clade_environ);
+    }
 
     if (!intercepted && getenv(CLADE_INTERCEPT_EXEC_ENV)) {
         // Extract some data from envp
@@ -60,6 +75,10 @@ int execve(const char *path, char *const argv[], char *const envp[]) {
 int execvp(const char *filename, char *const argv[]) {
     int (*execvp_real)(const char *, char *const *) = dlsym(RTLD_NEXT, "execvp");
 
+    if (!getenv(CLADE_INTERCEPT_EXEC_ENV)) {
+        update_environ(clade_environ);
+    }
+
     if (!intercepted && getenv(CLADE_INTERCEPT_EXEC_ENV)) {
         intercept_exec_call(filename, (char const *const *)argv);
         // DO NOT change value of intercepted to TRUE here
@@ -70,6 +89,10 @@ int execvp(const char *filename, char *const argv[]) {
 
 int execv(const char *filename, char *const argv[]) {
     int (*execv_real)(const char *, char *const *) = dlsym(RTLD_NEXT, "execv");
+
+    if (!getenv(CLADE_INTERCEPT_EXEC_ENV)) {
+        update_environ(clade_environ);
+    }
 
     // DO NOT check if (! intercepted) here: it will result in command loss
     // Also DO NOT change value of intercepted to TRUE for the same reason
@@ -89,6 +112,10 @@ int posix_spawn(pid_t *restrict pid, const char *restrict path, const posix_spaw
 {
     int (*posix_spawn_real)(pid_t *restrict, const char *restrict, const posix_spawn_file_actions_t *,
                 const posix_spawnattr_t *restrict, char *const *restrict, char *const *restrict) = dlsym(RTLD_NEXT, "posix_spawn");
+
+    if (!getenv(CLADE_INTERCEPT_EXEC_ENV)) {
+        update_environ(clade_environ);
+    }
 
     // DO NOT check if (! intercepted) here: it will result in command loss
     if ((access(path, F_OK ) != -1) && getenv(CLADE_INTERCEPT_EXEC_ENV) && argv) {

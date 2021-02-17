@@ -78,3 +78,16 @@ Otherwise such extension should be developed.
 
 Similar problems with the *source graph* and the *call graph* can be fixed
 via the same option, since they use the *command graph* internally.
+
+## BitBake support
+
+BitBake limits environment of the worker processes it creates, which
+doesn't allow Clade to correctly intercept build commands. To overcome it,
+you can use [BB_ENV_EXTRAWHITE](https://www.yoctoproject.org/docs/1.6/bitbake-user-manual/bitbake-user-manual.html#var-BB_ENV_EXTRAWHITE)
+BitBake environment variable, which specifies a set of variables to pass
+to the build processes:
+
+``` shell
+$ export BB_ENV_EXTRAWHITE="CLADE_INTERCEPT CLADE_ID_FILE CLADE_PARENT_ID LD_PRELOAD LD_LIBRARY_PATH $BB_ENV_EXTRAWHITE"
+$ clade bitbake <target>
+```

@@ -75,7 +75,7 @@ static char* construct_envp_entry(const char *key, const char *value) {
     return new_entry;
 }
 
-static char **copy_envp(char **envp) {
+char **copy_envp(char **envp) {
     int envp_len = get_envp_len(envp);
     char **copy = malloc((envp_len + clade_envs_len + 1) * sizeof(char *));
 
@@ -119,12 +119,17 @@ void update_environ(char **envp) {
     if (!envp)
         return;
 
-    int i = find_key_index(envp, CLADE_PARENT_ID_ENV);
+    // Add Clade environment variables from envp to environ if they were absent
+    for (int i = 0; i < clade_envs_len; i++) {
+        if (!getenv(clade_envs[i])) {
+            int index = find_key_index(envp, clade_envs[i]);
 
-    // i can be -1 when Clade environment variables can be found in environ,
-    // but were deleted from envp by some other process
-    if (i != -1) {
-        setenv(CLADE_PARENT_ID_ENV, strchr(envp[i], '=') + 1, 1);
+            // index can be -1 when Clade environment variables can be found in environ,
+            // but were deleted from envp by some other process
+            if (index != -1) {
+                setenv(clade_envs[i], strchr(envp[index], '=') + 1, 1);
+            }
+        }
     }
 }
 

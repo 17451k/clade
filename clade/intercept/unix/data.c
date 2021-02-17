@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include "which.h"
 #include "env.h"
@@ -71,10 +72,10 @@ static char *prepare_exec_data(const char *path, char const *const argv[]) {
     }
 
     // Get current working directory
-    const char *cwd = getcwd(NULL, 0);
+    char *cwd = getcwd(NULL, 0);
     if (!cwd) {
-        fprintf(stderr, "Couldn't get current working directory");
-        exit(EXIT_FAILURE);
+        // fprintf(stderr, "Couldn't get current working directory: %d\n", errno);
+        cwd = "";
     }
 
     // Sometimes "path" contains incorrect values ("gcc" instead of "/usr/bin/gcc")
@@ -103,6 +104,11 @@ static char *prepare_exec_data(const char *path, char const *const argv[]) {
         correct_path, DELIMITER
     );
     free(parent_id);
+
+    // if cwd == "" then it wasn't returned by malloc inside getcwd
+    if (cwd && cwd[0] != '\0') {
+        free(cwd);
+    }
 
     for (const char *const *arg = argv; arg && *arg; arg++) {
         char *exp_arg = expand_newlines_alloc(*arg);
