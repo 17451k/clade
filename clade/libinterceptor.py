@@ -33,10 +33,19 @@ class Libinterceptor(Intercept):
             env["DYLD_INSERT_LIBRARIES"] = libinterceptor
             env["DYLD_FORCE_FLAT_NAMESPACE"] = "1"
         elif sys.platform == "linux":
-            self.logger.debug("Set 'LD_PRELOAD' environment variable value")
+            existing_preload = env.get("LD_PRELOAD")
             env["LD_PRELOAD"] = libinterceptor
 
-            env["LD_LIBRARY_PATH"] = env.get("LD_LIBRARY_PATH", "") + ":" + LIB64 + ":" + LIB
+            if existing_preload:
+                env["LD_PRELOAD"] += " " + existing_preload
+
+            existing_lpath = env.get("LD_LIBRARY_PATH")
+            env["LD_LIBRARY_PATH"] = LIB64 + ":" + LIB
+
+            if existing_lpath:
+                env["LD_LIBRARY_PATH"] += ":" + existing_lpath
+
+            self.logger.debug("Set 'LD_PRELOAD' environment variable value as {!r}".format(env["LD_PRELOAD"]))
             self.logger.debug("Set LD_LIBRARY_PATH environment variable value as {!r}".format(env["LD_LIBRARY_PATH"]))
 
         return env
