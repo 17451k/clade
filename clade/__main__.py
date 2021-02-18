@@ -151,7 +151,8 @@ def prepare_conf(args):
     conf["force"] = args.force
     conf["use_wrappers"] = args.wrappers
     conf["preset"] = args.preset
-    conf["command"] = args.command
+    conf["build_command"] = args.command
+    conf["launch_command"] = sys.argv
 
     conf["Info.cif"] = args.cif if args.cif else conf.get("Info.cif", "cif")
 
@@ -180,7 +181,7 @@ def main(sys_args=sys.argv[1:]):
 
         c.logger.info("Starting build")
         build_time_start = time.time()
-        r = c.intercept(conf["command"], use_wrappers=conf["use_wrappers"], append=args.append, intercept_open=args.intercept_open)
+        r = c.intercept(conf["build_command"], use_wrappers=conf["use_wrappers"], append=args.append, intercept_open=args.intercept_open)
 
         build_delta = datetime.timedelta(seconds=(time.time() - build_time_start))
         build_delta_str = str(build_delta).split(".")[0]
