@@ -50,22 +50,29 @@ class Common(Extension, metaclass=abc.ABCMeta):
 
         self.bad_ids = os.path.join(self.work_dir, "bad_ids.txt")
 
-        cmd_filter = self.conf.get("Common.filter", [])
-        cmd_filter_in = self.conf.get("Common.filter_in", [])
-        cmd_filter_out = self.conf.get("Common.filter_out", [])
+        exclude_list = self.conf.get("Common.exclude_list", [])
+        exclude_list_in = self.conf.get("Common.exclude_list_in", [])
+        exclude_list_out = self.conf.get("Common.exclude_list_out", [])
+        include_list = self.conf.get("Common.include_list", [])
 
-        self.regex_in = None
-        self.regex_out = None
+        self.regex_exclude_in = None
+        self.regex_exclude_out = None
+        self.regex_include_in = None
 
         # Make a regex that matches if any of our regexes match.
-        if cmd_filter or cmd_filter_in:
-            self.regex_in = re.compile(
-                "(" + ")|(".join(cmd_filter + cmd_filter_in) + ")"
+        if exclude_list or exclude_list_in:
+            self.regex_exclude_in = re.compile(
+                "(" + ")|(".join(exclude_list + exclude_list_in) + ")"
             )
 
-        if cmd_filter or cmd_filter_out:
-            self.regex_out = re.compile(
-                "(" + ")|(".join(cmd_filter + cmd_filter_out) + ")"
+        if exclude_list or exclude_list_out:
+            self.regex_exclude_out = re.compile(
+                "(" + ")|(".join(exclude_list + exclude_list_out) + ")"
+            )
+
+        if include_list:
+            self.regex_include_in = re.compile(
+                "(" + ")|(".join(include_list) + ")"
             )
 
     @Extension.prepare
@@ -229,7 +236,17 @@ class Common(Extension, metaclass=abc.ABCMeta):
             (
                 True
                 for cmd_in in cmd_ins
-                if self.regex_in and self.regex_in.search(cmd_in)
+                if self.regex_exclude_in and self.regex_exclude_in.search(cmd_in)
+            )
+        ):
+            self.debug("Command {} is bad".format(cmd))
+            return True
+
+        if any(
+            (
+                True
+                for cmd_in in cmd_ins
+                if self.regex_include_in and not self.regex_include_in.search(cmd_in)
             )
         ):
             self.debug("Command {} is bad".format(cmd))
@@ -240,7 +257,7 @@ class Common(Extension, metaclass=abc.ABCMeta):
             (
                 True
                 for cmd_out in cmd_outs
-                if self.regex_out and self.regex_out.search(cmd_out)
+                if self.regex_exclude_out and self.regex_exclude_out.search(cmd_out)
             )
         ):
             self.debug("Command {} is bad".format(cmd))

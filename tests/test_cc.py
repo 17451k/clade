@@ -113,7 +113,7 @@ def test_cc_ignore_cc1(tmpdir, cmds_file, ignore_cc1):
 
 
 @pytest.mark.parametrize("compile_only", [True, False])
-def test_cc_filter_deps(tmpdir, cmds_file, compile_only):
+def test_cc_exclude_list_deps(tmpdir, cmds_file, compile_only):
     c = Clade(tmpdir, cmds_file)
     e = c.parse("CC")
 
@@ -126,14 +126,26 @@ def test_cc_filter_deps(tmpdir, cmds_file, compile_only):
     assert compile_only != found_deps_opt
 
 
-@pytest.mark.parametrize("filter", [[], ["/dev/null"]])
-@pytest.mark.parametrize("filter_in", [[], ["-"]])
-@pytest.mark.parametrize("filter_out", [[], ["/dev/null"]])
-def test_cc_filter(tmpdir, cmds_file, filter, filter_in, filter_out):
+@pytest.mark.parametrize("exclude_list", [[], ["/dev/null"]])
+@pytest.mark.parametrize("exclude_list_in", [[], ["-"]])
+@pytest.mark.parametrize("exclude_list_out", [[], ["/dev/null"]])
+def test_cc_exclude_list(tmpdir, cmds_file, exclude_list, exclude_list_in, exclude_list_out):
     conf = {
-        "Common.filter": filter,
-        "Common.filter_in": filter_in,
-        "Common.filter_out": filter_out
+        "Common.exclude_list": exclude_list,
+        "Common.exclude_list_in": exclude_list_in,
+        "Common.exclude_list_out": exclude_list_out
+    }
+
+    c = Clade(tmpdir, cmds_file, conf)
+    e = c.parse("CC")
+
+    assert len(list(e.load_all_cmds()))
+
+
+@pytest.mark.parametrize("include_list", [[], ["test_project"]])
+def test_cc_include_list(tmpdir, cmds_file, include_list):
+    conf = {
+        "Common.include_list": include_list
     }
 
     c = Clade(tmpdir, cmds_file, conf)

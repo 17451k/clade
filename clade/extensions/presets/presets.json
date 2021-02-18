@@ -35,9 +35,10 @@
             "CC",
             "CL"
         ],
-        "Common.filter": [],
-        "Common.filter_in": [],
-        "Common.filter_out": [],
+        "Common.exclude_list": [],
+        "Common.exclude_list_in": [],
+        "Common.exclude_list_out": [],
+        "Common.include_list": [],
         "Info.extra_CIF_opts": [],
         "Info.use_preprocessed_files": false,
         "Info.cif": "cif",
@@ -96,10 +97,10 @@
             "MV",
             "Objcopy"
         ],
-        "Common.filter": [
+        "Common.exclude_list": [
             ".*?\\.tmp$"
         ],
-        "Common.filter_in": [
+        "Common.exclude_list_in": [
             "^-$",
             "/dev/null",
             "scripts/(?!mod/empty\\.c)",
@@ -110,7 +111,7 @@
             "\\.tmp\\w+\\.s",
             "\\.S"
         ],
-        "Common.filter_out": [
+        "Common.exclude_list_out": [
             "/dev/null",
             "scripts/(?!mod/.*empty\\.o)",
             "\\.cmd$"
@@ -119,8 +120,8 @@
     },
     "busybox_linux": {
         "extends": "base_print",
-        "Common.filter": [],
-        "Common.filter_in": [
+        "Common.exclude_list": [],
+        "Common.exclude_list_in": [
             "\\.tmp$",
             "tmp\\.\\w+\\.c$",
             "tmp.*?\\.c$",
@@ -129,7 +130,7 @@
             "/dev/null",
             "built-in\\.o$"
         ],
-        "Common.filter_out": [
+        "Common.exclude_list_out": [
             "/dev/null",
             "\\.cmd$",
             "tmp\\.\\w+"
@@ -137,10 +138,10 @@
     },
     "apache_linux": {
         "extends": "base_print",
-        "Common.filter": [
+        "Common.exclude_list": [
             "/tmp/.*"
         ],
-        "Common.filter_in": [
+        "Common.exclude_list_in": [
             "\\.tmp$",
             "tmp\\.\\w+\\.c$",
             "tmp.*?\\.c$",
@@ -148,7 +149,7 @@
             "/dev/null",
             "built-in\\.o$"
         ],
-        "Common.filter_out": [
+        "Common.exclude_list_out": [
             "/dev/null",
             "\\.cmd$",
             "tmp\\.\\w+"
