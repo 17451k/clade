@@ -33,7 +33,7 @@ class AR(Common):
                 "command": cmd["command"],
             }
         except IndexError:
-            self.warning("Something is wrong with the following command: {}".format(cmd))
+            self.dump_bad_cmd_id(cmd["id"])
             return
 
         if self.is_bad(parsed_cmd):
