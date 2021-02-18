@@ -102,24 +102,29 @@ class CC(Compiler):
         command = [which] + opts + [cmd_in]
 
         # Do not execute a command that does not contain any input files
-        if cmd["in"] and "-" not in cmd["in"]:
-            self.debug("CWD: {!r}".format(cmd["cwd"]))
-            self.debug("Executing command: {!r}".format(
-                " ".join([shlex.quote(x) for x in command]))
-            )
-
-            if not os.path.exists(cmd["cwd"]):
-                self.warning("CWD for command {!r} was deleted after build".format(cmd_id))
-                return deps_file
-
-            subprocess.call(
-                command,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                cwd=cmd["cwd"],
-            )
-        else:
+        if not cmd["in"] or "-" in cmd["in"]:
             self.debug("Command {} does not contain any input files".format(cmd_id))
+            return deps_file
+
+        if not os.path.exists(which):
+            self.warning("Compiler {!r} is no longer exists".format(which))
+            return deps_file
+
+        if not os.path.exists(cmd["cwd"]):
+            self.warning("CWD for command {!r} was deleted after build".format(cmd_id))
+            return deps_file
+
+        self.debug("CWD: {!r}".format(cmd["cwd"]))
+        self.debug("Executing command: {!r}".format(
+            " ".join([shlex.quote(x) for x in command]))
+        )
+
+        subprocess.call(
+            command,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            cwd=cmd["cwd"],
+        )
 
         return deps_file
 
