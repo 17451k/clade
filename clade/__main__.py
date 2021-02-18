@@ -44,7 +44,7 @@ def parse_args(args):
     parser.add_argument(
         "-c",
         "--config",
-        help="path to the JSON file with configuration",
+        help="path to the JSON file or JSON string with configuration",
         metavar="JSON",
         default=None,
     )
@@ -139,10 +139,13 @@ def prepare_conf(args):
 
     if args.config:
         try:
-            with open(args.config, "r") as f:
-                conf = ujson.load(f)
-        except FileNotFoundError:
-            print("Configuration file is not found")
+            if os.path.isfile(args.config):
+                with open(args.config, "r") as f:
+                    conf = ujson.load(f)
+            else:
+                conf = ujson.loads(args.config)
+        except ValueError:
+            print("Configuration is not a proper JSON file or string")
             sys.exit(-1)
 
     conf["work_dir"] = args.work_dir
