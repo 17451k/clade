@@ -19,7 +19,7 @@ from clade.extensions.abstract import Extension
 class SrcGraph(Extension):
     __version__ = "1"
 
-    always_requires = ["CmdGraph"]
+    always_requires = ["CmdGraph", "Storage"]
     requires = always_requires + ["CC", "CL"]
 
     def __init__(self, work_dir, conf=None):
@@ -133,6 +133,9 @@ class SrcGraph(Extension):
 
     def __count_file_loc(self, file):
         """Count number of lines of code in the file."""
+        if self.conf.get("Compiler.store_deps"):
+            file = self.extensions["Storage"].get_storage_path(file)
+
         try:
             i = -1
             with open(file, "rb") as f:
