@@ -16,6 +16,7 @@
 import hashlib
 import itertools
 
+
 def get_string_hash(key):
     return hashlib.md5(key.encode("utf-8")).hexdigest()
 
