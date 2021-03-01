@@ -60,6 +60,9 @@ class Functions(Callgraph):
         """Load information about functions grouped by files."""
         return self.load_data_by_key(self.funcs_by_file_archive, files)
 
+    def yield_functions_by_file(self, files=None):
+        yield from self.yield_data_by_key(self.funcs_by_file_archive, files)
+
     def __process_definitions(self):
         for src_file, func, def_line, func_type, signature in self.extensions["Info"].iter_definitions():
             self.debug("Processing definition: " + " ".join(
