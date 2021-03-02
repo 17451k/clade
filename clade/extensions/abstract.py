@@ -21,7 +21,6 @@ import pathlib
 import pkg_resources
 import platform
 import os
-import pickle
 import shutil
 import sys
 import tempfile
@@ -132,7 +131,7 @@ class Extension(metaclass=abc.ABCMeta):
         """Parse intercepted commands."""
         pass
 
-    def load_data(self, file_name, raise_exception=True, format="json"):
+    def load_data(self, file_name, raise_exception=True):
         """Load file by name."""
 
         if not os.path.isabs(file_name):
@@ -151,23 +150,10 @@ class Extension(metaclass=abc.ABCMeta):
 
         self.debug("Loading {!r}".format(file_name))
 
-        if format == "json":
-            return self.__load_data_json(file_name)
-        elif format == "pickle":
-            return self.__load_data_pickle(file_name)
-        else:
-            self.error("Unreckognised data format: {!r}".format(format))
-            raise ValueError
-
-    def __load_data_json(self, file_name, raise_exception=True):
         with open(file_name, "r") as fh:
             return ujson.load(fh)
 
-    def __load_data_pickle(self, file_name, raise_exception=True):
-        with open(file_name, "rb") as fh:
-            return pickle.load(fh)
-
-    def dump_data(self, data, file_name, indent=4, format="json"):
+    def dump_data(self, data, file_name, indent=4):
         """Dump data to a file in the object working directory."""
 
         if not os.path.isabs(file_name):
@@ -177,19 +163,6 @@ class Extension(metaclass=abc.ABCMeta):
 
         self.debug("Dumping {!r}".format(file_name))
 
-        if format == "json":
-            self.__dump_data_json(data, file_name, indent=indent)
-        elif format == "pickle":
-            self.__dump_data_pickle(data, file_name)
-        else:
-            self.error("Unreckognised data format: {!r}".format(format))
-            raise ValueError
-
-    def __dump_data_pickle(self, data, file_name):
-        with open(file_name, "wb") as fh:
-            pickle.dump(data, fh, protocol=4)
-
-    def __dump_data_json(self, data, file_name, indent=0):
         try:
             with open(file_name, "w") as fh:
                 ujson.dump(
@@ -333,7 +306,7 @@ class Extension(metaclass=abc.ABCMeta):
         return opts
 
     def load_global_meta(self):
-        return self.load_data(self.global_meta_file, raise_exception=False, format="json")
+        return self.load_data(self.global_meta_file, raise_exception=False)
 
     def dump_global_meta(self, cmds_file):
         stored_meta = self.load_global_meta()
@@ -386,12 +359,12 @@ class Extension(metaclass=abc.ABCMeta):
         if "date" not in stored_meta:
             stored_meta["date"] = datetime.datetime.today().strftime('%Y-%m-%d %H:%M')
 
-        self.dump_data(stored_meta, self.global_meta_file, indent=4, format="json")
+        self.dump_data(stored_meta, self.global_meta_file, indent=4)
 
     def add_data_to_global_meta(self, key, data):
         stored_meta = self.load_global_meta()
         stored_meta[key] = data
-        self.dump_data(stored_meta, self.global_meta_file, indent=4, format="json")
+        self.dump_data(stored_meta, self.global_meta_file, indent=4)
 
     def __get_empty_obj(self, obj):
         empty_self = obj.__class__(self.clade_work_dir, self.conf)

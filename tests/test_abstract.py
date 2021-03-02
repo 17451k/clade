@@ -116,32 +116,3 @@ def test_check_conf_consistency(tmpdir, cmds_file):
     c = Clade(tmpdir, cmds_file, conf=changed_conf)
     with pytest.raises(RuntimeError):
         c.parse("CC")
-
-
-def test_pickle(tmpdir, cmds_file):
-    c = Clade(tmpdir, cmds_file)
-    e = c.parse("PidGraph")
-
-    filename = "test_pickle"
-    data = {"test": 1}
-
-    e.dump_data(data, filename, format="pickle")
-    assert os.path.exists(os.path.join(e.work_dir, filename))
-
-    loaded_data = e.load_data(filename, format="pickle")
-    assert data == loaded_data
-
-
-def test_zip(tmpdir, cmds_file):
-    c = Clade(tmpdir, cmds_file)
-    e = c.parse("PidGraph")
-
-    filename = "test_file.json"
-    archive = "test_archive.zip"
-    data = {"test": 1}
-
-    e.dump_data_to_zip(data, filename, archive)
-    assert os.path.exists(os.path.join(e.work_dir, archive))
-
-    loaded_data = e.load_data_from_zip(filename, archive)
-    assert data == loaded_data
