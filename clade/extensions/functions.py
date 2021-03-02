@@ -29,10 +29,10 @@ class Functions(Callgraph):
         self.src_graph = dict()
 
         self.funcs = nested_dict()
-        self.funcs_archive = "functions.zip"
+        self.funcs_folder = "functions"
 
         self.funcs_by_file = nested_dict()
-        self.funcs_by_file_archive = "functions_by_file.zip"
+        self.funcs_by_file_folder = "functions_by_file"
 
     @Extension.prepare
     def parse(self, cmds_file):
@@ -45,8 +45,8 @@ class Functions(Callgraph):
         self.__group_functions_by_file()
         self._clean_error_log()
 
-        self.dump_data_by_key(self.funcs, self.funcs_archive)
-        self.dump_data_by_key(self.funcs_by_file, self.funcs_by_file_archive)
+        self.dump_data_by_key(self.funcs, self.funcs_folder)
+        self.dump_data_by_key(self.funcs_by_file, self.funcs_by_file_folder)
 
         self.src_graph.clear()
         self.funcs.clear()
@@ -54,14 +54,14 @@ class Functions(Callgraph):
 
     def load_functions(self, funcs=None):
         """Load information about functions."""
-        return self.load_data_by_key(self.funcs_archive, funcs)
+        return self.load_data_by_key(self.funcs_folder, funcs)
 
     def load_functions_by_file(self, files=None):
         """Load information about functions grouped by files."""
-        return self.load_data_by_key(self.funcs_by_file_archive, files)
+        return self.load_data_by_key(self.funcs_by_file_folder, files)
 
     def yield_functions_by_file(self, files=None):
-        yield from self.yield_data_by_key(self.funcs_by_file_archive, files)
+        yield from self.yield_data_by_key(self.funcs_by_file_folder, files)
 
     def __process_definitions(self):
         for src_file, func, def_line, func_type, signature in self.extensions["Info"].iter_definitions():

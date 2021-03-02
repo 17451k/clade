@@ -35,7 +35,7 @@ class Callgraph(Extension):
         self.err_log = os.path.join(self.work_dir, "err.log")
 
         self.callgraph = nested_dict()
-        self.callgraph_archive = "callgraph.zip"
+        self.callgraph_folder = "callgraph"
 
         self.calls_by_ptr = nested_dict()
         self.calls_by_ptr_file = "calls_by_ptr.json"
@@ -61,7 +61,7 @@ class Callgraph(Extension):
             self.warning("Callgraph is empty")
             return
 
-        self.dump_data_by_key(self.callgraph, self.callgraph_archive)
+        self.dump_data_by_key(self.callgraph, self.callgraph_folder)
         self.dump_data(self.calls_by_ptr, self.calls_by_ptr_file)
         self.dump_data(self.used_in, self.used_in_file)
 
@@ -71,10 +71,10 @@ class Callgraph(Extension):
         self.used_in.clear()
 
     def load_callgraph(self, files=None):
-        return self.load_data_by_key(self.callgraph_archive, files)
+        return self.load_data_by_key(self.callgraph_folder, files)
 
     def yield_callgraph(self, files=None):
-        yield from self.yield_data_by_key(self.callgraph_archive, files)
+        yield from self.yield_data_by_key(self.callgraph_folder, files)
 
     def load_calls_by_ptr(self):
         return self.load_data(self.calls_by_ptr_file)

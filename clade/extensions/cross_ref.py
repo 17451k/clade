@@ -33,10 +33,10 @@ class CrossRef(Callgraph):
 
         self.funcs = None
 
-        self.ref_to_macro_archive = "ref_to_macro.zip"
-        self.ref_to_func_archive = "ref_to_func.zip"
-        self.ref_from_macro_archive = "ref_from_macro.zip"
-        self.ref_from_func_archive = "ref_from_func.zip"
+        self.ref_to_macro_folder = "ref_to_macro"
+        self.ref_to_func_folder = "ref_to_func"
+        self.ref_from_macro_folder = "ref_from_macro"
+        self.ref_from_func_folder = "ref_from_func"
 
     @Extension.prepare
     def parse(self, cmds_file):
@@ -59,8 +59,8 @@ class CrossRef(Callgraph):
 
     def load_ref_to_by_file(self, files=None):
         """Load references to definitions and declarations grouped by files."""
-        macro_data = self.load_data_by_key(self.ref_to_macro_archive, files)
-        func_data = self.load_data_by_key(self.ref_to_func_archive, files)
+        macro_data = self.load_data_by_key(self.ref_to_macro_folder, files)
+        func_data = self.load_data_by_key(self.ref_to_func_folder, files)
 
         for file in func_data:
             if file not in macro_data:
@@ -72,8 +72,8 @@ class CrossRef(Callgraph):
 
     def load_ref_from_by_file(self, files=None):
         """Load references to usages grouped by files."""
-        macro_data = self.load_data_by_key(self.ref_from_macro_archive, files)
-        func_data = self.load_data_by_key(self.ref_from_func_archive, files)
+        macro_data = self.load_data_by_key(self.ref_from_macro_folder, files)
+        func_data = self.load_data_by_key(self.ref_from_func_folder, files)
 
         for file in func_data:
             if file not in macro_data:
@@ -258,7 +258,7 @@ class CrossRef(Callgraph):
                         else:
                             ref_to[context_file]["decl_func"] = [val]
 
-        self.__dump_ref_to(ref_to, self.ref_to_func_archive)
+        self.__dump_ref_to(ref_to, self.ref_to_func_folder)
 
     def __gen_ref_to_macro(self, locations):
         ref_to = nested_dict()
@@ -282,7 +282,7 @@ class CrossRef(Callgraph):
                         else:
                             ref_to[exp_file]["def_macro"] = [val]
 
-        self.__dump_ref_to(ref_to, self.ref_to_macro_archive)
+        self.__dump_ref_to(ref_to, self.ref_to_macro_folder)
 
     def __dump_ref_to(self, ref_to, archive):
         if not ref_to:
@@ -326,7 +326,7 @@ class CrossRef(Callgraph):
                                 else:
                                     ref_from[decl_file]["call"] = [val]
 
-        self.__dump_ref_from(ref_from, self.ref_from_func_archive)
+        self.__dump_ref_from(ref_from, self.ref_from_func_folder)
 
     def __get_context_locs(self, file, func, callgraph):
         locs = []
@@ -366,7 +366,7 @@ class CrossRef(Callgraph):
                         else:
                             ref_from[def_file]["expand"] = [val]
 
-        self.__dump_ref_from(ref_from, self.ref_from_macro_archive)
+        self.__dump_ref_from(ref_from, self.ref_from_macro_folder)
 
     def __dump_ref_from(self, ref_from, archive):
         if not ref_from:

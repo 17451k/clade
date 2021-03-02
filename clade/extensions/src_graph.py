@@ -31,14 +31,14 @@ class SrcGraph(Extension):
         super().__init__(work_dir, conf)
 
         self.src_graph = dict()
-        self.src_graph_archive = "src_graph.zip"
+        self.src_graph_folder = "src_graph"
 
         self.src_info = dict()
         self.src_info_file = "src_info.json"
 
     def load_src_graph(self, files=None):
         """Load source graph."""
-        return self.load_data_by_key(self.src_graph_archive, files)
+        return self.load_data_by_key(self.src_graph_folder, files)
 
     def load_src_info(self):
         """Load information about source files."""
@@ -62,7 +62,7 @@ class SrcGraph(Extension):
             raise RuntimeError
 
         self.dump_data(self.src_info, self.src_info_file, indent=4)
-        self.dump_data_by_key(self.src_graph, self.src_graph_archive)
+        self.dump_data_by_key(self.src_graph, self.src_graph_folder)
 
         self.src_graph.clear()
 

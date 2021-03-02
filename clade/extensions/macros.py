@@ -26,10 +26,10 @@ class Macros(Extension):
         super().__init__(work_dir, conf)
 
         self.macros = nested_dict()
-        self.macros_archive = "macros.zip"
+        self.macros_folder = "macros"
 
         self.exps = nested_dict()
-        self.exps_archive = "expansions.zip"
+        self.exps_folder = "expansions"
 
     @Extension.prepare
     def parse(self, cmds_file):
@@ -40,14 +40,14 @@ class Macros(Extension):
         self.__process_macros_expansions()
 
         self.log("Dumping macros")
-        self.dump_data_by_key(self.macros, self.macros_archive)
+        self.dump_data_by_key(self.macros, self.macros_folder)
         self.macros.clear()
 
         self.log("Reversing macros expansions")
         self.__reverse_expansions()
 
         self.log("Dumping macros expansions")
-        self.dump_data_by_key(self.exps, self.exps_archive)
+        self.dump_data_by_key(self.exps, self.exps_folder)
         self.exps.clear()
 
     def __process_macros_definitions(self):
@@ -84,17 +84,17 @@ class Macros(Extension):
     def load_macros(self, files=None):
         """Load json with all information about macros."""
 
-        return self.load_data_by_key(self.macros_archive, files)
+        return self.load_data_by_key(self.macros_folder, files)
 
     def yield_macros(self, files=None):
         """Yeild dictionaries with information about macros."""
-        yield from self.yield_data_by_key(self.macros_archive, files)
+        yield from self.yield_data_by_key(self.macros_folder, files)
 
     def load_expansions(self, files=None):
         """Load json with all information about macro expansions."""
 
-        return self.load_data_by_key(self.exps_archive, files)
+        return self.load_data_by_key(self.exps_folder, files)
 
     def yield_expansions(self, files=None):
         """Yeild dictionaries with information about macro expansions."""
-        yield from self.yield_data_by_key(self.exps_archive, files)
+        yield from self.yield_data_by_key(self.exps_folder, files)
