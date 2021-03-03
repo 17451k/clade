@@ -25,14 +25,14 @@ class Typedefs(Extension):
         super().__init__(work_dir, conf)
 
         self.typedefs = dict()
-        self.typedefs_archive = "typedefs.zip"
+        self.typedefs_folder = "typedefs"
 
     @Extension.prepare
     def parse(self, cmds_file):
         self.log("Parsing typedefs")
 
         self.__process_typedefs()
-        self.dump_data_by_key(self.typedefs, self.typedefs_archive)
+        self.dump_data_by_key(self.typedefs, self.typedefs_folder)
         self.typedefs.clear()
 
     def __process_typedefs(self):
@@ -43,4 +43,4 @@ class Typedefs(Extension):
                 self.typedefs[scope_file].append(declaration)
 
     def load_typedefs(self, files=None):
-        return self.load_data_by_key(self.typedefs_archive, files)
+        return self.load_data_by_key(self.typedefs_folder, files)
