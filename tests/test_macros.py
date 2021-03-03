@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import os
+import pytest
 
 from clade import Clade
 
@@ -30,6 +31,7 @@ def expansions_are_ok(expansions):
     assert expansions[zero_c]["ZERO"]
 
 
+@pytest.mark.cif
 def test_macros(tmpdir, cmds_file):
     c = Clade(tmpdir, cmds_file)
     c.parse("Macros")

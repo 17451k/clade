@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
+
 from clade import Clade
 from tests.test_project import main_c, zero_c, zero_h
 
@@ -48,6 +50,7 @@ def filtered_funcs_by_file_are_ok(funcs_by_file, funcs_by_main_c):
             assert file not in funcs_by_main_c
 
 
+@pytest.mark.cif
 def test_functions(tmpdir, cmds_file):
     conf = {"CmdGraph.requires": ["CC", "MV"]}
 

@@ -37,6 +37,7 @@ def test_intercept(tmpdir):
     assert calculate_loc(output) > 1
 
 
+@pytest.mark.cif
 def test_cmd_graph(clade_api: Clade):
     c = clade_api
 
@@ -96,6 +97,7 @@ def test_cmd_graph(clade_api: Clade):
         assert c.get_leaf_cmds("-1")
 
 
+@pytest.mark.cif
 def test_src_graph(clade_api: Clade):
     c = clade_api
 
@@ -108,6 +110,7 @@ def test_src_graph(clade_api: Clade):
         assert c.get_file_size("this_file_does_not_exist.c")
 
 
+@pytest.mark.cif
 def test_pid_graph(clade_api: Clade):
     c = clade_api
 
@@ -127,6 +130,7 @@ def test_storage(tmpdir, cmds_file):
     assert c.get_storage_path(__file__)
 
 
+@pytest.mark.cif
 def test_callgraph(clade_api: Clade):
     c = clade_api
 
@@ -137,6 +141,7 @@ def test_callgraph(clade_api: Clade):
     callgraph_by_file_is_ok(callgraph, callgraph_by_zero_c)
 
 
+@pytest.mark.cif
 def test_functions(clade_api: Clade):
     c = clade_api
 
@@ -150,18 +155,22 @@ def test_functions(clade_api: Clade):
     filtered_funcs_by_file_are_ok(funcs_by_file, funcs_by_main_c)
 
 
+@pytest.mark.cif
 def test_get_typedefs(clade_api: Clade):
     typedefs_are_ok(clade_api.get_typedefs())
 
 
+@pytest.mark.cif
 def test_get_variables(clade_api: Clade):
     variables_are_ok(clade_api.get_variables())
 
 
+@pytest.mark.cif
 def test_get_used_in_vars_functions(clade_api: Clade):
     used_in_vars_is_ok(clade_api.get_used_in_vars_functions())
 
 
+@pytest.mark.cif
 def test_get_macros_expansions(clade_api: Clade):
     c = clade_api
 
@@ -171,6 +180,7 @@ def test_get_macros_expansions(clade_api: Clade):
     expansions_are_ok(c.get_macros_expansions())
 
 
+@pytest.mark.cif
 def test_get_macros_definitions(clade_api: Clade):
     c = clade_api
 
@@ -180,10 +190,12 @@ def test_get_macros_definitions(clade_api: Clade):
     definitions_are_ok(c.get_macros_definitions())
 
 
+@pytest.mark.cif
 def test_cdb(clade_api: Clade):
     assert clade_api.compilation_database
 
 
+@pytest.mark.cif
 def test_meta_good(clade_api: Clade):
     c = clade_api
 
@@ -226,6 +238,7 @@ def test_cant_create_work_dir():
         c.parse("CC")
 
 
+@pytest.mark.cif
 def test_check_work_dir(clade_api: Clade):
     assert clade_api.work_dir_ok(log=True)
 
@@ -236,6 +249,7 @@ def test_check_work_dir_bad(tmpdir, cmds_file):
     assert not c.work_dir_ok(log=True)
 
 
+@pytest.mark.cif
 def test_cross_ref(clade_api: Clade):
     c = clade_api
 

@@ -23,11 +23,9 @@ test_project = os.path.join(os.path.dirname(__file__), "test_project")
 test_project_make = ["make", "-C", test_project]
 
 
+@pytest.mark.skipif(sys.platform == "darwin", reason="test doesn't work on macOS")
 def test_intercept(tmpdir):
     cmds_file = os.path.join(str(tmpdir), "cmds.txt")
-
-    if sys.platform == "darwin":
-        return
 
     with pytest.raises(SystemExit) as e:
         main(["--cmds", cmds_file, "-i"] + test_project_make)

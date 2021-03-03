@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
+
 from clade import Clade
 from tests.test_project import main_c, zero_c, zero_h
 
@@ -68,6 +70,7 @@ def filtered_ref_from_are_ok(rel_from, rel_from_main_c):
             assert file not in rel_from_main_c
 
 
+@pytest.mark.cif
 def test_cross_ref(tmpdir, cmds_file):
     c = Clade(tmpdir, cmds_file)
     e = c.parse("CrossRef")

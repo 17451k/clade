@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
+
 from clade import Clade
 from tests.test_project import zero_c
 
@@ -21,6 +23,7 @@ def typedefs_are_ok(typedefs):
     assert "unsigned char super_char;" in typedefs[zero_c]
 
 
+@pytest.mark.cif
 def test_typedefs(tmpdir, cmds_file):
     c = Clade(tmpdir, cmds_file)
     e = c.parse("Typedefs")

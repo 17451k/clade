@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
+
 from clade import Clade
 from tests.test_project import main_c, zero_c
 
@@ -44,6 +46,7 @@ def used_in_is_ok(used_in):
     assert used_in[zero_c]["zero"]["used_in_func"][zero_c]["func_with_pointers"]["16"] == 3
 
 
+@pytest.mark.cif
 def test_callgraph(tmpdir, cmds_file):
     conf = {"CmdGraph.requires": ["CC", "MV"]}
 

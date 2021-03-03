@@ -13,10 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
+
 from clade import Clade
 from clade.scripts.tracer import Tracer
 
 
+@pytest.mark.cif
 def test_tracer(tmpdir, cmds_file):
     c = Clade(tmpdir, cmds_file, preset="klever_linux_kernel")
     c.parse_list(c.conf["extensions"])

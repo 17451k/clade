@@ -26,7 +26,7 @@ number_of_gcc_cmds = 2
 gcc_which = shutil.which("gcc")
 
 
-def test_bad_open(cmds_file):
+def test_bad_open():
     with pytest.raises(RuntimeError):
         open_cmds_file("do_not_exist.txt")
 

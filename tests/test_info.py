@@ -13,9 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
+
 from clade import Clade
 
 
+@pytest.mark.cif
 def test_info(tmpdir, cmds_file):
     conf = {"CC.filter_deps": False, "Info.extra_CIF_pts": ["-hello"]}
 

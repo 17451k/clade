@@ -48,10 +48,8 @@ def test_pid_graph(tmpdir, cmds_file):
 
 
 @pytest.mark.parametrize("as_picture", [True, False])
+@pytest.mark.skipif(not shutil.which("dot"), reason="dot is not installed")
 def test_pid_graph_as_picture(tmpdir, cmds_file, as_picture):
-    if not shutil.which("dot"):
-        return
-
     conf = {"PidGraph.as_picture": as_picture}
 
     c = Clade(tmpdir, cmds_file, conf)

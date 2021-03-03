@@ -15,6 +15,7 @@
 
 import os
 import pytest
+import shutil
 import tempfile
 
 from clade import Clade
@@ -40,3 +41,11 @@ def clade_api(tmpdir_factory, cmds_file):
     c.parse_list(["CrossRef", "Variables", "Macros", "Typedefs", "CDB"])
 
     yield c
+
+
+def pytest_collection_modifyitems(config, items):
+    skip_cif = pytest.mark.skipif(not shutil.which("cif"), reason="cif is not installed")
+
+    for item in items:
+        if 'cif' in item.keywords:
+            item.add_marker(skip_cif)

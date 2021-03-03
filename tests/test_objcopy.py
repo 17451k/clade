@@ -13,15 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
 import sys
 
 from clade import Clade
 
 
+@pytest.mark.skipif(sys.platform != "linux", reason="test only for Linux")
 def test_objcopy(tmpdir, cmds_file):
-    if not sys.platform == "linux":
-        return
-
     c = Clade(tmpdir, cmds_file)
     e = c.parse("Objcopy")
 

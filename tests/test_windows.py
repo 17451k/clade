@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import os
+import pytest
 import sys
 
 from clade import Clade
@@ -21,10 +22,8 @@ from clade import Clade
 test_build = ["pip", "install", "--user", "--no-binary", ":all:", "--force", "cchardet"]
 
 
+@pytest.mark.skipif(sys.platform != "win32", reason="tests only for Windows")
 def test_windows(tmpdir):
-    if sys.platform != "win32":
-        return
-
     work_dir = os.path.join(str(tmpdir), "clade")
     output = os.path.join(str(tmpdir), "cmds.txt")
 
