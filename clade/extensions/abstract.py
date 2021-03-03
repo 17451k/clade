@@ -234,16 +234,19 @@ class Extension(metaclass=abc.ABCMeta):
 
         return files
 
-    def dump_data_by_key(self, data, folder):
+    def dump_data_by_key(self, data, folder, indent=4):
         """Dump data to multiple json files in the object working directory."""
         self.debug("Dumping data to {!r}".format(folder))
 
         for key in data:
             file_name = self.__get_file_name_by_key(key, folder)
-            self.dump_data({key: data[key]}, file_name, indent=4)
+            self.dump_data({key: data[key]}, file_name, indent=indent)
 
     def __get_file_name_by_key(self, key, folder):
-        return folder + os.sep + key + ".json"
+        file_name = folder + os.sep + key + ".json"
+        file_name = os.path.normpath(file_name)
+
+        return file_name
 
     def get_ext_version(self):
         version = self.__version__
