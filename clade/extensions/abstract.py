@@ -180,6 +180,9 @@ class Extension(metaclass=abc.ABCMeta):
                     file_name
                 )
             )
+        except FileNotFoundError:
+            # Workaround for Python 3.5 and Windows
+            self.error("Can't create file {!r}".format(file_name))
 
     def load_data_by_key(self, folder, keys=None):
         """Load data stored in multiple json files using dump_data_by_key()."""
