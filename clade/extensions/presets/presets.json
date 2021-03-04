@@ -180,5 +180,16 @@
             "Macros",
             "CrossRef"
         ]
+    },
+    "klever": {
+        "extends": "base",
+        "indent": 0,
+        "extensions": [
+            "Callgraph",
+            "Variables",
+            "Typedefs",
+            "Macros",
+            "CrossRef"
+        ]
     }
 }
