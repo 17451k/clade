@@ -153,7 +153,7 @@ class Extension(metaclass=abc.ABCMeta):
         with open(file_name, "r") as fh:
             return ujson.load(fh)
 
-    def dump_data(self, data, file_name, indent=4):
+    def dump_data(self, data, file_name, indent=None):
         """Dump data to a file in the object working directory."""
 
         if not os.path.isabs(file_name):
@@ -162,6 +162,9 @@ class Extension(metaclass=abc.ABCMeta):
         os.makedirs(os.path.dirname(file_name), exist_ok=True)
 
         self.debug("Dumping {!r}".format(file_name))
+
+        if not indent:
+            indent = self.conf.get("indent", 4)
 
         try:
             with open(file_name, "w") as fh:
@@ -234,7 +237,7 @@ class Extension(metaclass=abc.ABCMeta):
 
         return files
 
-    def dump_data_by_key(self, data, folder, indent=4):
+    def dump_data_by_key(self, data, folder, indent=None):
         """Dump data to multiple json files in the object working directory."""
         self.debug("Dumping data to {!r}".format(folder))
 

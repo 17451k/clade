@@ -61,7 +61,7 @@ class SrcGraph(Extension):
             self.error("Source graph is empty")
             raise RuntimeError
 
-        self.dump_data(self.src_info, self.src_info_file, indent=4)
+        self.dump_data(self.src_info, self.src_info_file)
         self.dump_data_by_key(self.src_graph, self.src_graph_folder)
 
         self.src_graph.clear()

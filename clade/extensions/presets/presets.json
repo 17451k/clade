@@ -3,6 +3,7 @@
         "log_level": "INFO",
         "force": false,
         "cpu_count": null,
+        "indent": 4,
         "extensions": ["SrcGraph"],
         "Wrapper.wrap_list": [],
         "Wrapper.recursive_wrap": false,
@@ -157,6 +158,7 @@
     },
     "klever_linux_kernel": {
         "extends": "linux_kernel",
+        "indent": 0,
         "extensions": [
             "Callgraph",
             "Variables",

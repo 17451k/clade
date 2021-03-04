@@ -49,7 +49,7 @@ class Variables(Callgraph):
 
         # indent=4 may cause segfault inside ujson
         self.dump_data_by_key(self.variables, self.variables_folder, indent=0)
-        self.dump_variables_data(self.used_in_vars, self.used_in_vars_file, indent=4)
+        self.dump_variables_data(self.used_in_vars, self.used_in_vars_file)
 
         self.functions.clear()
         self.src_graph.clear()
