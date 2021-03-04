@@ -575,7 +575,7 @@ $ clade -e SrcGraph make
 clade/
 ├── cmds.txt
 ├── SrcGraph/
-│   ├── src_graph.zip
+│   ├── src_graph
 │   └── src_info.json
 ├── CmdGraph/
 ├── CC/
@@ -586,7 +586,7 @@ clade/
 ```
 
 *Source graph* for the Makefile presented in the *command graph* section above
-will be located in the `src_graph.zip` archive and contain multiple files that,
+will be located in the `src_graph` folder and contain multiple files that,
 when combined, looks like this:
 
 ``` json
@@ -642,7 +642,7 @@ added to the `PATH` environment variable.
 $ clade -e Callgraph cmds.txt
 ```
 
-*Call graph* itself is stored inside `Callgraph/callgraph.zip` file and can be
+*Call graph* itself is stored inside `Callgraph/callgraph` folder and can be
 rather large. Let's look at a small part of the call graph generated for
 the Linux kernel:
 
@@ -685,7 +685,7 @@ also present in the *call graph*, but were excluded from the above example.
 
 `Callgraph` extension uses `Function` extension to get information about
 function definitions and declarations.
-They are stored in the *Functions/functions.zip* file:
+They are stored in the *Functions/functions* folder:
 
 ``` json
 {
