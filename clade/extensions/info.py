@@ -228,6 +228,14 @@ class Info(Extension):
                 self.__save_log(cmd["id"], cwd, cif_args, cif_env, e.output, self.err_log)
                 self.__save_log(cmd["id"], cwd, cif_args, cif_env, e.output, self.cif_log)
                 return
+            except UnicodeDecodeError as e:
+                self.warning(
+                    "Can't decode CIF console output using 'utf-8' codec for command {!r}"
+                    .format(cmd["id"])
+                )
+
+                self.__save_log(cmd["id"], cwd, cif_args, cif_env, str(e), self.err_log)
+                self.__save_log(cmd["id"], cwd, cif_args, cif_env, str(e), self.cif_log)
 
         # Force garbage collector to work
         gc.collect()
