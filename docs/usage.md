@@ -406,11 +406,10 @@ $ tree clade -L 2
 clade
 ├── cmds.txt
 └── PidGraph
-       ├── pid_by_id.json
-       └── pid_graph.json
+       └── pid_by_id.json
 ```
 
-Two files will be generated. First one - `pid_by_id.json` - is a simple
+`pid_by_id.json` file will be generated - it is a simple
 mapping from ids to their pids and looks like this:
 
 ``` json
@@ -420,19 +419,6 @@ mapping from ids to their pids and looks like this:
     "3": "2",
     "4": "2",
     "5": "1"
-}
-```
-
-Another one - `pid_graph.json` - stores information about all parent commands
-for a given id:
-
-``` json
-{
-    "1": ["0"],
-    "2": ["1", "0"],
-    "3": ["2", "1", "0"],
-    "4": ["2", "1", "0"],
-    "5": ["1", "0"]
 }
 ```
 
@@ -447,8 +433,21 @@ c = Clade(work_dir="clade", cmds_file="cmds.txt")
 c.parse("PidGraph)
 
 # Get all information
-pid_graph = c.pid_graph
 pid_by_id = c.pid_by_id
+pid_graph = c.pid_graph
+```
+
+where *pid_graph* stores information about all parent commands
+for a given id:
+
+``` json
+{
+    "1": ["0"],
+    "2": ["1", "0"],
+    "3": ["2", "1", "0"],
+    "4": ["2", "1", "0"],
+    "5": ["1", "0"]
+}
 ```
 
 Other extensions use *pid graph* to filter *duplicate* commands.

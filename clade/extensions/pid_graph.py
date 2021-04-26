@@ -28,9 +28,6 @@ class PidGraph(Extension):
     def __init__(self, work_dir, conf=None):
         super().__init__(work_dir, conf)
 
-        self.graph = dict()
-        self.graph_file = "pid_graph.json"
-
         self.pid_by_id = dict()
         self.pid_by_id_file = "pid_by_id.json"
 
@@ -43,16 +40,11 @@ class PidGraph(Extension):
         for cmd in iter_cmds(cmds_file):
             self.pid_by_id[cmd["id"]] = cmd["pid"]
 
-            self.graph[cmd["id"]] = [cmd["pid"]] + self.graph.get(cmd["pid"], [])
-
-        self.dump_data(self.graph, self.graph_file)
         self.dump_data(self.pid_by_id, self.pid_by_id_file)
 
-        if self.graph:
-            if self.conf.get("PidGraph.as_picture"):
-                self.__print_pid_graph(cmds_file)
+        if self.pid_by_id and self.conf.get("PidGraph.as_picture"):
+            self.__print_pid_graph(cmds_file)
 
-        self.graph.clear()
         self.pid_by_id.clear()
 
     def __print_pid_graph(self, cmds_file):
@@ -74,13 +66,20 @@ class PidGraph(Extension):
         dot.render(self.graph_dot)
 
     def load_pid_graph(self):
-        return self.load_data(self.graph_file)
+        pid_by_id = self.load_pid_by_id()
+        pid_graph = dict()
+
+        for key in sorted(pid_by_id.keys(), key=lambda x: int(x)):
+            key = str(key)
+            pid_graph[key] = [pid_by_id[key]] + pid_graph.get(pid_by_id[key], [])
+
+        return pid_graph
 
     def load_pid_by_id(self):
         return self.load_data(self.pid_by_id_file)
 
     def filter_cmds_by_pid(self, cmds, parsed_ids=None):
-        graph = self.load_pid_graph()
+        pid_graph = self.load_pid_graph()
 
         if not parsed_ids:
             parsed_ids = set()
@@ -90,7 +89,7 @@ class PidGraph(Extension):
         filtered_cmds = []
 
         for cmd in sorted(cmds, key=lambda x: int(x["id"])):
-            if not (set(graph[cmd["id"]]) & parsed_ids):
+            if not (set(pid_graph[cmd["id"]]) & parsed_ids):
                 filtered_cmds.append(cmd)
 
             parsed_ids.add(cmd["id"])
