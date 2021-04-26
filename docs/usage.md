@@ -723,7 +723,7 @@ c = Clade(work_dir="clade", cmds_file="cmds.txt")
 callgraph = c.callgraph
 
 
-for file, func in traverse(self.callgraph, 2):
+for file, func in traverse(callgraph, 2):
     for caller_file, caller_func, call_line in traverse(callgraph[file][func]["called_in"], 3):
         ...
 
