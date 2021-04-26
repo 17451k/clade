@@ -402,7 +402,7 @@ class Clade:
         if cmd_id not in self.cmd_graph:
             raise KeyError("Can't find {!r} id in the command graph".format(cmd_id))
 
-        using = self.cmd_graph[cmd_id]["using"]
+        using = list(self.cmd_graph[cmd_id]["using"])
 
         indirect_using = []
         for using_id in using:
