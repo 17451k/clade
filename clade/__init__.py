@@ -49,7 +49,7 @@ class Clade:
         else:
             self.cmds_file = os.path.abspath(cmds_file)
 
-        self.conf = conf if conf else dict()
+        self.conf = conf if conf else {"work_dir": self.work_dir}
         self.conf = merge_preset_to_conf(preset, self.conf)
         self.conf_file = os.path.join(self.work_dir, "conf.json")
 
