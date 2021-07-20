@@ -144,7 +144,7 @@ class Clade:
 
         self.__prepare_to_intercept()
 
-        return intercept(
+        self.conf["build_exit_code"] = intercept(
             command=command,
             cwd=cwd,
             output=self.cmds_file,
@@ -153,6 +153,8 @@ class Clade:
             intercept_open=intercept_open,
             conf=self.conf
         )
+
+        return self.conf["build_exit_code"]
 
     def __get_ext_obj(self, ext_name):
         """Return object of specified extension."""

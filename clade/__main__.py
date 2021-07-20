@@ -165,6 +165,7 @@ def prepare_conf(args):
 def main(sys_args=sys.argv[1:]):
     args = parse_args(sys_args)
     conf = prepare_conf(args)
+    build_exit_code = 0
 
     # Create Clade interface object
     try:
@@ -184,17 +185,22 @@ def main(sys_args=sys.argv[1:]):
 
         c.logger.info("Starting build")
         build_time_start = time.time()
-        r = c.intercept(conf["build_command"], use_wrappers=conf["use_wrappers"], append=args.append, intercept_open=args.intercept_open)
+        build_exit_code = c.intercept(
+            conf["build_command"],
+            use_wrappers=conf["use_wrappers"],
+            append=args.append,
+            intercept_open=args.intercept_open
+        )
 
         build_delta = datetime.timedelta(seconds=(time.time() - build_time_start))
         build_delta_str = str(build_delta).split(".")[0]
 
         # Clade can still proceed further if exit code != 0
-        c.logger.error("Build finished in {} with exit code {}".format(build_delta_str, r))
+        c.logger.error("Build finished in {} with exit code {}".format(build_delta_str, build_exit_code))
 
         if args.intercept and os.path.exists(conf["cmds_file"]):
             c.logger.info("Path to the file with intercepted commands: {!r}".format(conf["cmds_file"]))
-            sys.exit(r)
+            sys.exit(build_exit_code)
 
     if not os.path.exists(conf["cmds_file"]):
         c.logger.error("Something is wrong: file with intercepted commands is empty")
@@ -210,6 +216,9 @@ def main(sys_args=sys.argv[1:]):
         ext_delta = datetime.timedelta(seconds=(time.time() - ext_time_start))
         ext_delta_str = str(ext_delta).split(".")[0]
         c.logger.info("Extensions finished in {}".format(ext_delta_str))
+
+        if build_exit_code != 0:
+            c.logger.error("Reminder that build finished with exit code {}".format(build_exit_code))
     except RuntimeError as e:
         if e.args:
             raise SystemExit(e)
