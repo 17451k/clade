@@ -148,9 +148,9 @@ def prepare_conf(args):
             print("Configuration is not a proper JSON file or string")
             sys.exit(-1)
 
-    conf["work_dir"] = args.work_dir
+    conf["work_dir"] = os.path.abspath(args.work_dir)
     conf["log_level"] = args.log_level
-    conf["cmds_file"] = args.cmds
+    conf["cmds_file"] = os.path.abspath(args.cmds)
     conf["force"] = args.force
     conf["use_wrappers"] = args.wrappers
     conf["preset"] = args.preset

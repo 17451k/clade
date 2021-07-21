@@ -49,8 +49,7 @@ class Clade:
         else:
             self.cmds_file = os.path.abspath(cmds_file)
 
-        self.conf = conf if conf else {"work_dir": self.work_dir}
-        self.conf = merge_preset_to_conf(preset, self.conf)
+        self.conf = self.__prepare_conf(preset, conf)
         self.conf_file = os.path.join(self.work_dir, "conf.json")
 
         # "Name -> Object" storage of all available extensions
@@ -71,6 +70,17 @@ class Clade:
         self._functions = None
         self._functions_by_file = None
         self._cdb = None
+
+    def __prepare_conf(self, preset, conf):
+        conf = dict(conf) if conf else dict()
+        conf = merge_preset_to_conf(preset, conf)
+
+        conf["work_dir"] = self.work_dir
+        conf["log_level"] = "INFO"
+        conf["cmds_file"] = self.cmds_file
+        conf["preset"] = preset
+        # conf["Info.cif"] = args.cif if args.cif else conf.get("Info.cif", "cif")
+        return conf
 
     def __prepare_to_init(self):
         # Clean working directory
@@ -144,6 +154,8 @@ class Clade:
 
         self.__prepare_to_intercept()
 
+        self.conf["build_command"] = command
+        self.conf["use_wrappers"] = use_wrappers
         self.conf["build_exit_code"] = intercept(
             command=command,
             cwd=cwd,
