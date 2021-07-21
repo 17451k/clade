@@ -41,13 +41,17 @@ def get_logger(name, with_name=True, conf=None):
     logger.addHandler(stream_handler)
 
     if conf.get("work_dir"):
-        log_file = os.path.join(conf["work_dir"], "clade.log")
-        log_file = os.path.abspath(log_file)
-        os.makedirs(os.path.dirname(log_file), exist_ok=True)
+        try:
+            log_file = os.path.join(conf["work_dir"], "clade.log")
+            log_file = os.path.abspath(log_file)
+            os.makedirs(os.path.dirname(log_file), exist_ok=True)
 
-        file_handler = logging.FileHandler(log_file)
-        file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
+            file_handler = logging.FileHandler(log_file)
+            file_handler.setFormatter(formatter)
+            logger.addHandler(file_handler)
+        except PermissionError:
+            # Can't write to clade.log file if working directory is read only
+            pass
 
     logger.setLevel(conf.get("log_level", "INFO"))
 
