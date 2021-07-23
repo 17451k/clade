@@ -28,8 +28,9 @@ def get_logger(name, with_name=True, conf=None):
 
     logger = logging.getLogger(name)
 
-    if logger.handlers:
-        return logger
+    # Remove all old handlers
+    for handler in logger.handlers[:]:
+        logger.removeHandler(handler)
 
     if with_name:
         formatter = logging.Formatter("%(asctime)s clade {}: %(message)s".format(name), "%H:%M:%S")
@@ -49,7 +50,7 @@ def get_logger(name, with_name=True, conf=None):
             file_handler = logging.FileHandler(log_file)
             file_handler.setFormatter(formatter)
             logger.addHandler(file_handler)
-        except PermissionError:
+        except (PermissionError, OSError):
             # Can't write to clade.log file if working directory is read only
             pass
 
