@@ -510,7 +510,9 @@ gcc_optimization_opts = [
 ]
 
 cif_supported_opts = (
-    ["-D", "-U", "-nostdinc", "-fshort-wchar", "-std", "--std", "-c"]
+    ["-D", "-U", "-fshort-wchar", "-std", "--std", "-c", ]
+    # Relation to a host environment such as the standard library. This is especially important for OS kernels.
+    + ["-nostdinc", "-fno-builtin", "-fno-hosted", "-ffreestanding"]
     + ["-mbig-endian", "-mlittle-endian", "-mabi"]  # arm
     + ["{}$".format(opt) for opt in gcc_optimization_opts]
     + include_opts
