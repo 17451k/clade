@@ -47,7 +47,7 @@ def get_logger(name, with_name=True, conf=None):
             log_file = os.path.abspath(log_file)
             os.makedirs(os.path.dirname(log_file), exist_ok=True)
 
-            file_handler = logging.FileHandler(log_file)
+            file_handler = logging.FileHandler(log_file, delay=True)
             file_handler.setFormatter(formatter)
             logger.addHandler(file_handler)
         except (PermissionError, OSError):
