@@ -518,7 +518,7 @@ cif_supported_opts = (
     # Machine-dependent options.
     + ["-mbig-endian", "-mlittle-endian", "-mabi"]
     # Options to enable different kinds of errors. They can help to make the source code better.
-    + ["-Werror-implicit-function-declaration"]
+    + ["-Werror-implicit-function-declaration", "-Werror=implicit-function-declaration"]
     + ["{}$".format(opt) for opt in gcc_optimization_opts]
     + include_opts
 )
