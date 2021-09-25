@@ -60,7 +60,7 @@ int execve(const char *path, char *const argv[], char *const envp[]) {
         // Extract some data from envp
         update_environ((char **)envp);
         // Store information about intercepted call
-        intercept_exec_call(path, (char const *const *)argv);
+        intercept_exec_call(path, (char const *const *)argv, (char const *const *)envp);
         intercepted = true;
 
         // Put updated data back to envp
@@ -80,7 +80,7 @@ int execvp(const char *filename, char *const argv[]) {
     }
 
     if (!intercepted && getenv(CLADE_INTERCEPT_EXEC_ENV)) {
-        intercept_exec_call(filename, (char const *const *)argv);
+        intercept_exec_call(filename, (char const *const *)argv, (char const *const *)environ);
         // DO NOT change value of intercepted to TRUE here
     }
 
@@ -97,7 +97,7 @@ int execv(const char *filename, char *const argv[]) {
     // DO NOT check if (! intercepted) here: it will result in command loss
     // Also DO NOT change value of intercepted to TRUE for the same reason
     if (getenv(CLADE_INTERCEPT_EXEC_ENV)) {
-        intercept_exec_call(filename, (char const *const *)argv);
+        intercept_exec_call(filename, (char const *const *)argv, (char const *const *)environ);
     }
     // BUT we need to change it for macOS to avoid duplicating commands
     #ifdef __APPLE__
@@ -120,7 +120,7 @@ int posix_spawn(pid_t *restrict pid, const char *restrict path, const posix_spaw
     // DO NOT check if (! intercepted) here: it will result in command loss
     if ((access(path, F_OK ) != -1) && getenv(CLADE_INTERCEPT_EXEC_ENV) && argv) {
         update_environ((char **)envp);
-        intercept_exec_call(path, (char const *const *)argv);
+        intercept_exec_call(path, (char const *const *)argv, (char const *const *)envp);
         intercepted = true;
 
         char **new_envp = update_envp((char **)envp);
