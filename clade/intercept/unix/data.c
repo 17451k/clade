@@ -183,23 +183,25 @@ static void store_data(const char *data, const char *data_file) {
 
 void intercept_exec_call(const char *path, char const *const argv[], char const *const envp[]) {
     char *data_file = getenv_or_fail(CLADE_INTERCEPT_EXEC_ENV);
-    char *env_vars_file = getenv_or_fail(CLADE_ENV_VARS_ENV);
+    char *env_vars_file = getenv(CLADE_ENV_VARS_ENV);
 
     clade_lock();
 
     // Data with intercepted command which will be stored
     char *data = prepare_exec_data(path, argv);
-    char *envs = prepare_env_data(envp);
 
     if (getenv(CLADE_PREPROCESS_ENV))
         send_data(data);
     else
         store_data(data, data_file);
 
-    store_data(envs, env_vars_file);
+    if (env_vars_file) {
+        char *envs = prepare_env_data(envp);
+        store_data(envs, env_vars_file);
+        free(envs);
+    }
 
     free(data);
-    free(envs);
 
     clade_unlock();
 }
