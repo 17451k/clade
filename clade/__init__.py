@@ -139,7 +139,7 @@ class Clade:
 
         self.__dump_conf()
 
-    def intercept(self, command, cwd=os.getcwd(), append=False, use_wrappers=False, intercept_open=False):
+    def intercept(self, command, cwd=os.getcwd(), append=False, use_wrappers=False, intercept_open=False, intercept_envs=False):
         """Execute intercepting of build commands.
 
         Args:
@@ -163,6 +163,7 @@ class Clade:
             append=append,
             use_wrappers=use_wrappers,
             intercept_open=intercept_open,
+            intercept_envs=intercept_envs,
             conf=self.conf
         )
 

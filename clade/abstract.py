@@ -39,13 +39,15 @@ class Intercept(metaclass=abc.ABCMeta):
         RuntimeError: Clade installation is corrupted, or intercepting process failed
     """
 
-    def __init__(self, command, cwd=os.getcwd(), output: str = "cmds.txt", append=False, intercept_open=False, conf=None):
+    def __init__(self, command, cwd=os.getcwd(), output: str = "cmds.txt", append=False, intercept_open=False, intercept_envs=False, conf=None):
         self.command = command
         self.cwd = cwd
         self.output = os.path.abspath(output)
         self.output_open = os.path.join(os.path.dirname(self.output), "open.txt")
+        self.output_envs = os.path.join(os.path.dirname(self.output), "envs.txt")
         self.append = append
         self.intercept_open = intercept_open
+        self.intercept_envs = intercept_envs
         self.conf = conf if conf else dict()
 
         self.clade_if_file = None
@@ -57,6 +59,8 @@ class Intercept(metaclass=abc.ABCMeta):
                 os.remove(self.output)
             if os.path.exists(self.output_open):
                 os.remove(self.output_open)
+            if os.path.exists(self.output_envs):
+                os.remove(self.output_envs)
 
     def _setup_env(self):
         env = dict(os.environ)
@@ -67,6 +71,10 @@ class Intercept(metaclass=abc.ABCMeta):
         if self.intercept_open:
             self.logger.debug("Set 'CLADE_INTERCEPT_OPEN' environment variable value")
             env["CLADE_INTERCEPT_OPEN"] = self.output_open
+
+        if self.intercept_envs:
+            self.logger.debug("Set 'CLADE_ENV_VARS' environment variable value")
+            env["CLADE_ENV_VARS"] = self.output_envs
 
         # Prepare environment variables for PID graph
         if self.append:
