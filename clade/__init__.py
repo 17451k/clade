@@ -17,10 +17,13 @@ import ujson
 import os
 import shutil
 
+from typing import List
+
 from clade.utils import get_logger, merge_preset_to_conf
 from clade.intercept import intercept
 from clade.extensions.abstract import Extension
 from clade.types.nested_dict import nested_dict, traverse
+from clade.cmds import iter_cmds, iter_cmds_by_which
 
 
 class Clade:
@@ -336,6 +339,24 @@ class Clade:
     def cmds(self):
         """List of all parsed commands."""
         return self.CmdGraph.load_all_cmds()
+
+    def get_raw_cmds(self):
+        """Get an iterator over all unparsed commands."""
+        for cmd in iter_cmds(self.cmds_file):
+            yield cmd
+
+    def get_raw_cmds_by_which(self, which_list: List[str]):
+        """Get an iterator over all unparsed commands filtered by 'which' field."""
+        for cmd in iter_cmds_by_which(self.cmds_file, which_list):
+            yield cmd
+
+    def get_raw_cmd_by_id(self, cmd_id: str):
+        """Get raw command by its identifier."""
+        for cmd in iter_cmds(self.cmds_file):
+            if cmd["id"] == cmd_id:
+                return cmd
+
+        return RuntimeError("No command with id {}".format(cmd_id))
 
     def get_cmds(self, with_opts=False, with_raw=False):
         """Get list with all parsed commands."""
