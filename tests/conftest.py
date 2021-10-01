@@ -20,7 +20,7 @@ import tempfile
 
 from clade import Clade
 from clade.intercept import intercept
-from tests.test_intercept import test_project_make
+from tests.test_intercept import test_project_make, test_project
 
 
 @pytest.fixture(scope="session")
@@ -31,6 +31,15 @@ def cmds_file():
     with tempfile.NamedTemporaryFile() as fh:
         intercept(command=test_project_make, output=fh.name, use_wrappers=True)
         yield fh.name
+
+@pytest.fixture(scope="session")
+def envs_file():
+    # Disable multiprocessing
+    os.environ["CLADE_DEBUG"] = "1"
+
+    c = Clade(work_dir=test_project+'/clade')
+    c.intercept(command=test_project_make, use_wrappers=True, intercept_envs=True)
+    yield os.path.join(c.work_dir, "envs.txt")
 
 
 @pytest.fixture(scope="session")

@@ -288,3 +288,18 @@ def test_get_raw_cmds_by_which(clade_api: Clade):
 @pytest.mark.cif
 def test_get_raw_cmd_by_id(clade_api: Clade):
     assert clade_api.get_raw_cmd_by_id("1")["id"] == "1"
+
+
+@pytest.mark.cif
+def test_get_envs_by_id(clade_api: Clade):
+    assert clade_api.get_envs_by_id("1")["id"] == "1"
+
+
+@pytest.mark.cif
+def test_get_envs(clade_api: Clade):
+    assert list(clade_api.get_envs()) == list(iter_envs(os.path.join(clade_api.work_dir, "envs.txt")))
+
+
+@pytest.mark.cif
+def test_get_get_env_value_by_id(clade_api: Clade):
+    assert clade_api.get_env_value_by_id("1", "HOME") == iter_envs(os.path.join(clade_api.work_dir, "envs.txt"))[1]["envs"]["HOME"]

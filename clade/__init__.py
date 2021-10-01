@@ -24,6 +24,7 @@ from clade.intercept import intercept
 from clade.extensions.abstract import Extension
 from clade.types.nested_dict import nested_dict, traverse
 from clade.cmds import iter_cmds, iter_cmds_by_which
+from clade.envs import iter_envs
 
 
 class Clade:
@@ -357,6 +358,27 @@ class Clade:
                 return cmd
 
         return RuntimeError("No command with id {}".format(cmd_id))
+
+    def get_envs(self):
+        """Get an iterator over all environment variables."""
+        for env in iter_envs(os.path.join(self.work_dir, "envs.txt")):
+            yield env
+
+    def get_envs_by_id(self, cmd_id: str):
+        """Get environment variables by its intercepted command identifier."""
+        for envs in iter_envs(os.path.join(self.work_dir, "envs.txt")):
+            if envs["id"] == cmd_id:
+                return envs["envs"]
+
+        raise RuntimeError("No envs with id {}".format(cmd_id))
+
+    def get_env_value_by_id(self, cmd_id: str, name: str):
+        """Get environment variable by its intercepted command identifier and name."""
+        envs = self.get_envs_by_id(cmd_id)
+        if name in envs:
+            return envs[name]
+        else:
+            raise RuntimeError("No envs with id {} and name {}".format(cmd_id, name))
 
     def get_cmds(self, with_opts=False, with_raw=False):
         """Get list with all parsed commands."""
