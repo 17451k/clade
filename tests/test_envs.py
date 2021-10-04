@@ -1,4 +1,4 @@
-# Copyright (c) 2018 ISP RAS (http://www.ispras.ru)
+# Copyright (c) 2021 ISP RAS (http://www.ispras.ru)
 # Ivannikov Institute for System Programming of the Russian Academy of Sciences
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,10 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
+
 import pytest
 
-from clade.envs import open_envs_file, iter_envs, split_env, join_env, get_first_env, get_last_env, get_last_id, get_all_envs, get_stats
+from clade.envs import open_envs_file, iter_envs, join_env, get_last_id, get_all_envs, get_stats
+
 
 def test_bad_open():
     with pytest.raises(RuntimeError):

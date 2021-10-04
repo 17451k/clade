@@ -32,21 +32,23 @@ def cmds_file():
         intercept(command=test_project_make, output=fh.name, use_wrappers=True)
         yield fh.name
 
+
 @pytest.fixture(scope="session")
 def envs_file():
     # Disable multiprocessing
     os.environ["CLADE_DEBUG"] = "1"
 
-    c = Clade(work_dir=test_project+'/clade')
+    c = Clade(work_dir=test_project + '/clade')
     c.intercept(command=test_project_make, use_wrappers=True, intercept_envs=True)
     yield os.path.join(c.work_dir, "envs.txt")
 
 
 @pytest.fixture(scope="session")
-def clade_api(tmpdir_factory, cmds_file):
+def clade_api(tmpdir_factory):
     tmpdir = tmpdir_factory.mktemp("Clade")
 
-    c = Clade(tmpdir, cmds_file)
+    c = Clade(tmpdir)
+    c.intercept(command=test_project_make, use_wrappers=True, intercept_envs=True)
     c.parse_list(["CrossRef", "Variables", "Macros", "Typedefs", "CDB"])
 
     yield c
