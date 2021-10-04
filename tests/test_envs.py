@@ -37,11 +37,16 @@ def test_get_stats(envs_file):
 
 
 def test_join_env(envs_file):
+    lines = []
+    for envs in iter_envs(envs_file):
+        for name, value in envs["envs"].items():
+            lines.append(join_env({name: value}))
+
     with open(envs_file, "r") as envs_fh:
-        for envs in iter_envs(envs_file):
-            for name, value in envs["envs"].items():
-                assert join_env({name: value}) == envs_fh.readline().strip()
-            envs_fh.readline()
+        for line in envs_fh:
+            line = line.strip()
+
+            assert not line or line in lines
 
 
 def test_get_all_envs(envs_file):
