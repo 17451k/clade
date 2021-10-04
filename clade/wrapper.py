@@ -22,13 +22,13 @@ from clade.abstract import Intercept
 
 
 class Wrapper(Intercept):
-    def __init__(self, command, cwd=os.getcwd(), output="cmds.txt", append=False, intercept_open=False, conf=None):
+    def __init__(self, command, cwd=os.getcwd(), output="cmds.txt", append=False, intercept_open=False, intercept_envs=False, conf=None):
         if intercept_open:
             raise RuntimeError("wrappers can't be used to intercept open()")
 
         self.wrappers_dir = tempfile.mkdtemp()
 
-        super().__init__(command, cwd=cwd, output=output, append=append, intercept_open=intercept_open, conf=conf)
+        super().__init__(command, cwd=cwd, output=output, append=append, intercept_open=intercept_open, intercept_envs=intercept_envs, conf=conf)
 
         self.wrapper = self.__find_wrapper()
         self.wrapper_postfix = ".clade"

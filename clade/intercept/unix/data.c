@@ -145,6 +145,31 @@ static char *prepare_open_data(const char *path, int flags) {
     return data;
 }
 
+static char *prepare_env_data(char const *const envp[]) {
+    unsigned envs_len = 1, written_len = 0;
+
+    for (const char *const *env = envp; env && *env; env++) {
+        envs_len += 2 * strlen(*env) + strlen("\n");
+    }
+
+    char *data = malloc(envs_len + strlen("\n"));
+
+    if (!data) {
+        fprintf(stderr, "Couldn't allocate memory\n");
+        exit(EXIT_FAILURE);
+    }
+
+    for (const char *const *env = envp; env && *env; env++) {
+        char *exp_env = expand_newlines_alloc(*env);
+        written_len += sprintf(data + written_len, "%s\n", exp_env);
+        free(exp_env);
+    }
+
+    written_len += sprintf(data + written_len, "\n");
+
+    return data;
+}
+
 static void store_data(const char *data, const char *data_file) {
     FILE *f = fopen(data_file, "a");
     if (!f) {
@@ -156,8 +181,9 @@ static void store_data(const char *data, const char *data_file) {
     fclose(f);
 }
 
-void intercept_exec_call(const char *path, char const *const argv[]) {
+void intercept_exec_call(const char *path, char const *const argv[], char const *const envp[]) {
     char *data_file = getenv_or_fail(CLADE_INTERCEPT_EXEC_ENV);
+    char *env_vars_file = getenv(CLADE_ENV_VARS_ENV);
 
     clade_lock();
 
@@ -168,6 +194,12 @@ void intercept_exec_call(const char *path, char const *const argv[]) {
         send_data(data);
     else
         store_data(data, data_file);
+
+    if (env_vars_file) {
+        char *envs = prepare_env_data(envp);
+        store_data(envs, env_vars_file);
+        free(envs);
+    }
 
     free(data);
 

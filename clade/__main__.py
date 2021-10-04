@@ -101,6 +101,13 @@ def parse_args(args):
         default=False,
     )
     parser.add_argument(
+        "-ie",
+        "--intercept-envs",
+        help="also intercept environment variables",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
         "-a",
         "--append",
         help="append intercepted commands to existing cmds.txt file",
@@ -189,7 +196,8 @@ def main(sys_args=sys.argv[1:]):
             conf["build_command"],
             use_wrappers=conf["use_wrappers"],
             append=args.append,
-            intercept_open=args.intercept_open
+            intercept_open=args.intercept_open,
+            intercept_envs=args.intercept_envs
         )
 
         build_delta = datetime.timedelta(seconds=(time.time() - build_time_start))

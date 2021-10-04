@@ -23,9 +23,12 @@ LIB64 = os.path.join(os.path.dirname(__file__), "intercept", "lib64")
 
 
 class Debugger(Intercept):
-    def __init__(self, command, cwd=os.getcwd(), output="cmds.txt", append=False, intercept_open=False, conf=None):
+    def __init__(self, command, cwd=os.getcwd(), output="cmds.txt", append=False, intercept_open=False, intercept_envs=False, conf=None):
         if intercept_open:
             raise RuntimeError("debugger can't be used to intercept open()")
+        
+        if intercept_envs:
+            raise RuntimeError("debugger can't be used to intercept environment variables")
 
         super().__init__(command, cwd=cwd, output=output, append=append, intercept_open=intercept_open, conf=conf)
 

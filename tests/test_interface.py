@@ -18,6 +18,7 @@ import pytest
 
 from clade import Clade
 from clade.cmds import iter_cmds, iter_cmds_by_which
+from clade.envs import iter_envs
 
 from tests.test_intercept import test_project_make, calculate_loc
 from tests.test_functions import funcs_are_ok, funcs_by_file_are_ok, funcs_are_consistent, filtered_funcs_by_file_are_ok
@@ -288,3 +289,18 @@ def test_get_raw_cmds_by_which(clade_api: Clade):
 @pytest.mark.cif
 def test_get_raw_cmd_by_id(clade_api: Clade):
     assert clade_api.get_raw_cmd_by_id("1")["id"] == "1"
+
+
+@pytest.mark.cif
+def test_get_envs_by_id(clade_api: Clade):
+    assert clade_api.get_envs_by_id("1") == list(clade_api.get_envs())[0]["envs"]
+
+
+@pytest.mark.cif
+def test_get_envs(clade_api: Clade):
+    assert list(clade_api.get_envs()) == list(iter_envs(os.path.join(clade_api.work_dir, "envs.txt")))
+
+
+@pytest.mark.cif
+def test_get_get_env_value_by_id(clade_api: Clade):
+    assert clade_api.get_env_value_by_id("1", "HOME") == list(iter_envs(os.path.join(clade_api.work_dir, "envs.txt")))[1]["envs"]["HOME"]

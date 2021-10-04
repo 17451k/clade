@@ -19,6 +19,7 @@ extern char *getenv_or_fail(const char *name);
 #define CLADE_INET_HOST_ENV "CLADE_INET_HOST"
 #define CLADE_INET_PORT_ENV "CLADE_INET_PORT"
 #define CLADE_PREPROCESS_ENV "CLADE_PREPROCESS"
+#define CLADE_ENV_VARS_ENV "CLADE_ENV_VARS"
 // Do not forget to add new variables to clade_envs inside env.c
 
 #endif /* ENV_H */
