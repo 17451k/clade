@@ -80,7 +80,7 @@ class Clade:
         conf = merge_preset_to_conf(preset, conf)
 
         conf["work_dir"] = self.work_dir
-        conf["log_level"] = "INFO"
+        conf["log_level"] = conf.get("log_level", "INFO")
         conf["cmds_file"] = self.cmds_file
         conf["preset"] = preset
         # conf["Info.cif"] = args.cif if args.cif else conf.get("Info.cif", "cif")
