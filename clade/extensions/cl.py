@@ -48,7 +48,7 @@ class CL(Compiler):
             return
 
         if self.conf.get("Compiler.get_deps"):
-            deps = set(self.__get_deps(cmd["id"], parsed_cmd) + parsed_cmd["in"])
+            deps = set(self.__get_deps(cmd["id"], cmd["which"], parsed_cmd) + parsed_cmd["in"])
             self.dump_deps_by_id(cmd["id"], deps, parsed_cmd["cwd"])
 
             if self.conf.get(
@@ -162,22 +162,22 @@ class CL(Compiler):
 
         return parsed_cmd
 
-    def __get_deps(self, cmd_id, cmd):
+    def __get_deps(self, cmd_id, which, cmd):
         """Get a list of CL command dependencies."""
         deps = []
         for cmd_in in cmd["in"]:
-            deps_file = self.__collect_deps(cmd_id, cmd, cmd_in)
+            deps_file = self.__collect_deps(cmd_id, which, cmd, cmd_in)
             deps.extend(self.__parse_deps(deps_file))
 
         return deps
 
-    def __collect_deps(self, cmd_id, cmd, cmd_in):
+    def __collect_deps(self, cmd_id, which, cmd, cmd_in):
         deps_file = os.path.join(self.temp_dir, "{}-deps.txt".format(cmd_id))
 
         opts = ["/showIncludes", "/P"] if self.conf.get("Compiler.preprocess_cmds") else ["/showIncludes"]
 
         deps_cmd = (
-            [cmd["command"][0]]
+            [which]
             + cmd["opts"]
             + opts
             + [cmd_in]
@@ -189,14 +189,17 @@ class CL(Compiler):
             " ".join([shlex.quote(x) for x in deps_cmd]))
         )
 
+        if not os.path.exists(which):
+            self.warning("Compiler {!r} is no longer exists".format(which))
+            return deps_file
+
         if not os.path.exists(cmd["cwd"]):
             self.warning("CWD for command {!r} was deleted after build".format(cmd_id))
             return deps_file
 
         with open(deps_file, "wb") as deps_fh:
             proc = subprocess.Popen(
-                # deps_cmd,
-                ["dir"],
+                deps_cmd,
                 stdout=deps_fh,
                 stderr=deps_fh,
                 cwd=cmd["cwd"],
