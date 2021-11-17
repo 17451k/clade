@@ -21,6 +21,7 @@
 #include <stdarg.h>
 #include <fcntl.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #define __USE_GNU
 #include <dlfcn.h>
@@ -51,20 +52,27 @@ void on_load(void) {
 int execve(const char *path, char *const argv[], char *const envp[]) {
     int (*execve_real)(const char *, char *const *, char *const *) = dlsym(RTLD_NEXT, "execve");
 
+    char *error;
+    if ((error = dlerror()) != NULL)  {
+        fprintf(stderr, "%s\n", error);
+        exit(1);
+    }
+
     // Add Clade environment variables from clade_environ to environ if they were absent
     if (!getenv(CLADE_INTERCEPT_EXEC_ENV)) {
         update_environ(clade_environ);
     }
 
     if (!intercepted && getenv(CLADE_INTERCEPT_EXEC_ENV)) {
-        // Extract some data from envp
-        update_environ((char **)envp);
+        // Copy envp, so we can safely modify it later
+        // All missing Clade environment variables will be added to "new_envp"
+        // from "environ" if they were absent in "evnp"
+        char **new_envp = copy_envp((char **)envp);
+
         // Store information about intercepted call
-        intercept_exec_call(path, (char const *const *)argv, (char const *const *)envp);
+        intercept_exec_call(path, (char const *const *)argv, new_envp);
         intercepted = true;
 
-        // Put updated data back to envp
-        char **new_envp = update_envp((char **)envp);
         return execve_real(path, argv, (char *const *restrict)new_envp);
     }
 
@@ -75,13 +83,26 @@ int execve(const char *path, char *const argv[], char *const envp[]) {
 int execvp(const char *filename, char *const argv[]) {
     int (*execvp_real)(const char *, char *const *) = dlsym(RTLD_NEXT, "execvp");
 
+    char *error;
+    if ((error = dlerror()) != NULL)  {
+        fprintf(stderr, "%s\n", error);
+        exit(1);
+    }
+
+    // Add Clade environment variables from clade_environ to environ if they were absent
     if (!getenv(CLADE_INTERCEPT_EXEC_ENV)) {
         update_environ(clade_environ);
     }
 
     if (!intercepted && getenv(CLADE_INTERCEPT_EXEC_ENV)) {
-        intercept_exec_call(filename, (char const *const *)argv, (char const *const *)environ);
+        // Copy environ, so we can safely modify it later
+        char **new_envp = copy_envp((char **)environ);
+
+        intercept_exec_call(filename, (char const *const *)argv, (char **)new_envp);
         // DO NOT change value of intercepted to TRUE here
+
+        // intercept_exec_call changed some environment values in new_envp, which now should be added back to environ
+        update_environ(new_envp);
     }
 
     return execvp_real(filename, argv);
@@ -90,6 +111,13 @@ int execvp(const char *filename, char *const argv[]) {
 int execv(const char *filename, char *const argv[]) {
     int (*execv_real)(const char *, char *const *) = dlsym(RTLD_NEXT, "execv");
 
+    char *error;
+    if ((error = dlerror()) != NULL)  {
+        fprintf(stderr, "%s\n", error);
+        exit(1);
+    }
+
+    // Add Clade environment variables from clade_environ to environ if they were absent
     if (!getenv(CLADE_INTERCEPT_EXEC_ENV)) {
         update_environ(clade_environ);
     }
@@ -97,7 +125,13 @@ int execv(const char *filename, char *const argv[]) {
     // DO NOT check if (! intercepted) here: it will result in command loss
     // Also DO NOT change value of intercepted to TRUE for the same reason
     if (getenv(CLADE_INTERCEPT_EXEC_ENV)) {
-        intercept_exec_call(filename, (char const *const *)argv, (char const *const *)environ);
+        // Copy environ, so we can safely modify it later
+        char **new_envp = copy_envp((char **)environ);
+
+        intercept_exec_call(filename, (char const *const *)argv, (char **)new_envp);
+
+        // intercept_exec_call changed some environment values in new_envp, which now should be added back to environ
+        update_environ(new_envp);
     }
     // BUT we need to change it for macOS to avoid duplicating commands
     #ifdef __APPLE__
@@ -113,17 +147,27 @@ int posix_spawn(pid_t *restrict pid, const char *restrict path, const posix_spaw
     int (*posix_spawn_real)(pid_t *restrict, const char *restrict, const posix_spawn_file_actions_t *,
                 const posix_spawnattr_t *restrict, char *const *restrict, char *const *restrict) = dlsym(RTLD_NEXT, "posix_spawn");
 
+    char *error;
+    if ((error = dlerror()) != NULL)  {
+        fprintf(stderr, "%s\n", error);
+        exit(1);
+    }
+
+    // Add Clade environment variables from clade_environ to environ if they were absent
     if (!getenv(CLADE_INTERCEPT_EXEC_ENV)) {
         update_environ(clade_environ);
     }
 
     // DO NOT check if (! intercepted) here: it will result in command loss
     if ((access(path, F_OK ) != -1) && getenv(CLADE_INTERCEPT_EXEC_ENV) && argv) {
-        update_environ((char **)envp);
-        intercept_exec_call(path, (char const *const *)argv, (char const *const *)envp);
+        // Copy envp, so we can safely modify it later
+        // All missing Clade environment variables will be added to "new_envp"
+        // from "environ" if they were absent in "evnp"
+        char **new_envp = copy_envp((char **)envp);
+
+        intercept_exec_call(path, (char const *const *)argv, new_envp);
         intercepted = true;
 
-        char **new_envp = update_envp((char **)envp);
         return posix_spawn_real(pid, path, file_actions, attrp, argv, (char *const *restrict)new_envp);
     }
 

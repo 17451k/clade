@@ -19,6 +19,6 @@ void clade_lock(void) {
 }
 
 void clade_unlock(void) {
-    fclose(f);
     flock(fileno(f), LOCK_UN);
+    fclose(f);
 }

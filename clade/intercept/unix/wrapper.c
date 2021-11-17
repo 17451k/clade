@@ -32,13 +32,18 @@ int main(int argc, char **argv, char **envp) {
     char *original_exe = malloc(strlen(argv[0]) + strlen(wrapper_postfix) + 1);
     sprintf(original_exe, "%s%s", argv[0], wrapper_postfix);
 
+    // Copy envp, so we can safely modify it later
+    // All missing Clade environment variables will be added to "new_envp"
+    // from "environ" if they were absent in "evnp"
+    char **new_envp = copy_envp((char **)envp);
+
     /* First case: original executable file was renamed
      * (.clade extension was added to its name)
      * and symlink to the wrapper was added instead.
      */
     if(access(original_exe, F_OK) != -1) {
         // Intercept call only if clade-intercept is working
-        if (getenv(CLADE_INTERCEPT_EXEC_ENV)) {
+        if (getenv_from_envp(new_envp, CLADE_INTERCEPT_EXEC_ENV)) {
             char *which = realpath(original_exe, NULL);
 
             if (!which) {
@@ -48,13 +53,13 @@ int main(int argc, char **argv, char **envp) {
 
             // strip wrapper_postfix extension
             which[strlen(which) - strlen(wrapper_postfix)] = 0;
-            intercept_exec_call(which, (char const *const *)argv, (char const *const *)envp);
+            intercept_exec_call(which, (char const *const *)argv, new_envp);
         }
 
         // First argument must be a valid path, not just a filename
         argv[0] = original_exe;
         // Execute original file
-        return execve(original_exe, argv, envp);
+        return execve(original_exe, argv, new_envp);
     } else {
         // Otherwise directory with wrappers is located in the PATH variable
         char *path = strstr(strdup(getenv("PATH")), WHICH_DELIMITER);
@@ -65,13 +70,13 @@ int main(int argc, char **argv, char **envp) {
             exit(EXIT_FAILURE);
         }
 
-        if (getenv(CLADE_INTERCEPT_EXEC_ENV)) {
-            intercept_exec_call(which, (char const *const *)argv, (char const *const *)envp);
+        if (getenv_from_envp(new_envp, CLADE_INTERCEPT_EXEC_ENV)) {
+            intercept_exec_call(which, (char const *const *)argv, new_envp);
         }
 
         // First argument must be a valid path, not just a filename
         argv[0] = which;
-        return execve(which, argv, envp);
+        return execve(which, argv, new_envp);
     }
 
     fprintf(stderr, "Something went wrong\n");

@@ -59,7 +59,7 @@ static char *expand_newlines_alloc(const char *src) {
     return dest;
 }
 
-static char *prepare_exec_data(const char *path, char const *const argv[]) {
+static char *prepare_exec_data(const char *path, char const *const argv[], char **envp) {
     unsigned args_len = 1, written_len = 0;
 
     // Concatenate all command-line arguments together using "||" as delimeter.
@@ -97,7 +97,7 @@ static char *prepare_exec_data(const char *path, char const *const argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    char *parent_id = get_parent_id();
+    char *parent_id = get_parent_id(envp);
     written_len += sprintf(data + written_len, "%s%s%s%s%s%s",
         cwd, DELIMITER,
         parent_id, DELIMITER,
@@ -181,14 +181,14 @@ static void store_data(const char *data, const char *data_file) {
     fclose(f);
 }
 
-void intercept_exec_call(const char *path, char const *const argv[], char const *const envp[]) {
+void intercept_exec_call(const char *path, char const *const argv[], char **envp) {
     char *data_file = getenv_or_fail(CLADE_INTERCEPT_EXEC_ENV);
     char *env_vars_file = getenv(CLADE_ENV_VARS_ENV);
 
     clade_lock();
 
     // Data with intercepted command which will be stored
-    char *data = prepare_exec_data(path, argv);
+    char *data = prepare_exec_data(path, argv, envp);
 
     if (getenv(CLADE_PREPROCESS_ENV))
         send_data(data);
@@ -196,7 +196,7 @@ void intercept_exec_call(const char *path, char const *const argv[], char const 
         store_data(data, data_file);
 
     if (env_vars_file) {
-        char *envs = prepare_env_data(envp);
+        char *envs = prepare_env_data((char const *const *)envp);
         store_data(envs, env_vars_file);
         free(envs);
     }

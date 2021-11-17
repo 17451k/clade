@@ -157,6 +157,30 @@ static int get_cmd_id_and_update() {
     return id;
 }
 
+char *getenv_from_envp(char **envp, const char *key) {
+    int index = find_key_index(envp, key);
+
+    if (index == -1) {
+        return NULL;
+    }
+
+    return strchr(envp[index], '=') + 1;
+}
+
+void setenv_to_envp(char **envp, const char *key, const char *value) {
+    char *new_entry = construct_envp_entry(key, value);
+
+    int index = find_key_index(envp, CLADE_PARENT_ID_ENV);
+
+    if (index != -1) {
+        free(envp[index]);
+        envp[index] = new_entry;
+    } else {
+        fprintf(stderr, "Coudn't find parent id\n");
+        exit(-1);
+    }
+}
+
 int get_cmd_id() {
     char *id_file = getenv(CLADE_ID_FILE_ENV);
 
@@ -178,14 +202,15 @@ int get_cmd_id() {
     return id;
 }
 
-char *get_parent_id() {
-    char *parent_id = strdup(getenv(CLADE_PARENT_ID_ENV));
+char *get_parent_id(char **envp) {
+    char *parent_id = strdup(getenv_from_envp(envp, CLADE_PARENT_ID_ENV));
 
     int new_parent_id = get_cmd_id_and_update();
     char new_clade_id[50]; // 50 should be enough
 
     sprintf(new_clade_id, "%d", new_parent_id);
-    setenv(CLADE_PARENT_ID_ENV, new_clade_id, 1);
+
+    setenv_to_envp(envp, CLADE_PARENT_ID_ENV, new_clade_id);
 
     return parent_id;
 }

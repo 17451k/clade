@@ -5,10 +5,13 @@ extern char **copy_envp(char **envp);
 extern char **update_envp(char **input_envp);
 extern void update_environ(char **envp);
 
-extern char *get_parent_id();
+extern char *get_parent_id(char **envp);
 extern int get_cmd_id();
 
 extern char *getenv_or_fail(const char *name);
+
+char *getenv_from_envp(char **envp, const char *key);
+void setenv_to_envp(char **envp, const char *key, const char *value);
 
 // All environment variables used by clade
 #define CLADE_INTERCEPT_OPEN_ENV "CLADE_INTERCEPT_OPEN"
