@@ -23,6 +23,8 @@ import tempfile
 
 from distutils.command.build import build
 from setuptools.command.develop import develop
+from setuptools.command.install import install
+from setuptools import dist
 
 
 LIBINT_SRC = os.path.abspath(
@@ -188,6 +190,21 @@ class CustomDevelop(develop):
         super().run()
 
 
+class CustomInstall(install):
+    def finalize_options(self):
+        install.finalize_options(self)
+        if self.distribution.has_ext_modules():
+            self.install_lib = self.install_platlib
+
+
+class CustomDist(dist.Distribution):
+    def is_pure(self):
+        return False
+
+    def has_ext_modules(self):
+        return True
+
+
 try:
     from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 
@@ -227,8 +244,10 @@ setuptools.setup(
     cmdclass={
         "build": CustomBuild,
         "develop": CustomDevelop,
+        "install": CustomInstall,
         "bdist_wheel": bdist_wheel,
     },
+    distclass=CustomDist,
     install_requires=[
         "ujson",
         "chardet",
