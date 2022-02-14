@@ -404,7 +404,7 @@ class Clade:
         if not cmd_type:
             cmd_type = self.get_cmd_type(cmd_id)
 
-        if with_deps and cmd_type not in ["CC", "CL"]:
+        if with_deps and cmd_type not in ["CC", "CL", "CXX"]:
             raise RuntimeError("Only compiler commands have dependencies")
 
         ext_obj = self.CmdGraph.get_ext_obj(cmd_type)
@@ -444,7 +444,7 @@ class Clade:
         if not cmd_type:
             cmd_type = self.get_cmd_type(cmd_id)
 
-        if cmd_type not in ["CC", "CL"]:
+        if cmd_type not in ["CC", "CL", "CXX"]:
             raise RuntimeError("Only compiler commands have dependencies")
 
         cc_obj = self.CmdGraph.get_ext_obj(cmd_type)
