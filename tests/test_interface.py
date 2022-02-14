@@ -71,7 +71,7 @@ def test_cmd_graph(clade_api: Clade):
 
         assert "command" in c.get_cmd(cmd_id, with_raw=True)
 
-        if c.get_cmd_type(cmd_id) == "CC":
+        if c.get_cmd_type(cmd_id) in ["CC", "CXX"]:
             for with_deps in (True, False):
                 assert ("deps" in c.get_cmd(cmd_id, with_deps=with_deps)) == with_deps
         else:
