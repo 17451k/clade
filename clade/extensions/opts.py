@@ -522,13 +522,13 @@ cif_supported_opts = (
     + include_opts
 )
 
-clang_supported_ipts = (
+clang_supported_opts = (
     cif_supported_opts + ["--target", "--sysroot", "-target"]
 )
 
 i_regex = re.compile("(" + "|".join(include_opts) + ")=?(.*)")
 cif_s_regex = re.compile("|".join(cif_supported_opts))
-clang_s_regex = re.compile("|".join(clang_supported_ipts))
+clang_s_regex = re.compile("|".join(clang_supported_opts))
 
 
 def filter_opts_for_clang(opts, get_storage_path=None):
