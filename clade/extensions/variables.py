@@ -23,7 +23,7 @@ from clade.extensions.initializations import parse_variables_initializations
 
 
 class Variables(Callgraph):
-    requires = ["SrcGraph", "Info", "Functions"]
+    requires = ["Info", "Functions"]
 
     __version__ = "1"
 
@@ -37,12 +37,10 @@ class Variables(Callgraph):
         self.used_in_vars_file = "used_in_vars.json"
 
         self.functions = None
-        self.src_graph = None
 
     @Extension.prepare
     def parse(self, cmds_file):
         self.functions = self.extensions["Functions"].load_functions()
-        self.src_graph = self.extensions["SrcGraph"].load_src_graph()
 
         self.__process_init_global()
         self._clean_error_log()
@@ -52,7 +50,6 @@ class Variables(Callgraph):
         self.dump_variables_data(self.used_in_vars, self.used_in_vars_file)
 
         self.functions.clear()
-        self.src_graph.clear()
         self.variables.clear()
         self.used_in_vars.clear()
 
