@@ -41,7 +41,7 @@ def get_logger(name, with_name=True, conf=None):
     stream_handler.setFormatter(formatter)
     logger.addHandler(stream_handler)
 
-    if conf.get("work_dir"):
+    if conf.get("work_dir") and os.access(conf.get("work_dir"), os.W_OK):
         try:
             log_file = os.path.join(conf["work_dir"], "clade.log")
             log_file = os.path.abspath(log_file)
