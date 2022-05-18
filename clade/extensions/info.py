@@ -14,7 +14,6 @@
 # limitations under the License.
 
 import codecs
-import concurrent.futures
 import fnmatch
 import gc
 import hashlib
@@ -23,8 +22,6 @@ import re
 import shlex
 import shutil
 import subprocess
-import sys
-import time
 import zipfile
 
 from clade.extensions.abstract import Extension
@@ -105,11 +102,13 @@ class Info(Extension):
         self.__check_cif()
 
         cmds = list(self.extensions["SrcGraph"].load_all_cmds())
+        total_cmds = len(cmds)
 
         if not cmds:
             raise RuntimeError("There are no parsed compiler commands")
 
-        self.parse_cmds_in_parallel(cmds, Info._run_cif)
+        self.log(f"Parsing {total_cmds} commands")
+        self.execute_in_parallel(cmds, Info._run_cif, total_objs=total_cmds)
 
         if os.path.exists(self.temp_dir):
             shutil.rmtree(self.temp_dir)
@@ -284,70 +283,20 @@ class Info(Extension):
         return cif_output
 
     def __normalize_cif_output(self, cif_output):
-        self.log("Normalizing CIF output")
-
-        if self.conf.get("cpu_count"):
-            max_workers = self.conf.get("cpu_count", os.cpu_count())
-        else:
-            max_workers = os.cpu_count()
+        init_global = os.path.basename(self.init_global).replace(".zip", ".txt")
+        files = [f for f in cif_output if not f.endswith(init_global)]
+        total_files = len(files)
+        storage = self.extensions["Storage"].get_storage_dir()
 
         # Normalize all small cif output files
-        with concurrent.futures.ProcessPoolExecutor(
-            max_workers=max_workers
-        ) as p:
-            futures = []
-            finished_files = 0
-
-            init_global = os.path.basename(self.init_global).replace(".zip", ".txt")
-            files = [f for f in cif_output if not f.endswith(init_global)]
-            total_files = len(files)
-
-            storage = self.extensions["Storage"].get_storage_dir()
-            expand = os.path.basename(self.expand)
-
-            for file in files:
-                f = p.submit(normalize_file, file, storage, self.cif_output_dir, expand)
-                futures.append(f)
-
-            while True:
-                if not futures:
-                    break
-
-                done_futures = [x for x in futures if x.done()]
-
-                # Remove all futures that are already completed
-                # to reduce memory usage
-                futures = [x for x in futures if not x.done()]
-
-                # Track progress (only if stdout is not redirected)
-                if total_files and sys.stdout.isatty() and self.conf["log_level"] in ["INFO", "DEBUG"]:
-                    finished_files += len(done_futures)
-
-                    msg = "\t [{:.0f}%] {} of {} files are normalized".format(
-                        finished_files / total_files * 100,
-                        finished_files,
-                        total_files,
-                    )
-                    print(msg, end="\r")
-
-                # Check return value of all finished futures
-                for f in done_futures:
-                    try:
-                        f.result()
-                    except Exception as e:
-                        self.error(
-                            "Something happened in the child process: {}".format(
-                                e
-                            )
-                        )
-
-                        raise RuntimeError
-
-                # Save a little bit of CPU time
-                time.sleep(0.1)
-
-        if total_files and sys.stdout.isatty() and self.conf["log_level"] in ["INFO", "DEBUG"]:
-            print(" " * 79, end="\r")
+        self.log(f"Normalizing {total_files} files")
+        self.execute_in_parallel(
+            objs=files,
+            process=normalize_file,
+            args=(storage, self.cif_output_dir),
+            pass_self=False,
+            total_objs=total_files
+        )
 
         # Join all cif output file into several big .txt files
         for file in self.files:
@@ -504,7 +453,7 @@ class Info(Extension):
 
 
 # Moving this function outside output_file class increases performance
-def normalize_file(file, storage, cif_output_dir, expand):
+def normalize_file(file, storage, cif_output_dir):
     if not os.path.isfile(file):
         return
 

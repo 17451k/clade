@@ -232,7 +232,7 @@ class Extension(metaclass=abc.ABCMeta):
 
     def __get_all_json_files_in_folder(self, folder):
         files = []
-        for p in pathlib.Path(folder).glob('**/*.json'):
+        for p in pathlib.Path(folder).glob("**/*.json"):
             files.append(str(p))
 
         return files
@@ -292,7 +292,9 @@ class Extension(metaclass=abc.ABCMeta):
         if global_meta:
             for key in [k for k in global_meta["conf"] if k in self.get_ext_opts()]:
                 if global_meta["conf"][key] != self.conf[key]:
-                    self.error("Configuration option {!r} was changed between launches".format(key))
+                    self.error(
+                        f"Configuration option {key} was changed between launches"
+                    )
                     raise RuntimeError
 
     def get_ext_opts(self):
@@ -344,7 +346,9 @@ class Extension(metaclass=abc.ABCMeta):
             stored_meta["versions"]["python"] = platform.python_version()
 
         if "pip" not in stored_meta["versions"]:
-            stored_meta["versions"]["pip"] = pkg_resources.get_distribution("pip").version
+            stored_meta["versions"]["pip"] = pkg_resources.get_distribution(
+                "pip"
+            ).version
 
         if "gcc" not in stored_meta["versions"]:
             stored_meta["versions"]["gcc"] = get_program_version("gcc")
@@ -366,7 +370,7 @@ class Extension(metaclass=abc.ABCMeta):
             ]
 
         if "date" not in stored_meta:
-            stored_meta["date"] = datetime.datetime.today().strftime('%Y-%m-%d %H:%M')
+            stored_meta["date"] = datetime.datetime.today().strftime("%Y-%m-%d %H:%M")
 
         self.dump_data(stored_meta, self.global_meta_file, indent=4)
 
@@ -380,45 +384,50 @@ class Extension(metaclass=abc.ABCMeta):
         empty_self.temp_dir = self.temp_dir
 
         for ext_name in obj.extensions:
-            empty_self.extensions[ext_name] = self.__get_empty_obj(obj.extensions[ext_name])
+            empty_self.extensions[ext_name] = self.__get_empty_obj(
+                obj.extensions[ext_name]
+            )
 
         return empty_self
 
-    def parse_cmds_in_parallel(self, cmds, unwrap, total_cmds=None):
-        if os.environ.get("CLADE_DEBUG"):
-            if total_cmds:
-                self.log("Parsing {} commands".format(total_cmds))
-
-            for cmd in cmds:
-                unwrap(self, cmd)
-            return
-
-        max_workers = self.conf.get("cpu_count", os.cpu_count())
-
-        # cmds is eather list, tuple or generator
-        if type(cmds) is list or type(cmds) is tuple:
-            total_cmds = len(cmds)
-
-        # Print progress only of we know total number of commands
-        if total_cmds:
-            self.log("Parsing {} commands".format(total_cmds))
+    def execute_in_parallel(
+        self, objs, process, args=(), total_objs=None, pass_self=True
+    ):
+        # objs is eather list, tuple or generator
+        if not total_objs and (type(objs) is list or type(objs) is tuple):
+            total_objs = len(objs)
 
         # Passing "self" object to p.submit() can be very, very time consuming
         # if self is rather big. So, here we create an empty object
         # of the current type, and use it instead
-        empty_self = self.__get_empty_obj(self)
+        if pass_self:
+            empty_self = self.__get_empty_obj(self)
+
+        if os.environ.get("CLADE_DEBUG"):
+            for obj in objs:
+                if pass_self:
+                    process(empty_self, obj, *args)
+                else:
+                    process(obj, *args)
+            return
+
+        max_workers = self.conf.get("cpu_count", os.cpu_count())
 
         with ProcessPoolExecutor(max_workers=max_workers) as p:
             chunk_size = 2000
             futures = []
-            finished_cmds = 0
+            finished_objs = 0
 
-            # Submit commands to executor in chunks
-            for cmd_chunk in yield_chunk(cmds, chunk_size=chunk_size):
+            # Submit objs to executor in chunks
+            for obj_chunk in yield_chunk(objs, chunk_size=chunk_size):
                 chunk_futures = []
 
-                for cmd in cmd_chunk:
-                    f = p.submit(unwrap, empty_self, cmd)
+                for obj in obj_chunk:
+                    if pass_self:
+                        f = p.submit(process, empty_self, obj, *args)
+                    else:
+                        f = p.submit(process, obj, *args)
+
                     chunk_futures.append(f)
                     futures.append(f)
 
@@ -433,13 +442,17 @@ class Extension(metaclass=abc.ABCMeta):
                     futures = [x for x in futures if not x.done()]
 
                     # Track progress (only if stdout is not redirected)
-                    if total_cmds and sys.stdout.isatty() and self.conf["log_level"] in ["INFO", "DEBUG"]:
-                        finished_cmds += len(done_futures)
+                    if (
+                        total_objs
+                        and sys.stdout.isatty()
+                        and self.conf["log_level"] in ["INFO", "DEBUG"]
+                    ):
+                        finished_objs += len(done_futures)
 
-                        msg = "\t [{:.0f}%] {} of {} commands are parsed".format(
-                            finished_cmds / total_cmds * 100,
-                            finished_cmds,
-                            total_cmds,
+                        msg = "\t Processed {} out of {} [{:.0f}%]".format(
+                            finished_objs,
+                            total_objs,
+                            finished_objs / total_objs * 100,
                         )
                         print(msg, end="\r")
 
@@ -451,17 +464,19 @@ class Extension(metaclass=abc.ABCMeta):
                             raise e
 
                     # Submit next chunk if the current one is almost processed
-                    finished_chunk_cmds = len(
-                        [x for x in chunk_futures if x.done()]
-                    )
-                    if finished_chunk_cmds > (chunk_size - chunk_size // 10):
+                    finished_chunk_objs = len([x for x in chunk_futures if x.done()])
+                    if finished_chunk_objs > (chunk_size - chunk_size // 10):
                         break
 
                     # Save a little bit of CPU time
                     # skip sleep only for very small projects
                     time.sleep(0.1)
 
-            if total_cmds and sys.stdout.isatty() and self.conf["log_level"] in ["INFO", "DEBUG"]:
+            if (
+                total_objs
+                and sys.stdout.isatty()
+                and self.conf["log_level"] in ["INFO", "DEBUG"]
+            ):
                 print(" " * 79, end="\r")
 
     @staticmethod
