@@ -82,8 +82,9 @@ class Common(Extension, metaclass=abc.ABCMeta):
         total_cmds = number_of_cmds_by_which(cmds_file, which_list)
         cmds = iter_cmds_by_which(cmds_file, which_list)
 
-        self.log(f"Parsing {total_cmds} commands")
-        self.execute_in_parallel(cmds, unwrap, total_objs=total_cmds)
+        if total_cmds:
+            self.log(f"Parsing {total_cmds} commands")
+            self.execute_in_parallel(cmds, unwrap, total_objs=total_cmds)
 
         self.__merge_all_cmds()
 
