@@ -118,9 +118,7 @@ class Info(Extension):
                 "Something is wrong with every compilation command"
             )
 
-        cif_output = self.__find_cif_output()
-
-        if not cif_output and os.path.exists(self.err_log):
+        if not os.path.exists(self.cif_output_dir) and os.path.exists(self.err_log):
             raise RuntimeError(
                 "CIF failed on every command. Log: {}".format(self.err_log)
             )
@@ -130,7 +128,7 @@ class Info(Extension):
         else:
             self.log("CIF finished with errors")
 
-        self.__normalize_cif_output(cif_output)
+        self.__normalize_cif_output()
 
     def __check_cif(self):
         if not shutil.which(self.conf.get("Info.cif", "cif")):
@@ -282,7 +280,9 @@ class Info(Extension):
 
         return cif_output
 
-    def __normalize_cif_output(self, cif_output):
+    def __normalize_cif_output(self):
+        cif_output = self.__find_cif_output()
+
         init_global = os.path.basename(self.init_global).replace(".zip", ".txt")
         files = [f for f in cif_output if not f.endswith(init_global)]
         total_files = len(files)
@@ -293,7 +293,6 @@ class Info(Extension):
         self.execute_in_parallel(
             objs=files,
             process=normalize_file,
-            args=(storage, self.cif_output_dir),
             pass_self=False,
             total_objs=total_files
         )
@@ -453,7 +452,7 @@ class Info(Extension):
 
 
 # Moving this function outside output_file class increases performance
-def normalize_file(file, storage, cif_output_dir):
+def normalize_file(file):
     if not os.path.isfile(file):
         return
 
