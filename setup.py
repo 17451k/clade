@@ -228,7 +228,7 @@ setuptools.setup(
     description="Clade is a tool for extracting information about software build process and source code",
     long_description=open("README.md", encoding="utf8").read(),
     long_description_content_type="text/markdown",
-    python_requires=">=3.5",
+    python_requires=">=3.7",
     packages=["clade"],
     package_data={"clade": package_files("clade")},
     entry_points={
@@ -262,7 +262,6 @@ setuptools.setup(
     ]},
     classifiers=[
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
