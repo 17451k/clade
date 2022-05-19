@@ -79,12 +79,12 @@ class Variables(Callgraph):
         self.log("Parsing global variables initializations")
         self.variables = parse_variables_initializations(
             self.extensions["Info"].iter_init_global,
-            self.functions,
             self.__process_callv,
             self.work_dir
         )
 
     def __process_callv(self, functions, context_file):
+        functions = {f for f in functions if f in self.functions}
         if not functions:
             return
 

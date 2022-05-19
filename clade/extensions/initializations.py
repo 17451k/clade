@@ -33,7 +33,6 @@ t_ignore = ''
 
 
 tmp_value_cache = set()
-functions = None
 callgraph_update_method = None
 function_name_re = re.compile(r"\(?\s*&?\s*(\w+)\s*\)?$")
 
@@ -346,10 +345,9 @@ def add_function(value):
 
 
 def commit_functions(path):
-    global functions
     global tmp_value_cache
     global callgraph_update_method
-    callgraph_update_method({f for f in tmp_value_cache if f in functions}, path)
+    callgraph_update_method(tmp_value_cache, path)
     tmp_value_cache = set()
 
 
@@ -369,10 +367,8 @@ def parse_declaration(string, work_dir):
     return __parser.parse(string, lexer=__lexer)
 
 
-def parse_variables_initializations(iter_init_global, callgraph_functions, commit_method, work_dir):
-    global functions
+def parse_variables_initializations(iter_init_global, commit_method, work_dir):
     global callgraph_update_method
-    functions = callgraph_functions
     callgraph_update_method = commit_method
 
     data = ''.join(list(iter_init_global())) + '\n'
