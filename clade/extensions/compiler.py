@@ -66,7 +66,10 @@ class Compiler(Common):
         if not deps:
             return
 
+        # Normalize and remove duplicates
         deps = self.extensions["Path"].normalize_rel_paths(deps, cwd)
+        deps = list(set(deps))
+
         self.debug("Dependencies of command {}: {}".format(cmd_id, deps))
         self.dump_data(deps, os.path.join(self.deps_dir, "{}.json".format(cmd_id)))
 
