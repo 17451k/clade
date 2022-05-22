@@ -441,20 +441,15 @@ class Extension(metaclass=abc.ABCMeta):
                     # to reduce memory usage
                     futures = [x for x in futures if not x.done()]
 
-                    # Track progress (only if stdout is not redirected)
-                    if (
-                        total_objs
-                        and sys.stdout.isatty()
-                        and self.conf["log_level"] in ["INFO", "DEBUG"]
-                    ):
+                    if total_objs:
                         finished_objs += len(done_futures)
 
-                        msg = "\t Processed {} out of {} [{:.0f}%]".format(
+                        msg = "Processed {} out of {} [{:.0f}%]".format(
                             finished_objs,
                             total_objs,
                             finished_objs / total_objs * 100,
                         )
-                        print(msg, end="\r")
+                        self.progress(msg)
 
                     # Check return value of all finished futures
                     for f in done_futures:
@@ -471,13 +466,6 @@ class Extension(metaclass=abc.ABCMeta):
                     # Save a little bit of CPU time
                     # skip sleep only for very small projects
                     time.sleep(0.1)
-
-            if (
-                total_objs
-                and sys.stdout.isatty()
-                and self.conf["log_level"] in ["INFO", "DEBUG"]
-            ):
-                print(" " * 79, end="\r")
 
     @staticmethod
     def get_all_extensions():
@@ -559,6 +547,12 @@ class Extension(metaclass=abc.ABCMeta):
         """
         self.__get_logger()
         self.logger.error("{}: [ERROR] {}".format(self.name, message))
+
+    def progress(self, message):
+        # Track progress (only if stdout is not redirected)
+        if sys.stdout.isatty() and self.conf["log_level"] in ["INFO", "DEBUG"]:
+            print(" " * 79, end="\r")
+            print("\t " + message, end="\r")
 
     def __get_logger(self):
         # Initializing logger this way serves two purposes:

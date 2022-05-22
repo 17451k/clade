@@ -300,9 +300,11 @@ class Info(Extension):
         # Join all cif output file into several big .txt files
         for file in self.files:
             output_type = os.path.basename(file).replace(".zip", ".txt")
+            output_files = [f for f in cif_output if f.endswith(output_type)]
+            self.progress(f"Joining {len(output_files)} {output_type} files")
 
             with zipfile.ZipFile(file, "w") as zip_fh:
-                for output_file in [f for f in cif_output if f.endswith(output_type)]:
+                for output_file in output_files:
                     # Remove unnecessary prefixes from path inside archive
                     arcname = output_file.replace(storage, "")
                     arcname = arcname.replace(self.cif_output_dir, "")
