@@ -76,7 +76,7 @@ class Wrapper(Intercept):
                             counter += 1
                         except FileExistsError:
                             continue
-            except FileNotFoundError:
+            except (FileNotFoundError, PermissionError):
                 continue
 
         self.logger.debug("{} path wrappers were created".format(counter))
