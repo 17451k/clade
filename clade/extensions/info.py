@@ -316,7 +316,7 @@ class Info(Extension):
 
     def iter_init_global(self):
         """Yield C_FILE, signature, type, json string with initialisations"""
-        regex = re.compile(r"\"(.*?)\" (.*?); (\S*) ([^']*)\n")
+        regex = re.compile(r"\"(.*?)\" (.*?); (\S*) (.*)\n")
 
         for content in self.__iter_file_regex(self.init_global, regex):
             yield content
