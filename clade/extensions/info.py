@@ -48,7 +48,8 @@ class Info(Extension):
         super().__init__(work_dir, conf)
 
         self.aspect = os.path.join(
-            os.path.dirname(__file__), "info", "info.aspect"
+            os.path.dirname(__file__), "info",
+            self.conf.get("Info.aspect", "info.aspect")
         )
 
         # Info about function definitions

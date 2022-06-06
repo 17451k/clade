@@ -15,24 +15,12 @@
  * limitations under the License.
  */
 
-around: define(likely(x)) { (x) }
-
-around: define(unlikely(x)) { (x) }
-
 query: execution($ $(..)) {
     $fprintf<"$env<CIF_INFO_DIR>" $path "/execution.txt", "%s %d %s %s\n", $func_name, $decl_line, $storage_class, $signature>
 }
 
 query: declare_func($ $(..)) {
     $fprintf<"$env<CIF_INFO_DIR>" $path "/declare_func.txt", "%s %d %s %s\n", $func_name, $decl_line, $storage_class, $signature>
-}
-
-query: expand(__EXPORT_SYMBOL(sym, sec)) {
-    $fprintf<"$env<CIF_INFO_DIR>" $expansion_path "/exported.txt", "%s\n", $arg_val1>
-}
-
-query: expand(___EXPORT_SYMBOL(sym, sec)) {
-    $fprintf<"$env<CIF_INFO_DIR>" $expansion_path "/exported.txt", "%s\n", $arg_val1>
 }
 
 query: expand($) {

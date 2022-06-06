@@ -1,0 +1,13 @@
+around: define(likely(x)) { (x) }
+
+around: define(unlikely(x)) { (x) }
+
+query: expand(__EXPORT_SYMBOL(sym, sec)) {
+    $fprintf<"$env<CIF_INFO_DIR>" $expansion_path "/exported.txt", "%s\n", $arg_val1>
+}
+
+query: expand(___EXPORT_SYMBOL(sym, sec)) {
+    $fprintf<"$env<CIF_INFO_DIR>" $expansion_path "/exported.txt", "%s\n", $arg_val1>
+}
+
+@include "info.aspect"
