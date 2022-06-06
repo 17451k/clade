@@ -56,7 +56,7 @@ query: use_var($ $) {
 }
 
 query: init_global($ $){
-    $fprintf<"$env<CIF_INFO_DIR>/$env<C_FILE>/init_global.txt", "%s %s %s\n", $signature, $storage_class, $var_init_list_json>
+    $fprintf<"$env<CIF_INFO_DIR>/$env<C_FILE>/init_global.txt", "\"%s\" %s %s\n", $signature, $storage_class, $var_init_list_json>
 }
 
 query: introduce($ $) {
