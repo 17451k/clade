@@ -19,74 +19,58 @@ around: define(likely(x)) { (x) }
 
 around: define(unlikely(x)) { (x) }
 
-info: execution(static $ $(..)) {
-    $fprintf<"$env<CIF_INFO_DIR>" $path "/execution.txt", "%s %d static %s\n", $func_name, $decl_line, $signature>
+query: execution($ $(..)) {
+    $fprintf<"$env<CIF_INFO_DIR>" $path "/execution.txt", "%s %d %s %s\n", $func_name, $decl_line, $storage_class, $signature>
 }
 
-info: execution($ $(..)) {
-    $fprintf<"$env<CIF_INFO_DIR>" $path "/execution.txt", "%s %d extern %s\n", $func_name, $decl_line, $signature>
+query: declare_func($ $(..)) {
+    $fprintf<"$env<CIF_INFO_DIR>" $path "/declare_func.txt", "%s %d %s %s\n", $func_name, $decl_line, $storage_class, $signature>
 }
 
-info: declare_func(static $ $(..)) {
-    $fprintf<"$env<CIF_INFO_DIR>" $path "/declare_func.txt", "%s %d static %s\n", $func_name, $decl_line, $signature>
-}
-
-info: declare_func($ $(..)) {
-    $fprintf<"$env<CIF_INFO_DIR>" $path "/declare_func.txt", "%s %d extern %s\n", $func_name, $decl_line, $signature>
-}
-
-info: expand(__EXPORT_SYMBOL(sym, sec)) {
+query: expand(__EXPORT_SYMBOL(sym, sec)) {
     $fprintf<"$env<CIF_INFO_DIR>" $expansion_path "/exported.txt", "%s\n", $arg_val1>
 }
 
-info: expand(___EXPORT_SYMBOL(sym, sec)) {
+query: expand(___EXPORT_SYMBOL(sym, sec)) {
     $fprintf<"$env<CIF_INFO_DIR>" $expansion_path "/exported.txt", "%s\n", $arg_val1>
 }
 
-info: expand($) {
+query: expand($) {
     $fprintf<"$env<CIF_INFO_DIR>" $expansion_path "/CLADE-EXPAND" $path "/expand.txt", "%s %d %d\n", $macro_name, $expansion_line, $line>
 }
 
-info: expand($(..)) {
+query: expand($(..)) {
     $fprintf<"$env<CIF_INFO_DIR>" $expansion_path "/CLADE-EXPAND" $path "/expand.txt", "%s %d %d %s\n", $macro_name, $expansion_line, $line, $actual_args>
 }
 
-info: define($) {
+query: define($) {
     $fprintf<"$env<CIF_INFO_DIR>" $path "/define.txt", "%s %d\n", $macro_name, $line>
 }
 
-info: define($(..)) {
+query: define($(..)) {
     $fprintf<"$env<CIF_INFO_DIR>" $path "/define.txt", "%s %d\n", $macro_name, $line>
 }
 
-info: call(static $ $(..)) {
-    $fprintf<"$env<CIF_INFO_DIR>" $func_context_path "/call.txt", "%s %s %d static %s\n", $func_context_name, $func_name, $call_line, $actual_arg_func_names>
+query: call($ $(..)) {
+    $fprintf<"$env<CIF_INFO_DIR>" $func_context_path "/call.txt", "%s %s %d %s %s\n", $func_context_name, $func_name, $call_line, $storage_class, $actual_arg_func_names>
 }
 
-info: call($ $(..)) {
-    $fprintf<"$env<CIF_INFO_DIR>" $func_context_path "/call.txt", "%s %s %d extern %s\n", $func_context_name, $func_name, $call_line, $actual_arg_func_names>
-}
-
-info: callp($ $(..)) {
+query: callp($ $(..)) {
     $fprintf<"$env<CIF_INFO_DIR>" $func_context_path "/callp.txt", "%s %s %d\n", $func_context_name, $func_ptr_name, $call_line>
 }
 
-info: use_func($ $(..)) {
+query: use_func($ $(..)) {
     $fprintf<"$env<CIF_INFO_DIR>" $func_context_path "/use_func.txt", "%s %s %d\n", $func_context_name, $func_name, $use_line>
 }
 
-info: use_var($ $) {
+query: use_var($ $) {
     $fprintf<"$env<CIF_INFO_DIR>" $func_context_path "/use_var.txt", "%s %s %d\n", $func_context_name, $var_name, $use_line>
 }
 
-info: init_global(static $ $){
-    $fprintf<"$env<CIF_INFO_DIR>/$env<C_FILE>/init_global.txt", "declaration: %s path: %s; type: static\n%s", $signature, $env<C_FILE>, $var_init_list>
+query: init_global($ $){
+    $fprintf<"$env<CIF_INFO_DIR>/$env<C_FILE>/init_global.txt", "%s %s %s\n", $signature, $storage_class, $var_init_list_json>
 }
 
-info: init_global($ $){
-    $fprintf<"$env<CIF_INFO_DIR>/$env<C_FILE>/init_global.txt", "declaration: %s path: %s; type: global\n%s", $signature, $env<C_FILE>, $var_init_list>
-}
-
-info: introduce($ $) {
+query: introduce($ $) {
     $fprintf<"$env<CIF_INFO_DIR>" $path "/typedefs.txt", "%s\n", $signature>
 }

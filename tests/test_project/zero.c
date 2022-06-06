@@ -20,3 +20,5 @@ int func_with_pointers() {
 typedef unsigned char super_char;
 
 int (*fp3[])(void) = {zero};
+
+static int (*fp4[])(void) = {zero};

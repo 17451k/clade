@@ -32,7 +32,7 @@ class Info(Extension):
     always_requires = ["SrcGraph", "Storage"]
     requires = always_requires + ["CC", "CL"]
 
-    __version__ = "2"
+    __version__ = "3"
 
     def __init__(self, work_dir, conf=None):
         if not conf:
@@ -283,15 +283,13 @@ class Info(Extension):
     def __normalize_cif_output(self):
         cif_output = self.__find_cif_output()
 
-        init_global = os.path.basename(self.init_global).replace(".zip", ".txt")
-        files = [f for f in cif_output if not f.endswith(init_global)]
-        total_files = len(files)
+        total_files = len(cif_output)
         storage = self.extensions["Storage"].get_storage_dir()
 
         # Normalize all small cif output files
         self.log(f"Normalizing {total_files} files")
         self.execute_in_parallel(
-            objs=files,
+            objs=cif_output,
             process=normalize_file,
             pass_self=False,
             total_objs=total_files
@@ -316,12 +314,11 @@ class Info(Extension):
             shutil.rmtree(self.cif_output_dir)
 
     def iter_init_global(self):
-        """Yield data from init_global.zip"""
-        with zipfile.ZipFile(self.init_global, "r") as zip_fh:
-            for file in zip_fh.namelist():
-                with zip_fh.open(file, "r") as f:
-                    for line in f:
-                        yield line.decode("utf-8")
+        """Yield C_FILE, signature, type, json string with initialisations"""
+        regex = re.compile(r"\"(.*?)\" (.*?); (\S*) ([^']*)\n")
+
+        for content in self.__iter_file_regex(self.init_global, regex):
+            yield content
 
     def iter_definitions(self):
         """Yield src_file, func, def_line, func_type, signature"""
@@ -329,6 +326,8 @@ class Info(Extension):
         regex = re.compile(r"\"(.*?)\" (\S*) (\S*) (\S*) ([^']*)\n")
 
         for content in self.__iter_file_regex(self.execution, regex):
+            # non-static functions are treated as extern by compiler
+            content[3] = "extern" if content[3] != "static" else "static"
             yield content
 
     def iter_declarations(self):
@@ -337,6 +336,8 @@ class Info(Extension):
         regex = re.compile(r"\"(.*?)\" (\S*) (\S*) (\S*) ([^']*)\n")
 
         for content in self.__iter_file_regex(self.decl, regex):
+            # non-static functions are treated as extern by compiler
+            content[3] = "extern" if content[3] != "static" else "static"
             yield content
 
     def iter_exported(self):
@@ -353,8 +354,9 @@ class Info(Extension):
         regex = re.compile(r'\"(.*?)\" (\S*) (\S*) (\S*) (\S*) (.*)')
         args_regex = re.compile(r"actual_arg_func_name(\d+)=\s*(\w+)\s*")
 
-        for orig_content in self.__iter_file_regex(self.call, regex):
-            content = list(orig_content)
+        for content in self.__iter_file_regex(self.call, regex):
+            # non-static functions are treated as extern by compiler
+            content[4] = "extern" if content[4] != "static" else "static"
 
             # Replace last element of content list (string with arguments)
             # with list of these arguments
@@ -427,7 +429,7 @@ class Info(Extension):
                         self.error("CIF output has unexpected format: {!r}".format(line))
                         raise SyntaxError
 
-                    yield m.groups()
+                    yield list(m.groups())
 
     def __iter_file(self, file, zip_fh):
         # Path to the source file is encoded in the path to the CIF output file

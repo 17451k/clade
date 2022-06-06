@@ -14,18 +14,17 @@
 # limitations under the License.
 
 import os
-# TODO: You can remove it as it will work with ujson everywhere (almost)
-import json
+import re
+import ujson
 
 from clade.extensions.abstract import Extension
 from clade.extensions.callgraph import Callgraph
-from clade.extensions.initializations import parse_variables_initializations
 
 
 class Variables(Callgraph):
     requires = ["Info", "Functions"]
 
-    __version__ = "1"
+    __version__ = "2"
 
     def __init__(self, work_dir, conf=None):
         super().__init__(work_dir, conf)
@@ -37,39 +36,23 @@ class Variables(Callgraph):
         self.used_in_vars_file = "used_in_vars.json"
 
         self.functions = None
+        self.function_name_re = re.compile(r"\(?\s*&?\s*(\w+)\s*\)?$")
+        self.possible_functions = set()
 
     @Extension.prepare
     def parse(self, cmds_file):
         self.functions = self.extensions["Functions"].load_functions()
 
         self.__process_init_global()
-        self._clean_error_log()
 
-        # indent=4 may cause segfault inside ujson
-        self.dump_data_by_key(self.variables, self.variables_folder, indent=0)
-        self.dump_variables_data(self.used_in_vars, self.used_in_vars_file)
+        self.dump_data_by_key(self.variables, self.variables_folder)
+        self.dump_data(self.used_in_vars, self.used_in_vars_file)
+
+        self._clean_error_log()
 
         self.functions.clear()
         self.variables.clear()
         self.used_in_vars.clear()
-
-    # TODO: Remove this as problem with ujson dump will be solved
-    def dump_variables_data(self, data, file_name, indent=0):
-        """Dump data to a json file in the object working directory."""
-
-        if not os.path.isabs(file_name):
-            file_name = os.path.join(self.work_dir, file_name)
-
-        os.makedirs(os.path.dirname(file_name), exist_ok=True)
-
-        self.debug("Dump {}".format(file_name))
-
-        try:
-            with open(file_name, "w") as fh:
-                json.dump(data, fh, sort_keys=True, indent=indent, ensure_ascii=False)
-        except RecursionError:
-            # todo: This is a workaround but it is required rarely
-            self.warning("Do not print data to file due to recursion limit {}".format(file_name))
 
     def __process_init_global(self):
         if not os.path.isfile(self.extensions["Info"].init_global):
@@ -77,11 +60,41 @@ class Variables(Callgraph):
             return
 
         self.log("Parsing global variables initializations")
-        self.variables = parse_variables_initializations(
-            self.extensions["Info"].iter_init_global,
-            self.__process_callv,
-            self.work_dir
-        )
+        for c_file, signature, type, json_str in self.extensions["Info"].iter_init_global():
+            if c_file not in self.variables:
+                self.variables[c_file] = []
+
+            initializations = ujson.loads(json_str)
+
+            self.variables[c_file].append({
+                "declaration": signature,
+                "path": c_file,
+                "type": type,
+                "value": initializations
+            })
+
+            # Save all functions referred at initialization of this variable
+            self.possible_functions = set()
+            self.__process_values(initializations)
+            self.__process_callv(self.possible_functions, c_file)
+
+    def __process_values(self, value):
+        if isinstance(value, str):
+            self.__add_possible_function_name(value)
+        elif isinstance(value, dict):
+            self.__process_values(value["value"])
+        elif isinstance(value, list):
+            [self.__process_values(v) for v in value]
+        else:
+            raise RuntimeError(f"Unknown value: {value}")
+
+    def __add_possible_function_name(self, value):
+        # Check that the explicit value is a function reference
+        m = self.function_name_re.fullmatch(value)
+
+        if m:
+            function_name = m.group(1)
+            self.possible_functions.add(function_name)
 
     def __process_callv(self, functions, context_file):
         functions = {f for f in functions if f in self.functions}

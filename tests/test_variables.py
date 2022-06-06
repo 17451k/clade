@@ -23,9 +23,10 @@ def variables_are_ok(variables):
     assert variables[zero_c]
     assert variables[zero_c][0]["declaration"] == "int (*fp3[1U])(void)"
     assert variables[zero_c][0]["path"] == zero_c
-    assert variables[zero_c][0]["type"] == "global"
+    assert variables[zero_c][0]["type"] == "none"
     assert variables[zero_c][0]["value"][0]["index"] == 0
     assert variables[zero_c][0]["value"][0]["value"] == " & zero"
+    assert variables[zero_c][1]["type"] == "static"
 
 
 def used_in_vars_is_ok(used_in_vars):
