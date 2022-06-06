@@ -264,7 +264,7 @@ class Extension(metaclass=abc.ABCMeta):
         """Check that working directory was creating with the extension of correct version."""
         stored_meta = self.load_global_meta().get(self.name)
 
-        if stored_meta and self.ext_meta["version"] != stored_meta["version"]:
+        if os.path.exists(self.work_dir) and stored_meta and self.ext_meta["version"] != stored_meta["version"]:
             self.error(
                 "Working directory was created by incompatible version of Clade and can't be used."
             )
