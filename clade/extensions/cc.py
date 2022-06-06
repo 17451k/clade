@@ -96,6 +96,9 @@ class CC(Compiler):
         else:
             additional_opts = ["-Wp,-MMD,{}".format(deps_file), "-MM"]
 
+        if not os.path.isabs(which):
+            which = os.path.join(cmd["cwd"], which)
+
         opts = cmd["opts"] + additional_opts
         command = [which] + opts + [cmd_in]
 
