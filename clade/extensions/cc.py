@@ -14,7 +14,9 @@
 # limitations under the License.
 
 import os
+import re
 import shlex
+import shutil
 import subprocess
 
 from clade.extensions.compiler import Compiler
@@ -31,6 +33,19 @@ class CC(Compiler):
 
     def parse_cmd(self, cmd):
         cmd_id = cmd["id"]
+
+        # Some commands can be ccache commands
+        if cmd["which"].endswith("ccache"):
+            cmd["command"] = [x for x in cmd["command"][1:] if x != "--ccache-skip"]
+            cmd["which"] = shutil.which(cmd["command"][0])
+
+            # Not all ccache commands are CC commands
+            for which in self.conf.get(self.name + ".which_list", []):
+                if re.search(which, cmd["which"]):
+                    break
+            else:
+                self.debug(f"{cmd} is not a {self.name} command")
+                return
 
         parsed_cmd = super().parse_cmd(cmd, self.name)
 

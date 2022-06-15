@@ -13,3 +13,5 @@ all:
 	-ld main.o -o main.o2 -g -l interceptor -linterceptor -L../../clade/intercept -L clade/intercept
 	-rm main zero.txt zero.o* main.o* zero.a
 	g++ zero.c main.c -o /dev/null -D TEST_MACRO -O3
+	-ccache gcc zero.c -I --ccache-skip /usr/include
+	-ccache g++ zero.c -o /dev/null
