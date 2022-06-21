@@ -29,7 +29,12 @@ class CC(Compiler):
     __version__ = "1"
 
     def parse(self, cmds_file):
-        super().parse(cmds_file, self.conf.get("CC.which_list", []))
+        which_list = list(self.conf.get("CC.which_list", []))
+
+        if self.conf.get("CC.process_ccache"):
+            which_list.append("ccache")
+
+        super().parse(cmds_file, which_list)
 
     def parse_cmd(self, cmd):
         cmd_id = cmd["id"]

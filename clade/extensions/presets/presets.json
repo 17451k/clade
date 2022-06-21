@@ -40,6 +40,8 @@
         "Common.exclude_list_in": [],
         "Common.exclude_list_out": [],
         "Common.include_list": [],
+        "CC.process_ccache": true,
+        "CXX.process_ccache": true,
         "Info.extra_CIF_opts": [],
         "Info.use_preprocessed_files": false,
         "Info.cif": "cif",
@@ -59,13 +61,11 @@
             "cc1$",
             "[mg]cc(-?\\d+(\\.\\d+){0,2})?$",
             "clang(-?\\d+(\\.\\d+){0,2})?$",
-            "ccache",
             "aspectator$"
         ],
         "CXX.which_list": [
             "[mgc]\\+\\+(-?\\d+(\\.\\d+){0,2})?$",
-            "clang\\+\\+(-?\\d+(\\.\\d+){0,2})?$",
-            "ccache"
+            "clang\\+\\+(-?\\d+(\\.\\d+){0,2})?$"
         ],
         "LD.which_list": [
             "(/|-)ld$",
