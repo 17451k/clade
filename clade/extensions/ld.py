@@ -17,6 +17,7 @@ import os
 import re
 
 from clade.extensions.common import Common
+from clade.extensions.opts import requires_value
 
 
 class LD(Common):
@@ -47,6 +48,8 @@ class LD(Common):
                 name = next(opts)
 
                 self.__find_archive(name, searchdirs, parsed_cmd)
+            elif opt in requires_value[self.name]:
+                continue
             elif opt.startswith("-l") or opt.startswith("--library="):
                 name = re.sub(r"^-l", "", opt)
                 name = re.sub(r"^--library=", "", name)
@@ -73,7 +76,21 @@ class LD(Common):
                 path = os.path.normpath(os.path.join(parsed_cmd["cwd"], path))
                 searchdirs.append(os.path.normpath(path))
 
-        return searchdirs
+        syslibroot = self.__get_syslibroot(parsed_cmd)
+
+        return [syslibroot + s for s in searchdirs]
+
+    def __get_syslibroot(self, parsed_cmd):
+        syslibroot = "/"
+
+        opts = iter(parsed_cmd["opts"])
+
+        for opt in opts:
+            if opt == "-syslibroot":
+                syslibroot = next(opts)
+                break
+
+        return syslibroot
 
     def __find_archive(self, name, searchdirs, parsed_cmd):
         if not searchdirs:
@@ -86,13 +103,14 @@ class LD(Common):
             names.append(name[1:])
         else:
             names.append("lib" + name + ".dylib")  # macOS
+            names.append("lib" + name + ".tbd")  # macOS, "text-based stub libraries"
             names.append("lib" + name + ".so")
             names.append("lib" + name + ".a")
             names.append(name + ".a")
 
         for searchdir in searchdirs:
-            for name in names:
-                archive = os.path.normpath(os.path.join(searchdir, name))
+            for basename in names:
+                archive = os.path.normpath(os.path.join(searchdir, basename))
                 if os.path.exists(archive):
                     if archive not in parsed_cmd["in"]:
                         parsed_cmd["in"].append(archive)

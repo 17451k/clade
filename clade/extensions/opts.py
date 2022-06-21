@@ -487,6 +487,17 @@ requires_value = {
     "Link": set(),
 }
 
+# Some options require multiple values
+requires_mult_values = {
+    "CC": dict(),
+    "CXX": dict(),
+    "LD": {"-platform_version": 3},
+    "AS": dict(),
+    "Objcopy": dict(),
+    "CL": dict(),
+    "Link": dict(),
+}
+
 include_opts = [
     "-include",
     "-I",

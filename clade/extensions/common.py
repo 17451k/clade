@@ -20,7 +20,7 @@ import re
 import sys
 
 from clade.extensions.abstract import Extension
-from clade.extensions.opts import requires_value
+from clade.extensions.opts import requires_value, requires_mult_values
 from clade.cmds import iter_cmds_by_which, number_of_cmds_by_which
 
 
@@ -111,8 +111,14 @@ class Common(Extension, metaclass=abc.ABCMeta):
         opts = iter(cmd["command"][1:])
 
         for opt in opts:
-            # Options with values.
-            if opt in requires_value[cmd_type]:
+            # Options with multiple values.
+            if opt in requires_mult_values[cmd_type].keys():
+                vals = []
+                for _ in range(requires_mult_values[cmd_type][opt]):
+                    vals.append(next(opts))
+                parsed_cmd["opts"].extend([opt] + vals)
+            # Options with single values.
+            elif opt in requires_value[cmd_type]:
                 # Value is the next option.
                 val = next(opts)
                 if opt == "-o":
