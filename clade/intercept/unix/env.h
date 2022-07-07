@@ -1,9 +1,11 @@
+#include <stdbool.h>
+
 #ifndef ENV_H
 #define ENV_H
 
 extern char **copy_envp(char **envp);
 extern char **update_envp(char **input_envp);
-extern void update_environ(char **envp);
+extern void update_environ(char **envp, bool force);
 
 extern char *get_parent_id(char **envp);
 extern int get_cmd_id();

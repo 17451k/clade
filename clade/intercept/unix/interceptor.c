@@ -60,7 +60,7 @@ int execve(const char *path, char *const argv[], char *const envp[]) {
 
     // Add Clade environment variables from clade_environ to environ if they were absent
     if (!getenv(CLADE_INTERCEPT_EXEC_ENV)) {
-        update_environ(clade_environ);
+        update_environ(clade_environ, false);
     }
 
     if (!intercepted && getenv(CLADE_INTERCEPT_EXEC_ENV)) {
@@ -91,7 +91,7 @@ int execvp(const char *filename, char *const argv[]) {
 
     // Add Clade environment variables from clade_environ to environ if they were absent
     if (!getenv(CLADE_INTERCEPT_EXEC_ENV)) {
-        update_environ(clade_environ);
+        update_environ(clade_environ, false);
     }
 
     if (!intercepted && getenv(CLADE_INTERCEPT_EXEC_ENV)) {
@@ -102,7 +102,7 @@ int execvp(const char *filename, char *const argv[]) {
         // DO NOT change value of intercepted to TRUE here
 
         // intercept_exec_call changed some environment values in new_envp, which now should be added back to environ
-        update_environ(new_envp);
+        update_environ(new_envp, true);
     }
 
     return execvp_real(filename, argv);
@@ -119,7 +119,7 @@ int execv(const char *filename, char *const argv[]) {
 
     // Add Clade environment variables from clade_environ to environ if they were absent
     if (!getenv(CLADE_INTERCEPT_EXEC_ENV)) {
-        update_environ(clade_environ);
+        update_environ(clade_environ, false);
     }
 
     // DO NOT check if (! intercepted) here: it will result in command loss
@@ -131,7 +131,7 @@ int execv(const char *filename, char *const argv[]) {
         intercept_exec_call(filename, (char const *const *)argv, (char **)new_envp);
 
         // intercept_exec_call changed some environment values in new_envp, which now should be added back to environ
-        update_environ(new_envp);
+        update_environ(new_envp, true);
     }
     // BUT we need to change it for macOS to avoid duplicating commands
     #ifdef __APPLE__
@@ -155,7 +155,7 @@ int posix_spawn(pid_t *restrict pid, const char *restrict path, const posix_spaw
 
     // Add Clade environment variables from clade_environ to environ if they were absent
     if (!getenv(CLADE_INTERCEPT_EXEC_ENV)) {
-        update_environ(clade_environ);
+        update_environ(clade_environ, false);
     }
 
     // DO NOT check if (! intercepted) here: it will result in command loss

@@ -116,13 +116,14 @@ char **update_envp(char **input_envp) {
     return envp;
 }
 
-void update_environ(char **envp) {
+void update_environ(char **envp, bool force) {
     if (!envp)
         return;
 
-    // Add Clade environment variables from envp to environ if they were absent
+    // Add Clade environment variables from envp to environ
+    // if force == true or they were absent
     for (int i = 0; i < clade_envs_len; i++) {
-        if (!getenv(clade_envs[i])) {
+        if (force || !getenv(clade_envs[i])) {
             int index = find_key_index(envp, clade_envs[i]);
 
             // index can be -1 when Clade environment variables can be found in environ,
