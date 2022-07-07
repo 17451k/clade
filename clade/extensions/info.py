@@ -200,7 +200,6 @@ class Info(Extension):
                 )
 
             opts.extend(self.conf.get("Info.extra_CIF_opts", []))
-            opts = [re.sub(r"\"", r'\\"', opt) for opt in opts]
 
             if opts:
                 cif_args.append("--")

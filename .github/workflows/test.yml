@@ -35,12 +35,12 @@ jobs:
     - name: Download CIF [Ubuntu]
       if: startsWith(matrix.os, 'ubuntu')
       run: |
-        curl -sSfL -o cif.tar.xz https://github.com/ldv-klever/cif/releases/download/v1.1/linux-x86_64-cif-1.1.tar.xz
+        curl -sSfL -o cif.tar.xz https://github.com/ldv-klever/cif/releases/download/v1.2/linux-x86_64-cif-1.2.tar.xz
 
     - name: Download CIF [macOS]
       if: startsWith(matrix.os, 'macos')
       run: |
-        curl -sSfL -o cif.tar.xz https://github.com/ldv-klever/cif/releases/download/v1.1/macos-x86_64-cif-1.1.tar.xz
+        curl -sSfL -o cif.tar.xz https://github.com/ldv-klever/cif/releases/download/v1.2/macos-x86_64-cif-1.2.tar.xz
 
     - name: Install CIF
       if: "!startsWith(matrix.os, 'windows')"
