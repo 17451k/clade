@@ -25,6 +25,7 @@
             "CC",
             "CXX",
             "LD",
+            "LN",
             "MV",
             "Objcopy",
             "CL",
@@ -73,6 +74,9 @@
         ],
         "MV.which_list": [
             "/mv$"
+        ],
+        "LN.which_list": [
+            "/ln$"
         ],
         "Objcopy.which_list": [
             "objcopy$"
