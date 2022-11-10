@@ -34,20 +34,48 @@ class LN(Common):
             "command": cmd["command"],
         }
 
-        # 'ln' options always have the following form:
-        #     [-opt]... in_file out_file (or out_dir)
-        for opt in cmd["command"][1:]:
+        # 'ln' options always have the following forms:
+        #     [-options] in_file
+        #     [-options] in_file out_file
+        #     [-options] in_file ... out_dir
+
+        # Output directory, where symlinks will be created
+        # By default it is current working directory
+        out = None
+
+        opts = iter(cmd["command"][1:])
+        for opt in opts:
             if re.search(r"^-", opt):
-                parsed_cmd["opts"].append(opt)
-            elif not parsed_cmd["in"]:
-                parsed_cmd["in"].append(os.path.normpath(opt))
-            else:
+                if opt == "-t":
+                    # Value is the next option.
+                    out = os.path.normpath(next(opts))
+                elif opt.startswith("--target-directory="):
+                    out = opt.replace("--target-directory=", "")
+                else:
+                    parsed_cmd["opts"].append(opt)
+            elif os.path.isfile(opt):
+                if out is not None or not parsed_cmd["in"] or opt != cmd["command"][-1]:
+                    parsed_cmd["in"].append(os.path.normpath(opt))
+                else:
+                    parsed_cmd["out"].append(os.path.normpath(opt))
+            elif os.path.isdir(opt):
                 out = os.path.normpath(opt)
+            else:
+                self.error(f"Files from the command {cmd} probably do not exist anymore")
+                return
 
-                if os.path.isdir(out):
-                    out = os.path.join(out, os.path.basename(parsed_cmd["in"][0]))
+        if not parsed_cmd["out"] and not out:
+            out = parsed_cmd["cwd"]
 
-                parsed_cmd["out"].append(out)
+        if (parsed_cmd["out"] and out):
+            self.error(f"ln command {cmd} is incorrectly parsed: {parsed_cmd=}, {out=}")
+            return
+
+        if out:
+            for cmd_in in parsed_cmd["in"]:
+                parsed_cmd["out"].append(os.path.join(out, os.path.basename(cmd_in)))
+
+        # TODO: support  --target-directory=DIRECTORY
 
         if self.is_bad(parsed_cmd):
             self.dump_bad_cmd_id(cmd["id"])
