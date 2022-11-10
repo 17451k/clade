@@ -467,6 +467,9 @@ class Extension(metaclass=abc.ABCMeta):
                     # skip sleep only for very small projects
                     time.sleep(0.1)
 
+        # Clean line
+        print(" " * 79, end="\r")
+
     @staticmethod
     def get_all_extensions():
         """Get all extension classes."""

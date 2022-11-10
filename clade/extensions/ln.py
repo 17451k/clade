@@ -64,18 +64,17 @@ class LN(Common):
                 self.error(f"Files from the command {cmd} probably do not exist anymore")
                 return
 
+        # If no output parsed, then it is created in current directory
         if not parsed_cmd["out"] and not out:
             out = parsed_cmd["cwd"]
 
         if (parsed_cmd["out"] and out):
-            self.error(f"ln command {cmd} is incorrectly parsed: {parsed_cmd=}, {out=}")
+            self.error(f"ln command {cmd} is incorrectly parsed: {parsed_cmd}")
             return
 
         if out:
             for cmd_in in parsed_cmd["in"]:
                 parsed_cmd["out"].append(os.path.join(out, os.path.basename(cmd_in)))
-
-        # TODO: support  --target-directory=DIRECTORY
 
         if self.is_bad(parsed_cmd):
             self.dump_bad_cmd_id(cmd["id"])
