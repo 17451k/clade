@@ -137,10 +137,6 @@ class Callgraph(Extension):
                 if args:
                     call_val["args"] = args
 
-                self.debug("Function {} from {} is called in {}:{} in {}".format(
-                    func, possible_file, context_file, call_line, context_func
-                ))
-
                 self.callgraph[possible_file][func]['called_in'][context_file][context_func][call_line] = call_val
 
                 # Create reversed callgraph
@@ -148,6 +144,10 @@ class Callgraph(Extension):
 
                 if possible_file == "unknown":
                     self._error("Can't match definition: {} {}".format(func, context_file))
+                else:
+                    self.debug("Function {} from {} is called in {}:{} in {}".format(
+                        func, possible_file, context_file, call_line, context_func
+                    ))
 
         # Keep function types in the callgraph
         for path, func in traverse(self.callgraph, 2):
@@ -233,9 +233,14 @@ class Callgraph(Extension):
             > 0
         )
 
-        self.debug("{!r} and {!r} are from the same translation unit".format(
-            file1, file2)
-        )
+        if r:
+            self.debug("{!r} and {!r} are from the same translation unit".format(
+                file1, file2)
+            )
+        else:
+            self.debug("{!r} and {!r} are not from the same translation unit".format(
+                file1, file2)
+            )
 
         return r
 
@@ -251,7 +256,10 @@ class Callgraph(Extension):
             > 0
         )
 
-        self.debug("{!r} and {!r} are linked".format(file1, file2))
+        if r:
+            self.debug("{!r} and {!r} are linked".format(file1, file2))
+        else:
+            self.debug("{!r} and {!r} are not linked".format(file1, file2))
 
         return r
 
