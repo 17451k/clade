@@ -301,13 +301,18 @@ class Info(Extension):
             output_files = [f for f in cif_output if f.endswith(output_type)]
             self.progress(f"Joining {len(output_files)} {output_type} files")
 
+            # Filter duplicate files (CIF issue?)
+            arcnames = set()
+
             with zipfile.ZipFile(file, "w") as zip_fh:
                 for output_file in output_files:
                     # Remove unnecessary prefixes from path inside archive
                     arcname = output_file.replace(storage, "")
                     arcname = arcname.replace(self.cif_output_dir, "")
 
-                    zip_fh.write(output_file, arcname=arcname)
+                    if arcname not in arcnames:
+                        zip_fh.write(output_file, arcname=arcname)
+                        arcnames.add(arcname)
 
         # Remove cif output directory
         if os.path.exists(self.cif_output_dir):
