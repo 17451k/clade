@@ -137,7 +137,7 @@ class Callgraph(Extension):
                 if args:
                     call_val["args"] = args
 
-                self.debug("Fuction {} from {} is called in {}:{} in {}".format(
+                self.debug("Function {} from {} is called in {}:{} in {}".format(
                     func, possible_file, context_file, call_line, context_func
                 ))
 
