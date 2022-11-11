@@ -81,3 +81,5 @@ class LN(Common):
             return
 
         self.dump_cmd_by_id(cmd["id"], parsed_cmd)
+
+        return parsed_cmd

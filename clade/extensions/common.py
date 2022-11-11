@@ -189,6 +189,10 @@ class Common(Extension, metaclass=abc.ABCMeta):
             return fh.read().splitlines()
 
     def _normalize_paths(self, cmd):
+        if "PATH " not in self.extensions:
+            self.error("PATH extension is not available")
+            return cmd
+
         cmd["in"] = self.extensions["Path"].normalize_rel_paths(cmd["in"], cmd["cwd"])
         cmd["out"] = self.extensions["Path"].normalize_rel_paths(cmd["out"], cmd["cwd"])
         cmd["cwd"] = self.extensions["Path"].normalize_abs_path(cmd["cwd"])
