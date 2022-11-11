@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+import subprocess
 import pathlib
 
 from clade.extensions.ln import LN
@@ -22,8 +23,7 @@ def get_cmd(tmp_path, command):
     cwd = tmp_path / "cwd"
     cwd.mkdir()
 
-    os.chdir(cwd)
-    os.system(command)
+    subprocess.run(command, cwd=cwd, shell=True)
 
     return {
         "cwd": str(cwd),
