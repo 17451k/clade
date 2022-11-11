@@ -13,11 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-try:
-    import cchardet as chardet
-except ImportError:
-    import chardet
-
+import charset_normalizer
 import functools
 import os
 import shutil
@@ -43,9 +39,7 @@ class Storage(Extension):
             self.debug("Saving {!r} to the Storage".format(file))
 
             if not os.path.exists(file):
-                self.error(
-                    "File does not exist: {!r}".format(file)
-                )
+                self.error("File does not exist: {!r}".format(file))
                 raise RuntimeError
 
             if os.path.isfile(file):
@@ -106,7 +100,7 @@ class Storage(Extension):
                 content_bytes = fh.read()
 
             if not encoding:
-                detected = chardet.detect(content_bytes)
+                detected = charset_normalizer.detect(content_bytes)
                 encoding = detected["encoding"]
                 confidence = detected["confidence"]
             else:
@@ -115,25 +109,22 @@ class Storage(Extension):
 
             if not confidence:
                 self.warning(
-                    "Can't confidently detect encoding of {!r}.".format(
-                        filename
-                    )
+                    "Can't confidently detect encoding of {!r}.".format(filename)
                 )
                 shutil.copyfile(filename, dst)
                 return
 
-            self.debug("Trying to store {!r}. Detected encoding: {} (confidence = {})".format(
-                filename, encoding, confidence
-            ))
+            self.debug(
+                "Trying to store {!r}. Detected encoding: {} (confidence = {})".format(
+                    filename, encoding, confidence
+                )
+            )
 
-            with tempfile.NamedTemporaryFile(
-                mode="wb", delete=False
-            ) as f:
+            with tempfile.NamedTemporaryFile(mode="wb", delete=False) as f:
                 # Encode file content to utf-8
                 try:
                     content_bytes = content_bytes.decode(
-                        encoding,
-                        self.conf.get("Storage.decoding_errors", "strict")
+                        encoding, self.conf.get("Storage.decoding_errors", "strict")
                     ).encode("utf-8")
                 except UnicodeDecodeError:
                     # If user-specified encoding failed, try automatic detection

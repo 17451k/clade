@@ -250,8 +250,7 @@ setuptools.setup(
     distclass=CustomDist,
     install_requires=[
         "ujson",
-        "chardet",
-        "cchardet",
+        "charset_normalizer",
         "graphviz",
         "ply",
     ],
