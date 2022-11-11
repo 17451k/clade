@@ -83,3 +83,16 @@ class LN(Common):
         self.dump_cmd_by_id(cmd["id"], parsed_cmd)
 
         return parsed_cmd
+
+    def get_pairs(self):
+        '''Returns iterator for all (file, its symlink) pairs'''
+        cmds = self.load_all_cmds()
+
+        for cmd in cmds:
+            for i, file in enumerate(cmd["in"]):
+                # ln commands always have paired input and output files:
+                # in = ["test1.c", "test2.c"]
+                # out = ["link/test1.c", "link/test2.c"]
+                symlink = cmd["out"][i]
+
+                yield (file, symlink)

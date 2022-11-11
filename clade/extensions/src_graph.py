@@ -110,7 +110,7 @@ class SrcGraph(Extension):
                 self.src_graph[src_file]["compiled_in"].add(cmd_id)
                 self.src_graph[src_file]["used_by"].update(used_by)
 
-        self.__untangle_symlinks()
+        # self.__untangle_symlinks()
 
         # Convert sets to lists for ujson
         for file in self.src_graph:
@@ -125,29 +125,21 @@ class SrcGraph(Extension):
             ))
 
     def __untangle_symlinks(self):
-        cmds = self.extensions["LN"].load_all_cmds()
+        for file, symlink in self.extensions["LN"].get_pairs():
+            # If both files are not in the source graph, then continue
+            if file not in self.src_graph and symlink not in self.src_graph:
+                continue
 
-        for cmd in cmds:
-            for i, cmd_in in enumerate(cmd["in"]):
-                # ln commands always have paired input and output files:
-                # in = ["test1.c", "test2.c"]
-                # out = ["link/test1.c", "link/test2.c"]
-                cmd_out = cmd["out"][i]
+            # Otherwise we need to make source graphs identical for both in and out file
+            self.src_graph[file] = self.src_graph.get(file, self.__get_new_value())
+            self.src_graph[symlink] = self.src_graph.get(symlink, self.__get_new_value())
 
-                # If both files are not in the source graph, then continue
-                if cmd_in not in self.src_graph and cmd_out not in self.src_graph:
-                    continue
+            # Combine values of compiled_in and used_by fields
+            compiled_in = self.src_graph[file]["compiled_in"].union(self.src_graph[symlink]["compiled_in"])
+            used_by = self.src_graph[file]["used_by"].union(self.src_graph[symlink]["used_by"])
 
-                # Otherwise we need to make source graphs identical for both in and out file
-                self.src_graph[cmd_in] = self.src_graph.get(cmd_in, self.__get_new_value())
-                self.src_graph[cmd_out] = self.src_graph.get(cmd_out, self.__get_new_value())
-
-                # Combine values of compiled_in and used_by fields
-                compiled_in = self.src_graph[cmd_in]["compiled_in"].union(self.src_graph[cmd_out]["compiled_in"])
-                used_by = self.src_graph[cmd_in]["used_by"].union(self.src_graph[cmd_out]["used_by"])
-
-                self.src_graph[cmd_in] = {"compiled_in": compiled_in, "used_by": used_by}
-                self.src_graph[cmd_out] = {"compiled_in": compiled_in, "used_by": used_by}
+            self.src_graph[file] = {"compiled_in": compiled_in, "used_by": used_by}
+            self.src_graph[symlink] = {"compiled_in": compiled_in, "used_by": used_by}
 
     def __find_used_by(self, cmd_graph, cmd_id):
         used_by = set()
