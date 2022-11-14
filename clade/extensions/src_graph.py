@@ -110,7 +110,7 @@ class SrcGraph(Extension):
                 self.src_graph[src_file]["compiled_in"].add(cmd_id)
                 self.src_graph[src_file]["used_by"].update(used_by)
 
-        # self.__untangle_symlinks()
+        self.__untangle_symlinks()
 
         # Convert sets to lists for ujson
         for file in self.src_graph:
@@ -129,6 +129,8 @@ class SrcGraph(Extension):
             # If both files are not in the source graph, then continue
             if file not in self.src_graph and symlink not in self.src_graph:
                 continue
+
+            self.debug(f"Combine source graphs for {file!r} and {symlink!r}")
 
             # Otherwise we need to make source graphs identical for both in and out file
             self.src_graph[file] = self.src_graph.get(file, self.__get_new_value())
