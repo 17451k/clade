@@ -38,7 +38,7 @@ class CmdGraph(Extension):
 
         self.graph = dict()
         self.graph_file = "cmd_graph.json"
-        
+
         self.cmd_type = dict()
         self.cmd_type_file = "cmd_type.json"
 
@@ -150,24 +150,21 @@ class CmdGraph(Extension):
 
         dot = Digraph(graph_attr={"rankdir": "LR"}, node_attr={"shape": "rectangle"})
 
-        added_nodes = dict()
+        added_nodes = set()
 
         for cmd_id in self.graph:
             cmd_type = self.cmd_type[cmd_id]
             cmd = self.extensions[cmd_type].load_cmd_by_id(cmd_id)
-
-            if cmd_type in ["CC", "CL"]:
-                cmd["opts"] = self.extensions[cmd_type].load_opts_by_id(cmd_id)
 
             for i, cmd_out in enumerate(cmd["out"]):
                 cmd_out_hash = get_string_hash(cmd_out)
 
                 if cmd_out not in added_nodes:
                     dot.node(cmd_out_hash, label=re.escape(cmd_out))
-                    added_nodes[cmd_out] = 1
+                    added_nodes.add(cmd_out)
 
                 # Properly print compiler commands with "-c" option
-                if cmd_type in ["CC", "CL"] and ("-c" in cmd["opts"] or "/c" in cmd["opts"]):
+                if cmd_type in ["CC", "CL"]:
                     if not cmd["in"]:
                         continue
                     cmd_ins = [cmd["in"][i]]
@@ -179,7 +176,7 @@ class CmdGraph(Extension):
 
                     if cmd_in not in added_nodes:
                         dot.node(cmd_in_hash, label=re.escape(cmd_in))
-                        added_nodes[cmd_in] = 1
+                        added_nodes.add(cmd_in)
 
                     dot.edge(
                         cmd_in_hash,
