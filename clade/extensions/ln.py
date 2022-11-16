@@ -54,12 +54,12 @@ class LN(Common):
                     out = opt.replace("-t", "")
                 else:
                     parsed_cmd["opts"].append(opt)
-            elif os.path.isfile(opt):
+            elif os.path.isfile(opt) or os.path.isfile(os.path.join(cmd["cwd"], opt)):
                 if out is not None or not parsed_cmd["in"] or opt != cmd["command"][-1]:
                     parsed_cmd["in"].append(os.path.normpath(opt))
                 else:
                     parsed_cmd["out"].append(os.path.normpath(opt))
-            elif os.path.isdir(opt):
+            elif os.path.isdir(opt) or os.path.isdir(os.path.join(cmd["cwd"], opt)):
                 out = os.path.normpath(opt)
             else:
                 self.error(f"Files from the command {cmd} probably do not exist anymore")
