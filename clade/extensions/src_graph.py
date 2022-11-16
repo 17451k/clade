@@ -19,8 +19,8 @@ from clade.extensions.abstract import Extension
 class SrcGraph(Extension):
     __version__ = "1"
 
-    always_requires = ["CmdGraph", "Storage", "LN"]
-    requires = always_requires  # exact list is specified in preset.json
+    always_requires = ["CmdGraph", "Storage", "Alternatives"]
+    requires = always_requires  # exact list is specified in presets.json
 
     def __init__(self, work_dir, conf=None):
         conf = conf if conf else dict()
@@ -101,6 +101,11 @@ class SrcGraph(Extension):
                 src_files = cmd["in"]
 
             for src_file in src_files:
+                # For each source file, there may be several identical ones,
+                # produced by cp, ln, or install commands.
+                # Here we replace each path by its canonical path.
+                src_file = self.extensions["Alternatives"].get_canonical_path(src_file)
+
                 if src_file not in self.src_graph:
                     self.src_graph[src_file] = self.__get_new_value()
                     self.src_info[src_file] = {"loc": self.__count_file_loc(src_file)}
@@ -110,9 +115,7 @@ class SrcGraph(Extension):
                 self.src_graph[src_file]["compiled_in"].add(cmd_id)
                 self.src_graph[src_file]["used_by"].update(used_by)
 
-        self.__untangle_symlinks()
-
-        # Convert sets to lists for ujson
+        # Convert sets to lists for json serialization
         for file in self.src_graph:
             self.src_graph[file]["compiled_in"] = list(self.src_graph[file]["compiled_in"])
             self.src_graph[file]["used_by"] = list(self.src_graph[file]["used_by"])
@@ -123,25 +126,6 @@ class SrcGraph(Extension):
             self.debug("{!r} file is used by {}".format(
                 file, self.src_graph[file]["used_by"]
             ))
-
-    def __untangle_symlinks(self):
-        for file, symlink in self.extensions["LN"].get_pairs():
-            # If both files are not in the source graph, then continue
-            if file not in self.src_graph and symlink not in self.src_graph:
-                continue
-
-            self.debug(f"Combine source graphs for {file!r} and {symlink!r}")
-
-            # Otherwise we need to make source graphs identical for both in and out file
-            self.src_graph[file] = self.src_graph.get(file, self.__get_new_value())
-            self.src_graph[symlink] = self.src_graph.get(symlink, self.__get_new_value())
-
-            # Combine values of compiled_in and used_by fields
-            compiled_in = self.src_graph[file]["compiled_in"].union(self.src_graph[symlink]["compiled_in"])
-            used_by = self.src_graph[file]["used_by"].union(self.src_graph[symlink]["used_by"])
-
-            self.src_graph[file] = {"compiled_in": compiled_in, "used_by": used_by}
-            self.src_graph[symlink] = {"compiled_in": compiled_in, "used_by": used_by}
 
     def __find_used_by(self, cmd_graph, cmd_id):
         used_by = set()

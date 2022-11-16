@@ -29,7 +29,7 @@ from clade.extensions.opts import filter_opts
 
 
 class Info(Extension):
-    always_requires = ["SrcGraph", "Storage"]
+    always_requires = ["SrcGraph", "Storage", "Alternatives"]
     requires = always_requires + ["CC", "CL"]
 
     __version__ = "3"
@@ -409,6 +409,9 @@ class Info(Extension):
         for orig_content in self.__iter_file_regex(self.expand, regex):
             content = list(orig_content)
 
+            # Make def_file canonical
+            content[1] = self.extensions["Alternatives"].get_canonical_path(content[0])
+
             args = list()
 
             # Replace last element of content list (string with arguments)
@@ -424,7 +427,7 @@ class Info(Extension):
             yield content
 
     def iter_typedefs(self):
-        """Yeild scope_file, declaration"""
+        """Yield scope_file, declaration"""
 
         regex = re.compile(r'\"(.*?)\" typedef (.*)')
 
@@ -441,7 +444,11 @@ class Info(Extension):
                         self.error("CIF output has unexpected format: {!r}".format(line))
                         raise SyntaxError
 
-                    yield list(m.groups())
+                    content = list(m.groups())
+
+                    # First index is always a path: make it canonical
+                    content[0] = self.extensions["Alternatives"].get_canonical_path(content[0])
+                    yield content
 
     def __iter_file(self, file, zip_fh):
         # Path to the source file is encoded in the path to the CIF output file

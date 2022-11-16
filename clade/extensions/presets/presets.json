@@ -19,6 +19,10 @@
         "Storage.convert_to_utf8": false,
         "Storage.decoding_errors": "strict",
         "Storage.files_to_add": [],
+        "Alternatives.use_canonical_paths": true,
+        "Alternatives.requires": [
+            "LN"
+        ],
         "CmdGraph.requires": [
             "AR",
             "AS",
