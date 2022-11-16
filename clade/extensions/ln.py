@@ -1,4 +1,4 @@
-# Copyright (c) Ilya Shchepetkov
+# Copyright (c) 2022 Ilya Shchepetkov
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -46,11 +46,12 @@ class LN(Common):
         opts = iter(cmd["command"][1:])
         for opt in opts:
             if re.search(r"^-", opt):
-                if opt == "-t":
+                if opt == "-t" or opt == "--target-directory":
                     # Value is the next option.
                     out = os.path.normpath(next(opts))
-                elif opt.startswith("--target-directory="):
+                elif opt.startswith("--target-directory=") or opt.startswith("-t"):
                     out = opt.replace("--target-directory=", "")
+                    out = opt.replace("-t", "")
                 else:
                     parsed_cmd["opts"].append(opt)
             elif os.path.isfile(opt):

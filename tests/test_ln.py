@@ -112,7 +112,7 @@ def check_target(parsed_cmd, in_file, out_dir):
     assert str(out_dir) in parsed_cmd["out"][0]
 
 
-def test_ln_target1(tmp_path: pathlib.Path):
+def test_ln_t1(tmp_path: pathlib.Path):
     ln = LN(tmp_path)
 
     in_file = create_empty_file(tmp_path / "test.txt")
@@ -125,7 +125,20 @@ def test_ln_target1(tmp_path: pathlib.Path):
     check_target(parsed_cmd, in_file, out_dir)
 
 
-def test_ln_target2(tmp_path: pathlib.Path):
+def test_ln_t2(tmp_path: pathlib.Path):
+    ln = LN(tmp_path)
+
+    in_file = create_empty_file(tmp_path / "test.txt")
+    out_dir = tmp_path / "output"
+    out_dir.mkdir()
+
+    cmd = get_cmd(tmp_path, f"ln -t{out_dir} {in_file}")
+
+    parsed_cmd = ln.parse_cmd(cmd)
+    check_target(parsed_cmd, in_file, out_dir)
+
+
+def test_ln_target1(tmp_path: pathlib.Path):
     ln = LN(tmp_path)
 
     in_file = create_empty_file(tmp_path / "test.txt")
@@ -133,6 +146,19 @@ def test_ln_target2(tmp_path: pathlib.Path):
     out_dir.mkdir()
 
     cmd = get_cmd(tmp_path, f"ln --target-directory={out_dir} {in_file}")
+
+    parsed_cmd = ln.parse_cmd(cmd)
+    check_target(parsed_cmd, in_file, out_dir)
+
+
+def test_ln_target2(tmp_path: pathlib.Path):
+    ln = LN(tmp_path)
+
+    in_file = create_empty_file(tmp_path / "test.txt")
+    out_dir = tmp_path / "output"
+    out_dir.mkdir()
+
+    cmd = get_cmd(tmp_path, f"ln --target-directory {out_dir} {in_file}")
 
     parsed_cmd = ln.parse_cmd(cmd)
     check_target(parsed_cmd, in_file, out_dir)
