@@ -72,11 +72,8 @@ class Functions(Callgraph):
                 + " ".join([src_file, func, def_line, func_type, signature])
             )
             if func in self.funcs and src_file in self.funcs[func]:
-                self._error(
-                    "Function is defined more than once: {!r} {!r}".format(
-                        func, src_file
-                    )
-                )
+                # It is normal because of canonical paths:
+                # just skip repeated definitions.
                 continue
 
             self.funcs[func][src_file] = {
@@ -118,13 +115,13 @@ class Functions(Callgraph):
                 continue
 
             if decl_file not in self.src_graph and decl_file != "unknown":
-                self._error(f"Not in source graph: {decl_file}")
+                self._error(f"Not in the source graph: {decl_file}")
 
             found = False
 
             for src_file in self.funcs[decl_name]:
                 if src_file not in self.src_graph and src_file != "unknown":
-                    self._error(f"Not in source graph: {src_file}")
+                    self._error(f"Not in the source graph: {src_file}")
 
                 if (
                     src_file == decl_file
