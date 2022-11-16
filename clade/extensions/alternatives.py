@@ -14,6 +14,7 @@
 
 import itertools
 import functools
+import os
 
 from typing import List
 from clade.extensions.abstract import Extension
@@ -32,12 +33,12 @@ class Alternatives(Extension):
 
     Alternatives is a short from "alternative paths".
     '''
-    requires = []
+    always_requres = ["Storage"]
 
     __version__ = "1"
 
     def __init__(self, work_dir, conf=None):
-        self.requires = conf.get("Alternatives.requires", [])
+        self.requires = self.always_requres + conf.get("Alternatives.requires", [])
 
         super().__init__(work_dir, conf)
 
@@ -94,7 +95,19 @@ class Alternatives(Extension):
         if not self.conf.get("Alternatives.use_canonical_paths"):
             return path
 
-        return sorted(self.get_all_paths(path))[0]
+        paths = sorted(self.get_all_paths(path))
+
+        # No alternatives
+        if len(paths) == 1:
+            return paths[0]
+
+        # Try to return first path that exists
+        for path in paths:
+            if os.path.exists(self.extensions["Storage"].get_storage_path(path)):
+                return path
+
+        # Otherwise simply return the path itself
+        return paths[0]
 
     def get_all_paths(self, paths):
         '''Return list of all known paths for the ones provided as an input'''
@@ -119,6 +132,9 @@ class Alternatives(Extension):
         cmds = list()
 
         for ext_name in self.extensions:
+            if ext_name in self.always_requres:
+                continue
+
             for cmd in self.extensions[ext_name].load_all_cmds():
                 cmd["type"] = ext_name
                 cmds.append(cmd)
