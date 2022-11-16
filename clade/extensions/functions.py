@@ -64,9 +64,12 @@ class Functions(Callgraph):
         yield from self.yield_data_by_key(self.funcs_by_file_folder, files)
 
     def __process_definitions(self):
-        for src_file, func, def_line, func_type, signature in self.extensions["Info"].iter_definitions():
-            self.debug("Processing definition: " + " ".join(
-                [src_file, func, def_line, func_type, signature])
+        for src_file, func, def_line, func_type, signature in self.extensions[
+            "Info"
+        ].iter_definitions():
+            self.debug(
+                "Processing definition: "
+                + " ".join([src_file, func, def_line, func_type, signature])
             )
             if func in self.funcs and src_file in self.funcs[func]:
                 self._error(
@@ -92,9 +95,16 @@ class Functions(Callgraph):
                 "declarations": {decl_file: decl_val},
             }
 
-        for decl_file, decl_name, decl_line, decl_type, decl_signature in self.extensions["Info"].iter_declarations():
-            self.debug("Processing declaration: " + " ".join(
-                [decl_file, decl_name, decl_line, decl_type, decl_signature])
+        for (
+            decl_file,
+            decl_name,
+            decl_line,
+            decl_type,
+            decl_signature,
+        ) in self.extensions["Info"].iter_declarations():
+            self.debug(
+                "Processing declaration: "
+                + " ".join([decl_file, decl_name, decl_line, decl_type, decl_signature])
             )
 
             decl_val = {
@@ -104,19 +114,17 @@ class Functions(Callgraph):
             }
 
             if decl_name not in self.funcs:
-                self.funcs[decl_name]["unknown"] = get_unknown_val(
-                    decl_file, decl_val
-                )
+                self.funcs[decl_name]["unknown"] = get_unknown_val(decl_file, decl_val)
                 continue
 
-            if decl_file not in self.src_graph:
-                self._error("Not in source graph: {}".format(decl_file))
+            if decl_file not in self.src_graph and decl_file != "unknown":
+                self._error(f"Not in source graph: {decl_file}")
 
             found = False
 
             for src_file in self.funcs[decl_name]:
-                if src_file not in self.src_graph:
-                    self._error("Not in source graph: {}".format(src_file))
+                if src_file not in self.src_graph and src_file != "unknown":
+                    self._error(f"Not in source graph: {src_file}")
 
                 if (
                     src_file == decl_file
@@ -142,15 +150,11 @@ class Functions(Callgraph):
                     found = True
 
             if not found:
-                self.funcs[decl_name]["unknown"] = get_unknown_val(
-                    decl_file, decl_val
-                )
+                self.funcs[decl_name]["unknown"] = get_unknown_val(decl_file, decl_val)
 
     def __process_exported(self):
         for src_file, func in self.extensions["Info"].iter_exported():
-            self.debug("Processing exported functions: " + " ".join(
-                [src_file, func])
-            )
+            self.debug("Processing exported functions: " + " ".join([src_file, func]))
 
             # Variables can also be exported
             if func not in self.funcs:
