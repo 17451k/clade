@@ -475,6 +475,20 @@ cl_opts = [
     "-U",
 ]
 
+install_opts = [
+    "-g",
+    "--group",
+    "-m",
+    "--mode",
+    "-o",
+    "--owner",
+    "---strip-program",
+    "-S",
+    "--suffix",
+    "-t",
+    "--target-directory",
+]
+
 cl_preprocessor_deps_opts = ["/EP", "-EP", "/E", "-E", "/P", "-P"]
 
 requires_value = {
@@ -485,6 +499,7 @@ requires_value = {
     "Objcopy": set(objcopy_opts),
     "CL": set(cl_opts),
     "Link": set(),
+    "Install": set(install_opts)
 }
 
 # Some options require multiple values

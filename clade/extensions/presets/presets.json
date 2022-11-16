@@ -21,7 +21,8 @@
         "Storage.files_to_add": [],
         "Alternatives.use_canonical_paths": true,
         "Alternatives.requires": [
-            "LN"
+            "LN",
+            "Install"
         ],
         "CmdGraph.requires": [
             "AR",
@@ -81,6 +82,9 @@
         ],
         "LN.which_list": [
             "/ln$"
+        ],
+        "Install.which_list": [
+            "/install$"
         ],
         "Objcopy.which_list": [
             "objcopy$"
