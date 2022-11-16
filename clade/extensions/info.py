@@ -127,7 +127,14 @@ class Info(Extension):
         if not os.path.exists(self.err_log):
             self.log("CIF finished without errors")
         else:
-            self.log("CIF finished with errors")
+            # Count number of command on which CIF failed
+            with open(self.err_log, "r") as log_fh:
+                count = 0
+                for line in log_fh:
+                    if "Aspectator failed at" in line:
+                        count += 1
+
+            self.warning(f"CIF failed on {count} commands")
 
         self.__normalize_cif_output()
 
