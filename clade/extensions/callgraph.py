@@ -33,6 +33,7 @@ class Callgraph(Extension):
         self.funcs = dict()
 
         self.err_log = os.path.join(self.work_dir, "err.log")
+        self.err_dir = os.path.join(self.work_dir, "errors")
 
         self.callgraph = nested_dict()
         self.callgraph_folder = "callgraph"
@@ -101,8 +102,7 @@ class Callgraph(Extension):
                 possible_files = tuple(f for f in self.funcs[func]
                                        if f != "unknown" and self.funcs[func][f]["type"] in (call_type, "exported"))
             else:
-                self._error("Can't find '{}' in Functions".format(func))
-                possible_files = []
+                self._error(f"Can't find '{func}' in Functions")
 
             # Assign priority number for each possible definition. Examples:
             # 5 means that definition is located in the same file as the call
@@ -127,7 +127,7 @@ class Callgraph(Extension):
                 index -= 1
 
             if len(matched_files) > 1:
-                self._error("Multiple matches: {} {}".format(func, context_func))
+                self._error(f"Multiple matches: {func}", context_file)
 
             for possible_file in matched_files:
                 call_val = {
@@ -143,7 +143,7 @@ class Callgraph(Extension):
                 self.callgraph[context_file][context_func]["calls"][possible_file][func][call_line] = call_val
 
                 if possible_file == "unknown":
-                    self._error("Can't match definition: {} {}".format(func, context_file))
+                    self._error(f"Can't match definition: {func}", context_file)
                 else:
                     self.debug("Function {} from {} is called in {}:{} in {}".format(
                         func, possible_file, context_file, call_line, context_func
@@ -177,15 +177,14 @@ class Callgraph(Extension):
                 continue
 
             if func not in self.funcs:
-                self._error("Use of function without definition: {}".format(func))
-                continue
+                self._error(f"Use of function without definition: {func}", context_file)
 
             # For each function call there can be many definitions with the same name, defined in different files.
             # possible_files is a list of them.
             possible_files = tuple(f for f in self.funcs[func] if f != "unknown")
 
             if len(possible_files) == 0:
-                self._error("No possible definitions for use: {}".format(func))
+                self._error(f"No possible definitions for use: {func}")
                 continue
 
             # Assign priority number for each possible definition. Examples:
@@ -207,7 +206,7 @@ class Callgraph(Extension):
                 raise RuntimeError("We do not expect any other file class")
 
             if len(matched_files) > 1:
-                self._error("Multiple matches for use: {} call in {}".format(func, context_func))
+                self._error(f"Multiple matches for use: {func}", context_file)
 
             for possible_file in matched_files:
                 if func not in self.used_in[possible_file]:
@@ -219,7 +218,7 @@ class Callgraph(Extension):
                     self.used_in[possible_file][func]["used_in_func"][context_file][context_func][line] = index
 
                 if possible_file == "unknown":
-                    self._error("Can't match definition for use: {} {}".format(func, context_file))
+                    self._error(f"Can't match definition for use: {func}", context_file)
 
     @functools.lru_cache()
     def _t_unit_is_common(self, file1, file2):
@@ -263,7 +262,7 @@ class Callgraph(Extension):
 
         return r
 
-    def _error(self, msg):
+    def _error(self, msg, file=None):
         """Print an error message."""
         self.debug(msg)
 
@@ -272,20 +271,54 @@ class Callgraph(Extension):
         with open(self.err_log, "a") as err_fh:
             err_fh.write("{}\n".format(msg))
 
+        # If file specified, then also print the message to separate file log
+        if file:
+            self._error_by_file(msg, file)
+
+    def _error_by_file(self, msg, file):
+        """Print an error message separately for each file."""
+        path = os.path.join(self.work_dir, self.err_dir + file + ".log")
+
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+
+        with open(path, "a") as err_fh:
+            err_fh.write(f"{msg}\n")
+
     def _clean_error_log(self):
         """Remove duplicate error messages."""
 
-        if not os.path.isfile(self.err_log):
-            return
+        log_files = self.__find_log_files()
 
-        dup_lines = dict()
+        if len(log_files) > 1:
+            self.log(f"Cleaning {len(log_files)} log files")
 
-        with open(self.err_log, "r") as output_fh:
-            with open(self.err_log + ".temp", "w") as temp_fh:
+        for log_file in log_files:
+            if not os.path.isfile(log_file):
+                return
+
+            dup_lines = dict()
+
+            with open(log_file, "r") as output_fh:
                 for line in output_fh:
+                    line = line.strip()
                     if line not in dup_lines:
-                        temp_fh.write(line)
                         dup_lines[line] = 1
+                    else:
+                        dup_lines[line] += 1
 
-        os.remove(self.err_log)
-        os.rename(self.err_log + ".temp", self.err_log)
+            # Print back clean and sorted log
+            with open(log_file, "w") as output_fh:
+                for line, times in sorted(dup_lines.items(), key=lambda item: item[1], reverse=True):
+                    if times > 1:
+                        output_fh.write(line + f" ({times} times)\n")
+                    else:
+                        output_fh.write(line + "\n")
+
+    def __find_log_files(self):
+        log_files = [self.err_log]
+
+        for root, _, filenames in os.walk(self.err_dir):
+            for filename in filenames:
+                log_files.append(os.path.join(root, filename))
+
+        return log_files
