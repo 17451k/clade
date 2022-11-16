@@ -226,7 +226,7 @@ def main(sys_args=sys.argv[1:]):
         c.logger.info("Extensions finished in {}".format(ext_delta_str))
 
         if build_exit_code != 0:
-            c.logger.error("Reminder that build finished with exit code {}".format(build_exit_code))
+            c.logger.warning("[WARNING] Reminder that build finished with exit code {}".format(build_exit_code))
     except RuntimeError as e:
         if e.args:
             raise SystemExit(e)
