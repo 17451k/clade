@@ -60,7 +60,11 @@ class SocketServer(parent):
         # Request handler must have access to extensions
         extensions = []
         for cls in Extension.get_all_extensions():
-            extensions.append(cls(conf.get("work_dir", "Clade"), conf))
+            try:
+                extensions.append(cls(conf.get("work_dir", "Clade"), conf))
+            except Exception:
+                # Some extension classes are abstract and can't be instantiated
+                continue
         rh.extensions = extensions
 
         super().__init__(address, rh)
