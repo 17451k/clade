@@ -13,17 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import functools
 import os
 import re
 import shlex
 import shutil
 import subprocess
 
-from clade.extensions.compiler import Compiler
+from clade.extensions.linker import Linker
 from clade.extensions.opts import cc_preprocessor_opts
 
 
-class CC(Compiler):
+class CC(Linker):
     """Class for parsing CC build commands."""
 
     __version__ = "1"
@@ -53,6 +54,7 @@ class CC(Compiler):
                 return
 
         parsed_cmd = super().parse_cmd(cmd, self.name)
+        self._parse_linker_opts(cmd["which"], parsed_cmd)
 
         if not parsed_cmd["out"] and "-c" in parsed_cmd["opts"]:
             for cmd_in in parsed_cmd["in"]:
@@ -246,3 +248,26 @@ class CC(Compiler):
                 )
 
         return pre
+
+    @functools.lru_cache()
+    def _get_default_searchdirs(self, which):
+        searchdirs = []
+
+        # cc1 is not a linker
+        if which.endswith("cc1"):
+            return searchdirs
+
+        try:
+            r = subprocess.run(f"{which} -print-search-dirs | grep libraries", shell=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+            libraries = r.stdout.replace("libraries: =", "")
+
+            for line in libraries.split(":"):
+                if os.path.isdir(line):
+                    searchdirs.append(os.path.normpath(line))
+        except Exception:
+            self.debug(f"Unable to find search dirs for {which}")
+            return searchdirs
+
+        self.debug(f"Default search dirs for {which} are: {searchdirs}")
+        return searchdirs

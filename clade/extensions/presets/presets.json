@@ -10,7 +10,7 @@
         "CC.ignore_cc1": true,
         "CC.with_system_header_files": true,
         "CL.pre_encoding": null,
-        "LD.searchdirs": ["/usr/lib"],
+        "Linker.searchdirs": [],
         "Compiler.deps_encoding": null,
         "Compiler.get_deps": true,
         "Compiler.store_deps": true,

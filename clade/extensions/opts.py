@@ -34,6 +34,7 @@ gcc_opts = [
     "-Xpreprocessor",
     "-Xassembler",
     "-l",
+    "-L",
     "-Xlinker",
     "-T",
     "-u",
