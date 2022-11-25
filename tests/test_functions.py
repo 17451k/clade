@@ -32,11 +32,13 @@ def funcs_are_ok(funcs):
 
 def funcs_by_file_are_ok(funcs_by_file):
     assert funcs_by_file
-    assert [d["name"] for d in funcs_by_file[zero_c]] == [
-        "zero",
-        "print",
-        "func_with_pointers",
-    ]
+    assert sorted([d["name"] for d in funcs_by_file[zero_c]]) == sorted(
+        [
+            "zero",
+            "print",
+            "func_with_pointers",
+        ]
+    )
 
     for definition in funcs_by_file[zero_c]:
         if definition["name"] != "zero":
