@@ -17,7 +17,7 @@ from clade.extensions.abstract import Extension
 
 
 class SrcGraph(Extension):
-    __version__ = "1"
+    __version__ = "2"
 
     always_requires = ["CmdGraph", "Storage", "Alternatives"]
     requires = always_requires  # exact list is specified in presets.json
@@ -46,11 +46,11 @@ class SrcGraph(Extension):
 
     @Extension.prepare
     def parse(self, cmds_file):
-        cmds = list(self.load_all_cmds())
+        cmds = list(self.load_compilation_cmds())
         cmds_number = len(cmds)
 
         if cmds_number:
-            self.log("Parsing {} commands".format(cmds_number))
+            self.log(f"Parsing {cmds_number} commands")
         else:
             self.error("No compilation commands found")
             raise RuntimeError
@@ -66,15 +66,16 @@ class SrcGraph(Extension):
 
         self.src_graph.clear()
 
-    def load_all_cmds(self, with_opts=False, with_raw=False, with_deps=False):
+    def load_compilation_cmds(self, with_opts=False, with_raw=False, with_deps=False):
+        """Get list with all parsed compilation commands (C projects only)"""
         cmds = []
 
-        for ext_name in [
-            x for x in self.extensions if x not in self.always_requires
-        ]:
+        for ext_name in [x for x in self.extensions if x not in self.always_requires]:
             for cmd in self.extensions[ext_name].load_all_cmds(
-                compile_only=True, with_opts=with_opts,
-                with_raw=with_raw, with_deps=with_deps
+                compile_only=True,
+                with_opts=with_opts,
+                with_raw=with_raw,
+                with_deps=with_deps,
             ):
                 cmd["type"] = ext_name
                 cmds.append(cmd)
@@ -82,9 +83,8 @@ class SrcGraph(Extension):
         return cmds
 
     def __generate_src_graph(self, cmds):
-        try:
-            cmd_graph = self.extensions["CmdGraph"].load_cmd_graph()
-        except FileNotFoundError:
+        # We can do nothing without command graph
+        if not self.extensions["CmdGraph"].cmd_graph_exists():
             return
 
         for cmd in cmds:
@@ -93,7 +93,7 @@ class SrcGraph(Extension):
 
             # used_by is a list of commands that use (possibly indirectly)
             # output of the command with ID=cmd_id
-            used_by = self.__find_used_by(cmd_graph, cmd_id)
+            used_by = self.extensions["CmdGraph"].find_used_by(cmd_id)
 
             if self.conf.get("Compiler.get_deps"):
                 src_files = self.extensions[cmd_type].load_deps_by_id(cmd_id)
@@ -107,34 +107,25 @@ class SrcGraph(Extension):
                 src_file = self.extensions["Alternatives"].get_canonical_path(src_file)
 
                 if src_file not in self.src_graph:
-                    self.src_graph[src_file] = self.__get_new_value()
+                    self.src_graph[src_file] = dict()
                     self.src_info[src_file] = {"loc": self.__count_file_loc(src_file)}
 
-                # compiled_in is a list of commands
-                # that compile 'rel_in' source file
-                self.src_graph[src_file]["compiled_in"].add(cmd_id)
-                self.src_graph[src_file]["used_by"].update(used_by)
+                if cmd["id"] not in self.src_graph[src_file]:
+                    self.src_graph[src_file][cmd_id] = set()
+
+                # The following means: source file src_file is compiled
+                # in commaind with id=cmd_id, and is indirectly used by commands
+                # from the self.src_graph[src_file][cmd_id] set
+                self.src_graph[src_file][cmd_id].update(used_by)
 
         # Convert sets to lists for json serialization
         for file in self.src_graph:
-            self.src_graph[file]["compiled_in"] = list(self.src_graph[file]["compiled_in"])
-            self.src_graph[file]["used_by"] = list(self.src_graph[file]["used_by"])
+            for cmd_id in self.src_graph[file]:
+                self.src_graph[file][cmd_id] = list(self.src_graph[file][cmd_id])
 
-            self.debug("{!r} file is compiled in {}".format(
-                file, self.src_graph[file]["compiled_in"]
-            ))
-            self.debug("{!r} file is used by {}".format(
-                file, self.src_graph[file]["used_by"]
-            ))
-
-    def __find_used_by(self, cmd_graph, cmd_id):
-        used_by = set()
-
-        for used_by_id in cmd_graph[cmd_id]["used_by"]:
-            used_by.add(used_by_id)
-            used_by.update(self.__find_used_by(cmd_graph, used_by_id))
-
-        return used_by
+                self.debug(
+                    f"{file!r} is compiled in {cmd_id} and used by {self.src_graph[file][cmd_id]}"
+                )
 
     def __count_file_loc(self, file):
         """Count number of lines of code in the file."""
@@ -153,6 +144,27 @@ class SrcGraph(Extension):
             self.warning("Cannot get size of file {}".format(file))
             return 0
 
-    @staticmethod
-    def __get_new_value():
-        return {"compiled_in": set(), "used_by": set()}
+    def in_source_graph(self, file, cmd_id):
+        '''Check that file and command_id is indeed present in the source graph'''
+        if not hasattr(self, "src_graph") or not self.src_graph:
+            self.src_graph = self.load_src_graph()
+
+        return file in self.src_graph and cmd_id in self.src_graph[file]
+
+    def get_used_by(self, file, cmd_id):
+        '''Get all commands that use given file'''
+        if not hasattr(self, "src_graph") or not self.src_graph:
+            self.src_graph = self.load_src_graph()
+
+        if self.in_source_graph(file, cmd_id):
+            return self.src_graph[file][cmd_id]
+
+        return []
+
+    def unload_src_graph(self):
+        '''Unload source graph from the memory.'''
+
+        # Generally, this is not necessary, unless you want
+        # to try to manually manage memory consumtion
+        if hasattr(self, "src_graph") and self.src_graph:
+            del self.src_graph

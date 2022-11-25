@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import hashlib
 import itertools
 import functools
 import os
@@ -21,7 +22,7 @@ from clade.extensions.abstract import Extension
 
 
 class Alternatives(Extension):
-    '''
+    """
     This extension is responsible for parsing build commands that create
     "identical" file copies: ln, cp, install, etc. It provides an API
     for the following things:
@@ -32,7 +33,8 @@ class Alternatives(Extension):
       the same for all identical files.
 
     Alternatives is a short from "alternative paths".
-    '''
+    """
+
     always_requres = ["Storage"]
 
     __version__ = "1"
@@ -54,24 +56,36 @@ class Alternatives(Extension):
 
         for cmd in cmds:
             if not cmd["in"] or not cmd["out"] or len(cmd["in"]) != len(cmd["out"]):
-                self.debug(f"Command {cmd['id']} doesn't have symmetrical input and output files")
+                self.debug(
+                    f"Command {cmd['id']} doesn't have symmetrical input and output files"
+                )
                 continue
 
             # For each input file, there should be a corresponding identical output file
             for i, cmd_in in enumerate(cmd["in"]):
-                # TODO: check that cmd_in is indeed the same file as cmd_out
                 cmd_out = cmd["out"][i]
 
-                if cmd_in not in self.alts:
-                    self.alts[cmd_in] = set()
+                # Sometimes there can be some false positives, for example,
+                # because some ln commands overwrite files from the previous ones
+                # Here we check that cmd_in is indeed the same file as cmd_out
+                if (
+                    not os.path.exists(cmd_in)
+                    or not os.path.exists(cmd_out)
+                    or self.__get_file_checksum(cmd_in)
+                    != self.__get_file_checksum(cmd_out)
+                ):
+                    continue
 
-                if cmd_out not in self.alts:
-                    self.alts[cmd_out] = set()
+                self.__add_pair(cmd_in, cmd_out)
 
-                # Add output file as an identical for the input file
-                # And vice versa
-                self.alts[cmd_in].add(cmd_out)
-                self.alts[cmd_out].add(cmd_in)
+                # Resolve possible symlinks
+                real_cmd_in = os.path.realpath(cmd_in)
+                if real_cmd_in != cmd_in:
+                    self.__add_pair(real_cmd_in, cmd_in)
+
+                real_cmd_out = os.path.realpath(cmd_out)
+                if real_cmd_out != cmd_out:
+                    self.__add_pair(real_cmd_out, cmd_out)
 
         # Convert sets to lists for json serialization
         for path in self.alts:
@@ -79,18 +93,30 @@ class Alternatives(Extension):
 
         self.dump_data(self.alts, self.alts_file)
 
+    def __add_pair(self, cmd_in, cmd_out):
+        if cmd_in not in self.alts:
+            self.alts[cmd_in] = set()
+
+        if cmd_out not in self.alts:
+            self.alts[cmd_out] = set()
+
+        # Add output file as an identical for the input file
+        # And vice versa
+        self.alts[cmd_in].add(cmd_out)
+        self.alts[cmd_out].add(cmd_in)
+
     def load_alternatives(self):
         return self.load_data(self.alts_file)
 
     @functools.lru_cache()
     def get_canonical_path(self, path):
-        '''Returns a canonical path for a given path
+        """Returns a canonical path for a given path
 
         For example. if "/lib/header.h" and "/lib/x86_64/header.h" files are the same,
         then:
             * get_canonical_path("/lib/header.h") == "/lib/header.h"
             * get_canonical_path("/lib/x86_64/header.h") == "/lib/header.h"
-        '''
+        """
 
         if not self.conf.get("Alternatives.use_canonical_paths"):
             return path
@@ -110,7 +136,7 @@ class Alternatives(Extension):
         return paths[0]
 
     def get_all_paths(self, paths):
-        '''Return list of all known paths for the ones provided as an input'''
+        """Return list of all known paths for the ones provided as an input"""
         # Input parameter is a single path
         if isinstance(paths, str):
             return self.__get_all_paths(paths)
@@ -140,3 +166,10 @@ class Alternatives(Extension):
                 cmds.append(cmd)
 
         return cmds
+
+    def __get_file_checksum(self, file):
+        try:
+            with open(file, "rb") as fh:
+                return hashlib.md5(fh.read()).hexdigest()
+        except FileNotFoundError:
+            return None

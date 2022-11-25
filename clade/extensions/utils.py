@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import collections
 import hashlib
 import itertools
 
@@ -31,3 +32,7 @@ def yield_chunk(container, chunk_size=1000):
             yield piece
         else:
             return
+
+
+# Location is a file + command id, in which it was compiled
+Location = collections.namedtuple("Location", ["file", "cmd_id"])

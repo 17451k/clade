@@ -131,6 +131,13 @@ class Extension(metaclass=abc.ABCMeta):
         """Parse intercepted commands."""
         pass
 
+    def file_exists(self, file_name):
+        '''File exists in the working directory'''
+        if not os.path.isabs(file_name):
+            file_name = os.path.join(self.work_dir, file_name)
+
+        return os.path.exists(file_name)
+
     def load_data(self, file_name, raise_exception=True):
         """Load file by name."""
 

@@ -33,20 +33,18 @@ class Macros(Extension):
 
     @Extension.prepare
     def parse(self, cmds_file):
-        self.log("Parsing macros definitions")
+        self.log("Parsing definitions")
         self.__process_macros_definitions()
 
-        self.log("Parsing macros expansions")
+        self.log("Parsing expansions")
         self.__process_macros_expansions()
 
-        self.log("Dumping macros")
         self.dump_data_by_key(self.macros, self.macros_folder)
         self.macros.clear()
 
-        self.log("Reversing macros expansions")
+        self.log("Reversing expansions")
         self.__reverse_expansions()
 
-        self.log("Dumping macros expansions")
         self.dump_data_by_key(self.exps, self.exps_folder)
         self.exps.clear()
 

@@ -13,15 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import functools
-import os
 import re
 
 from clade.extensions.abstract import Extension
+from clade.extensions.common_info import CommonInfo
 from clade.types.nested_dict import nested_dict, traverse
 
 
-class Callgraph(Extension):
+class Callgraph(CommonInfo):
     requires = ["SrcGraph", "Info", "Functions"]
 
     __version__ = "1"
@@ -29,47 +28,32 @@ class Callgraph(Extension):
     def __init__(self, work_dir, conf=None):
         super().__init__(work_dir, conf)
 
-        self.src_graph = dict()
         self.funcs = dict()
-
-        self.err_log = os.path.join(self.work_dir, "err.log")
-        self.err_dir = os.path.join(self.work_dir, "errors")
 
         self.callgraph = nested_dict()
         self.callgraph_folder = "callgraph"
 
-        self.calls_by_ptr = nested_dict()
-        self.calls_by_ptr_file = "calls_by_ptr.json"
-
-        self.used_in = nested_dict()
-        self.used_in_file = "used_in.json"
-
-        self.is_builtin = re.compile(r'(__builtin)|(__compiletime)')
+        self.is_builtin = re.compile(r"(__builtin)|(__compiletime)")
 
     @Extension.prepare
     def parse(self, cmds_file):
         self.log("Generating callgraph")
 
-        self.src_graph = self.extensions["SrcGraph"].load_src_graph()
         self.funcs = self.extensions["Functions"].load_functions()
 
         self.__process_calls()
-        self.__process_calls_by_pointers()
-        self.__process_functions_usages()
-        self._clean_error_log()
+        self.__add_types()
+        self._clean_warn_log()
 
         if not self.callgraph:
             self.warning("Callgraph is empty")
             return
 
         self.dump_data_by_key(self.callgraph, self.callgraph_folder)
-        self.dump_data(self.calls_by_ptr, self.calls_by_ptr_file)
-        self.dump_data(self.used_in, self.used_in_file)
 
-        self.src_graph.clear()
+        self.extensions["SrcGraph"].unload_src_graph()
         self.funcs.clear()
         self.callgraph.clear()
-        self.used_in.clear()
 
     def load_callgraph(self, files=None):
         return self.load_data_by_key(self.callgraph_folder, files)
@@ -77,248 +61,142 @@ class Callgraph(Extension):
     def yield_callgraph(self, files=None):
         yield from self.yield_data_by_key(self.callgraph_folder, files)
 
-    def load_calls_by_ptr(self):
-        return self.load_data(self.calls_by_ptr_file)
-
-    def load_used_in(self):
-        return self.load_data(self.used_in_file)
-
     def __process_calls(self):
-        is_bad = re.compile(r'__bad')
+        # TODO: Linux kernel cpecific, move to the configuration
+        is_bad = re.compile(r"__bad")
 
-        for context_file, context_func, func, call_line, call_type, args in self.extensions["Info"].iter_calls():
+        for (
+            context_file,
+            context_cmd_id,
+            context_func,
+            func,
+            call_line,
+            call_type,
+            args,
+        ) in self.extensions["Info"].iter_calls():
             # args are excluded from the debug log
-            self.debug("Processing function calls: " + " ".join(
-                [context_file, context_func, func, call_line, call_type])
+            self.debug(
+                "Processing function calls: "
+                + " ".join(
+                    [
+                        context_file,
+                        context_cmd_id,
+                        context_func,
+                        func,
+                        call_line,
+                        call_type,
+                    ]
+                )
             )
 
-            if self.is_builtin.match(func) or (is_bad.match(func) and func not in self.callgraph):
+            if self.is_builtin.match(func) or (
+                is_bad.match(func) and func not in self.callgraph
+            ):
                 self.debug("Function {} is bad".format(func))
                 continue
 
-            # For each function call there can be many definitions with the same name, defined in different
-            # files. Possible_files is a list of them.
-            if func in self.funcs:
-                possible_files = tuple(f for f in self.funcs[func]
-                                       if f != "unknown" and self.funcs[func][f]["type"] in (call_type, "exported"))
-            else:
-                self._error(f"Can't find '{func}' in Functions")
+            context_definition = self.extensions["Functions"].construct_definition(
+                context_file, context_cmd_id, call_type, call_line
+            )
 
-            # Assign priority number for each possible definition. Examples:
-            # 5 means that definition is located in the same file as the call
-            # 4 - in the same translation unit
-            # 3 - reserved for exported functions (Linux kernel only)
-            # 2 - in the object file that is linked with the object file that contains the call
-            # 1 - TODO: investigate this case
-            # 0 - definition is not found
-            index = 5
-            for files in (
-                    (f for f in possible_files if f == context_file),
-                    (f for f in possible_files if self._t_unit_is_common(f, context_file)),
-                    (f for f in possible_files if self.funcs[func][f]["type"] == "exported") if call_type == "extern" else tuple(),
-                    (f for f in possible_files if self._files_are_linked(f, context_file) and
-                        any(self._t_unit_is_common(cf, context_file) for cf in self.funcs[func][f]["declarations"])) if call_type == "extern" else tuple(),
-                    (f for f in possible_files if any(self._t_unit_is_common(cf, context_file) for cf in self.funcs[func][f]["declarations"]))
-                    if call_type == "extern" else tuple(),
-                    ['unknown']):
-                matched_files = tuple(files)
-                if matched_files:
-                    break
-                index -= 1
+            matched_files, index = self.__get_definitions(func, context_definition)
 
             if len(matched_files) > 1:
-                self._error(f"Multiple matches: {func}", context_file)
+                self._warning(f"Multiple matches: {func}", context_file)
 
             for possible_file in matched_files:
                 call_val = {
-                    'match_type': index,
+                    "match_type": index,
                 }
 
                 if args:
                     call_val["args"] = args
 
-                self.callgraph[possible_file][func]['called_in'][context_file][context_func][call_line] = call_val
+                self.callgraph[possible_file][func]["called_in"][context_file][
+                    context_func
+                ][call_line] = call_val
 
                 # Create reversed callgraph
-                self.callgraph[context_file][context_func]["calls"][possible_file][func][call_line] = call_val
+                self.callgraph[context_file][context_func]["calls"][possible_file][
+                    func
+                ][call_line] = call_val
 
-                if possible_file == "unknown":
-                    self._error(f"Can't match definition: {func}", context_file)
+                if possible_file == "unknown" and index == 0:
+                    self._warning(f"Can't match definition: {func}", context_file)
                 else:
-                    self.debug("Function {} from {} is called in {}:{} in {}".format(
-                        func, possible_file, context_file, call_line, context_func
-                    ))
+                    self.debug(
+                        "Function {} from {} is called in {}:{} in {}".format(
+                            func, possible_file, context_file, call_line, context_func
+                        )
+                    )
 
+    def __add_types(self):
         # Keep function types in the callgraph
         for path, func in traverse(self.callgraph, 2):
-            if path == "unknown" and (func not in self.funcs or not self.funcs[func].get(path)):
+            if path == "unknown" and func not in self.funcs:
                 continue
 
-            self.callgraph[path][func]["type"] = self.funcs[func][path]["type"]
-
-    def __process_calls_by_pointers(self):
-        for context_file, context_func, func_ptr, call_line in self.extensions["Info"].iter_calls_by_pointers():
-            self.debug("Processing calls by pointers: " + " ".join(
-                [context_file, context_func, func_ptr, call_line])
-            )
-
-            if func_ptr not in self.calls_by_ptr[context_file][context_func]:
-                self.calls_by_ptr[context_file][context_func][func_ptr] = [call_line]
-            else:
-                self.calls_by_ptr[context_file][context_func][func_ptr].append(call_line)
-
-    def __process_functions_usages(self):
-        for context_file, context_func, func, line in self.extensions["Info"].iter_functions_usages():
-            self.debug("Processing function usages: " + " ".join(
-                [context_file, context_func, func, line])
-            )
-
-            if self.is_builtin.match(func):
-                continue
-
-            if func not in self.funcs:
-                self._error(f"Use of function without definition: {func}", context_file)
-
-            # For each function call there can be many definitions with the same name, defined in different files.
-            # possible_files is a list of them.
-            possible_files = tuple(f for f in self.funcs[func] if f != "unknown")
-
-            if len(possible_files) == 0:
-                self._error(f"No possible definitions for use: {func}")
-                continue
-
-            # Assign priority number for each possible definition. Examples:
-            # 3 means that definition is located in the same file as the call
-            # 2 - in the same translation unit
-            # 1 - in the object file that is linked with the object file that contains the call
-            # 0 - definition is not found
-            index = 3
-            for files in (
-                    (f for f in possible_files if f == context_file),
-                    (f for f in possible_files if self._t_unit_is_common(f, context_file)),
-                    (f for f in possible_files if self._files_are_linked(f, context_file)),
-                    ['unknown']):
-                matched_files = tuple(files)
-                if matched_files:
+            for definition in self.funcs[func]:
+                # Warning: may be innacurate
+                if definition["file"] == path:
+                    self.callgraph[path][func]["type"] = definition["type"]
                     break
-                index -= 1
             else:
-                raise RuntimeError("We do not expect any other file class")
+                self.callgraph[path][func]["type"] = "extern"
 
-            if len(matched_files) > 1:
-                self._error(f"Multiple matches for use: {func}", context_file)
-
-            for possible_file in matched_files:
-                if func not in self.used_in[possible_file]:
-                    self.used_in[possible_file][func] = {"used_in_file": nested_dict(), "used_in_func": nested_dict()}
-
-                if context_func == "NULL":
-                    self.used_in[possible_file][func]["used_in_file"][context_file][line] = index
-                else:
-                    self.used_in[possible_file][func]["used_in_func"][context_file][context_func][line] = index
-
-                if possible_file == "unknown":
-                    self._error(f"Can't match definition for use: {func}", context_file)
-
-    @functools.lru_cache()
-    def _t_unit_is_common(self, file1, file2):
-        r = (
-            file1 in self.src_graph
-            and file2 in self.src_graph
-            and len(
-                set(self.src_graph[file1]["compiled_in"])
-                & set(self.src_graph[file2]["compiled_in"])
-            )
-            > 0
-        )
-
-        if r:
-            self.debug("{!r} and {!r} are from the same translation unit".format(
-                file1, file2)
-            )
+    def __get_definitions(self, func, context_definition):
+        # For each function call there can be many definitions with the same name, defined in different
+        # files. possible_definitions is a list of them.
+        possible_definitions = []
+        if func in self.funcs:
+            for definition in self.funcs[func]:
+                if definition["type"] in (context_definition["type"], "exported"):
+                    possible_definitions.append(definition)
         else:
-            self.debug("{!r} and {!r} are not from the same translation unit".format(
-                file1, file2)
-            )
+            self._warning(f"Can't find '{func}' in Functions")
 
-        return r
+        matched_files = []
+        # Assign priority number for each possible definition (see index variable)
+        index = 5
 
-    @functools.lru_cache()
-    def _files_are_linked(self, file1, file2):
-        r = (
-            file1 in self.src_graph
-            and file2 in self.src_graph
-            and len(
-                set(self.src_graph[file1]["used_by"])
-                & set(self.src_graph[file2]["used_by"])
-            )
-            > 0
-        )
+        for files in (
+            # 5: definition is located in the same file as the call
+            (
+                d["file"]
+                for d in possible_definitions
+                if self._in_the_same_file(d, context_definition)
+            ),
+            # 4: definition is located in the same translation unit
+            (
+                d["file"]
+                for d in possible_definitions
+                if self._in_the_same_tu(d, context_definition)
+            ),
+            # 3: definition is an exported function (Linux kernel only)
+            (
+                d["file"]
+                for d in possible_definitions
+                if self._definition_is_exported(d, context_definition)
+            ),
+            # 2: definition is in the object file that is linked with the object file that contains the call
+            (
+                d["file"]
+                for d in possible_definitions
+                if self._definition_is_linked(d, context_definition)
+            ),
+            # 1: header files with declaration is included into the object file that contains the call
+            (
+                d["file"]
+                for d in possible_definitions
+                if self._declaration_is_in_the_same_tu(d, context_definition)
+            ),
+            # 0: definition is not found
+            ["unknown"],
+        ):
+            matched_files = tuple(files)
 
-        if r:
-            self.debug("{!r} and {!r} are linked".format(file1, file2))
-        else:
-            self.debug("{!r} and {!r} are not linked".format(file1, file2))
+            if matched_files:
+                break
+            index -= 1
 
-        return r
-
-    def _error(self, msg, file=None):
-        """Print an error message."""
-        self.debug(msg)
-
-        os.makedirs(self.work_dir, exist_ok=True)
-
-        with open(self.err_log, "a") as err_fh:
-            err_fh.write("{}\n".format(msg))
-
-        # If file specified, then also print the message to separate file log
-        if file:
-            self._error_by_file(msg, file)
-
-    def _error_by_file(self, msg, file):
-        """Print an error message separately for each file."""
-        path = os.path.join(self.work_dir, self.err_dir + file + ".log")
-
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-
-        with open(path, "a") as err_fh:
-            err_fh.write(f"{msg}\n")
-
-    def _clean_error_log(self):
-        """Remove duplicate error messages."""
-
-        log_files = self.__find_log_files()
-
-        if len(log_files) > 1:
-            self.log(f"Cleaning {len(log_files)} log files")
-
-        for log_file in log_files:
-            if not os.path.isfile(log_file):
-                return
-
-            dup_lines = dict()
-
-            with open(log_file, "r") as output_fh:
-                for line in output_fh:
-                    line = line.strip()
-                    if line not in dup_lines:
-                        dup_lines[line] = 1
-                    else:
-                        dup_lines[line] += 1
-
-            # Print back clean and sorted log
-            with open(log_file, "w") as output_fh:
-                for line, times in sorted(dup_lines.items(), key=lambda item: item[1], reverse=True):
-                    if times > 1:
-                        output_fh.write(line + f" ({times} times)\n")
-                    else:
-                        output_fh.write(line + "\n")
-
-    def __find_log_files(self):
-        log_files = [self.err_log]
-
-        for root, _, filenames in os.walk(self.err_dir):
-            for filename in filenames:
-                log_files.append(os.path.join(root, filename))
-
-        return log_files
+        return matched_files, index

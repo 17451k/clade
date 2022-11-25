@@ -387,11 +387,11 @@ class Clade:
     @property
     def compilation_cmds(self):
         """List of all parsed compilation commands (C projects only)."""
-        return self.SrcGraph.load_all_cmds()
+        return self.SrcGraph.load_compilation_cmds()
 
     def get_compilation_cmds(self, with_opts=False, with_raw=False, with_deps=False):
         """Get list with all parsed compilation commands (C projects only)."""
-        return self.SrcGraph.load_all_cmds(
+        return self.SrcGraph.load_compilation_cmds(
             with_opts=with_opts, with_raw=with_raw, with_deps=with_deps)
 
     def get_cmd_type(self, cmd_id):
@@ -529,7 +529,7 @@ class Clade:
         Args:
             file: A name of the source file from the source graph
         """
-        return (cmd_id for cmd_id in self.SrcGraph.load_src_graph([file])[file]["compiled_in"])
+        return (cmd_id for cmd_id in self.SrcGraph.load_src_graph([file])[file].keys())
 
     def get_compilation_cmds_by_file(self, file):
         """Get list of compilation commands in which the file was compiled.

@@ -38,7 +38,7 @@ class CDB(Extension):
 
     @Extension.prepare
     def parse(self, cmds_file):
-        cmds = self.extensions["SrcGraph"].load_all_cmds(
+        cmds = self.extensions["SrcGraph"].load_compilation_cmds(
             with_opts=True, with_raw=True, with_deps=False
         )
 

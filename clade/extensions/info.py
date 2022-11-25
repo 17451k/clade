@@ -32,7 +32,7 @@ class Info(Extension):
     always_requires = ["SrcGraph", "Storage", "Alternatives"]
     requires = always_requires + ["CC", "CL"]
 
-    __version__ = "3"
+    __version__ = "4"
 
     def __init__(self, work_dir, conf=None):
         if not conf:
@@ -102,7 +102,7 @@ class Info(Extension):
     def parse(self, cmds_file):
         self.__check_cif()
 
-        cmds = list(self.extensions["SrcGraph"].load_all_cmds())
+        cmds = list(self.extensions["SrcGraph"].load_compilation_cmds())
         total_cmds = len(cmds)
 
         if not cmds:
@@ -162,25 +162,24 @@ class Info(Extension):
         )
 
         for cmd_in in cmd["in"]:
-            storage_cmd_in = self.extensions["Storage"].get_storage_path(cmd_in)
-
             if use_pre:
                 cif_in = self.extensions[cmd["type"]].get_pre_file_by_path(
                     cmd_in, cmd["cwd"]
                 )
             else:
-                cif_in = storage_cmd_in
+                cif_in = cmd_in
 
             if not os.path.exists(cif_in):
                 continue
 
             cif_out = os.path.join(
-                tmp_dir, os.path.basename(storage_cmd_in.lstrip(os.sep)) + ".o"
+                tmp_dir, os.path.basename(cif_in.lstrip(os.sep)) + ".o"
             )
 
             cif_env = {
                 "CIF_INFO_DIR": self.cif_output_dir,
-                "C_FILE": cmd_in
+                "C_FILE": cmd_in,
+                "CMD_ID": cmd["id"]
             }
 
             cif_args = [
@@ -291,7 +290,6 @@ class Info(Extension):
         cif_output = self.__find_cif_output()
 
         total_files = len(cif_output)
-        storage = self.extensions["Storage"].get_storage_dir()
 
         # Normalize all small cif output files
         self.log(f"Normalizing {total_files} files")
@@ -302,54 +300,54 @@ class Info(Extension):
             total_objs=total_files
         )
 
+        storage_dir = self.extensions["Storage"].get_storage_dir()
+
         # Join all cif output file into several big .txt files
         for file in self.files:
             output_type = os.path.basename(file).replace(".zip", ".txt")
             output_files = [f for f in cif_output if f.endswith(output_type)]
             self.progress(f"Joining {len(output_files)} {output_type} files")
 
-            # Filter duplicate files (CIF issue?)
-            arcnames = set()
-
             with zipfile.ZipFile(file, "w") as zip_fh:
                 for output_file in output_files:
                     # Remove unnecessary prefixes from path inside archive
-                    arcname = output_file.replace(storage, "")
-                    arcname = arcname.replace(self.cif_output_dir, "")
+                    arcname = output_file.replace(self.cif_output_dir, "")
+                    # TODO: investigate why there are paths with storage_dir
+                    arcname = arcname.replace(storage_dir, "")
 
-                    if arcname not in arcnames:
-                        zip_fh.write(output_file, arcname=arcname)
-                        arcnames.add(arcname)
+                    zip_fh.write(output_file, arcname=arcname)
 
         # Remove cif output directory
         if os.path.exists(self.cif_output_dir):
             shutil.rmtree(self.cif_output_dir)
 
     def iter_init_global(self):
-        """Yield C_FILE, signature, type, json string with initialisations"""
-        regex = re.compile(r"\"(.*?)\" \"(.*?);\" (\S*) (.*)\n")
+        """Yield C_FILE, signature, cmd_id, type, json string with initialisations"""
+        regex = re.compile(r"\"(.*?)\" \"(.*?);\" (\S*) (\S*) (.*)\n")
 
         for content in self.__iter_file_regex(self.init_global, regex):
+            # non-static functions are treated as extern by compiler
+            content[3] = "extern" if content[3] != "static" else "static"
             yield content
 
     def iter_definitions(self):
-        """Yield src_file, func, def_line, func_type, signature"""
+        """Yield src_file, cmd_id, func, def_line, func_type, signature"""
 
-        regex = re.compile(r"\"(.*?)\" (\S*) (\S*) (\S*) ([^']*)\n")
+        regex = re.compile(r"\"(.*?)\" (\S*) (\S*) (\S*) (\S*) ([^']*)\n")
 
         for content in self.__iter_file_regex(self.execution, regex):
             # non-static functions are treated as extern by compiler
-            content[3] = "extern" if content[3] != "static" else "static"
+            content[4] = "extern" if content[4] != "static" else "static"
             yield content
 
     def iter_declarations(self):
-        """Yield decl_file, decl_name, decl_line, decl_type, decl_signature"""
+        """Yield decl_file, cmd_id, decl_name, decl_line, decl_type, decl_signature"""
 
-        regex = re.compile(r"\"(.*?)\" (\S*) (\S*) (\S*) ([^']*)\n")
+        regex = re.compile(r"\"(.*?)\" (\S*) (\S*) (\S*) (\S*) ([^']*)\n")
 
         for content in self.__iter_file_regex(self.decl, regex):
             # non-static functions are treated as extern by compiler
-            content[3] = "extern" if content[3] != "static" else "static"
+            content[4] = "extern" if content[4] != "static" else "static"
             yield content
 
     def iter_exported(self):
@@ -361,14 +359,14 @@ class Info(Extension):
             yield content
 
     def iter_calls(self):
-        """Yield context_file, context_func, func, call_line, call_type, args"""
+        """Yield context_file, context_cmd_id, context_func, func, call_line, call_type, args"""
 
-        regex = re.compile(r'\"(.*?)\" (\S*) (\S*) (\S*) (\S*) (.*)')
+        regex = re.compile(r'\"(.*?)\" (\S*) (\S*) (\S*) (\S*) (\S*) (.*)')
         args_regex = re.compile(r"actual_arg_func_name(\d+)=\s*(\w+)\s*")
 
         for content in self.__iter_file_regex(self.call, regex):
             # non-static functions are treated as extern by compiler
-            content[4] = "extern" if content[4] != "static" else "static"
+            content[5] = "extern" if content[5] != "static" else "static"
 
             # Replace last element of content list (string with arguments)
             # with list of these arguments
@@ -385,11 +383,14 @@ class Info(Extension):
             yield content
 
     def iter_functions_usages(self):
-        """Yield context_file, context_func, func, line"""
+        """Yield context_file, context_cmd_id, context_func, func, line, call_type"""
 
-        regex = re.compile(r'\"(.*?)\" (\S*) (\S*) (\S*)')
+        regex = re.compile(r'\"(.*?)\" (\S*) (\S*) (\S*) (\S*) (\S*)')
 
         for content in self.__iter_file_regex(self.use_func, regex):
+            # non-static functions are treated as extern by compiler
+            content[5] = "extern" if content[5] != "static" else "static"
+
             yield content
 
     def iter_macros_definitions(self):

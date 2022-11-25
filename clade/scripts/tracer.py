@@ -39,35 +39,45 @@ class Tracer:
             raise RuntimeError("Specified Clade build base is not valid")
 
     def find_functions(self, func_names: List[str]):
-        functions = []
+        functions = set()
 
         s_regex = re.compile("^" + ("$|^".join(func_names)) + "$")
 
         for func in self.clade.functions:
             if s_regex.match(func):
-                for file in self.clade.functions[func]:
-                    functions.append(Function(func, file))
+                for definition in self.clade.functions[func]:
+                    functions.add(Function(func, definition["file"]))
 
         if not functions:
-            raise RuntimeError("Specified functions were not found in the Clade build base")
+            raise RuntimeError(
+                "Specified functions were not found in the Clade build base"
+            )
         elif len(functions) < len(func_names):
-            for func_name in [x for x in func_names if x not in [y.name for y in functions]]:
-                raise RuntimeError("{!r} function was not found in the Clade build base".format(func_name))
+            for func_name in [
+                x for x in func_names if x not in [y.name for y in functions]
+            ]:
+                raise RuntimeError(
+                    "{!r} function was not found in the Clade build base".format(
+                        func_name
+                    )
+                )
 
-        return functions
+        return list(functions)
 
     def find_functions_with_prefix(self, prefix):
-        functions = []
+        functions = set()
 
         for func in self.clade.functions:
             if re.search(prefix, func, flags=re.I):
-                for file in self.clade.functions[func]:
-                    functions.append(Function(func, file))
+                for definition in self.clade.functions[func]:
+                    functions.add(Function(func, definition["file"]))
 
         if not functions:
-            raise RuntimeError("Functions with prefix {!r} were not found in the Clade build base".format(prefix))
+            raise RuntimeError(
+                "Functions with prefix {!r} were not found".format(prefix)
+            )
 
-        return functions
+        return list(functions)
 
     def trace(self, from_func: Function, to_func: Function):
         return self.trace_list([from_func], [to_func])
@@ -146,7 +156,9 @@ class Tracer:
 
     @staticmethod
     def print_dot(trace, filename):
-        dot = graphviz.Digraph(graph_attr={'rankdir': 'LR'}, node_attr={'shape': 'rectangle'})
+        dot = graphviz.Digraph(
+            graph_attr={"rankdir": "LR"}, node_attr={"shape": "rectangle"}
+        )
 
         nodes = set()
 
@@ -236,7 +248,7 @@ def main(args=None):
         for to_func in to_funcs:
             trace = t.trace(from_func, to_func)
 
-            filename = os.path.join(args.output, "{}-{}.dot".format(from_func.name, to_func.name))
+            filename = os.path.join(args.output, f"{from_func.name}-{to_func.name}.dot")
             t.print_dot(trace, filename)
 
 

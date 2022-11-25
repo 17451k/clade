@@ -18,11 +18,11 @@ import re
 import ujson
 
 from clade.extensions.abstract import Extension
-from clade.extensions.callgraph import Callgraph
+from clade.extensions.common_info import CommonInfo
 
 
-class Variables(Callgraph):
-    requires = ["Info", "Functions"]
+class Variables(CommonInfo):
+    requires = ["Info", "Functions", "SrcGraph"]
 
     __version__ = "2"
 
@@ -35,22 +35,22 @@ class Variables(Callgraph):
         self.used_in_vars = dict()
         self.used_in_vars_file = "used_in_vars.json"
 
-        self.functions = None
+        self.funcs = None
         self.function_name_re = re.compile(r"\(?\s*&?\s*(\w+)\s*\)?$")
         self.possible_functions = set()
 
     @Extension.prepare
     def parse(self, cmds_file):
-        self.functions = self.extensions["Functions"].load_functions()
+        self.funcs = self.extensions["Functions"].load_functions()
 
         self.__process_init_global()
 
         self.dump_data_by_key(self.variables, self.variables_folder)
         self.dump_data(self.used_in_vars, self.used_in_vars_file)
 
-        self._clean_error_log()
+        self._clean_warn_log()
 
-        self.functions.clear()
+        self.funcs.clear()
         self.variables.clear()
         self.used_in_vars.clear()
 
@@ -60,23 +60,27 @@ class Variables(Callgraph):
             return
 
         self.log("Parsing global variables initializations")
-        for c_file, signature, type, json_str in self.extensions["Info"].iter_init_global():
+        for c_file, signature, cmd_id, type, json_str in self.extensions[
+            "Info"
+        ].iter_init_global():
             if c_file not in self.variables:
                 self.variables[c_file] = []
 
             initializations = ujson.loads(json_str)
 
-            self.variables[c_file].append({
-                "declaration": signature,
-                "path": c_file,
-                "type": type,
-                "value": initializations
-            })
+            self.variables[c_file].append(
+                {
+                    "declaration": signature,
+                    "path": c_file,
+                    "type": type,
+                    "value": initializations,
+                }
+            )
 
             # Save all functions referred at initialization of this variable
             self.possible_functions = set()
             self.__process_values(initializations)
-            self.__process_callv(self.possible_functions, c_file)
+            self.__process_callv(c_file, cmd_id)
 
     def __process_values(self, value):
         if isinstance(value, str):
@@ -96,44 +100,66 @@ class Variables(Callgraph):
             function_name = m.group(1)
             self.possible_functions.add(function_name)
 
-    def __process_callv(self, functions, context_file):
-        functions = {f for f in functions if f in self.functions}
+    def __process_callv(self, context_file, context_cmd_id):
+        functions = {f for f in self.possible_functions if f in self.funcs}
+
         if not functions:
             return
 
-        options = (
-            lambda fs: tuple(f for f in fs if f == context_file),
-            lambda fs: tuple(f for f in fs if self._t_unit_is_common(f, context_file)),
-            lambda fs: tuple(f for f in fs if self._files_are_linked(f, context_file)),
+        context_definition = self.extensions["Functions"].construct_definition(
+            context_file, context_cmd_id, None, None
         )
 
         for func in functions:
-            # For each function call there can be many definitions with the same name, defined in different files.
-            # possible_files is a list of them.
-            possible_files = tuple(f for f in self.functions[func] if f != "unknown")
+            # For each function call there can be many definitions with the same name, defined in different
+            # files. possible_definitions is a list of them.
+            possible_definitions = []
+            if func in self.funcs:
+                for definition in self.funcs[func]:
+                    possible_definitions.append(definition)
 
-            if len(possible_files) == 0:
-                self._error("No possible definitions for use: {}".format(func))
+            if not possible_definitions:
                 continue
 
-            for category in options:
-                files = category(possible_files)
-                if len(files) > 0:
+            for files in (
+                # 3: definition is located in the same file as the call
+                (
+                    d["file"]
+                    for d in possible_definitions
+                    if self._in_the_same_file(d, context_definition)
+                ),
+                # 2: definition is located in the same translation unit
+                (
+                    d["file"]
+                    for d in possible_definitions
+                    if self._in_the_same_tu(d, context_definition)
+                ),
+                # 1: definition is in the object file that is linked with the object file that contains the call
+                (
+                    d["file"]
+                    for d in possible_definitions
+                    if self._definition_is_linked(d, context_definition)
+                ),
+                # 0: definition is not found
+                ["unknown"],
+            ):
+                matched_files = tuple(files)
+                if matched_files:
                     break
-            else:
-                self._error("Can't match definition for use: {} {}".format(func, context_file))
-                files = ('unknown',)
 
-            if len(files) > 1:
-                self._error("Multiple matches for use in vars: {} in {}".format(func, context_file))
+            if len(matched_files) > 1:
+                self._warning(f"Multiple matches: {func}", context_file)
 
-            for possible_file in files:
+            for possible_file in matched_files:
                 if func not in self.used_in_vars:
                     self.used_in_vars[func] = {possible_file: [context_file]}
                 elif possible_file not in self.used_in_vars[func]:
                     self.used_in_vars[func][possible_file] = [context_file]
                 elif context_file not in self.used_in_vars[func][possible_file]:
                     self.used_in_vars[func][possible_file].append(context_file)
+
+                if possible_file == "unknown":
+                    self._warning(f"Can't match definition: {func}", context_file)
 
     def load_variables(self, files=None):
         return self.load_data_by_key(self.variables_folder, files)

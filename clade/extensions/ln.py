@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+import pathlib
 import re
 
 from clade.extensions.common import Common
@@ -34,16 +35,11 @@ class LN(Common):
             "command": cmd["command"],
         }
 
-        # 'ln' options always have the following forms:
-        #     [-options] in_file
-        #     [-options] in_file out_file
-        #     [-options] in_file ... out_dir
-
-        # Output directory, where symlinks will be created
-        # By default it is current working directory
+        opts = iter(cmd["command"][1:])
+        files = []
         out = None
 
-        opts = iter(cmd["command"][1:])
+        # First we parse only options, leaving all the files unparsed
         for opt in opts:
             if re.search(r"^-", opt):
                 if opt == "-t" or opt == "--target-directory":
@@ -54,28 +50,60 @@ class LN(Common):
                     out = opt.replace("-t", "")
                 else:
                     parsed_cmd["opts"].append(opt)
-            elif os.path.isfile(opt) or os.path.isfile(os.path.join(cmd["cwd"], opt)):
-                if out is not None or not parsed_cmd["in"] or opt != cmd["command"][-1]:
-                    parsed_cmd["in"].append(os.path.normpath(opt))
-                else:
-                    parsed_cmd["out"].append(os.path.normpath(opt))
-            elif os.path.isdir(opt) or os.path.isdir(os.path.join(cmd["cwd"], opt)):
-                out = os.path.normpath(opt)
             else:
-                self.error(f"Files from the command {cmd} probably do not exist anymore")
-                return
+                files.append(os.path.normpath(opt))
 
-        # If no output parsed, then it is created in current directory
-        if not parsed_cmd["out"] and not out:
-            out = parsed_cmd["cwd"]
+        # ln cases (ignoring options):
+        # - FILE
+        # - DIR
+        # - FILE OUT_FILE
+        # - FILE OUT_DIR
+        # - DIR OUT_DIR
+        # - FILE DIR FILE DIR OUT_DIR
 
-        if (parsed_cmd["out"] and out):
-            self.error(f"ln command {cmd} is incorrectly parsed: {parsed_cmd}")
+        if len(files) == 1 or len(files) > 2 or out:
+            # Output file will be current working directory, if not specified with -t
+            if len(files) == 1 and not out:
+                out = parsed_cmd["cwd"]
+            # Or it can be specified in the command itself
+            elif len(files) > 2 and not out:
+                out = files[-1]
+                files = files[:-1]
+
+            for file in files:
+                if os.path.isfile(file):
+                    parsed_cmd["in"].append(file)
+                    parsed_cmd["out"].append(os.path.join(out, os.path.basename(file)))
+                else:
+                    # If input file is a directory, we threat all the files inside it
+                    # as input files
+                    in_files = self.__get_files(file)
+                    parsed_cmd["in"].extend(in_files)
+
+                    for in_file in in_files:
+                        in_file = in_file.replace(file + "/", "")
+                        parsed_cmd["out"].append(os.path.join(out, in_file))
+        # This case is special: name of the output file differs from the name of the input one
+        elif len(files) == 2:
+            if os.path.isfile(files[0]):
+                parsed_cmd["in"].append(files[0])
+
+                if os.path.isdir(files[1]):
+                    parsed_cmd["out"].append(os.path.join(files[1], os.path.basename(files[0])))
+                else:
+                    parsed_cmd["out"].append(files[1])
+            else:
+                parsed_cmd["in"] = self.__get_files(files[0])
+
+                for in_file in parsed_cmd["in"]:
+                    in_file = in_file.replace(files[0] + "/", "")
+                    parsed_cmd["out"].append(os.path.join(files[1], in_file))
+        else:
+            self.error(f"No files in {parsed_cmd['id']} command")
+
+        if not parsed_cmd["out"] and not parsed_cmd["in"]:
+            self.error(f"Command {cmd} is incorrectly parsed: {parsed_cmd}")
             return
-
-        if out:
-            for cmd_in in parsed_cmd["in"]:
-                parsed_cmd["out"].append(os.path.join(out, os.path.basename(cmd_in)))
 
         if self.is_bad(parsed_cmd):
             self.dump_bad_cmd_id(cmd["id"])
@@ -97,3 +125,15 @@ class LN(Common):
                 symlink = cmd["out"][i]
 
                 yield (file, symlink)
+
+    def __get_files(self, path):
+        files = []
+
+        if os.path.isfile(path):
+            files.append(os.path.normpath(path))
+        else:
+            for p in pathlib.Path(path).rglob("*"):
+                if p.is_file():
+                    files.append(os.path.normpath(p))
+
+        return files

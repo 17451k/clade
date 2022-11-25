@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import os
+import itertools
 
 from clade import Clade
 
@@ -29,8 +30,8 @@ def test_src_graph(tmpdir, cmds_file):
     src_graph = e.load_src_graph()
 
     assert src_graph
-    assert len(src_graph[test_file]["compiled_in"]) == 3
-    assert len(src_graph[test_file]["used_by"]) == 2
+    assert len(src_graph[test_file].keys()) == 3
+    assert len(list(itertools.chain(*src_graph[test_file].values()))) == 2
 
     src_info = e.load_src_info()
     assert src_info
@@ -38,8 +39,8 @@ def test_src_graph(tmpdir, cmds_file):
 
     graph_part = e.load_src_graph([test_file])
     assert graph_part
-    assert len(graph_part[test_file]["used_by"]) == 2
-    assert len(src_graph[test_file]["compiled_in"]) == 3
+    assert len(list(itertools.chain(*graph_part[test_file].values()))) == 2
+    assert len(src_graph[test_file].keys()) == 3
 
 
 def test_src_graph_empty_conf(tmpdir, cmds_file):
@@ -48,4 +49,4 @@ def test_src_graph_empty_conf(tmpdir, cmds_file):
 
     src_graph = e.load_src_graph()
     assert src_graph
-    assert len(src_graph[test_file]["used_by"]) >= 1
+    assert len(list(itertools.chain(*src_graph[test_file].values()))) >= 1

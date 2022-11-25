@@ -14,11 +14,11 @@
 # limitations under the License.
 
 from clade.extensions.abstract import Extension
-from clade.extensions.callgraph import Callgraph
-from clade.types.nested_dict import nested_dict, traverse
+from clade.extensions.common_info import CommonInfo
+from clade.extensions.utils import Location
 
 
-class Functions(Callgraph):
+class Functions(CommonInfo):
     requires = ["SrcGraph", "Info"]
 
     __version__ = "1"
@@ -26,29 +26,24 @@ class Functions(Callgraph):
     def __init__(self, work_dir, conf=None):
         super().__init__(work_dir, conf)
 
-        self.src_graph = dict()
-
-        self.funcs = nested_dict()
+        self.funcs = dict()
         self.funcs_folder = "functions"
 
-        self.funcs_by_file = nested_dict()
+        self.funcs_by_file = dict()
         self.funcs_by_file_folder = "functions_by_file"
 
     @Extension.prepare
     def parse(self, cmds_file):
-        self.src_graph = self.extensions["SrcGraph"].load_src_graph()
-
-        self.log("Parsing function definitions and declarations")
         self.__process_definitions()
         self.__process_declarations()
         self.__process_exported()
         self.__group_functions_by_file()
-        self._clean_error_log()
+        self._clean_warn_log()
 
         self.dump_data_by_key(self.funcs, self.funcs_folder)
         self.dump_data_by_key(self.funcs_by_file, self.funcs_by_file_folder)
 
-        self.src_graph.clear()
+        self.extensions["SrcGraph"].unload_src_graph()
         self.funcs.clear()
         self.funcs_by_file.clear()
 
@@ -64,36 +59,49 @@ class Functions(Callgraph):
         yield from self.yield_data_by_key(self.funcs_by_file_folder, files)
 
     def __process_definitions(self):
-        for src_file, func, def_line, func_type, signature in self.extensions[
-            "Info"
-        ].iter_definitions():
+        self.log("Parsing definitions")
+
+        for (
+            src_file,
+            src_cmd_id,
+            func,
+            def_line,
+            func_type,
+            signature,
+        ) in self.extensions["Info"].iter_definitions():
             self.debug(
                 "Processing definition: "
                 + " ".join([src_file, func, def_line, func_type, signature])
             )
-            if func in self.funcs and src_file in self.funcs[func]:
-                # It is normal because of canonical paths:
-                # just skip repeated definitions.
-                continue
 
-            self.funcs[func][src_file] = {
-                "type": func_type,
-                "line": def_line,
-                "signature": signature,
-                "declarations": dict(),
-            }
+            if func not in self.funcs:
+                self.funcs[func] = []
+
+            for definition in self.funcs[func]:
+                if definition["file"] == src_file and definition["line"] == def_line:
+                    # There can be some repeated definitions because of
+                    # canonical paths: we just skip them here
+                    if src_cmd_id not in definition["compiled_in"]:
+                        definition["compiled_in"].append(src_cmd_id)
+                    break
+            else:
+                self.funcs[func].append(
+                    self.construct_definition(
+                        src_file, src_cmd_id, func_type, def_line, signature
+                    )
+                )
 
     def __process_declarations(self):
-        def get_unknown_val(decl_file, decl_val):
-            return {
-                "type": "extern",
-                "line": None,
-                "signature": None,
-                "declarations": {decl_file: decl_val},
-            }
+        def get_unknown_val(decl_val, type="extern"):
+            return self.construct_definition(
+                "unknown", "0", type, None, None, decl_val
+            )
+
+        self.log("Parsing declarations")
 
         for (
             decl_file,
+            decl_cmd_id,
             decl_name,
             decl_line,
             decl_type,
@@ -105,61 +113,101 @@ class Functions(Callgraph):
             )
 
             decl_val = {
+                "file": decl_file,
                 "signature": decl_signature,
                 "line": decl_line,
                 "type": decl_type,
+                "compiled_in": [decl_cmd_id],
             }
 
             if decl_name not in self.funcs:
-                self.funcs[decl_name]["unknown"] = get_unknown_val(decl_file, decl_val)
+                self.funcs[decl_name] = [get_unknown_val(decl_val, decl_type)]
+                self._warning(f"No definition: {decl_name}")
                 continue
-
-            if decl_file not in self.src_graph and decl_file != "unknown":
-                self._error(f"Not in the source graph: {decl_file}")
 
             found = False
 
-            for src_file in self.funcs[decl_name]:
-                if src_file not in self.src_graph and src_file != "unknown":
-                    self._error(f"Not in the source graph: {src_file}")
+            for definition in self.funcs[decl_name]:
+                if definition["file"] == "unknown":
+                    continue
 
-                if (
-                    src_file == decl_file
-                    or self._t_unit_is_common(src_file, decl_file)
-                    or (
+                for def_cmd_id in definition["compiled_in"]:
+                    if not decl_type == definition["type"]:
+                        continue
+
+                    if def_cmd_id == decl_cmd_id or (
                         decl_type == "extern"
-                        and self._files_are_linked(src_file, decl_file)
-                    )
-                ):
-                    self.funcs[decl_name][src_file]["declarations"][
-                        decl_file
-                    ] = decl_val
-                    found = True
-                elif src_file == "unknown":
-                    if "unknown" in self.funcs[decl_name]:
-                        self.funcs[decl_name]["unknown"]["declarations"][
-                            decl_file
-                        ] = decl_val
-                    else:
-                        self.funcs[decl_name]["unknown"] = get_unknown_val(
-                            decl_file, decl_val
+                        and self._files_are_linked(
+                            Location(definition["file"], def_cmd_id),
+                            Location(decl_file, decl_cmd_id),
                         )
-                    found = True
+                    ):
+                        self.__add_declaration(definition, decl_val)
+                        found = True
 
             if not found:
-                self.funcs[decl_name]["unknown"] = get_unknown_val(decl_file, decl_val)
+                for definition in self.funcs[decl_name]:
+                    if definition["file"] == "unknown":
+                        self.__add_declaration(definition, decl_val)
+                        break
+                else:
+                    self.funcs[decl_name].append(get_unknown_val(decl_val, decl_type))
+
+    def __add_declaration(self, definition, decl_val):
+        for declaration in definition["declarations"]:
+            if (
+                declaration["file"] == decl_val["file"]
+                and declaration["line"] == decl_val["line"]
+            ):
+                declaration["compiled_in"].append(decl_val["compiled_in"][0])
+                return
+        else:
+            definition["declarations"].append(decl_val)
 
     def __process_exported(self):
+        # Linux kernel only
+
         for src_file, func in self.extensions["Info"].iter_exported():
             self.debug("Processing exported functions: " + " ".join([src_file, func]))
 
             # Variables can also be exported
             if func not in self.funcs:
                 continue
-            elif src_file not in self.funcs[func]:
-                continue
-            self.funcs[func][src_file]["type"] = "exported"
+
+            for definition in self.funcs[func]:
+                if definition["file"] == src_file:
+                    definition["type"] = "exported"
 
     def __group_functions_by_file(self):
-        for func, file in traverse(self.funcs, 2):
-            self.funcs_by_file[file][func] = self.funcs[func][file]
+        self.log("Grouping functions by file")
+
+        for func in self.funcs:
+            for definition in self.funcs[func]:
+                # Make copy of definition, so we can alter it
+                definition = dict(definition)
+
+                file = definition["file"]
+                del definition["file"]
+                definition["name"] = func
+
+                if file not in self.funcs_by_file:
+                    self.funcs_by_file[file] = []
+
+                self.funcs_by_file[file].append(definition)
+
+    def construct_definition(
+        self, file, cmd_id, type, line=None, signature=None, declaration=None
+    ):
+        if not declaration:
+            declarations = []
+        else:
+            declarations = [declaration]
+
+        return {
+            "file": file,
+            "type": type,
+            "line": line,
+            "signature": signature,
+            "compiled_in": [cmd_id],
+            "declarations": declarations,
+        }

@@ -200,3 +200,23 @@ class CmdGraph(Extension):
             )
 
         return self.extensions[ext_name]
+
+    def cmd_graph_exists(self):
+        '''True if CmdGraph exists and can be used'''
+        return self.file_exists(self.graph_file)
+
+    def find_used_by(self, cmd_id):
+        '''Find all commands that use (possibly indirectly) output file from the given command'''
+        if not self.graph:
+            self.graph = self.load_cmd_graph()
+
+        used_by = set()
+
+        if cmd_id not in self.graph:
+            return used_by
+
+        for used_by_id in self.graph[cmd_id]["used_by"]:
+            used_by.add(used_by_id)
+            used_by.update(self.find_used_by(used_by_id))
+
+        return used_by

@@ -16,11 +16,11 @@
  */
 
 query: execution($ $(..)) {
-    $fprintf<"$env<CIF_INFO_DIR>" $path "/execution.txt", "%s %d %s %s\n", $func_name, $decl_line, $storage_class, $signature>
+    $fprintf<"$env<CIF_INFO_DIR>" $path "/execution.txt", "%s %s %d %s %s\n", $env<CMD_ID>, $func_name, $decl_line, $storage_class, $signature>
 }
 
 query: declare_func($ $(..)) {
-    $fprintf<"$env<CIF_INFO_DIR>" $path "/declare_func.txt", "%s %d %s %s\n", $func_name, $decl_line, $storage_class, $signature>
+    $fprintf<"$env<CIF_INFO_DIR>" $path "/declare_func.txt", "%s %s %d %s %s\n", $env<CMD_ID>, $func_name, $decl_line, $storage_class, $signature>
 }
 
 query: expand($) {
@@ -40,7 +40,7 @@ query: define($(..)) {
 }
 
 query: call($ $(..)) {
-    $fprintf<"$env<CIF_INFO_DIR>" $func_context_path "/call.txt", "%s %s %d %s %s\n", $func_context_name, $func_name, $call_line, $storage_class, $actual_arg_func_names>
+    $fprintf<"$env<CIF_INFO_DIR>" $func_context_path "/call.txt", "%s %s %s %d %s %s\n", $env<CMD_ID>, $func_context_name, $func_name, $call_line, $storage_class, $actual_arg_func_names>
 }
 
 query: callp($ $(..)) {
@@ -48,7 +48,7 @@ query: callp($ $(..)) {
 }
 
 query: use_func($ $(..)) {
-    $fprintf<"$env<CIF_INFO_DIR>" $func_context_path "/use_func.txt", "%s %s %d\n", $func_context_name, $func_name, $use_line>
+    $fprintf<"$env<CIF_INFO_DIR>" $func_context_path "/use_func.txt", "%s %s %s %d %s\n", $env<CMD_ID>, $func_context_name, $func_name, $use_line, $storage_class>
 }
 
 query: use_var($ $) {
@@ -56,7 +56,7 @@ query: use_var($ $) {
 }
 
 query: init_global($ $){
-    $fprintf<"$env<CIF_INFO_DIR>/$env<C_FILE>/init_global.txt", "\"%s\" %s %s\n", $signature, $storage_class, $var_init_list_json>
+    $fprintf<"$env<CIF_INFO_DIR>/$env<C_FILE>/init_global.txt", "\"%s\" %s %s %s\n", $signature, $env<CMD_ID>, $storage_class, $var_init_list_json>
 }
 
 query: introduce($ $) {
