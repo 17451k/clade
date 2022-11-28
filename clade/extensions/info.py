@@ -108,6 +108,8 @@ class Info(Extension):
         if not cmds:
             raise RuntimeError("There are no parsed compiler commands")
 
+        self.storage_dir = self.extensions["Storage"].get_storage_dir()
+
         self.log(f"Parsing {total_cmds} commands")
         self.execute_in_parallel(cmds, Info._run_cif, total_objs=total_cmds)
 
@@ -162,12 +164,14 @@ class Info(Extension):
         )
 
         for cmd_in in cmd["in"]:
+            storage_cmd_in = self.extensions["Storage"].get_storage_path(cmd_in)
+
             if use_pre:
                 cif_in = self.extensions[cmd["type"]].get_pre_file_by_path(
                     cmd_in, cmd["cwd"]
                 )
             else:
-                cif_in = cmd_in
+                cif_in = storage_cmd_in
 
             if not os.path.exists(cif_in):
                 continue
@@ -278,11 +282,11 @@ class Info(Extension):
             log_fh.write("\n\n")
 
     def __find_cif_output(self):
-        cif_output = []
+        cif_output = set()
 
         for root, _, filenames in os.walk(self.work_dir):
             for filename in fnmatch.filter(filenames, "*.txt"):
-                cif_output.append(os.path.join(root, filename))
+                cif_output.add(os.path.join(root, filename))
 
         return cif_output
 
@@ -290,6 +294,14 @@ class Info(Extension):
         cif_output = self.__find_cif_output()
 
         total_files = len(cif_output)
+
+        # All paths in CIF output should be formatted the following way:
+        # - CIF_OUTPUT_DIR + STORAGE_PATH + ABS_FILE_PATH
+        # But sometimes, due to the absolute imports, this becomes
+        # - CIF_OUTPUT_DIR + ABS_FILE_PATH
+        # And information about one file (ABS_FILE_PATH) can be splitted
+        # into several paths. self.__fix_wrong_paths compines and fixes it.
+        self.__fix_wrong_paths(cif_output)
 
         # Normalize all small cif output files
         self.log(f"Normalizing {total_files} files")
@@ -300,8 +312,6 @@ class Info(Extension):
             total_objs=total_files
         )
 
-        storage_dir = self.extensions["Storage"].get_storage_dir()
-
         # Join all cif output file into several big .txt files
         for file in self.files:
             output_type = os.path.basename(file).replace(".zip", ".txt")
@@ -311,15 +321,44 @@ class Info(Extension):
             with zipfile.ZipFile(file, "w") as zip_fh:
                 for output_file in output_files:
                     # Remove unnecessary prefixes from path inside archive
-                    arcname = output_file.replace(self.cif_output_dir, "")
-                    # TODO: investigate why there are paths with storage_dir
-                    arcname = arcname.replace(storage_dir, "")
-
+                    arcname = self.__normalize_path(output_file)
                     zip_fh.write(output_file, arcname=arcname)
 
         # Remove cif output directory
         if os.path.exists(self.cif_output_dir):
             shutil.rmtree(self.cif_output_dir)
+
+    def __fix_wrong_paths(self, cif_output):
+        # Set of files to remove from cif_output
+        to_remove = set()
+
+        paths = dict()
+        for output_file in cif_output:
+            npath = self.__normalize_path(output_file)
+
+            if npath not in paths:
+                # Everyting is ok
+                paths[npath] = output_file
+                continue
+
+            # Otherwise, information about output_file is also stored
+            # in paths[npath]. Combine these 2 files:
+            normal_path = paths[npath]
+
+            with open(normal_path, "a") as normal_fh:
+                with open(output_file, "r") as wrong_fh:
+                    for line in wrong_fh:
+                        normal_fh.write(line)
+
+            os.remove(output_file)
+            to_remove.add(output_file)
+
+        for output_file in to_remove:
+            cif_output.remove(output_file)
+
+    def __normalize_path(self, path):
+        npath = path.replace(self.cif_output_dir, "")
+        return npath.replace(self.storage_dir, "")
 
     def iter_init_global(self):
         """Yield C_FILE, signature, cmd_id, type, json string with initialisations"""

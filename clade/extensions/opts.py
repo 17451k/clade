@@ -594,7 +594,7 @@ def filter_opts(opts, get_storage_path=None, s_regex=cif_s_regex):
             if (
                 get_storage_path
                 and os.path.isabs(path)
-                and name == "-isysroot"
+                and (not is_isysroot or name == "-isysroot")
             ):
                 opt = opt.replace(path, get_storage_path(path))
 
@@ -606,15 +606,12 @@ def filter_opts(opts, get_storage_path=None, s_regex=cif_s_regex):
             if (
                 get_storage_path
                 and os.path.isabs(path)
-                and name == "-isysroot"
+                and (not is_isysroot or name == "-isysroot")
             ):
                 path = get_storage_path(path)
 
             filtered_opts.append(path)
         else:
             raise RuntimeError("Can't process CIF options")
-
-    if get_storage_path and not is_isysroot:
-        filtered_opts.extend(["-isysroot", get_storage_path("/")])
 
     return filtered_opts
