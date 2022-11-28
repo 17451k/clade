@@ -256,8 +256,9 @@ setuptools.setup(
     ],
     extras_require={"dev": [
         "pytest",
-        "pytest-profiling",
-        "coverage"
+        "black",
+        "flake8",
+        "mypy"
     ]},
     classifiers=[
         "Programming Language :: Python :: 3",
