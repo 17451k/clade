@@ -34,14 +34,14 @@ class Alternatives(Extension):
     Alternatives is a short from "alternative paths".
     """
 
-    always_requres = ["Storage"]
+    always_requires = ["Storage"]
 
     __version__ = "1"
 
     def __init__(self, work_dir, conf=None):
         super().__init__(work_dir, conf)
 
-        self.requires = self.always_requres + self.conf.get("Alternatives.requires", [])
+        self.requires = self.always_requires + self.conf.get("Alternatives.requires", [])
 
         self.alts = dict()
         self.alts_file = "alts.json"
@@ -156,7 +156,7 @@ class Alternatives(Extension):
         cmds = list()
 
         for ext_name in self.extensions:
-            if ext_name in self.always_requres:
+            if ext_name in self.always_requires:
                 continue
 
             for cmd in self.extensions[ext_name].load_all_cmds():
