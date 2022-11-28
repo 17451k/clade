@@ -36,10 +36,8 @@ def test_no_isysroot(tmpdir):
 
     filtered_opts = filter_opts(opts, c.get_storage_path)
 
-    assert len(filtered_opts) == len(opts) + 2
-    assert filtered_opts[0] == "-I/usr/include"
-    assert filtered_opts[1] == "-isysroot"
-    assert filtered_opts[2] == c.storage_dir + "/"
+    assert len(filtered_opts) == len(opts)
+    assert filtered_opts[0] == f"-I{c.storage_dir}/usr/include"
 
 
 def test_no_get_storage_path():
