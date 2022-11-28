@@ -260,9 +260,15 @@ class CC(Linker):
         try:
             r = subprocess.run(f"{which} -print-search-dirs | grep libraries", shell=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
-            libraries = r.stdout.replace("libraries: =", "")
+            libraries = r.stdout.replace("libraries: =", "").strip()
 
-            for line in libraries.split(":"):
+            lines = libraries.split(":")
+
+            # If there is only 1 searchdir, there is no ":" separator
+            if not lines:
+                lines = [libraries]
+
+            for line in lines:
                 if os.path.isdir(line):
                     searchdirs.append(os.path.normpath(line))
         except Exception:
