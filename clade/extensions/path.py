@@ -35,12 +35,13 @@ class Path(Extension):
     def normalize_rel_paths(self, paths: List[str], cwd: str) -> List[str]:
         return [self.normalize_rel_path(path, cwd) for path in paths]
 
+    @staticmethod
     @functools.lru_cache()
-    def normalize_rel_path(self, path: str, cwd: str) -> str:
+    def normalize_rel_path(path: str, cwd: str) -> str:
         cwd = cwd.strip()
         path = path.strip()
 
-        key = self.__get_key(path, cwd)
+        key = Path.__get_key(path, cwd)
         if sys.platform == "win32":
             key = key.lower()
 
@@ -49,10 +50,11 @@ class Path(Extension):
         else:
             abs_path = path
 
-        return self.normalize_abs_path(abs_path)
+        return Path.normalize_abs_path(abs_path)
 
+    @staticmethod
     @functools.lru_cache()
-    def normalize_abs_path(self, path: str) -> str:
+    def normalize_abs_path(path: str) -> str:
         path = path.strip()
 
         key = path
@@ -62,7 +64,7 @@ class Path(Extension):
         npath = os.path.normpath(path)
 
         if sys.platform == "win32":
-            npath = self.__get_actual_filename(npath)
+            npath = Path.__get_actual_filename(npath)
             npath = npath.replace("\\", "/")
             drive, tail = os.path.splitdrive(npath)
             if drive:
@@ -70,10 +72,12 @@ class Path(Extension):
 
         return npath
 
-    def __get_key(self, path, cwd):
+    @staticmethod
+    def __get_key(path, cwd):
         return cwd + "/" + path
 
-    def __get_actual_filename(self, path):
+    @staticmethod
+    def __get_actual_filename(path):
         if path[-1] in "\\":
             path = path[:-1]
         dirs = path.split("\\")

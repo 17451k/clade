@@ -53,7 +53,10 @@ class Linker(Compiler):
 
     def __get_searchdirs(self, which, parsed_cmd):
         # sysroot paths are not supported (searchdir begins with "=")
-        searchdirs = self._get_default_searchdirs(which) + self.conf.get("Linker.searchdirs", [])
+        default_searchdirs = self._get_default_searchdirs(which)
+        self.debug(f"Default search dirs for {which} are: {default_searchdirs}")
+
+        searchdirs = default_searchdirs + self.conf.get("Linker.searchdirs", [])
 
         opts = iter(parsed_cmd["opts"])
         for opt in opts:

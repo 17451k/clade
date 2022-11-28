@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import functools
 import os
 
 from clade.extensions.abstract import Extension
@@ -145,7 +144,6 @@ class CommonInfo(Extension):
         )
         return False
 
-    @functools.lru_cache()
     def _files_are_linked(self, loc1: Location, loc2: Location):
         if loc1 == Location("unknown", "0") or loc2 == Location("unknown", "0"):
             return False

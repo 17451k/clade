@@ -39,8 +39,9 @@ class LD(Linker):
 
         self.dump_cmd_by_id(cmd["id"], parsed_cmd)
 
+    @staticmethod
     @functools.lru_cache()
-    def _get_default_searchdirs(self, which):
+    def _get_default_searchdirs(which):
         searchdirs = []
 
         try:
@@ -54,8 +55,6 @@ class LD(Linker):
                 if os.path.isdir(m.group(1)):
                     searchdirs.append(m.group(1))
         except Exception:
-            self.debug(f"Unable to find search dirs for {which}")
             return searchdirs
 
-        self.debug(f"Default search dirs for {which} are: {searchdirs}")
         return searchdirs

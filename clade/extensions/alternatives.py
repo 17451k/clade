@@ -14,7 +14,6 @@
 
 import hashlib
 import itertools
-import functools
 import os
 
 from typing import List
@@ -40,9 +39,9 @@ class Alternatives(Extension):
     __version__ = "1"
 
     def __init__(self, work_dir, conf=None):
-        self.requires = self.always_requres + conf.get("Alternatives.requires", [])
-
         super().__init__(work_dir, conf)
+
+        self.requires = self.always_requres + self.conf.get("Alternatives.requires", [])
 
         self.alts = dict()
         self.alts_file = "alts.json"
@@ -108,7 +107,6 @@ class Alternatives(Extension):
     def load_alternatives(self):
         return self.load_data(self.alts_file)
 
-    @functools.lru_cache()
     def get_canonical_path(self, path):
         """Returns a canonical path for a given path
 

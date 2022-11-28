@@ -249,8 +249,9 @@ class CC(Linker):
 
         return pre
 
+    @staticmethod
     @functools.lru_cache()
-    def _get_default_searchdirs(self, which):
+    def _get_default_searchdirs(which):
         searchdirs = []
 
         # cc1 is not a linker
@@ -272,8 +273,6 @@ class CC(Linker):
                 if os.path.isdir(line):
                     searchdirs.append(os.path.normpath(line))
         except Exception:
-            self.debug(f"Unable to find search dirs for {which}")
             return searchdirs
 
-        self.debug(f"Default search dirs for {which} are: {searchdirs}")
         return searchdirs

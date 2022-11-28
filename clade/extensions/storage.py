@@ -85,8 +85,9 @@ class Storage(Extension):
 
         return dst
 
+    @staticmethod
     @functools.lru_cache(maxsize=30000)
-    def __path_exists(self, path):
+    def __path_exists(path):
         return os.path.exists(path)
 
     def __copy_file(self, filename, dst, encoding=None):
