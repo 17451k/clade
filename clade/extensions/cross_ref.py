@@ -215,7 +215,10 @@ class CrossRef(CommonInfo):
                 loc_list = locations[context_file]["call"][func]
 
                 for definition in self.funcs[file]:
-                    if definition["name"] == func and definition["line"]:
+                    if definition["name"] != func:
+                        continue
+
+                    if definition["line"]:
                         def_line = int(definition["line"])
 
                         for loc_el in loc_list:
