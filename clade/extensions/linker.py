@@ -90,7 +90,6 @@ class Linker(Compiler):
 
     def __find_archive(self, name, searchdirs, parsed_cmd):
         if not searchdirs:
-            self.warning("Search directories are empty")
             return
 
         names = []
