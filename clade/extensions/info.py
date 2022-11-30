@@ -244,6 +244,8 @@ class Info(Extension):
                 self.__save_log(cmd["id"], cwd, cif_args, cif_env, str(e), self.err_log)
                 self.__save_log(cmd["id"], cwd, cif_args, cif_env, str(e), self.cif_log)
 
+        shutil.rmtree(tmp_dir)
+
         # Force garbage collector to work
         gc.collect()
 
