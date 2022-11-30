@@ -51,6 +51,9 @@ class Alternatives(Extension):
         # Load all build commands that create "identical" file copies
         cmds = self.__load_cmds()
 
+        if not cmds:
+            return
+
         self.log(f"Parsing {len(cmds)} commands")
 
         for cmd in cmds:
@@ -144,7 +147,7 @@ class Alternatives(Extension):
         return list(itertools.chain.from_iterable(list_of_paths))
 
     def __get_all_paths(self, path: str) -> List[str]:
-        if not self.alts:
+        if not self.alts and self.file_exists(self.alts_file):
             self.alts = self.load_alternatives()
 
         if path not in self.alts:
