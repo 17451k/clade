@@ -452,7 +452,7 @@ class Info(Extension):
             content = list(orig_content)
 
             # Make def_file canonical
-            content[1] = self.extensions["Alternatives"].get_canonical_path(content[0])
+            content[1] = self.extensions["Alternatives"].get_canonical_path(content[1])
 
             args = list()
 
