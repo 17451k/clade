@@ -76,11 +76,15 @@ class CrossRef(CommonInfo):
             for definition in self.funcs[file]:
                 if definition["line"]:
                     val = (definition["line"], definition["name"], "def_func")
-                    self.__add_raw_loc(raw_locations, file, val)
+
+                    if val not in raw_locations.get(file, []):
+                        self.__add_raw_loc(raw_locations, file, val)
 
                 for declaration in definition["declarations"]:
                     val = (declaration["line"], definition["name"], "decl_func")
-                    self.__add_raw_loc(raw_locations, declaration["file"], val)
+
+                    if val not in raw_locations.get(declaration["file"], []):
+                        self.__add_raw_loc(raw_locations, declaration["file"], val)
 
         for context_file, callgraph in self.extensions["Callgraph"].yield_callgraph():
             for _, _, file, func, line in traverse(callgraph[context_file], 5, {2: "calls"}):
@@ -242,9 +246,9 @@ class CrossRef(CommonInfo):
 
     def __add_ref(self, ref, file, key, val):
         if ref[file][key]:
-            ref[file][key].append(val)
+            ref[file][key].add(val)
         else:
-            ref[file][key] = [val]
+            ref[file][key] = {val}
 
     def __dump_ref_to(self, ref_to):
         if not ref_to:
@@ -257,6 +261,7 @@ class CrossRef(CommonInfo):
                 continue
             ref_to[file].update(local_ref_to[file])
 
+        self.__convert_sets_to_lists(ref_to)
         self.dump_data_by_key(ref_to, self.ref_to_folder)
 
     def __gen_ref_from(self, locations):
@@ -303,7 +308,7 @@ class CrossRef(CommonInfo):
             for _, line in traverse(called_in[context_file], 2):
                 lines.append(int(line))
 
-            locs.append((context_file, lines))
+            locs.append((context_file, tuple(lines)))
 
         return locs
 
@@ -320,7 +325,7 @@ class CrossRef(CommonInfo):
 
                     for exp_file in macros[def_file][macro][def_line]:
                         exp_lines = [int(l) for l in macros[def_file][macro][def_line][exp_file]]
-                        val = (loc_el, (exp_file, exp_lines))
+                        val = (loc_el, (exp_file, tuple(exp_lines)))
                         self.__add_ref(ref_from, def_file, "expand", val)
 
             self.__dump_ref_from(ref_from)
@@ -337,14 +342,21 @@ class CrossRef(CommonInfo):
 
             if "call" in local_ref_from[file]:
                 if ref_from[file]["call"]:
+                    ref_from[file]["call"] = list(ref_from[file]["call"])
                     ref_from[file]["call"].extend(local_ref_from[file]["call"])
                 else:
                     ref_from[file]["call"] = local_ref_from[file]["call"]
 
             if "expand" in local_ref_from[file]:
                 if ref_from[file]["expand"]:
+                    ref_from[file]["expand"] = list(ref_from[file]["expand"])
                     ref_from[file]["expand"].extend(local_ref_from[file]["expand"])
                 else:
                     ref_from[file]["expand"] = local_ref_from[file]["expand"]
 
+        self.__convert_sets_to_lists(ref_from)
         self.dump_data_by_key(ref_from, self.ref_from_folder)
+
+    def __convert_sets_to_lists(self, ref):
+        for file, key in traverse(ref, 2):
+            ref[file][key] = list(ref[file][key])
