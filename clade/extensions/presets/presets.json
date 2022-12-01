@@ -35,7 +35,8 @@
             "Objcopy",
             "CL",
             "Link",
-            "Copy"
+            "Copy",
+            "Install"
         ],
         "CmdGraph.as_picture": false,
         "SrcGraph.requires": [
