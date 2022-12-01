@@ -64,7 +64,7 @@ class CrossRef(CommonInfo):
         return self.load_data_by_key(self.ref_from_folder, files)
 
     def __get_raw_locations(self):
-        raw_locations = nested_dict()
+        raw_locations = dict()
 
         raw_locations = self.__get_raw_func_locations(raw_locations)
         raw_locations = self.__get_raw_macro_locations(raw_locations)
@@ -76,28 +76,16 @@ class CrossRef(CommonInfo):
             for definition in self.funcs[file]:
                 if definition["line"]:
                     val = (definition["line"], definition["name"], "def_func")
-
-                    if file in raw_locations:
-                        raw_locations[file].append(val)
-                    else:
-                        raw_locations[file] = [val]
+                    self.__add_raw_loc(raw_locations, file, val)
 
                 for declaration in definition["declarations"]:
                     val = (declaration["line"], definition["name"], "decl_func")
-
-                    if declaration["file"] in raw_locations:
-                        raw_locations[declaration["file"]].append(val)
-                    else:
-                        raw_locations[declaration["file"]] = [val]
+                    self.__add_raw_loc(raw_locations, declaration["file"], val)
 
         for context_file, callgraph in self.extensions["Callgraph"].yield_callgraph():
             for _, _, file, func, line in traverse(callgraph[context_file], 5, {2: "calls"}):
                 val = (line, func, "call")
-
-                if context_file in raw_locations:
-                    raw_locations[context_file].append(val)
-                else:
-                    raw_locations[context_file] = [val]
+                self.__add_raw_loc(raw_locations, context_file, val)
 
         return raw_locations
 
@@ -105,11 +93,7 @@ class CrossRef(CommonInfo):
         for exp_file, expansions in self.extensions["Macros"].yield_expansions():
             for macro, exp_line in traverse(expansions[exp_file], 2):
                 val = (exp_line, macro, "expand")
-
-                if exp_file in raw_locations:
-                    raw_locations[exp_file].append(val)
-                else:
-                    raw_locations[exp_file] = [val]
+                self.__add_raw_loc(raw_locations, exp_file, val)
 
         # Load macros dictionary independetly for each file
         for def_file, macros in self.extensions["Macros"].yield_macros():
@@ -118,13 +102,15 @@ class CrossRef(CommonInfo):
                     continue
 
                 val = (def_line, macro, "def_macro")
-
-                if def_file in raw_locations:
-                    raw_locations[def_file].append(val)
-                else:
-                    raw_locations[def_file] = [val]
+                self.__add_raw_loc(raw_locations, def_file, val)
 
         return raw_locations
+
+    def __add_raw_loc(self, raw_locations, file, val):
+        if file in raw_locations:
+            raw_locations[file].append(val)
+        else:
+            raw_locations[file] = [val]
 
     def __parse_file(self, file, raw_locations, ignore_errors=False, encoding="utf8"):
         storage_file = self.extensions["Storage"].get_storage_path(file)
@@ -223,22 +209,14 @@ class CrossRef(CommonInfo):
 
                         for loc_el in loc_list:
                             val = (loc_el, (file, def_line))
-
-                            if ref_to[context_file]["def_func"]:
-                                ref_to[context_file]["def_func"].append(val)
-                            else:
-                                ref_to[context_file]["def_func"] = [val]
+                            self.__add_ref(ref_to, context_file, "def_func", val)
 
                     for declaration in definition["declarations"]:
                         decl_line = int(declaration["line"])
 
                         for loc_el in loc_list:
                             val = (loc_el, (declaration["file"], decl_line))
-
-                            if ref_to[context_file]["decl_func"]:
-                                ref_to[context_file]["decl_func"].append(val)
-                            else:
-                                ref_to[context_file]["decl_func"] = [val]
+                            self.__add_ref(ref_to, context_file, "decl_func", val)
 
             self.__dump_ref_to(ref_to)
 
@@ -258,13 +236,15 @@ class CrossRef(CommonInfo):
                             continue
 
                         val = (loc_el, (def_file, int(def_line)))
-
-                        if ref_to[exp_file]["def_macro"]:
-                            ref_to[exp_file]["def_macro"].append(val)
-                        else:
-                            ref_to[exp_file]["def_macro"] = [val]
+                        self.__add_ref(ref_to, exp_file, "def_macro", val)
 
             self.__dump_ref_to(ref_to)
+
+    def __add_ref(self, ref, file, key, val):
+        if ref[file][key]:
+            ref[file][key].append(val)
+        else:
+            ref[file][key] = [val]
 
     def __dump_ref_to(self, ref_to):
         if not ref_to:
@@ -296,11 +276,7 @@ class CrossRef(CommonInfo):
                     for context_file, lines in context_locs:
                         for loc_el in loc_list:
                             val = (loc_el, (context_file, lines))
-
-                            if ref_from[file]["call"]:
-                                ref_from[file]["call"].append(val)
-                            else:
-                                ref_from[file]["call"] = [val]
+                            self.__add_ref(ref_from, file, "call", val)
 
                 for declaration in definition["declarations"]:
                     if definition["name"] in locations[declaration["file"]]["decl_func"]:
@@ -309,11 +285,7 @@ class CrossRef(CommonInfo):
                         for context_file, lines in context_locs:
                             for loc_el in loc_list:
                                 val = (loc_el, (context_file, lines))
-
-                                if ref_from[declaration["file"]]["call"]:
-                                    ref_from[declaration["file"]]["call"].append(val)
-                                else:
-                                    ref_from[declaration["file"]]["call"] = [val]
+                                self.__add_ref(ref_from, declaration["file"], "call", val)
 
             self.__dump_ref_from(ref_from)
 
@@ -349,11 +321,7 @@ class CrossRef(CommonInfo):
                     for exp_file in macros[def_file][macro][def_line]:
                         exp_lines = [int(l) for l in macros[def_file][macro][def_line][exp_file]]
                         val = (loc_el, (exp_file, exp_lines))
-
-                        if ref_from[def_file]["expand"]:
-                            ref_from[def_file]["expand"].append(val)
-                        else:
-                            ref_from[def_file]["expand"] = [val]
+                        self.__add_ref(ref_from, def_file, "expand", val)
 
             self.__dump_ref_from(ref_from)
 
