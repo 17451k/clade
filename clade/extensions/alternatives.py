@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import functools
 import hashlib
 import itertools
 import os
@@ -138,6 +139,9 @@ class Alternatives(Extension):
 
     def get_all_paths(self, paths):
         """Return list of all known paths for the ones provided as an input"""
+        if not self.alts and self.file_exists(self.alts_file):
+            self.alts = self.load_alternatives()
+
         # Input parameter is a single path
         if isinstance(paths, str):
             return self.__get_all_paths(paths)
@@ -147,9 +151,6 @@ class Alternatives(Extension):
         return list(itertools.chain.from_iterable(list_of_paths))
 
     def __get_all_paths(self, path: str) -> List[str]:
-        if not self.alts and self.file_exists(self.alts_file):
-            self.alts = self.load_alternatives()
-
         if path not in self.alts:
             return [path]
 
@@ -168,7 +169,9 @@ class Alternatives(Extension):
 
         return cmds
 
-    def __get_file_checksum(self, file):
+    @staticmethod
+    @functools.lru_cache()
+    def __get_file_checksum(file):
         try:
             with open(file, "rb") as fh:
                 return hashlib.md5(fh.read()).hexdigest()

@@ -526,14 +526,14 @@ def normalize_file(file):
 
     # Read large files (>= 100mb) line by line
     if os.path.getsize(file) >= 104857600:
-        with codecs.open(file, "r", encoding="utf8", errors="ignore") as fh:
-            with open(new_file, "w") as new_fh:
+        with codecs.open(file, "rb") as fh:
+            with open(new_file, "wb") as new_fh:
                 for line in fh:
                     if not line:
                         continue
 
                     # Storing hash of string instead of string itself reduces memory usage by 30-40%
-                    h = hashlib.md5(line.encode("utf-8")).hexdigest()
+                    h = hashlib.md5(line).hexdigest()
                     if h in seen:
                         continue
 
@@ -542,12 +542,12 @@ def normalize_file(file):
                     new_fh.write(line)
     else:
         lines = []
-        with codecs.open(file, "r", encoding="utf8", errors="ignore") as fh:
+        with codecs.open(file, "rb") as fh:
             lines = fh.readlines()
 
             new_lines = []
             for line in lines:
-                h = hashlib.md5(line.encode("utf-8")).hexdigest()
+                h = hashlib.md5(line).hexdigest()
                 if h in seen:
                     continue
 
@@ -555,7 +555,7 @@ def normalize_file(file):
 
                 new_lines.append(line)
 
-            with open(new_file, "w") as new_fh:
+            with open(new_file, "wb") as new_fh:
                 new_fh.writelines(new_lines)
 
     os.replace(new_file, file)
