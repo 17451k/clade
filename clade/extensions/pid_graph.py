@@ -13,10 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re
-import os
-
-from graphviz import Digraph
 
 from clade.cmds import iter_cmds, get_last_id
 from clade.extensions.abstract import Extension
@@ -31,8 +27,6 @@ class PidGraph(Extension):
         self.pid_by_id = dict()
         self.pid_by_id_file = "pid_by_id.json"
 
-        self.graph_dot = os.path.join(self.work_dir, "pid_graph.dot")
-
     @Extension.prepare
     def parse(self, cmds_file):
         self.log("Parsing {} commands".format(get_last_id(cmds_file, raise_exception=True)))
@@ -42,28 +36,7 @@ class PidGraph(Extension):
 
         self.dump_data(self.pid_by_id, self.pid_by_id_file)
 
-        if self.pid_by_id and self.conf.get("PidGraph.as_picture"):
-            self.__print_pid_graph(cmds_file)
-
         self.pid_by_id.clear()
-
-    def __print_pid_graph(self, cmds_file):
-        self.debug("Preparing dot file")
-
-        dot = Digraph(graph_attr={'rankdir': 'LR'}, node_attr={'shape': 'rectangle'})
-
-        cmds = list(iter_cmds(cmds_file))
-
-        for cmd in cmds:
-            cmd_node = "[{}] {}".format(cmd["id"], cmd["which"])
-            dot.node(cmd["id"], label=re.escape(cmd_node))
-
-        for cmd in cmds:
-            for parent_cmd in [x for x in cmds if x["id"] == cmd["pid"]]:
-                dot.edge(parent_cmd["id"], cmd["id"])
-
-        self.debug("Rendering dot file")
-        dot.render(self.graph_dot)
 
     def load_pid_graph(self):
         pid_by_id = self.load_pid_by_id()

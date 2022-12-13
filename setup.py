@@ -239,6 +239,8 @@ setuptools.setup(
             "clade-diff=clade.scripts.diff:main",
             "clade-check=clade.scripts.check:main",
             "clade-trace=clade.scripts.tracer:main",
+            "clade-file-graph=clade.scripts.file_graph:main",
+            "clade-pid-graph=clade.scripts.pid_graph:main",
         ]
     },
     cmdclass={

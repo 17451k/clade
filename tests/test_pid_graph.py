@@ -13,9 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import pytest
-import shutil
 
 from clade import Clade
 from clade.cmds import get_last_id
@@ -45,15 +42,3 @@ def test_pid_graph(tmpdir, cmds_file):
     for cmd_id in cmd_ids:
         assert cmd_id in pid_by_id
         assert int(pid_by_id[cmd_id]) < int(cmd_id)
-
-
-@pytest.mark.parametrize("as_picture", [True, False])
-@pytest.mark.skipif(not shutil.which("dot"), reason="dot is not installed")
-def test_pid_graph_as_picture(tmpdir, cmds_file, as_picture):
-    conf = {"PidGraph.as_picture": as_picture}
-
-    c = Clade(tmpdir, cmds_file, conf)
-    e = c.parse("PidGraph")
-
-    assert os.path.exists(e.graph_dot) == as_picture
-    assert os.path.exists(e.graph_dot + ".pdf") == as_picture

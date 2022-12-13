@@ -62,8 +62,7 @@ def test_cmd_graph_as_picture(tmpdir, cmds_file, as_picture):
     c = Clade(tmpdir, cmds_file, conf)
     e = c.parse("CmdGraph")
 
-    assert os.path.exists(e.graph_dot) == as_picture
-    assert os.path.exists(e.graph_dot + ".pdf") == as_picture
+    assert os.path.exists(e.pdf_file + ".pdf") == as_picture
 
 
 def test_cmd_graph_empty_conf(tmpdir, cmds_file):

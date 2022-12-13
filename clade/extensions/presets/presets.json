@@ -55,7 +55,6 @@
         "Info.cif": "cif",
         "Info.aspectator": null,
         "Info.aspect": "info.aspect",
-        "PidGraph.as_picture": false,
         "PidGraph.filter_cmds_by_pid": true,
         "CDB.filter_opts": false,
         "AR.which_list": [
@@ -101,11 +100,6 @@
             "cmd\\.exe$"
         ]
     },
-    "base_print": {
-        "extends": "base",
-        "CmdGraph.as_picture": true,
-        "PidGraph.as_picture": true
-    },
     "linux_kernel": {
         "extends": "base",
         "CmdGraph.requires": [
@@ -138,7 +132,7 @@
         "Info.aspect": "linux_kernel.aspect"
     },
     "busybox_linux": {
-        "extends": "base_print",
+        "extends": "base",
         "Common.exclude_list": [],
         "Common.exclude_list_in": [
             "\\.tmp$",
@@ -156,7 +150,7 @@
         ]
     },
     "apache_linux": {
-        "extends": "base_print",
+        "extends": "base",
         "Common.exclude_list": [
             "/tmp/.*"
         ],

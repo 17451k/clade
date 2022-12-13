@@ -131,3 +131,6 @@ prof
 
 # pyright
 pyrightconfig.json
+
+# documents
+*.pdf

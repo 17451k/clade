@@ -19,7 +19,6 @@ import os
 from graphviz import Digraph
 
 from clade.extensions.abstract import Extension
-from clade.extensions.utils import get_string_hash
 
 
 class CmdGraph(Extension):
@@ -44,8 +43,7 @@ class CmdGraph(Extension):
 
         self.out_dict = dict()
 
-        self.graph_dot = os.path.join(self.work_dir, "cmd_graph.dot")
-        self.graph_with_files_dot = os.path.join(self.work_dir, "cmd_graph_with_files.dot")
+        self.pdf_file = os.path.join(self.work_dir, "cmd_graph")
 
     def load_cmd_graph(self):
         """Load command graph."""
@@ -86,6 +84,15 @@ class CmdGraph(Extension):
 
         return [cmd for cmd in cmds if cmd["id"] in cmd_graph]
 
+    def load_cmd_by_id(self, cmd_id):
+        if not hasattr(self, "cmd_type") or not self.cmd_type:
+            self.cmd_type = self.load_cmd_type()
+
+        cmd = self.extensions[self.cmd_type[cmd_id]].load_cmd_by_id(cmd_id)
+        cmd["type"] = self.cmd_type[cmd_id]
+
+        return cmd
+
     @Extension.prepare
     def parse(self, cmds_file):
         cmds = self.load_all_cmds()
@@ -100,7 +107,6 @@ class CmdGraph(Extension):
         if self.graph:
             if self.conf.get("CmdGraph.as_picture"):
                 self.__print_cmd_graph()
-                self.__print_cmd_graph_with_files()
         else:
             self.error("Command graph is empty")
             raise RuntimeError
@@ -143,49 +149,7 @@ class CmdGraph(Extension):
                 dot.edge(using_id, cmd_id)
 
         self.debug("Rendering dot file")
-        dot.render(self.graph_dot)
-
-    def __print_cmd_graph_with_files(self):
-        self.debug("Preparing dot file")
-
-        dot = Digraph(graph_attr={"rankdir": "LR"}, node_attr={"shape": "rectangle"})
-
-        added_nodes = set()
-
-        for cmd_id in self.graph:
-            cmd_type = self.cmd_type[cmd_id]
-            cmd = self.extensions[cmd_type].load_cmd_by_id(cmd_id)
-
-            for i, cmd_out in enumerate(cmd["out"]):
-                cmd_out_hash = get_string_hash(cmd_out)
-
-                if cmd_out not in added_nodes:
-                    dot.node(cmd_out_hash, label=re.escape(cmd_out))
-                    added_nodes.add(cmd_out)
-
-                # Properly print compiler commands with "-c" option
-                if cmd_type in ["CC", "CL"]:
-                    if not cmd["in"]:
-                        continue
-                    cmd_ins = [cmd["in"][i]]
-                else:
-                    cmd_ins = cmd["in"]
-
-                for cmd_in in cmd_ins:
-                    cmd_in_hash = get_string_hash(cmd_in)
-
-                    if cmd_in not in added_nodes:
-                        dot.node(cmd_in_hash, label=re.escape(cmd_in))
-                        added_nodes.add(cmd_in)
-
-                    dot.edge(
-                        cmd_in_hash,
-                        cmd_out_hash,
-                        label="{}({})".format(cmd_type, cmd_id),
-                    )
-
-        self.debug("Rendering dot file")
-        dot.render(self.graph_with_files_dot)
+        dot.render(self.pdf_file, cleanup=True)
 
     @staticmethod
     def __get_new_value():
