@@ -25,7 +25,7 @@ import subprocess
 import zipfile
 
 from clade.extensions.abstract import Extension
-from clade.extensions.opts import filter_opts
+from clade.extensions.opts import filter_opts, compile_s_regex, cif_supported_opts
 
 
 class Info(Extension):
@@ -163,6 +163,13 @@ class Info(Extension):
             "Info.use_preprocessed_files"
         )
 
+        # Include user-configured list of supported options
+        extra_supported_opts = self.conf.get("Info.extra_supported_opts", [])
+        cif_s_regex = None
+
+        if extra_supported_opts:
+            cif_s_regex = compile_s_regex(cif_supported_opts + extra_supported_opts)
+
         for cmd_in in cmd["in"]:
             storage_cmd_in = self.extensions["Storage"].get_storage_path(cmd_in)
 
@@ -205,8 +212,9 @@ class Info(Extension):
                 opts = []
             else:
                 opts = self.extensions[cmd["type"]].load_opts_by_id(cmd["id"])
+
                 opts = filter_opts(
-                    opts, self.extensions["Storage"].get_storage_path
+                    opts, self.extensions["Storage"].get_storage_path, cif_s_regex
                 )
 
             opts.extend(self.conf.get("Info.extra_CIF_opts", []))

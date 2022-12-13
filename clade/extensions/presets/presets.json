@@ -50,6 +50,7 @@
         "CC.process_ccache": true,
         "CXX.process_ccache": true,
         "Info.extra_CIF_opts": [],
+        "Info.extra_supported_opts": [],
         "Info.use_preprocessed_files": false,
         "Info.cif": "cif",
         "Info.aspectator": null,
