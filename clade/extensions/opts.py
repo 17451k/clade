@@ -542,7 +542,7 @@ cif_supported_opts = (
     # Options controlling types representation.
     + ["-fshort-wchar", "-fno-short-wchar", "-fshort-enums", "-fno-short-enums"]
     # Machine-dependent options.
-    + ["-mbig-endian", "-mlittle-endian", "-mabi"]
+    + ["-mbig-endian", "-mlittle-endian", "-mabi", "-mcpu"]
     # Options to enable different kinds of errors. They can help to make the source code better.
     + ["-Werror-implicit-function-declaration", "-Werror=implicit-function-declaration"]
     + ["{}$".format(opt) for opt in gcc_optimization_opts]
