@@ -100,6 +100,9 @@
             "cmd\\.exe$"
         ]
     },
+    "base_print": {
+        "extends": "base"
+    },
     "linux_kernel": {
         "extends": "base",
         "CmdGraph.requires": [
