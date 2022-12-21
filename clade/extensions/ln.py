@@ -71,7 +71,7 @@ class LN(Common):
                 files = files[:-1]
 
             for file in files:
-                if os.path.isfile(file):
+                if os.path.isfile(file) or not os.path.isdir(file):
                     parsed_cmd["in"].append(file)
                     parsed_cmd["out"].append(os.path.join(out, os.path.basename(file)))
                 else:
@@ -85,7 +85,7 @@ class LN(Common):
                         parsed_cmd["out"].append(os.path.join(out, in_file))
         # This case is special: name of the output file differs from the name of the input one
         elif len(files) == 2:
-            if os.path.isfile(files[0]):
+            if os.path.isfile(files[0]) or not os.path.isdir(files[0]):
                 parsed_cmd["in"].append(files[0])
 
                 if os.path.isdir(files[1]):
