@@ -876,3 +876,19 @@ class Clade:
             files = set(files)
 
         return self.CrossRef.load_ref_from_by_file(files)
+
+    @property
+    def Alternatives(self):
+        """Object of "Alternatives" extension."""
+        return self.__get_ext_obj("Alternatives")
+
+    def get_canonical_path(self, path):
+        """Returns a canonical path for a given path
+
+        For example. if "/lib/header.h" and "/lib/x86_64/header.h" files are the same,
+        then:
+            * get_canonical_path("/lib/header.h") == "/lib/header.h"
+            * get_canonical_path("/lib/x86_64/header.h") == "/lib/header.h"
+        """
+
+        return self.Alternatives.get_canonical_path(path)
