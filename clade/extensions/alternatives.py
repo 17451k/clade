@@ -123,7 +123,7 @@ class Alternatives(Extension):
         if not self.conf.get("Alternatives.use_canonical_paths"):
             return path
 
-        paths = sorted(self.get_all_paths(path))
+        paths = sorted(self.get_all_paths(path), reverse=True)
 
         # No alternatives
         if len(paths) == 1:
