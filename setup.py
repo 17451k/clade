@@ -142,9 +142,7 @@ def build_libinterceptor():
         elif sys.platform == "win32":
             build_debugger(build_dir)
         else:
-            exit(
-                "Your platform {!r} is not supported yet.".format(sys.platform)
-            )
+            exit("Your platform {!r} is not supported yet.".format(sys.platform))
     finally:
         shutil.rmtree(build_dir)
 
@@ -152,12 +150,10 @@ def build_libinterceptor():
 def package_files(package_directory):
     paths = []
 
-    for (path, _, filenames) in os.walk(package_directory):
+    for path, _, filenames in os.walk(package_directory):
         for filename in filenames:
             paths.append(
-                os.path.relpath(
-                    os.path.join(path, filename), start=package_directory
-                )
+                os.path.relpath(os.path.join(path, filename), start=package_directory)
             )
 
     # Add files created on the build step
@@ -214,7 +210,6 @@ try:
             # Mark us as not a pure python package
             self.root_is_pure = False
 
-
 except ImportError:
     bdist_wheel = None
 
@@ -256,12 +251,15 @@ setuptools.setup(
         "graphviz",
         "ply",
     ],
-    extras_require={"dev": [
-        "pytest",
-        "black",
-        "flake8",
-        "mypy"
-    ]},
+    extras_require={
+        "dev": [
+            "pytest",
+            "black",
+            "flake8",
+            "mypy",
+            "ruff",
+        ]
+    },
     classifiers=[
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.7",
