@@ -42,10 +42,15 @@ class Alternatives(Extension):
     def __init__(self, work_dir, conf=None):
         super().__init__(work_dir, conf)
 
-        self.requires = self.always_requires + self.conf.get("Alternatives.requires", [])
+        self.requires = self.always_requires + self.conf.get(
+            "Alternatives.requires", []
+        )
 
         self.alts = dict()
         self.alts_file = "alts.json"
+
+        # Helper variable for optimisation purposes
+        self.alternatives_exist = True
 
     @Extension.prepare
     def parse(self, cmds_file):
@@ -94,7 +99,8 @@ class Alternatives(Extension):
         for path in self.alts:
             self.alts[path] = list(self.alts[path])
 
-        self.dump_data(self.alts, self.alts_file)
+        if self.alts:
+            self.dump_data(self.alts, self.alts_file)
 
     def __add_pair(self, cmd_in, cmd_out):
         if cmd_in not in self.alts:
@@ -120,14 +126,26 @@ class Alternatives(Extension):
             * get_canonical_path("/lib/x86_64/header.h") == "/lib/header.h"
         """
 
+        if not self.alternatives_exist:
+            return path
+
         if not self.conf.get("Alternatives.use_canonical_paths"):
             return path
 
-        paths = sorted(self.get_all_paths(path), reverse=True)
+        if not self.alts:
+            if os.path.exists(self.work_dir):
+                self.alts = self.load_alternatives()
+            else:
+                self.alternatives_exist = False
+
+        paths = self.__get_all_paths(path)
 
         # No alternatives
         if len(paths) == 1:
             return paths[0]
+
+        # Sort paths in order to make the choice deterministic
+        paths = sorted(paths, reverse=True)
 
         # Try to return first path that exists
         for path in paths:
@@ -137,20 +155,17 @@ class Alternatives(Extension):
         # Otherwise simply return the path itself
         return paths[0]
 
-    def get_all_paths(self, paths):
+    def __get_all_paths(self, paths):
         """Return list of all known paths for the ones provided as an input"""
-        if not self.alts and self.file_exists(self.alts_file):
-            self.alts = self.load_alternatives()
-
         # Input parameter is a single path
         if isinstance(paths, str):
-            return self.__get_all_paths(paths)
+            return self.__construct_paths(paths)
 
         # Otherwise it is a list of paths
-        list_of_paths = [self.__get_all_paths(path) for path in paths]
+        list_of_paths = [self.__construct_paths(path) for path in paths]
         return list(itertools.chain.from_iterable(list_of_paths))
 
-    def __get_all_paths(self, path: str) -> List[str]:
+    def __construct_paths(self, path: str) -> List[str]:
         if path not in self.alts:
             return [path]
 
