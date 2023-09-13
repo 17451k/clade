@@ -61,13 +61,13 @@ def parse_args(args):
         help="extension to launch",
         metavar="EXTENSION",
         default=[],
-        action="append"
+        action="append",
     )
     parser.add_argument(
         "-C",
         "--cmds",
         help="path to the FILE where intercepted commands will be saved (default is clade/cmds.txt)",
-        metavar="FILE"
+        metavar="FILE",
     )
     parser.add_argument(
         "-f",
@@ -176,12 +176,21 @@ def main(sys_args=sys.argv[1:]):
 
     # Create Clade interface object
     try:
-        c = Clade(work_dir=conf["work_dir"], cmds_file=conf["cmds_file"], conf=conf, preset=args.preset)
+        c = Clade(
+            work_dir=conf["work_dir"],
+            cmds_file=conf["cmds_file"],
+            conf=conf,
+            preset=args.preset,
+        )
     except RuntimeError as e:
         raise SystemExit(e)
 
     if os.path.isfile(conf["cmds_file"]) and args.intercept and not args.append:
-        c.logger.info("File with intercepted commands already exists: {!r}".format(conf["cmds_file"]))
+        c.logger.info(
+            "File with intercepted commands already exists: {!r}".format(
+                conf["cmds_file"]
+            )
+        )
         sys.exit(-1)
     elif os.path.isfile(conf["cmds_file"]) and not args.intercept and not args.append:
         c.logger.info("Skipping build and reusing {!r} file".format(conf["cmds_file"]))
@@ -197,17 +206,25 @@ def main(sys_args=sys.argv[1:]):
             use_wrappers=conf["use_wrappers"],
             append=args.append,
             intercept_open=args.intercept_open,
-            intercept_envs=args.intercept_envs
+            intercept_envs=args.intercept_envs,
         )
 
         build_delta = datetime.timedelta(seconds=(time.time() - build_time_start))
         build_delta_str = str(build_delta).split(".")[0]
 
         # Clade can still proceed further if exit code != 0
-        c.logger.error("Build finished in {} with exit code {}".format(build_delta_str, build_exit_code))
+        c.logger.error(
+            "Build finished in {} with exit code {}".format(
+                build_delta_str, build_exit_code
+            )
+        )
 
         if args.intercept and os.path.exists(conf["cmds_file"]):
-            c.logger.info("Path to the file with intercepted commands: {!r}".format(conf["cmds_file"]))
+            c.logger.info(
+                "Path to the file with intercepted commands: {!r}".format(
+                    conf["cmds_file"]
+                )
+            )
             sys.exit(build_exit_code)
 
     if not os.path.exists(conf["cmds_file"]):
@@ -226,7 +243,11 @@ def main(sys_args=sys.argv[1:]):
         c.logger.info("Extensions finished in {}".format(ext_delta_str))
 
         if build_exit_code != 0:
-            c.logger.warning("[WARNING] Reminder that build finished with exit code {}".format(build_exit_code))
+            c.logger.warning(
+                "[WARNING] Reminder that build finished with exit code {}".format(
+                    build_exit_code
+                )
+            )
     except RuntimeError as e:
         if e.args:
             raise SystemExit(e)
