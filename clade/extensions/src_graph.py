@@ -93,7 +93,7 @@ class SrcGraph(Extension):
 
             # used_by is a list of commands that use (possibly indirectly)
             # output of the command with ID=cmd_id
-            used_by = self.extensions["CmdGraph"].find_used_by(cmd_id)
+            used_by = list(self.extensions["CmdGraph"].find_used_by(cmd_id))
 
             if self.conf.get("Compiler.get_deps"):
                 src_files = self.extensions[cmd_type].load_deps_by_id(cmd_id)
@@ -110,22 +110,10 @@ class SrcGraph(Extension):
                     self.src_graph[src_file] = dict()
                     self.src_info[src_file] = {"loc": self.__count_file_loc(src_file)}
 
-                if cmd["id"] not in self.src_graph[src_file]:
-                    self.src_graph[src_file][cmd_id] = set()
-
                 # The following means: source file src_file is compiled
                 # in commaind with id=cmd_id, and is indirectly used by commands
                 # from the self.src_graph[src_file][cmd_id] set
-                self.src_graph[src_file][cmd_id].update(used_by)
-
-        # Convert sets to lists for json serialization
-        for file in self.src_graph:
-            for cmd_id in self.src_graph[file]:
-                self.src_graph[file][cmd_id] = list(self.src_graph[file][cmd_id])
-
-                self.debug(
-                    f"{file!r} is compiled in {cmd_id} and used by {self.src_graph[file][cmd_id]}"
-                )
+                self.src_graph[src_file][cmd_id] = used_by
 
     def __count_file_loc(self, file):
         """Count number of lines of code in the file."""
@@ -145,14 +133,14 @@ class SrcGraph(Extension):
             return 0
 
     def in_source_graph(self, file, cmd_id):
-        '''Check that file and command_id is indeed present in the source graph'''
+        """Check that file and command_id is indeed present in the source graph"""
         if not hasattr(self, "src_graph") or not self.src_graph:
             self.src_graph = self.load_src_graph()
 
         return file in self.src_graph and cmd_id in self.src_graph[file]
 
     def get_used_by(self, file, cmd_id):
-        '''Get all commands that use given file'''
+        """Get all commands that use given file"""
         if not hasattr(self, "src_graph") or not self.src_graph:
             self.src_graph = self.load_src_graph()
 
@@ -162,7 +150,7 @@ class SrcGraph(Extension):
         return []
 
     def unload_src_graph(self):
-        '''Unload source graph from the memory.'''
+        """Unload source graph from the memory."""
 
         # Generally, this is not necessary, unless you want
         # to try to manually manage memory consumtion
