@@ -132,7 +132,7 @@ class Extension(metaclass=abc.ABCMeta):
         pass
 
     def file_exists(self, file_name):
-        '''File exists in the working directory'''
+        """File exists in the working directory"""
         if not os.path.isabs(file_name):
             file_name = os.path.join(self.work_dir, file_name)
 
@@ -271,7 +271,11 @@ class Extension(metaclass=abc.ABCMeta):
         """Check that working directory was creating with the extension of correct version."""
         stored_meta = self.load_global_meta().get(self.name)
 
-        if os.path.exists(self.work_dir) and stored_meta and self.ext_meta["version"] != stored_meta["version"]:
+        if (
+            os.path.exists(self.work_dir)
+            and stored_meta
+            and self.ext_meta["version"] != stored_meta["version"]
+        ):
             self.error(
                 "Working directory was created by incompatible version of Clade and can't be used."
             )
