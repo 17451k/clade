@@ -18,9 +18,9 @@ import os
 import shutil
 import sys
 import tempfile
-import ujson
 
 from clade import Clade
+from clade.utils import load
 
 
 def parse_args(args, work_dir):
@@ -84,8 +84,7 @@ def prepare_conf(args):
 
     if args.config:
         try:
-            with open(args.config, "r") as f:
-                conf = ujson.load(f)
+            conf = load(args.config)
         except FileNotFoundError:
             print("Configuration file is not found")
             sys.exit(-1)

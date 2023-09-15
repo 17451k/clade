@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ujson
+import json
 import os
 import shutil
 
@@ -94,7 +94,9 @@ class Clade:
         # Check that Clade has permission to read the working directory (if it exists)
         if os.path.exists(self.work_dir):
             if not os.access(self.work_dir, os.R_OK):
-                self.logger.error("Permission error: can't read files from the working directory")
+                self.logger.error(
+                    "Permission error: can't read files from the working directory"
+                )
                 raise PermissionError
 
     def __check_write_to_parent_dir(self, path):
@@ -109,7 +111,11 @@ class Clade:
     def __check_write_to_dir(self, path):
         if path and os.path.exists(path):
             if not os.access(path, os.X_OK | os.W_OK):
-                self.logger.error("Permission error: can't write files to the {!r} directory".format(path))
+                self.logger.error(
+                    "Permission error: can't write files to the {!r} directory".format(
+                        path
+                    )
+                )
                 raise PermissionError
 
     def __prepare_to_intercept(self):
@@ -127,13 +133,13 @@ class Clade:
     def __dump_conf(self):
         # Overwrite this file each time
         with open(self.conf_file, "w") as fh:
-            ujson.dump(
+            json.dump(
                 self.conf,
                 fh,
                 sort_keys=True,
                 indent=4,
                 ensure_ascii=False,
-                escape_forward_slashes=False,
+                # escape_forward_slashes=False,
             )
 
     def __prepare_to_parse(self):
@@ -143,7 +149,15 @@ class Clade:
 
         self.__dump_conf()
 
-    def intercept(self, command, cwd=os.getcwd(), append=False, use_wrappers=False, intercept_open=False, intercept_envs=False):
+    def intercept(
+        self,
+        command,
+        cwd=os.getcwd(),
+        append=False,
+        use_wrappers=False,
+        intercept_open=False,
+        intercept_envs=False,
+    ):
         """Execute intercepting of build commands.
 
         Args:
@@ -168,7 +182,7 @@ class Clade:
             use_wrappers=use_wrappers,
             intercept_open=intercept_open,
             intercept_envs=intercept_envs,
-            conf=self.conf
+            conf=self.conf,
         )
 
         return self.conf["build_exit_code"]
@@ -392,13 +406,16 @@ class Clade:
     def get_compilation_cmds(self, with_opts=False, with_raw=False, with_deps=False):
         """Get list with all parsed compilation commands (C projects only)."""
         return self.SrcGraph.load_compilation_cmds(
-            with_opts=with_opts, with_raw=with_raw, with_deps=with_deps)
+            with_opts=with_opts, with_raw=with_raw, with_deps=with_deps
+        )
 
     def get_cmd_type(self, cmd_id):
         """Get type of a command by its identifier."""
         return self.cmd_type[cmd_id]
 
-    def get_cmd(self, cmd_id, cmd_type=None, with_opts=False, with_raw=False, with_deps=False):
+    def get_cmd(
+        self, cmd_id, cmd_type=None, with_opts=False, with_raw=False, with_deps=False
+    ):
         """Get command by its identifier and type (optionally)."""
 
         if not cmd_type:
@@ -470,7 +487,9 @@ class Clade:
         return using
 
     def get_root_cmds_by_type(self, cmd_id, cmd_type):
-        return [x for x in self.get_root_cmds(cmd_id) if self.get_cmd_type(x) == cmd_type]
+        return [
+            x for x in self.get_root_cmds(cmd_id) if self.get_cmd_type(x) == cmd_type
+        ]
 
     def get_leaf_cmds(self, cmd_id):
         """Get list of identifiers of all leaf commands from a command graph of a given command identifier."""
@@ -537,7 +556,10 @@ class Clade:
         Args:
             file: A name of the source file from the source graph
         """
-        return (self.get_cmd(cmd_id) for cmd_id in self.get_compilation_cmds_ids_by_file(file))
+        return (
+            self.get_cmd(cmd_id)
+            for cmd_id in self.get_compilation_cmds_ids_by_file(file)
+        )
 
     @property
     def PidGraph(self):
@@ -584,7 +606,9 @@ class Clade:
                       option
         """
 
-        return self.Storage.add_file(file, storage_filename=storage_filename, encoding=encoding)
+        return self.Storage.add_file(
+            file, storage_filename=storage_filename, encoding=encoding
+        )
 
     def get_storage_path(self, path):
         """Get path to the file or directory from the storage."""
@@ -823,13 +847,23 @@ class Clade:
                 self.logger.error("Working directory does not exist")
             return False
 
-        ext_names = [f for f in os.listdir(self.work_dir) if os.path.isdir(os.path.join(self.work_dir, f))]
-        ext_objs = [ext_obj for ext_obj in self.__get_ext_obj_list(ext_names) if ext_obj.name in ext_names]
+        ext_names = [
+            f
+            for f in os.listdir(self.work_dir)
+            if os.path.isdir(os.path.join(self.work_dir, f))
+        ]
+        ext_objs = [
+            ext_obj
+            for ext_obj in self.__get_ext_obj_list(ext_names)
+            if ext_obj.name in ext_names
+        ]
 
         if ext_objs:
             if not ext_objs[0].load_global_meta():
                 if log:
-                    self.logger.error("Working directory does not contain file with global meta information")
+                    self.logger.error(
+                        "Working directory does not contain file with global meta information"
+                    )
                 return False
 
         for ext_obj in ext_objs:
@@ -845,7 +879,9 @@ class Clade:
 
         if log:
             self.logger.info(
-                "Working directory is OK and contains data from the following extensions: {}".format(", ".join(ext_names))
+                "Working directory is OK and contains data from the following extensions: {}".format(
+                    ", ".join(ext_names)
+                )
             )
         return True
 

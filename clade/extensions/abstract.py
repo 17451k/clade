@@ -17,6 +17,7 @@ import abc
 import datetime
 import fnmatch
 import importlib
+import json
 import pathlib
 import pkg_resources
 import platform
@@ -25,14 +26,13 @@ import shutil
 import sys
 import tempfile
 import time
-import ujson
 import uuid
 
 from concurrent.futures import ProcessPoolExecutor
 
 from clade.cmds import get_build_dir
 from clade.extensions.utils import yield_chunk
-from clade.utils import get_clade_version, get_program_version, get_logger
+from clade.utils import get_clade_version, get_program_version, get_logger, load, dump
 
 
 class Extension(metaclass=abc.ABCMeta):
@@ -157,10 +157,9 @@ class Extension(metaclass=abc.ABCMeta):
 
         self.debug("Loading {!r}".format(file_name))
 
-        with open(file_name, "r") as fh:
-            return ujson.load(fh)
+        return load(file_name)
 
-    def dump_data(self, data, file_name, indent=None):
+    def dump_data(self, data, file_name):
         """Dump data to a file in the object working directory."""
 
         if not os.path.isabs(file_name):
@@ -170,19 +169,8 @@ class Extension(metaclass=abc.ABCMeta):
 
         self.debug("Dumping {!r}".format(file_name))
 
-        if not indent:
-            indent = self.conf.get("indent", 4)
-
         try:
-            with open(file_name, "w") as fh:
-                ujson.dump(
-                    data,
-                    fh,
-                    sort_keys=True,
-                    indent=indent,
-                    ensure_ascii=False,
-                    escape_forward_slashes=False,
-                )
+            dump(data, file_name)
         except RecursionError:
             # This is a workaround, but it is rarely required
             self.warning(
@@ -244,13 +232,13 @@ class Extension(metaclass=abc.ABCMeta):
 
         return files
 
-    def dump_data_by_key(self, data, folder, indent=None):
+    def dump_data_by_key(self, data, folder):
         """Dump data to multiple json files in the object working directory."""
         self.debug("Dumping data to {!r}".format(folder))
 
         for key in data:
             file_name = self.__get_file_name_by_key(key, folder)
-            self.dump_data({key: data[key]}, file_name, indent=indent)
+            self.dump_data({key: data[key]}, file_name)
 
     def __get_file_name_by_key(self, key, folder):
         file_name = folder + os.sep + key + ".json"
@@ -383,12 +371,15 @@ class Extension(metaclass=abc.ABCMeta):
         if "date" not in stored_meta:
             stored_meta["date"] = datetime.datetime.today().strftime("%Y-%m-%d %H:%M")
 
-        self.dump_data(stored_meta, self.global_meta_file, indent=4)
+        with open(self.global_meta_file, "w") as fh:
+            fh.write(json.dumps(stored_meta, indent=4))
 
     def add_data_to_global_meta(self, key, data):
         stored_meta = self.load_global_meta()
         stored_meta[key] = data
-        self.dump_data(stored_meta, self.global_meta_file, indent=4)
+
+        with open(self.global_meta_file, "w") as fh:
+            fh.write(json.dumps(stored_meta, indent=4))
 
     def __get_empty_obj(self, obj):
         empty_self = obj.__class__(self.clade_work_dir, self.conf)

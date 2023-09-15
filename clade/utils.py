@@ -19,7 +19,7 @@ import os
 import re
 import subprocess
 import sys
-import ujson
+import orjson
 
 
 def get_logger(name, with_name=True, conf=None):
@@ -33,7 +33,9 @@ def get_logger(name, with_name=True, conf=None):
         logger.removeHandler(handler)
 
     if with_name:
-        formatter = logging.Formatter("%(asctime)s clade {}: %(message)s".format(name), "%H:%M:%S")
+        formatter = logging.Formatter(
+            "%(asctime)s clade {}: %(message)s".format(name), "%H:%M:%S"
+        )
     else:
         formatter = logging.Formatter("%(asctime)s clade: %(message)s", "%H:%M:%S")
 
@@ -64,8 +66,7 @@ def merge_preset_to_conf(preset_name, conf):
         os.path.dirname(__file__), "extensions", "presets", "presets.json"
     )
 
-    with open(preset_file, "r") as f:
-        presets = ujson.load(f)
+    presets = load(preset_file)
 
     if preset_name not in presets:
         raise RuntimeError("Preset {!r} is not found".format(preset_name))
@@ -105,5 +106,15 @@ def get_program_version(program, version_arg="--version"):
         ).strip()
     finally:
         if version.startswith("gcc"):
-            version = re.sub(r'\nCopyright[\s\S]*', '', version)
+            version = re.sub(r"\nCopyright[\s\S]*", "", version)
         return version
+
+
+def dump(data, path):
+    with open(path, "wb") as fh:
+        fh.write(orjson.dumps(data))
+
+
+def load(path):
+    with open(path, "rb") as f:
+        return orjson.loads(f.read())

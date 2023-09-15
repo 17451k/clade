@@ -246,7 +246,7 @@ setuptools.setup(
     },
     distclass=CustomDist,
     install_requires=[
-        "ujson",
+        "orjson",
         "charset_normalizer",
         "graphviz",
         "ply",

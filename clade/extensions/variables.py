@@ -13,9 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import orjson
 import os
 import re
-import ujson
 
 from clade.extensions.abstract import Extension
 from clade.extensions.common_info import CommonInfo
@@ -70,7 +70,7 @@ class Variables(CommonInfo):
             if c_file not in self.variables:
                 self.variables[c_file] = []
 
-            initializations = ujson.loads(json_str)
+            initializations = orjson.loads(json_str)
 
             self.variables[c_file].append(
                 {

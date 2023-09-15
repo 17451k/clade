@@ -15,13 +15,13 @@
 
 import argparse
 import datetime
+import orjson
 import os
 import sys
 import time
-import ujson
 
 from clade import Clade
-from clade.utils import get_clade_version
+from clade.utils import get_clade_version, load
 
 
 def parse_args(args):
@@ -147,10 +147,9 @@ def prepare_conf(args):
     if args.config:
         try:
             if os.path.isfile(args.config):
-                with open(args.config, "r") as f:
-                    conf = ujson.load(f)
+                conf = load(args.config)
             else:
-                conf = ujson.loads(args.config)
+                conf = orjson.loads(args.config)
         except ValueError:
             print("Configuration is not a proper JSON file or string")
             sys.exit(-1)

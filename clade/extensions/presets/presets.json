@@ -3,8 +3,9 @@
         "log_level": "INFO",
         "force": false,
         "cpu_count": null,
-        "indent": 4,
-        "extensions": ["SrcGraph"],
+        "extensions": [
+            "SrcGraph"
+        ],
         "Wrapper.wrap_list": [],
         "Wrapper.recursive_wrap": false,
         "CC.ignore_cc1": true,
@@ -131,7 +132,9 @@
             "scripts/(?!mod/.*empty\\.o)",
             "\\.cmd$"
         ],
-        "Info.extra_CIF_opts": ["-Dvector_size(x)="],
+        "Info.extra_CIF_opts": [
+            "-Dvector_size(x)="
+        ],
         "Info.aspect": "linux_kernel.aspect"
     },
     "busybox_linux": {
@@ -173,7 +176,6 @@
     },
     "klever_linux_kernel": {
         "extends": "linux_kernel",
-        "indent": 0,
         "extensions": [
             "Callgraph",
             "Variables",
@@ -198,7 +200,6 @@
     },
     "klever": {
         "extends": "base",
-        "indent": 0,
         "extensions": [
             "Callgraph",
             "Variables",
