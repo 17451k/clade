@@ -93,13 +93,14 @@ class CommonInfo(Extension):
         return log_files
 
     def _in_the_same_file(self, definition, context_definition):
-        return (
-            definition["file"] == context_definition["file"]
-            and context_definition["compiled_in"][0] in definition["compiled_in"]
-        )
+        return definition["file"] == context_definition["file"] and set(
+            context_definition["compiled_in"]
+        ).intersection(definition["compiled_in"])
 
     def _in_the_same_tu(self, definition, context_definition):
-        return context_definition["compiled_in"][0] in definition["compiled_in"]
+        return set(context_definition["compiled_in"]).intersection(
+            definition["compiled_in"]
+        )
 
     def _definition_is_exported(self, definition, context_definition):
         return (
@@ -107,21 +108,20 @@ class CommonInfo(Extension):
         )
 
     def _definition_is_linked(self, definition, context_definition):
-        context_location = Location(
-            context_definition["file"], context_definition["compiled_in"][0]
-        )
+        for context_cmd_id in context_definition["compiled_in"]:
+            context_location = Location(context_definition["file"], context_cmd_id)
 
-        for cmd_id in definition["compiled_in"]:
-            location = Location(definition["file"], cmd_id)
+            for cmd_id in definition["compiled_in"]:
+                location = Location(definition["file"], cmd_id)
 
-            if not self._files_are_linked(location, context_location):
-                continue
+                if not self._files_are_linked(location, context_location):
+                    continue
 
-            for declaration in definition["declarations"]:
-                for decl_cmd_id in declaration["compiled_in"]:
-                    # Declaration is included in the call file
-                    if decl_cmd_id == context_location.cmd_id:
-                        return True
+                for declaration in definition["declarations"]:
+                    for decl_cmd_id in declaration["compiled_in"]:
+                        # Declaration is included in the call file
+                        if decl_cmd_id == context_location.cmd_id:
+                            return True
 
         self.debug(
             f"{definition['file']!r} and {context_definition['file']!r} are not linked"
@@ -129,15 +129,14 @@ class CommonInfo(Extension):
         return False
 
     def _declaration_is_in_the_same_tu(self, definition, context_definition):
-        context_location = Location(
-            context_definition["file"], context_definition["compiled_in"][0]
-        )
+        for context_cmd_id in context_definition["compiled_in"]:
+            context_location = Location(context_definition["file"], context_cmd_id)
 
-        for declaration in definition["declarations"]:
-            for cmd_id in declaration["compiled_in"]:
-                # Declaration is included in the call file
-                if cmd_id == context_location.cmd_id:
-                    return True
+            for declaration in definition["declarations"]:
+                for cmd_id in declaration["compiled_in"]:
+                    # Declaration is included in the call file
+                    if cmd_id == context_location.cmd_id:
+                        return True
 
         self.debug(
             f"{definition['file']!r} and {context_definition['file']!r} are not in the same tu"

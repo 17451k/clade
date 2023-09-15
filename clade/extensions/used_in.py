@@ -36,7 +36,7 @@ class UsedIn(CommonInfo):
         self.is_builtin = re.compile(r"(__builtin)|(__compiletime)")
 
     @Extension.prepare
-    def parse(self, cmds_file):
+    def parse(self, _):
         self.log("Processing function usages")
 
         self.funcs = self.extensions["Functions"].load_functions()
@@ -53,19 +53,36 @@ class UsedIn(CommonInfo):
         return self.load_data(self.used_in_file)
 
     def __process_functions_usages(self):
-        for context_file, context_cmd_id, context_func, func, line, context_type in self.extensions[
-            "Info"
-        ].iter_functions_usages():
+        for (
+            context_file,
+            context_cmd_id_list,
+            context_func,
+            func,
+            line,
+            context_type,
+        ) in self.extensions["Info"].iter_functions_usages():
+            # Split a string with CMD_IDs separated by comma
+            # into an actual Python list
+            context_cmd_id_list = context_cmd_id_list.split(",")
+
             self.debug(
                 "Processing function usages: "
-                + " ".join([context_file, context_cmd_id, context_func, func, line, context_type])
+                + " ".join(
+                    [
+                        context_file,
+                        context_func,
+                        func,
+                        line,
+                        context_type,
+                    ]
+                )
             )
 
             if self.is_builtin.match(func):
                 continue
 
             context_definition = self.extensions["Functions"].construct_definition(
-                context_file, context_cmd_id, context_type, line
+                context_file, context_cmd_id_list, context_type, line
             )
 
             # For each function call there can be many definitions with the same name, defined in different
@@ -129,6 +146,4 @@ class UsedIn(CommonInfo):
                     ][line] = index
 
                 if possible_file == "unknown" and index == 0:
-                    self._warning(
-                        f"Can't match definition: {func}", context_file
-                    )
+                    self._warning(f"Can't match definition: {func}", context_file)

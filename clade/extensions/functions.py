@@ -33,7 +33,7 @@ class Functions(CommonInfo):
         self.funcs_by_file_folder = "functions_by_file"
 
     @Extension.prepare
-    def parse(self, cmds_file):
+    def parse(self, _):
         self.__process_definitions()
         self.__process_declarations()
         self.__process_exported()
@@ -63,7 +63,7 @@ class Functions(CommonInfo):
 
         for (
             src_file,
-            src_cmd_id,
+            src_cmd_id_list,
             func,
             def_line,
             func_type,
@@ -73,6 +73,9 @@ class Functions(CommonInfo):
                 "Processing definition: "
                 + " ".join([src_file, func, def_line, func_type, signature])
             )
+            # Split a string with CMD_IDs separated by comma
+            # into an actual Python list
+            src_cmd_id_list = src_cmd_id_list.split(",")
 
             if func not in self.funcs:
                 self.funcs[func] = []
@@ -81,32 +84,35 @@ class Functions(CommonInfo):
                 if definition["file"] == src_file and definition["line"] == def_line:
                     # There can be some repeated definitions because of
                     # canonical paths: we just skip them here
-                    if src_cmd_id not in definition["compiled_in"]:
-                        definition["compiled_in"].append(src_cmd_id)
+                    for src_cmd_id in src_cmd_id_list:
+                        if src_cmd_id not in definition["compiled_in"]:
+                            definition["compiled_in"].append(src_cmd_id)
                     break
             else:
                 self.funcs[func].append(
                     self.construct_definition(
-                        src_file, src_cmd_id, func_type, def_line, signature
+                        src_file, src_cmd_id_list, func_type, def_line, signature
                     )
                 )
 
     def __process_declarations(self):
         def get_unknown_val(decl_val, type="extern"):
-            return self.construct_definition(
-                "unknown", "0", type, None, None, decl_val
-            )
+            return self.construct_definition("unknown", "0", type, None, None, decl_val)
 
         self.log("Parsing declarations")
 
         for (
             decl_file,
-            decl_cmd_id,
+            decl_cmd_id_list,
             decl_name,
             decl_line,
             decl_type,
             decl_signature,
         ) in self.extensions["Info"].iter_declarations():
+            # Split a string with CMD_IDs separated by comma
+            # into an actual Python list
+            decl_cmd_id_list = decl_cmd_id_list.split(",")
+
             self.debug(
                 "Processing declaration: "
                 + " ".join([decl_file, decl_name, decl_line, decl_type, decl_signature])
@@ -117,7 +123,7 @@ class Functions(CommonInfo):
                 "signature": decl_signature,
                 "line": decl_line,
                 "type": decl_type,
-                "compiled_in": [decl_cmd_id],
+                "compiled_in": decl_cmd_id_list,
             }
 
             if decl_name not in self.funcs:
@@ -131,19 +137,26 @@ class Functions(CommonInfo):
                 if definition["file"] == "unknown":
                     continue
 
-                for def_cmd_id in definition["compiled_in"]:
-                    if not decl_type == definition["type"]:
-                        continue
+                if decl_type != definition["type"]:
+                    continue
 
-                    if def_cmd_id == decl_cmd_id or (
-                        decl_type == "extern"
-                        and self._files_are_linked(
+                if set(definition["compiled_in"]).intersection(decl_cmd_id_list):
+                    self.__add_declaration(definition, decl_val)
+                    found = True
+                    continue
+
+                for def_cmd_id in definition["compiled_in"]:
+                    if found == True:
+                        break
+
+                    for decl_cmd_id in decl_val["compiled_in"]:
+                        if decl_type == "extern" and self._files_are_linked(
                             Location(definition["file"], def_cmd_id),
                             Location(decl_file, decl_cmd_id),
-                        )
-                    ):
-                        self.__add_declaration(definition, decl_val)
-                        found = True
+                        ):
+                            self.__add_declaration(definition, decl_val)
+                            found = True
+                            break
 
             if not found:
                 for definition in self.funcs[decl_name]:
@@ -159,7 +172,10 @@ class Functions(CommonInfo):
                 declaration["file"] == decl_val["file"]
                 and declaration["line"] == decl_val["line"]
             ):
-                declaration["compiled_in"].append(decl_val["compiled_in"][0])
+                # This case is (supposedly) not triggered often
+                declaration["compiled_in"] = list(
+                    set(declaration["compiled_in"]).union(set(decl_val["compiled_in"]))
+                )
                 return
         else:
             definition["declarations"].append(decl_val)
@@ -196,7 +212,7 @@ class Functions(CommonInfo):
                 self.funcs_by_file[file].append(definition)
 
     def construct_definition(
-        self, file, cmd_id, type, line=None, signature=None, declaration=None
+        self, file, cmd_id_list, type, line=None, signature=None, declaration=None
     ):
         if not declaration:
             declarations = []
@@ -208,6 +224,6 @@ class Functions(CommonInfo):
             "type": type,
             "line": line,
             "signature": signature,
-            "compiled_in": [cmd_id],
+            "compiled_in": cmd_id_list,
             "declarations": declarations,
         }

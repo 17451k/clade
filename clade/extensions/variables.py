@@ -40,7 +40,7 @@ class Variables(CommonInfo):
         self.possible_functions = set()
 
     @Extension.prepare
-    def parse(self, cmds_file):
+    def parse(self, _):
         self.funcs = self.extensions["Functions"].load_functions()
 
         self.__process_init_global()
@@ -60,9 +60,13 @@ class Variables(CommonInfo):
             return
 
         self.log("Parsing global variables initializations")
-        for c_file, signature, cmd_id, type, json_str in self.extensions[
+        for c_file, signature, cmd_id_list, type, json_str in self.extensions[
             "Info"
         ].iter_init_global():
+            # Split a string with CMD_IDs separated by comma
+            # into an actual Python list
+            cmd_id_list = cmd_id_list.split(",")
+
             if c_file not in self.variables:
                 self.variables[c_file] = []
 
@@ -80,7 +84,7 @@ class Variables(CommonInfo):
             # Save all functions referred at initialization of this variable
             self.possible_functions = set()
             self.__process_values(initializations)
-            self.__process_callv(c_file, cmd_id)
+            self.__process_callv(c_file, cmd_id_list)
 
     def __process_values(self, value):
         if isinstance(value, str):
@@ -100,14 +104,14 @@ class Variables(CommonInfo):
             function_name = m.group(1)
             self.possible_functions.add(function_name)
 
-    def __process_callv(self, context_file, context_cmd_id):
+    def __process_callv(self, context_file, context_cmd_id_list):
         functions = {f for f in self.possible_functions if f in self.funcs}
 
         if not functions:
             return
 
         context_definition = self.extensions["Functions"].construct_definition(
-            context_file, context_cmd_id, None, None
+            context_file, context_cmd_id_list, None, None
         )
 
         for func in functions:
@@ -120,6 +124,8 @@ class Variables(CommonInfo):
 
             if not possible_definitions:
                 continue
+
+            matched_files = []
 
             for files in (
                 # 3: definition is located in the same file as the call

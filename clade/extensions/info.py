@@ -32,7 +32,7 @@ class Info(Extension):
     always_requires = ["SrcGraph", "Storage", "Alternatives"]
     requires = always_requires + ["CC", "CL"]
 
-    __version__ = "4"
+    __version__ = "5"
 
     def __init__(self, work_dir, conf=None):
         if not conf:
@@ -48,8 +48,9 @@ class Info(Extension):
         super().__init__(work_dir, conf)
 
         self.aspect = os.path.join(
-            os.path.dirname(__file__), "info",
-            self.conf.get("Info.aspect", "info.aspect")
+            os.path.dirname(__file__),
+            "info",
+            self.conf.get("Info.aspect", "info.aspect"),
         )
 
         # Info about function definitions
@@ -96,10 +97,10 @@ class Info(Extension):
         self.cif_log = os.path.join(self.work_dir, "cif.log")
         self.err_log = os.path.join(self.work_dir, "err.log")
 
-        self.expand_regex = re.compile(r'\"(.*?)\"(.*)')
+        self.expand_regex = re.compile(r"\"(.*?)\"(.*)")
 
     @Extension.prepare
-    def parse(self, cmds_file):
+    def parse(self, _):
         self.__check_cif()
 
         cmds = list(self.extensions["SrcGraph"].load_compilation_cmds())
@@ -117,9 +118,7 @@ class Info(Extension):
             shutil.rmtree(self.temp_dir)
 
         if not os.path.exists(self.cif_log):
-            raise RuntimeError(
-                "Something is wrong with every compilation command"
-            )
+            raise RuntimeError("Something is wrong with every compilation command")
 
         if not os.path.exists(self.cif_output_dir) and os.path.exists(self.err_log):
             raise RuntimeError(
@@ -190,23 +189,27 @@ class Info(Extension):
             cif_env = {
                 "CIF_INFO_DIR": self.cif_output_dir,
                 "C_FILE": cmd_in,
-                "CMD_ID": cmd["id"]
+                "CMD_ID": cmd["id"],
             }
 
             cif_args = [
                 self.conf.get("Info.cif", "cif"),
-                "--debug", "ALL",
-                "--in", cif_in,
-                "--aspect", self.aspect,
-                "--back-end", "src",
-                "--stage", "instrumentation",
-                "--out", cif_out
+                "--debug",
+                "ALL",
+                "--in",
+                cif_in,
+                "--aspect",
+                self.aspect,
+                "--back-end",
+                "src",
+                "--stage",
+                "instrumentation",
+                "--out",
+                cif_out,
             ]
 
             if self.conf.get("Info.aspectator"):
-                cif_args.extend(
-                    ["--aspectator", self.conf.get("Info.aspectator")]
-                )
+                cif_args.extend(["--aspectator", self.conf.get("Info.aspectator")])
 
             if use_pre:
                 opts = []
@@ -236,17 +239,22 @@ class Info(Extension):
                     stderr=subprocess.STDOUT,
                     cwd=cwd,
                     universal_newlines=True,
-                    env=env
+                    env=env,
                 )
                 self.__save_log(cmd["id"], cwd, cif_args, cif_env, output, self.cif_log)
             except subprocess.CalledProcessError as e:
-                self.__save_log(cmd["id"], cwd, cif_args, cif_env, e.output, self.err_log)
-                self.__save_log(cmd["id"], cwd, cif_args, cif_env, e.output, self.cif_log)
+                self.__save_log(
+                    cmd["id"], cwd, cif_args, cif_env, e.output, self.err_log
+                )
+                self.__save_log(
+                    cmd["id"], cwd, cif_args, cif_env, e.output, self.cif_log
+                )
                 return
             except UnicodeDecodeError as e:
                 self.warning(
-                    "Can't decode CIF console output using 'utf-8' codec for command {!r}"
-                    .format(cmd["id"])
+                    "Can't decode CIF console output using 'utf-8' codec for command {!r}".format(
+                        cmd["id"]
+                    )
                 )
 
                 self.__save_log(cmd["id"], cwd, cif_args, cif_env, str(e), self.err_log)
@@ -319,7 +327,13 @@ class Info(Extension):
             objs=cif_output,
             process=normalize_file,
             pass_self=False,
-            total_objs=total_files
+            total_objs=total_files,
+        )
+        self.execute_in_parallel(
+            objs=cif_output,
+            process=combine_ids,
+            pass_self=False,
+            total_objs=total_files,
         )
 
         # Join all cif output file into several big .txt files
@@ -380,7 +394,7 @@ class Info(Extension):
             yield content
 
     def iter_definitions(self):
-        """Yield src_file, cmd_id, func, def_line, func_type, signature"""
+        """Yield src_file, cmd_id_list, func, def_line, func_type, signature"""
 
         regex = re.compile(r"\"(.*?)\" (\S*) (\S*) (\S*) (\S*) ([^']*)\n")
 
@@ -390,7 +404,7 @@ class Info(Extension):
             yield content
 
     def iter_declarations(self):
-        """Yield decl_file, cmd_id, decl_name, decl_line, decl_type, decl_signature"""
+        """Yield decl_file, cmd_id_list, decl_name, decl_line, decl_type, decl_signature"""
 
         regex = re.compile(r"\"(.*?)\" (\S*) (\S*) (\S*) (\S*) ([^']*)\n")
 
@@ -408,9 +422,9 @@ class Info(Extension):
             yield content
 
     def iter_calls(self):
-        """Yield context_file, context_cmd_id, context_func, func, call_line, call_type, args"""
+        """Yield context_file, context_cmd_id_list, context_func, func, call_line, call_type, args"""
 
-        regex = re.compile(r'\"(.*?)\" (\S*) (\S*) (\S*) (\S*) (\S*) (.*)')
+        regex = re.compile(r"\"(.*?)\" (\S*) (\S*) (\S*) (\S*) (\S*) (.*)")
         args_regex = re.compile(r"actual_arg_func_name(\d+)=\s*(\w+)\s*")
 
         for content in self.__iter_file_regex(self.call, regex):
@@ -426,7 +440,7 @@ class Info(Extension):
     def iter_calls_by_pointers(self):
         """Yield context_file, context_func, func_ptr, call_line"""
 
-        regex = re.compile(r'\"(.*?)\" (\S*) (\S*) (\S*)')
+        regex = re.compile(r"\"(.*?)\" (\S*) (\S*) (\S*)")
 
         for content in self.__iter_file_regex(self.callp, regex):
             yield content
@@ -434,7 +448,7 @@ class Info(Extension):
     def iter_functions_usages(self):
         """Yield context_file, context_cmd_id, context_func, func, line, call_type"""
 
-        regex = re.compile(r'\"(.*?)\" (\S*) (\S*) (\S*) (\S*) (\S*)')
+        regex = re.compile(r"\"(.*?)\" (\S*) (\S*) (\S*) (\S*) (\S*)")
 
         for content in self.__iter_file_regex(self.use_func, regex):
             # non-static functions are treated as extern by compiler
@@ -453,8 +467,8 @@ class Info(Extension):
     def iter_macros_expansions(self):
         """Yield exp_file, def_file, macro, exp_line, def_line, args_str"""
 
-        regex = re.compile(r'\"(.*?)\" \"(.*?)\" (\S*) (\S*) (\S*)(.*)')
-        arg_regex = re.compile(r' actual_arg\d+=(.*)')
+        regex = re.compile(r"\"(.*?)\" \"(.*?)\" (\S*) (\S*) (\S*)(.*)")
+        arg_regex = re.compile(r" actual_arg\d+=(.*)")
 
         for orig_content in self.__iter_file_regex(self.expand, regex):
             content = list(orig_content)
@@ -467,7 +481,7 @@ class Info(Extension):
             # Replace last element of content list (string with arguments)
             # with list of these arguments
             if content[-1]:
-                for arg in content[-1].split(','):
+                for arg in content[-1].split(","):
                     m_arg = arg_regex.match(arg)
                     if m_arg:
                         args.append(m_arg.group(1))
@@ -479,7 +493,7 @@ class Info(Extension):
     def iter_typedefs(self):
         """Yield scope_file, declaration"""
 
-        regex = re.compile(r'\"(.*?)\" typedef (.*)')
+        regex = re.compile(r"\"(.*?)\" typedef (.*)")
 
         for content in self.__iter_file_regex(self.typedefs, regex):
             yield content
@@ -491,13 +505,17 @@ class Info(Extension):
                     m = regex.match(line)
 
                     if not m:
-                        self.error("CIF output has unexpected format: {!r}".format(line))
+                        self.error(
+                            "CIF output has unexpected format: {!r}".format(line)
+                        )
                         raise SyntaxError
 
                     content = list(m.groups())
 
                     # First index is always a path: make it canonical
-                    content[0] = self.extensions["Alternatives"].get_canonical_path(content[0])
+                    content[0] = self.extensions["Alternatives"].get_canonical_path(
+                        content[0]
+                    )
                     yield content
 
     def __iter_file(self, file, zip_fh):
@@ -541,13 +559,13 @@ def normalize_file(file):
                         continue
 
                     # Storing hash of string instead of string itself reduces memory usage by 30-40%
-                    h = hashlib.md5(line).hexdigest()
+                    h = hashlib.md5(line).hexdigest()  # type: ignore
                     if h in seen:
                         continue
 
                     seen.add(h)
 
-                    new_fh.write(line)
+                    new_fh.write(line)  # type: ignore
     else:
         lines = []
         with codecs.open(file, "rb") as fh:
@@ -555,7 +573,7 @@ def normalize_file(file):
 
             new_lines = []
             for line in lines:
-                h = hashlib.md5(line).hexdigest()
+                h = hashlib.md5(line).hexdigest()  # type: ignore
                 if h in seen:
                     continue
 
@@ -565,5 +583,41 @@ def normalize_file(file):
 
             with open(new_file, "wb") as new_fh:
                 new_fh.writelines(new_lines)
+
+    os.replace(new_file, file)
+
+
+# Combine strings like:
+#   62543 is_acpi_node is_acpi_device_node 415 none null
+#   62756 is_acpi_node is_acpi_device_node 415 none null
+#   72341 is_acpi_node is_acpi_device_node 415 none null
+# into
+#   62543,62756,72341 is_acpi_node is_acpi_device_node 415 none NULL
+def combine_ids(file):
+    d = dict()
+
+    with open(file) as in_fh:
+        for line in in_fh:
+            line = line.strip()
+
+            m = re.match(r"(\d*) (.*)", line)
+
+            # If not matched, then it is files without CMD_IDS
+            # We want to skip those
+            if not m:
+                return
+
+            cmd_id = m.group(1)
+            rest = m.group(2)
+
+            if rest not in d:
+                d[rest] = [cmd_id]
+            else:
+                d[rest].append(cmd_id)
+
+    new_file = file + ".tmp"
+    with open(new_file, "w") as new_fh:
+        for line in d:
+            new_fh.write(f"{','.join(d[line])} {line}\n")
 
     os.replace(new_file, file)

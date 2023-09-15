@@ -36,7 +36,7 @@ class Callgraph(CommonInfo):
         self.is_builtin = re.compile(r"(__builtin)|(__compiletime)")
 
     @Extension.prepare
-    def parse(self, cmds_file):
+    def parse(self, _):
         self.log("Generating callgraph")
 
         self.funcs = self.extensions["Functions"].load_functions()
@@ -67,20 +67,23 @@ class Callgraph(CommonInfo):
 
         for (
             context_file,
-            context_cmd_id,
+            context_cmd_id_list,
             context_func,
             func,
             call_line,
             call_type,
             args,
         ) in self.extensions["Info"].iter_calls():
+            # Split a string with CMD_IDs separated by comma
+            # into an actual Python list
+            context_cmd_id_list = context_cmd_id_list.split(",")
+
             # args are excluded from the debug log
             self.debug(
                 "Processing function calls: "
                 + " ".join(
                     [
                         context_file,
-                        context_cmd_id,
                         context_func,
                         func,
                         call_line,
@@ -96,7 +99,7 @@ class Callgraph(CommonInfo):
                 continue
 
             context_definition = self.extensions["Functions"].construct_definition(
-                context_file, context_cmd_id, call_type, call_line
+                context_file, context_cmd_id_list, call_type, call_line
             )
 
             matched_files, index = self.__get_definitions(func, context_definition)
