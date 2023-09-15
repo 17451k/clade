@@ -7,7 +7,7 @@ Python packages for testing, measuring code coverage and profiling, using the
 following command:
 
 ``` shell
-$ python3 -m pip install -e ".[dev]"
+python3 -m pip install -e ".[dev]"
 ```
 
 Note that this command installs Clade in "editable" mode directly from the
@@ -20,7 +20,7 @@ You can check that Clade works as expected on your machine by running
 the test suite from the repository (doesn't work on Windows yet):
 
 ``` shell
-$ pytest
+pytest
 ```
 
 ## Measuring code coverage
@@ -28,7 +28,7 @@ $ pytest
 To measure coverage you need to execute the following commands:
 
 ``` shell
-$ coverage run -m pytest && coverage combine && coverage html
+coverage run -m pytest && coverage combine && coverage html
 ```
 
 Results can be observed by opening generated *htmlcov/index.html* file in the browser.

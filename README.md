@@ -70,7 +70,7 @@ twice as long time than a typical build process.
 To install the latest stable version just run the following command:
 
 ``` shell
-$ python3 -m pip install clade
+python3 -m pip install clade
 ```
 
 ## Documentation

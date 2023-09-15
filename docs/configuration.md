@@ -4,7 +4,7 @@ There is a bunch of options that can be changed to alter the behaviour of the
 *clade* command. The configuration can be passed via the "-c" option like this:
 
 ``` shell
-$ clade -c conf.json make
+clade -c conf.json make
 ```
 
 where `conf.json` is a json file with some configuration options:
@@ -105,7 +105,7 @@ If you want to execute Clade on one of these projects, then it might be a
 to deal with various problems and mess with the configuration:
 
 ``` shell
-$ clade -p linux_kernel make
+clade -p linux_kernel make
 ```
 
 or

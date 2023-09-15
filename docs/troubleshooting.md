@@ -88,6 +88,6 @@ BitBake environment variable, which specifies a set of variables to pass
 to the build processes:
 
 ``` shell
-$ export BB_ENV_EXTRAWHITE="CLADE_INTERCEPT CLADE_ID_FILE CLADE_PARENT_ID LD_PRELOAD LD_LIBRARY_PATH $BB_ENV_EXTRAWHITE"
-$ clade bitbake <target>
+export BB_ENV_EXTRAWHITE="CLADE_INTERCEPT CLADE_ID_FILE CLADE_PARENT_ID LD_PRELOAD LD_LIBRARY_PATH $BB_ENV_EXTRAWHITE"
+clade bitbake <target>
 ```

@@ -3,17 +3,19 @@
 The simplest way to start using Clade is to run the following command:
 
 ``` shell
-$ clade make
+clade make
 ```
 
 where *make* should be replaced by your project build command. Clade will
-execuite build, intercept build commands, parse them and generate a lot of data
+execute build, intercept build commands, parse them and generate a lot of data
 about build process and source files. The following sections explain formats
 of the generated data, as well as some other things.
 
 All functionality is available both as command-line scripts and
 as Python modules that you can import and use, so the following
-examples will include both use cases.
+examples will include both use cases. Also, all paths in the actual
+Clade output are absolute: but for simplicity, they were made relative
+in the examples.
 
 ## Build command intercepting
 
@@ -21,7 +23,7 @@ Intercepting of build commands is quite easy: all you need is to
 wrap your main build command like this:
 
 ``` shell
-$ clade -i make
+clade -i make
 ```
 
 where *make* should be replaced by your project build command.
@@ -35,7 +37,7 @@ You can change the path to to the file where intercepted commands will be
 saved using --cmds option:
 
 ``` shell
-$ clade -i --cmds /work/cmds.txt make
+clade -i --cmds /work/cmds.txt make
 ```
 
 In case the build process of your project consists of several independent
@@ -43,8 +45,8 @@ steps, you can still create one single *cmds.txt* file using
 -a (--append) option:
 
 ``` shell
-$ clade -i make step_one
-$ clade -i -a make step_two
+clade -i make step_one
+clade -i -a make step_two
 ```
 
 As a result, build commands of the second make command will be appended
@@ -58,8 +60,8 @@ c = Clade(cmds_file="cmds.txt")
 c.intercept(command=["make"], append=False)
 ```
 
-Clade implements several different methods of build commands intercepting.
-
+Clade implements several different methods of build commands intercepting,
+they will be described in the following sections.
 
 ### Library injection
 
@@ -82,7 +84,7 @@ There is an alternative intercepting method that is based on
 *wrappers*. It can be used when LD_PRELOAD is unavailable:
 
 ``` shell
-$ clade -i -wr make
+clade -i -wr make
 ```
 
 Clade scans `PATH` environment variable to detect available
@@ -96,7 +98,7 @@ Clade adds this temporary directory to the `PATH`.
 
 This method can't intercept commands that are executed
 bypassing the PATH environment variable: for example, `gcc` command can be
-intercepted, but directl call of `/usr/bin/gcc` cannot be.
+intercepted, but direct call of `/usr/bin/gcc` cannot be.
 If you need to intercept such commands you may use `Wrapper.wrap_list`
 configuration option (read about configuration in the
 [configuration](configuration.md) section).
@@ -133,7 +135,7 @@ to find and log its command line arguments, and then resumes the build process.
 It can be used like this:
 
 ``` shell
-$ clade -i msbuild MyProject.sln
+clade -i msbuild MyProject.sln
 ```
 
 You can intercept build commands on Windows from a python script:
@@ -232,12 +234,15 @@ for parsing following commands:
 * archive commands (ar);
 * move commands (mv, cmd.exe -c);
 * object copy commands (objcopy);
+* install commands (install);
+* symlink commands (ln);
 
 These extensions can be executed from command line through `clade -e EXTENSION_NAME`,
-where EXTENSION_NAME can be CC, CXX, LD, AS, AR, MV, Objcopy, CL, or Link, like this:
+where EXTENSION_NAME can be CC, CXX, LD, AS, AR, MV, Objcopy, CL, Link,
+Install, Copy commands, like this:
 
 ``` shell
-$ clade -e CC make
+clade -e CC make
 ```
 
 As a result, a working directory named `clade` will be created:
@@ -400,8 +405,8 @@ This information is stored in the *pid graph* and can be obtained using
 `PidGraph` extension:
 
 ``` shell
-$ clade -e PidGraph make
-$ tree clade -L 2
+clade -e PidGraph make
+tree clade -L 2
 
 clade
 ├── cmds.txt
@@ -498,7 +503,7 @@ all:
 Using `CmdGraph` these commands can be connected:
 
 ``` shell
-$ clade -e CmdGraph make
+clade -e CmdGraph make
 
 clade/
 ├── cmds.txt
@@ -569,7 +574,7 @@ This information is called *source graph* and can be generated
 using `SrcGraph` extension:
 
 ``` shell
-$ clade -e SrcGraph make
+clade -e SrcGraph make
 
 clade/
 ├── cmds.txt
@@ -591,26 +596,25 @@ when combined, looks like this:
 ``` json
 {
     "/usr/include/stdio.h": {
-        "compiled_in": ["1"],
-        "loc": 414,
-        "used_by": ["2", "3"]
+        "1": ["2", "3"]
     },
-    "main.c":{
-        "compiled_in": ["1"],
-        "loc": 5,
-        "used_by": ["2", "3"],
+    "main.c": {
+        "1": ["2", "3"],
     },
-    "main.s":{
-        "compiled_in": ["2"],
-        "loc": 20,
-        "used_by": ["3"],
+    "main.s": {
+        "2": ["3"],
     }
 }
 ```
 
 For simplicity information about other files has been removed from
-the presented *source graph*.
+the presented *source graph*. Also, all paths in the real *source graph"
+are absolute.
 As always, commands are represented through their unique identifiers.
+
+It can be interpreted like this: file "main.c" is compiled in the command
+with its id=1, and was indirectly used (through linking, for example)
+in commands with ids=[2, 3].
 
 `src_info.json` contains information about the size of the source file
 in lines of code.
@@ -638,7 +642,7 @@ added to the `PATH` environment variable.
 *Call graph* can be generated using `Callgraph` extension:
 
 ``` shell
-$ clade -e Callgraph cmds.txt
+clade -e Callgraph cmds.txt
 ```
 
 *Call graph* itself is stored inside `Callgraph/callgraph` folder and can be
@@ -688,25 +692,31 @@ They are stored in the *Functions/functions* folder:
 
 ``` json
 {
-    "asix_get_phy_addr": {
-        "drivers/net/usb/asix_common.c": {
-            "declarations": {
-                "drivers/net/usb/asix.h": {
+    "asix_get_phy_addr": [
+        {
+            "file": "drivers/net/usb/asix_common.c",
+            "compiled_in": ["7", "4", "2"],
+            "declarations": [
+                {
+                    "file": "drivers/net/usb/asix.h",
                     "line": "204",
                     "signature": "int asix_get_phy_addr(struct usbnet *);",
-                    "type": "extern"
+                    "type": "extern",
+                    "compiled_in": ["7", "4", "2"]
                 }
-            },
+            ],
             "line": "232",
             "signature": "int asix_get_phy_addr(struct usbnet *dev);",
             "type": "extern"
         }
+    ]
 }
 ```
 
 For each function definition there is information about corresponding
 declaration, line numbers in which the definition and declaration are located,
-function signature and type (global or static).
+function signature and type (global or static), and also ids of commands in
+which this definition was compiled.
 
 `Callgraph` and `Functions` can be used through Python interface:
 
@@ -740,7 +750,7 @@ interface, compared to most other command line tools available in Clade.
 Compilation database can be generated using `clade-cdb` command:
 
 ``` shell
-$ clade-cdb make
+clade-cdb make
 ```
 
 where `make` should be replaced by your project build command.
@@ -751,7 +761,7 @@ If you have `cmds.txt` file you can skip the build process and get
 `compile_comands.json` much faster:
 
 ``` shell
-$ clade-cdb --cmds cmds.txt
+clade-cdb --cmds cmds.txt
 ```
 
 Other options are available through `--help` option.
