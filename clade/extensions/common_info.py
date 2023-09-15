@@ -92,17 +92,20 @@ class CommonInfo(Extension):
 
         return log_files
 
-    def _in_the_same_file(self, definition, context_definition):
-        return definition["file"] == context_definition["file"] and set(
-            context_definition["compiled_in"]
-        ).intersection(definition["compiled_in"])
+    @staticmethod
+    def _in_the_same_file(definition, context_definition):
+        return definition["file"] == context_definition[
+            "file"
+        ] and CommonInfo._in_the_same_tu(definition, context_definition)
 
-    def _in_the_same_tu(self, definition, context_definition):
+    @staticmethod
+    def _in_the_same_tu(definition, context_definition):
         return set(context_definition["compiled_in"]).intersection(
             definition["compiled_in"]
         )
 
-    def _definition_is_exported(self, definition, context_definition):
+    @staticmethod
+    def _definition_is_exported(definition, context_definition):
         return (
             definition["type"] == "exported" and context_definition["type"] == "extern"
         )
@@ -128,19 +131,14 @@ class CommonInfo(Extension):
         )
         return False
 
-    def _declaration_is_in_the_same_tu(self, definition, context_definition):
-        for context_cmd_id in context_definition["compiled_in"]:
-            context_location = Location(context_definition["file"], context_cmd_id)
+    @staticmethod
+    def _declaration_is_in_the_same_tu(definition, context_definition):
+        context_compiled_in = set(context_definition["compiled_in"])
 
-            for declaration in definition["declarations"]:
-                for cmd_id in declaration["compiled_in"]:
-                    # Declaration is included in the call file
-                    if cmd_id == context_location.cmd_id:
-                        return True
+        for declaration in definition["declarations"]:
+            if context_compiled_in.intersection(declaration["compiled_in"]):
+                return True
 
-        self.debug(
-            f"{definition['file']!r} and {context_definition['file']!r} are not in the same tu"
-        )
         return False
 
     def _files_are_linked(self, loc1: Location, loc2: Location):
@@ -149,14 +147,19 @@ class CommonInfo(Extension):
 
         if not self.extensions["SrcGraph"].in_source_graph(loc1.file, loc1.cmd_id):
             self._warning(f"{loc1.file} was not compiled in {loc1.cmd_id}")
+            return False
 
         if not self.extensions["SrcGraph"].in_source_graph(loc2.file, loc2.cmd_id):
             self._warning(f"{loc2.file} was not compiled in {loc2.cmd_id}")
+            return False
 
         return (
             len(
-                set(self.extensions["SrcGraph"].get_used_by(loc1.file, loc1.cmd_id))
-                & set(self.extensions["SrcGraph"].get_used_by(loc2.file, loc2.cmd_id))
+                set(
+                    self.extensions["SrcGraph"].get_used_by(loc1.file, loc1.cmd_id)
+                ).intersection(
+                    self.extensions["SrcGraph"].get_used_by(loc2.file, loc2.cmd_id)
+                )
             )
             > 0
         )
