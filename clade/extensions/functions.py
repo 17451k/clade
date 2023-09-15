@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import array
+
 from clade.extensions.abstract import Extension
 from clade.extensions.common_info import CommonInfo
 from clade.extensions.utils import Location
@@ -21,7 +23,7 @@ from clade.extensions.utils import Location
 class Functions(CommonInfo):
     requires = ["SrcGraph", "Info"]
 
-    __version__ = "1"
+    __version__ = "2"
 
     def __init__(self, work_dir, conf=None):
         super().__init__(work_dir, conf)
@@ -75,7 +77,9 @@ class Functions(CommonInfo):
             )
             # Split a string with CMD_IDs separated by comma
             # into an actual Python list
-            src_cmd_id_list = src_cmd_id_list.split(",")
+            src_cmd_id_list = array.array(
+                "L", [int(x) for x in src_cmd_id_list.split(",")]
+            )
 
             if func not in self.funcs:
                 self.funcs[func] = []
@@ -97,7 +101,9 @@ class Functions(CommonInfo):
 
     def __process_declarations(self):
         def get_unknown_val(decl_val, type="extern"):
-            return self.construct_definition("unknown", "0", type, None, None, decl_val)
+            return self.construct_definition(
+                "unknown", ["0"], type, None, None, decl_val
+            )
 
         self.log("Parsing declarations")
 
@@ -111,7 +117,9 @@ class Functions(CommonInfo):
         ) in self.extensions["Info"].iter_declarations():
             # Split a string with CMD_IDs separated by comma
             # into an actual Python list
-            decl_cmd_id_list = decl_cmd_id_list.split(",")
+            decl_cmd_id_list = array.array(
+                "L", [int(x) for x in decl_cmd_id_list.split(",")]
+            )
 
             self.debug(
                 "Processing declaration: "
@@ -149,7 +157,7 @@ class Functions(CommonInfo):
                     if found == True:
                         break
 
-                    for decl_cmd_id in decl_val["compiled_in"]:
+                    for decl_cmd_id in decl_cmd_id_list:
                         if decl_type == "extern" and self._files_are_linked(
                             Location(definition["file"], def_cmd_id),
                             Location(decl_file, decl_cmd_id),

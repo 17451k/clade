@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import array
 import logging
 import pkg_resources
 import os
@@ -110,9 +111,15 @@ def get_program_version(program, version_arg="--version"):
         return version
 
 
+def array_hook(obj):
+    if isinstance(obj, array.array):
+        return [str(x) for x in obj]
+    raise TypeError
+
+
 def dump(data, path):
     with open(path, "wb") as fh:
-        fh.write(orjson.dumps(data))
+        fh.write(orjson.dumps(data, default=array_hook))
 
 
 def load(path):
