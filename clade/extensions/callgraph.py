@@ -28,8 +28,6 @@ class Callgraph(CommonInfo):
     def __init__(self, work_dir, conf=None):
         super().__init__(work_dir, conf)
 
-        self.funcs = dict()
-
         self.callgraph = nested_dict()
         self.callgraph_folder = "callgraph"
 
@@ -38,8 +36,6 @@ class Callgraph(CommonInfo):
     @Extension.prepare
     def parse(self, _):
         self.log("Generating callgraph")
-
-        self.funcs = self.extensions["Functions"].load_functions()
 
         self.__process_calls()
         self.__add_types()
@@ -52,7 +48,6 @@ class Callgraph(CommonInfo):
         self.dump_data_by_key(self.callgraph, self.callgraph_folder)
 
         self.extensions["SrcGraph"].unload_src_graph()
-        self.funcs.clear()
         self.callgraph.clear()
 
     def load_callgraph(self, files=None):
@@ -136,10 +131,11 @@ class Callgraph(CommonInfo):
     def __add_types(self):
         # Keep function types in the callgraph
         for path, func in traverse(self.callgraph, 2):
-            if path == "unknown" and func not in self.funcs:
+            funcs = self.extensions["Functions"].load_functions([func])
+            if path == "unknown" and func not in funcs:
                 continue
 
-            for definition in self.funcs[func]:
+            for definition in funcs[func]:
                 # Warning: may be innacurate
                 if definition["file"] == path:
                     self.callgraph[path][func]["type"] = definition["type"]
@@ -148,11 +144,12 @@ class Callgraph(CommonInfo):
                 self.callgraph[path][func]["type"] = "extern"
 
     def __get_definitions(self, func, context_definition):
+        funcs = self.extensions["Functions"].load_functions([func])
         # For each function call there can be many definitions with the same name, defined in different
         # files. possible_definitions is a list of them.
         possible_definitions = []
-        if func in self.funcs:
-            for definition in self.funcs[func]:
+        if func in funcs:
+            for definition in funcs[func]:
                 if definition["type"] in (context_definition["type"], "exported"):
                     possible_definitions.append(definition)
         else:
