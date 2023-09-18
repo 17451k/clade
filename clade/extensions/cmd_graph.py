@@ -148,7 +148,7 @@ class CmdGraph(Extension):
             dot.node(str(cmd_id), label=re.escape(cmd_node))
 
             for using_id in self.graph[cmd_id]["using"]:
-                dot.edge(using_id, str(cmd_id))
+                dot.edge(str(using_id), str(cmd_id))
 
         self.debug("Rendering dot file")
         dot.render(self.pdf_file, cleanup=True)
