@@ -142,7 +142,7 @@ class CommonInfo(Extension):
         return False
 
     def _files_are_linked(self, loc1: Location, loc2: Location):
-        if loc1 == Location("unknown", "0") or loc2 == Location("unknown", "0"):
+        if loc1 == Location("unknown", 0) or loc2 == Location("unknown", 0):
             return False
 
         if not self.extensions["SrcGraph"].in_source_graph(loc1.file, loc1.cmd_id):

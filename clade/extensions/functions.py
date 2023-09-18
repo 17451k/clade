@@ -101,9 +101,7 @@ class Functions(CommonInfo):
 
     def __process_declarations(self):
         def get_unknown_val(decl_val, type="extern"):
-            return self.construct_definition(
-                "unknown", ["0"], type, None, None, decl_val
-            )
+            return self.construct_definition("unknown", [0], type, None, None, decl_val)
 
         self.log("Parsing declarations")
 
