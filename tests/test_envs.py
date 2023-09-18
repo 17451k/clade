@@ -16,7 +16,14 @@
 
 import pytest
 
-from clade.envs import open_envs_file, iter_envs, join_env, get_last_id, get_all_envs, get_stats
+from clade.envs import (
+    open_envs_file,
+    iter_envs,
+    join_env,
+    get_last_id,
+    get_all_envs,
+    get_stats,
+)
 
 
 def test_bad_open():
@@ -33,7 +40,7 @@ def test_get_last_id(envs_file):
 
 
 def test_get_stats(envs_file):
-    assert get_stats(envs_file)["1"] > 0
+    assert get_stats(envs_file)[1] > 0
 
 
 def test_join_env(envs_file):

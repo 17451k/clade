@@ -37,7 +37,7 @@ class CrossRef(CommonInfo):
         self.ref_from_folder = "ref_from"
 
     @Extension.prepare
-    def parse(self, cmds_file):
+    def parse(self, _):
         self.log("Loading data")
         self.funcs = self.extensions["Functions"].load_functions_by_file()
 
@@ -72,6 +72,9 @@ class CrossRef(CommonInfo):
         return raw_locations
 
     def __get_raw_func_locations(self, raw_locations):
+        if not self.funcs:
+            raise RuntimeError("No information about functions is available")
+
         for file in self.funcs:
             for definition in self.funcs[file]:
                 if definition["line"]:
@@ -87,7 +90,9 @@ class CrossRef(CommonInfo):
                         self.__add_raw_loc(raw_locations, declaration["file"], val)
 
         for context_file, callgraph in self.extensions["Callgraph"].yield_callgraph():
-            for _, _, file, func, line in traverse(callgraph[context_file], 5, {2: "calls"}):
+            for _, _, file, func, line in traverse(
+                callgraph[context_file], 5, {2: "calls"}
+            ):
                 val = (line, func, "call")
                 self.__add_raw_loc(raw_locations, context_file, val)
 
@@ -141,7 +146,10 @@ class CrossRef(CommonInfo):
                 if sorted_pos >= len(sorted_locs):
                     break
 
-                while (sorted_pos < len(sorted_locs) and int(sorted_locs[sorted_pos][0]) <= i + 1):
+                while (
+                    sorted_pos < len(sorted_locs)
+                    and int(sorted_locs[sorted_pos][0]) <= i + 1
+                ):
                     if i == int(sorted_locs[sorted_pos][0]) - 1:
                         line = int(sorted_locs[sorted_pos][0])
                         name = sorted_locs[sorted_pos][1]
@@ -180,7 +188,9 @@ class CrossRef(CommonInfo):
         for context_file, callgraph in self.extensions["Callgraph"].yield_callgraph():
             calls = set()
 
-            for context_func, _, file in traverse(callgraph[context_file], 3, {2: "calls"}):
+            for context_func, _, file in traverse(
+                callgraph[context_file], 3, {2: "calls"}
+            ):
                 if file not in self.funcs:
                     self._warning("Can't find file: {!r}".format(file))
                     continue
@@ -235,7 +245,9 @@ class CrossRef(CommonInfo):
                 for loc_el in loc_list:
                     exp_line = str(loc_el[0])
 
-                    for def_file, def_line in traverse(expansions[exp_file][macro][exp_line], 2):
+                    for def_file, def_line in traverse(
+                        expansions[exp_file][macro][exp_line], 2
+                    ):
                         if def_file == "unknown":
                             continue
 
@@ -273,9 +285,14 @@ class CrossRef(CommonInfo):
             ref_from = nested_dict()
 
             for definition in self.funcs[file]:
-                context_locs = self.__get_context_locs(file, definition["name"], callgraph)
+                context_locs = self.__get_context_locs(
+                    file, definition["name"], callgraph
+                )
 
-                if file != "unknown" and definition["name"] in locations[file]["def_func"]:
+                if (
+                    file != "unknown"
+                    and definition["name"] in locations[file]["def_func"]
+                ):
                     loc_list = locations[file]["def_func"][definition["name"]]
 
                     for context_file, lines in context_locs:
@@ -284,13 +301,20 @@ class CrossRef(CommonInfo):
                             self.__add_ref(ref_from, file, "call", val)
 
                 for declaration in definition["declarations"]:
-                    if definition["name"] in locations[declaration["file"]]["decl_func"]:
-                        loc_list = locations[declaration["file"]]["decl_func"][definition["name"]]
+                    if (
+                        definition["name"]
+                        in locations[declaration["file"]]["decl_func"]
+                    ):
+                        loc_list = locations[declaration["file"]]["decl_func"][
+                            definition["name"]
+                        ]
 
                         for context_file, lines in context_locs:
                             for loc_el in loc_list:
                                 val = (loc_el, (context_file, lines))
-                                self.__add_ref(ref_from, declaration["file"], "call", val)
+                                self.__add_ref(
+                                    ref_from, declaration["file"], "call", val
+                                )
 
             self.__dump_ref_from(ref_from)
 
@@ -324,7 +348,9 @@ class CrossRef(CommonInfo):
                     def_line = str(loc_el[0])
 
                     for exp_file in macros[def_file][macro][def_line]:
-                        exp_lines = [int(l) for l in macros[def_file][macro][def_line][exp_file]]
+                        exp_lines = [
+                            int(l) for l in macros[def_file][macro][def_line][exp_file]
+                        ]
                         val = (loc_el, (exp_file, tuple(exp_lines)))
                         self.__add_ref(ref_from, def_file, "expand", val)
 

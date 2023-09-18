@@ -15,6 +15,7 @@
 
 import os
 import re
+
 DELIMITER = "||"
 
 
@@ -71,20 +72,23 @@ def iter_cmds(cmds_file):
     with open_cmds_file(cmds_file) as cmds_fp:
         for cmd_id, line in enumerate(cmds_fp):
             cmd = split_cmd(line)
-            cmd["id"] = str(cmd_id + 1)  # cmd_id should be line number in cmds_fp file
+            cmd["id"] = cmd_id + 1  # cmd_id should be line number in cmds_fp file
             yield cmd
 
 
 def split_cmd(line):
     """Convert a single intercepted command into dictionary."""
     cmd = dict()
-    cmd["cwd"], cmd["pid"], cmd["which"], *cmd["command"] = line.strip().split(DELIMITER)
+    cmd["cwd"], cmd["pid"], cmd["which"], *cmd["command"] = line.strip().split(
+        DELIMITER
+    )
+    cmd["pid"] = int(cmd["pid"])
     return cmd
 
 
 def join_cmd(cmd):
     """Convert a single intercepted command from dictionary to cmds.txt line."""
-    line = DELIMITER.join([cmd["cwd"], cmd["pid"], cmd["which"]] + cmd["command"])
+    line = DELIMITER.join([cmd["cwd"], str(cmd["pid"]), cmd["which"]] + cmd["command"])
     return line
 
 
@@ -110,7 +114,7 @@ def get_last_cmd(cmds_file):
     return last_cmd
 
 
-def get_last_id(cmds_file, raise_exception=False) -> str:
+def get_last_id(cmds_file, raise_exception=False) -> int:
     """Get last used id."""
     try:
         last_cmd = get_last_cmd(cmds_file)
@@ -118,7 +122,7 @@ def get_last_id(cmds_file, raise_exception=False) -> str:
     except RuntimeError:
         if raise_exception:
             raise
-        return "0"
+        return 0
 
 
 def get_all_cmds(cmds_file):

@@ -47,7 +47,7 @@ class Extension(metaclass=abc.ABCMeta):
         FileNotFoundError: Cant find file with the build commands
     """
 
-    __version__ = "3"
+    __version__ = "4"
 
     def __init__(self, work_dir, conf=None):
         self.name = self.__class__.__name__
@@ -158,6 +158,15 @@ class Extension(metaclass=abc.ABCMeta):
         self.debug("Loading {!r}".format(file_name))
 
         return load(file_name)
+
+    def load_dict_with_int_keys(self, file_name):
+        """Load dictionary and replace back string keys with int ones."""
+        data = self.load_data(file_name)
+        return {int(key): data[key] for key in data}
+
+    def dump_dict_with_int_keys(self, data, file_name):
+        """Dump dictionary with int keys by replacing them with string ones."""
+        self.dump_data({str(key): data[key] for key in data}, file_name)
 
     def dump_data(self, data, file_name):
         """Dump data to a file in the object working directory."""

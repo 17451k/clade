@@ -71,9 +71,7 @@ class Common(Extension, metaclass=abc.ABCMeta):
             )
 
         if include_list:
-            self.regex_include_in = re.compile(
-                "(" + ")|(".join(include_list) + ")"
-            )
+            self.regex_include_in = re.compile("(" + ")|(".join(include_list) + ")")
 
     @Extension.prepare
     def parse(self, cmds_file, which_list):
@@ -104,9 +102,7 @@ class Common(Extension, metaclass=abc.ABCMeta):
         parsed_cmd = self._get_cmd_dict(cmd)
 
         if cmd_type not in requires_value:
-            raise RuntimeError(
-                "Command type '{}' is not supported".format(cmd_type)
-            )
+            raise RuntimeError("Command type '{}' is not supported".format(cmd_type))
 
         opts = iter(cmd["command"][1:])
 
@@ -136,9 +132,7 @@ class Common(Extension, metaclass=abc.ABCMeta):
         return parsed_cmd
 
     def load_cmd_by_id(self, id):
-        return self.load_data(
-            os.path.join(self.cmds_dir, "{}.json".format(id))
-        )
+        return self.load_data(os.path.join(self.cmds_dir, "{}.json".format(id)))
 
     def dump_cmd_by_id(self, id, cmd):
         cmd = self._normalize_paths(cmd)
@@ -156,9 +150,7 @@ class Common(Extension, metaclass=abc.ABCMeta):
         return self.load_data(raw_file, raise_exception=True)
 
     def dump_raw_by_id(self, id, raw_command):
-        self.dump_data(
-            raw_command, os.path.join(self.raw_dir, "{}.json".format(id))
-        )
+        self.dump_data(raw_command, os.path.join(self.raw_dir, "{}.json".format(id)))
 
     def load_opts_by_id(self, id):
         opts_file = os.path.join(self.opts_dir, "{}.json".format(id))
@@ -186,7 +178,7 @@ class Common(Extension, metaclass=abc.ABCMeta):
             return []
 
         with open(self.bad_ids, "r") as fh:
-            return fh.read().splitlines()
+            return [int(cmd_id) for cmd_id in fh.read().splitlines()]
 
     def _normalize_paths(self, cmd):
         if "Path" not in self.extensions:
@@ -202,9 +194,7 @@ class Common(Extension, metaclass=abc.ABCMeta):
     def __merge_all_cmds(self):
         """Merge all parsed commands into a single json file."""
         self.debug("Merging all parsed commands")
-        cmd_jsons = glob.glob(
-            os.path.join(self.work_dir, self.cmds_dir, "*[0-9].json")
-        )
+        cmd_jsons = glob.glob(os.path.join(self.work_dir, self.cmds_dir, "*[0-9].json"))
 
         merged_cmds = []
 
@@ -218,18 +208,16 @@ class Common(Extension, metaclass=abc.ABCMeta):
 
         self.dump_data(merged_cmds, self.cmds_file)
 
-    def load_all_cmds(
-        self, with_opts=False, with_raw=False, filter_by_pid=True
-    ):
+    def load_all_cmds(self, with_opts=False, with_raw=False, filter_by_pid=True):
         """Load all parsed commands."""
         cmds = self.load_data(self.cmds_file, raise_exception=False)
 
-        if filter_by_pid and self.conf.get(
-            "PidGraph.filter_cmds_by_pid", True
-        ):
+        if filter_by_pid and self.conf.get("PidGraph.filter_cmds_by_pid", True):
             bad_ids = self.get_bad_ids()
             self.debug("Bad commands: {}".format(bad_ids))
-            cmds = self.extensions["PidGraph"].filter_cmds_by_pid(cmds, parsed_ids=bad_ids)
+            cmds = self.extensions["PidGraph"].filter_cmds_by_pid(
+                cmds, parsed_ids=bad_ids
+            )
 
         if with_opts:
             for cmd in cmds:

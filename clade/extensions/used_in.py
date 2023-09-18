@@ -63,7 +63,9 @@ class UsedIn(CommonInfo):
         ) in self.extensions["Info"].iter_functions_usages():
             # Split a string with CMD_IDs separated by comma
             # into an actual Python list
-            context_cmd_id_list = context_cmd_id_list.split(",")
+            context_cmd_id_list = [
+                int(cmd_id) for cmd_id in context_cmd_id_list.split(",")
+            ]
 
             self.debug(
                 "Processing function usages: "

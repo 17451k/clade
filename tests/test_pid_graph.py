@@ -27,7 +27,7 @@ def test_pid_graph(tmpdir, cmds_file):
     pid_graph = e.load_pid_graph()
     pid_by_id = e.load_pid_by_id()
 
-    cmd_ids = list(str(x) for x in range(1, int(last_id) + 1))
+    cmd_ids = list(x for x in range(1, int(last_id) + 1))
     assert len(pid_graph) == len(cmd_ids)
 
     for cmd_id in cmd_ids:

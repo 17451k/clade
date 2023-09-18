@@ -21,12 +21,22 @@ from clade.cmds import iter_cmds, iter_cmds_by_which
 from clade.envs import iter_envs
 
 from tests.test_intercept import test_project_make, calculate_loc
-from tests.test_functions import funcs_are_ok, funcs_by_file_are_ok, funcs_are_consistent, filtered_funcs_by_file_are_ok
+from tests.test_functions import (
+    funcs_are_ok,
+    funcs_by_file_are_ok,
+    funcs_are_consistent,
+    filtered_funcs_by_file_are_ok,
+)
 from tests.test_callgraph import callgraph_is_ok, callgraph_by_file_is_ok
 from tests.test_variables import variables_are_ok, used_in_vars_is_ok
 from tests.test_typedefs import typedefs_are_ok
 from tests.test_macros import definitions_are_ok, expansions_are_ok
-from tests.test_cross_ref import ref_to_are_ok, filtered_ref_to_are_ok, ref_from_are_ok, filtered_ref_from_are_ok
+from tests.test_cross_ref import (
+    ref_to_are_ok,
+    filtered_ref_to_are_ok,
+    ref_from_are_ok,
+    filtered_ref_from_are_ok,
+)
 from tests.test_project import main_c, zero_c
 
 
@@ -283,24 +293,33 @@ def test_get_raw_cmds(clade_api: Clade):
 
 @pytest.mark.cif
 def test_get_raw_cmds_by_which(clade_api: Clade):
-    assert list(clade_api.get_raw_cmds_by_which(["/usr/bin/make"])) == list(iter_cmds_by_which(clade_api.cmds_file, ["/usr/bin/make"]))
+    assert list(clade_api.get_raw_cmds_by_which(["/usr/bin/make"])) == list(
+        iter_cmds_by_which(clade_api.cmds_file, ["/usr/bin/make"])
+    )
 
 
 @pytest.mark.cif
 def test_get_raw_cmd_by_id(clade_api: Clade):
-    assert clade_api.get_raw_cmd_by_id("1")["id"] == "1"
+    assert clade_api.get_raw_cmd_by_id(1)["id"] == 1
 
 
 @pytest.mark.cif
 def test_get_envs_by_id(clade_api: Clade):
-    assert clade_api.get_envs_by_id("1") == list(clade_api.get_envs())[0]["envs"]
+    assert clade_api.get_envs_by_id(1) == list(clade_api.get_envs())[0]["envs"]
 
 
 @pytest.mark.cif
 def test_get_envs(clade_api: Clade):
-    assert list(clade_api.get_envs()) == list(iter_envs(os.path.join(clade_api.work_dir, "envs.txt")))
+    assert list(clade_api.get_envs()) == list(
+        iter_envs(os.path.join(clade_api.work_dir, "envs.txt"))
+    )
 
 
 @pytest.mark.cif
 def test_get_get_env_value_by_id(clade_api: Clade):
-    assert clade_api.get_env_value_by_id("1", "HOME") == list(iter_envs(os.path.join(clade_api.work_dir, "envs.txt")))[1]["envs"]["HOME"]
+    assert (
+        clade_api.get_env_value_by_id(1, "HOME")
+        == list(iter_envs(os.path.join(clade_api.work_dir, "envs.txt")))[1]["envs"][
+            "HOME"
+        ]
+    )

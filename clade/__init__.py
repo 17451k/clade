@@ -365,7 +365,7 @@ class Clade:
         for cmd in iter_cmds_by_which(self.cmds_file, which_list):
             yield cmd
 
-    def get_raw_cmd_by_id(self, cmd_id: str):
+    def get_raw_cmd_by_id(self, cmd_id: int):
         """Get raw command by its identifier."""
         for cmd in iter_cmds(self.cmds_file):
             if cmd["id"] == cmd_id:
@@ -378,7 +378,7 @@ class Clade:
         for env in iter_envs(os.path.join(self.work_dir, "envs.txt")):
             yield env
 
-    def get_envs_by_id(self, cmd_id: str):
+    def get_envs_by_id(self, cmd_id: int):
         """Get environment variables by its intercepted command identifier."""
         for envs in iter_envs(os.path.join(self.work_dir, "envs.txt")):
             if envs["id"] == cmd_id:
@@ -386,7 +386,7 @@ class Clade:
 
         raise RuntimeError("No envs with id {}".format(cmd_id))
 
-    def get_env_value_by_id(self, cmd_id: str, name: str):
+    def get_env_value_by_id(self, cmd_id: int, name: str):
         """Get environment variable by its intercepted command identifier and name."""
         envs = self.get_envs_by_id(cmd_id)
         if name in envs:

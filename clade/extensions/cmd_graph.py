@@ -47,11 +47,11 @@ class CmdGraph(Extension):
 
     def load_cmd_graph(self):
         """Load command graph."""
-        return self.load_data(self.graph_file)
+        return self.load_dict_with_int_keys(self.graph_file)
 
     def load_cmd_type(self):
         """Load information about command types."""
-        return self.load_data(self.cmd_type_file)
+        return self.load_dict_with_int_keys(self.cmd_type_file)
 
     def load_all_cmds(self, with_opts=False, with_raw=False, filter_by_pid=False):
         cmds = list()
@@ -67,7 +67,9 @@ class CmdGraph(Extension):
         self.debug("All bad commands: {}".format(bad_ids))
 
         if self.conf.get("PidGraph.filter_cmds_by_pid", True) or filter_by_pid:
-            cmds = self.extensions["PidGraph"].filter_cmds_by_pid(cmds, parsed_ids=bad_ids)
+            cmds = self.extensions["PidGraph"].filter_cmds_by_pid(
+                cmds, parsed_ids=bad_ids
+            )
 
         return cmds
 
@@ -101,8 +103,8 @@ class CmdGraph(Extension):
         for cmd in sorted(cmds, key=lambda x: int(x["id"])):
             self.__add_to_graph(cmd)
 
-        self.dump_data(self.graph, self.graph_file)
-        self.dump_data(self.cmd_type, self.cmd_type_file)
+        self.dump_dict_with_int_keys(self.graph, self.graph_file)
+        self.dump_dict_with_int_keys(self.cmd_type, self.cmd_type_file)
 
         if self.graph:
             if self.conf.get("CmdGraph.as_picture"):
@@ -117,7 +119,7 @@ class CmdGraph(Extension):
     def __add_to_graph(self, cmd):
         self.cmd_type[cmd["id"]] = cmd["type"]
 
-        out_id = str(cmd["id"])
+        out_id = cmd["id"]
         if out_id not in self.graph:
             self.graph[out_id] = self.__get_new_value()
 
@@ -136,17 +138,17 @@ class CmdGraph(Extension):
     def __print_cmd_graph(self):
         self.debug("Preparing dot file")
 
-        dot = Digraph(graph_attr={'rankdir': 'LR'}, node_attr={'shape': 'rectangle'})
+        dot = Digraph(graph_attr={"rankdir": "LR"}, node_attr={"shape": "rectangle"})
 
         for cmd_id in self.graph:
             cmd_type = self.cmd_type[cmd_id]
             cmd = self.extensions[cmd_type].load_cmd_by_id(cmd_id)
 
             cmd_node = "[{}] {}".format(cmd["id"], cmd_type)
-            dot.node(cmd["id"], label=re.escape(cmd_node))
+            dot.node(str(cmd_id), label=re.escape(cmd_node))
 
             for using_id in self.graph[cmd_id]["using"]:
-                dot.edge(using_id, cmd_id)
+                dot.edge(using_id, str(cmd_id))
 
         self.debug("Rendering dot file")
         dot.render(self.pdf_file, cleanup=True)
@@ -166,11 +168,11 @@ class CmdGraph(Extension):
         return self.extensions[ext_name]
 
     def cmd_graph_exists(self):
-        '''True if CmdGraph exists and can be used'''
+        """True if CmdGraph exists and can be used"""
         return self.file_exists(self.graph_file)
 
     def find_used_by(self, cmd_id):
-        '''Find all commands that use (possibly indirectly) output file from the given command'''
+        """Find all commands that use (possibly indirectly) output file from the given command"""
         if not self.graph:
             self.graph = self.load_cmd_graph()
 

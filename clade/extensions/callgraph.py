@@ -71,7 +71,9 @@ class Callgraph(CommonInfo):
         ) in self.extensions["Info"].iter_calls():
             # Split a string with CMD_IDs separated by comma
             # into an actual Python list
-            context_cmd_id_list = context_cmd_id_list.split(",")
+            context_cmd_id_list = [
+                int(cmd_id) for cmd_id in context_cmd_id_list.split(",")
+            ]
 
             # args are excluded from the debug log
             self.debug(

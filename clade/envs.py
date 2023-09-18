@@ -38,28 +38,28 @@ def iter_envs(envs_file):
     """
     with open_envs_file(envs_file) as envs_fp:
         cmd_id = 1
-        envs = {"id": str(cmd_id), "envs": dict()}
+        envs = {"id": cmd_id, "envs": dict()}
         for line in envs_fp:
             if line.strip():
                 e = split_env(line)
-                envs['envs'].update(e)
+                envs["envs"].update(e)
             else:
                 yield envs
                 cmd_id += 1
-                envs = {"id": str(cmd_id), "envs": dict()}
+                envs = {"id": cmd_id, "envs": dict()}
 
 
 def split_env(line):
     """Convert a single intercepted environment variable into dictionary."""
     env = dict()
-    l = line.strip().split('=', maxsplit=1)
+    l = line.strip().split("=", maxsplit=1)
     env[l[0]] = l[1]
     return env
 
 
 def join_env(env):
     """Convert a single intercepted environment variable from dictionary to envs.txt line."""
-    line = '='.join(list(env.items())[0])
+    line = "=".join(list(env.items())[0])
     return line
 
 
@@ -99,6 +99,6 @@ def get_stats(envs_file):
     """Get statistics of intercepted environment variables number."""
     stats = dict()
     for env in iter_envs(envs_file):
-        stats[env["id"]] = len(env['envs'])
+        stats[env["id"]] = len(env["envs"])
 
     return stats

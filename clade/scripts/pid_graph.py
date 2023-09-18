@@ -34,11 +34,11 @@ class PidGraph:
 
         for cmd in cmds:
             cmd_node = "[{}] {}".format(cmd["id"], cmd["which"])
-            dot.node(cmd["id"], label=re.escape(cmd_node))
+            dot.node(str(cmd["id"]), label=re.escape(cmd_node))
 
         for cmd in cmds:
             for parent_cmd in [x for x in cmds if x["id"] == cmd["pid"]]:
-                dot.edge(parent_cmd["id"], cmd["id"])
+                dot.edge(str(parent_cmd["id"]), str(cmd["id"]))
 
         dot.render("pid_graph", directory=self.output, cleanup=True)
 

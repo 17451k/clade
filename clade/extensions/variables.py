@@ -65,7 +65,7 @@ class Variables(CommonInfo):
         ].iter_init_global():
             # Split a string with CMD_IDs separated by comma
             # into an actual Python list
-            cmd_id_list = cmd_id_list.split(",")
+            cmd_id_list = [int(cmd_id) for cmd_id in cmd_id_list.split(",")]
 
             if c_file not in self.variables:
                 self.variables[c_file] = []

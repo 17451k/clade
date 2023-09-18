@@ -189,7 +189,7 @@ class Info(Extension):
             cif_env = {
                 "CIF_INFO_DIR": self.cif_output_dir,
                 "C_FILE": cmd_in,
-                "CMD_ID": cmd["id"],
+                "CMD_ID": str(cmd["id"]),
             }
 
             cif_args = [

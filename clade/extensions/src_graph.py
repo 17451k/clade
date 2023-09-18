@@ -38,14 +38,21 @@ class SrcGraph(Extension):
 
     def load_src_graph(self, files=None):
         """Load source graph."""
-        return self.load_data_by_key(self.src_graph_folder, files)
+        src_graph = self.load_data_by_key(self.src_graph_folder, files)
+
+        for file in src_graph:
+            src_graph[file] = {
+                int(key): src_graph[file][key] for key in src_graph[file]
+            }
+
+        return src_graph
 
     def load_src_info(self):
         """Load information about source files."""
         return self.load_data(self.src_info_file)
 
     @Extension.prepare
-    def parse(self, cmds_file):
+    def parse(self, _):
         cmds = list(self.load_compilation_cmds())
         cmds_number = len(cmds)
 
@@ -62,7 +69,7 @@ class SrcGraph(Extension):
             raise RuntimeError
 
         self.dump_data(self.src_info, self.src_info_file)
-        self.dump_data_by_key(self.src_graph, self.src_graph_folder)
+        self.dump_src_graph()
 
         self.src_graph.clear()
 
@@ -88,15 +95,12 @@ class SrcGraph(Extension):
             return
 
         for cmd in cmds:
-            cmd_id = str(cmd["id"])
-            cmd_type = cmd["type"]
-
             # used_by is a list of commands that use (possibly indirectly)
             # output of the command with ID=cmd_id
-            used_by = list(self.extensions["CmdGraph"].find_used_by(cmd_id))
+            used_by = list(self.extensions["CmdGraph"].find_used_by(cmd["id"]))
 
             if self.conf.get("Compiler.get_deps"):
-                src_files = self.extensions[cmd_type].load_deps_by_id(cmd_id)
+                src_files = self.extensions[cmd["type"]].load_deps_by_id(cmd["id"])
             else:
                 src_files = cmd["in"]
 
@@ -113,7 +117,7 @@ class SrcGraph(Extension):
                 # The following means: source file src_file is compiled
                 # in commaind with id=cmd_id, and is indirectly used by commands
                 # from the self.src_graph[src_file][cmd_id] set
-                self.src_graph[src_file][cmd_id] = used_by
+                self.src_graph[src_file][cmd["id"]] = used_by
 
     def __count_file_loc(self, file):
         """Count number of lines of code in the file."""
@@ -156,3 +160,14 @@ class SrcGraph(Extension):
         # to try to manually manage memory consumtion
         if hasattr(self, "src_graph") and self.src_graph:
             del self.src_graph
+
+    def dump_src_graph(self):
+        # Replace int keys with string ones
+        src_graph = dict()
+
+        for file in self.src_graph:
+            src_graph[file] = {
+                str(key): self.src_graph[file][key] for key in self.src_graph[file]
+            }
+
+        self.dump_data_by_key(src_graph, self.src_graph_folder)

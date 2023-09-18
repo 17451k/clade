@@ -33,7 +33,7 @@ def test_cmd_graph_requires(tmpdir, cmds_file):
     cmd_id = None
     for cmd in e.extensions["CC"].load_all_cmds():
         if main_c in cmd["in"] and zero_c in cmd["in"] and tmp_main in cmd["out"]:
-            cmd_id = str(cmd["id"])
+            cmd_id = cmd["id"]
 
     assert cmd_id
     assert cmd_graph

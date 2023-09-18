@@ -29,27 +29,27 @@ class PidGraph(Extension):
 
     @Extension.prepare
     def parse(self, cmds_file):
-        self.log("Parsing {} commands".format(get_last_id(cmds_file, raise_exception=True)))
+        self.log(
+            "Parsing {} commands".format(get_last_id(cmds_file, raise_exception=True))
+        )
 
         for cmd in iter_cmds(cmds_file):
             self.pid_by_id[cmd["id"]] = cmd["pid"]
 
-        self.dump_data(self.pid_by_id, self.pid_by_id_file)
-
+        self.dump_dict_with_int_keys(self.pid_by_id, self.pid_by_id_file)
         self.pid_by_id.clear()
 
     def load_pid_graph(self):
         pid_by_id = self.load_pid_by_id()
         pid_graph = dict()
 
-        for key in sorted(pid_by_id.keys(), key=lambda x: int(x)):
-            key = str(key)
+        for key in sorted(pid_by_id.keys()):
             pid_graph[key] = [pid_by_id[key]] + pid_graph.get(pid_by_id[key], [])
 
         return pid_graph
 
     def load_pid_by_id(self):
-        return self.load_data(self.pid_by_id_file)
+        return self.load_dict_with_int_keys(self.pid_by_id_file)
 
     def filter_cmds_by_pid(self, cmds, parsed_ids=None):
         pid_graph = self.load_pid_graph()
