@@ -24,7 +24,7 @@ def funcs_are_ok(funcs):
     definition = funcs["main"][0]
 
     assert not definition["declarations"]
-    assert definition["line"] == "8"
+    assert definition["line"] == 8
     assert definition["signature"] == "int main(void);"
     assert definition["type"] == "extern"
     assert len(funcs["print"]) >= 2
@@ -46,7 +46,7 @@ def funcs_by_file_are_ok(funcs_by_file):
         for declaration in definition["declarations"]:
             if declaration["file"] != zero_h:
                 continue
-            assert declaration["line"] == "1"
+            assert declaration["line"] == 1
             assert declaration["signature"] == "int zero();"
             assert declaration["type"] == "extern"
 

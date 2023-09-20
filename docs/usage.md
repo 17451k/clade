@@ -196,8 +196,8 @@ looks like this:
         "-O3"
     ],
     "cwd": "/work/simple_make",
-    "id": "3",
-    "pid": "2",
+    "id": 3,
+    "pid": 2,
     "which": "/usr/bin/gcc"
 }
 ```
@@ -280,7 +280,7 @@ Let's look at the parsed command from the above example:
 ``` json
 {
     "cwd":"/work/simple_make",
-    "id":"3",
+    "id":3,
     "in":[
         "/work/simple_make/main.c"
     ],
@@ -419,11 +419,11 @@ mapping from ids to their pids and looks like this:
 
 ``` json
 {
-    "1": "0",
-    "2": "1",
-    "3": "2",
-    "4": "2",
-    "5": "1"
+    "1": 0,
+    "2": 1,
+    "3": 2,
+    "4": 2,
+    "5": 1
 }
 ```
 
@@ -447,11 +447,11 @@ for a given id:
 
 ``` json
 {
-    "1": ["0"],
-    "2": ["1", "0"],
-    "3": ["2", "1", "0"],
-    "4": ["2", "1", "0"],
-    "5": ["1", "0"]
+    "1": [0],
+    "2": [1, 0],
+    "3": [2, 1, 0],
+    "4": [2, 1, 0],
+    "5": [1, 0]
 }
 ```
 
@@ -523,16 +523,16 @@ identifiers and the type of extensions that parsed it):
 ``` json
 {
     "1":{
-        "used_by": ["2", "3"],
+        "used_by": [2, 3],
         "using": []
     },
     "2":{
-        "used_by": ["3"],
-        "using": ["1"]
+        "used_by": [3],
+        "using": [1]
     },
     "3":{
         "used_by": [],
-        "using": ["1", "2"]
+        "using": [1, 2]
     }
 }
 ```
@@ -596,13 +596,13 @@ when combined, looks like this:
 ``` json
 {
     "/usr/include/stdio.h": {
-        "1": ["2", "3"]
+        "1": [2, 3]
     },
     "main.c": {
-        "1": ["2", "3"],
+        "1": [2, 3],
     },
     "main.s": {
-        "2": ["3"],
+        "2": [3],
     }
 }
 ```
@@ -655,19 +655,28 @@ the Linux kernel:
         "asix_get_phy_addr": {
             "called_in": {
                 "drivers/net/usb/asix_devices.c": {
-                    "ax88172_bind": {
-                        "242": {"match_type" : 1}
-                    },
-                    "ax88178_bind": {
-                        "809": {"match_type" : 1}
-                    }
+                    "ax88172_bind": [
+                        {
+                            "line": 242,
+                            "match_type": 1
+                        }
+                    ],
+                    "ax88178_bind": [
+                        {
+                            "line": 809,
+                            "match_type": 1
+                        }
+                    ]
                 }
             },
             "calls": {
                 "drivers/net/usb/asix_common.c": {
-                    "asix_read_phy_addr": {
-                        "235": {"match_type" : 5}
-                    }
+                    "asix_read_phy_addr": [
+                        {
+                            "line": 235,
+                            "match_type": 5
+                        }
+                    ]
                 }
             },
             "type": "extern"
@@ -679,7 +688,7 @@ the Linux kernel:
 There is `drivers/net/usb/asix_common.c` file with definition of the
 `asix_get_phy_addr` function. This function is called in the
 `drivers/net/usb/asix_devices.c` file by `ax88172_bind` function on line
-`242` and by `ax88178_bind` function on line `809`. `match_type` is an internal
+`242` and by `ax88178_bind` function on line `809`. `match` is an internal
 information needed for debug purposes. Also, this function calls `asix_read_phy_addr`
 file from the `drivers/net/usb/asix_common.c` file on the line `235`.
 
@@ -695,17 +704,17 @@ They are stored in the *Functions/functions* folder:
     "asix_get_phy_addr": [
         {
             "file": "drivers/net/usb/asix_common.c",
-            "compiled_in": ["7", "4", "2"],
+            "compiled_in": [7, 4, 2],
             "declarations": [
                 {
                     "file": "drivers/net/usb/asix.h",
-                    "line": "204",
+                    "line": 204,
                     "signature": "int asix_get_phy_addr(struct usbnet *);",
                     "type": "extern",
-                    "compiled_in": ["7", "4", "2"]
+                    "compiled_in": [7, 4, 2]
                 }
             ],
-            "line": "232",
+            "line": 232,
             "signature": "int asix_get_phy_addr(struct usbnet *dev);",
             "type": "extern"
         }

@@ -35,14 +35,11 @@ class Variables(CommonInfo):
         self.used_in_vars = dict()
         self.used_in_vars_file = "used_in_vars.json"
 
-        self.funcs = None
         self.function_name_re = re.compile(r"\(?\s*&?\s*(\w+)\s*\)?$")
         self.possible_functions = set()
 
     @Extension.prepare
     def parse(self, _):
-        self.funcs = self.extensions["Functions"].load_functions()
-
         self.__process_init_global()
 
         self.dump_data_by_key(self.variables, self.variables_folder)
@@ -50,7 +47,6 @@ class Variables(CommonInfo):
 
         self._clean_warn_log()
 
-        self.funcs.clear()
         self.variables.clear()
         self.used_in_vars.clear()
 
@@ -105,7 +101,11 @@ class Variables(CommonInfo):
             self.possible_functions.add(function_name)
 
     def __process_callv(self, context_file, context_cmd_id_list):
-        functions = {f for f in self.possible_functions if f in self.funcs}
+        functions = {
+            f
+            for f in self.possible_functions
+            if self.extensions["Functions"].function_exists(f)
+        }
 
         if not functions:
             return
@@ -118,9 +118,10 @@ class Variables(CommonInfo):
             # For each function call there can be many definitions with the same name, defined in different
             # files. possible_definitions is a list of them.
             possible_definitions = []
-            if func in self.funcs:
-                for definition in self.funcs[func]:
-                    possible_definitions.append(definition)
+
+            definitions = self.extensions["Functions"].load_definitions(func)
+            for definition in definitions:
+                possible_definitions.append(definition)
 
             if not possible_definitions:
                 continue

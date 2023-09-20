@@ -19,7 +19,9 @@ import re
 
 
 from clade.extensions.abstract import Extension
+from clade.extensions.callgraph import Call
 from clade.extensions.common_info import CommonInfo
+from clade.extensions.macros import Expansion
 from clade.types.nested_dict import nested_dict, traverse
 
 
@@ -31,7 +33,7 @@ class CrossRef(CommonInfo):
     def __init__(self, work_dir, conf=None):
         super().__init__(work_dir, conf)
 
-        self.funcs = None
+        self.funcs = dict()
 
         self.ref_to_folder = "ref_to"
         self.ref_from_folder = "ref_from"
@@ -39,7 +41,10 @@ class CrossRef(CommonInfo):
     @Extension.prepare
     def parse(self, _):
         self.log("Loading data")
-        self.funcs = self.extensions["Functions"].load_functions_by_file()
+        for file, funcs in self.extensions["Functions"].yield_functions_by_file(
+            strip_list=["compiled_in", "signature", "type"]
+        ):
+            self.funcs[file] = funcs[file]
 
         self.log("Calculating raw locations")
         raw_locations = self.__get_raw_locations()
@@ -48,6 +53,7 @@ class CrossRef(CommonInfo):
         locations = dict()
         for file in raw_locations:
             locations[file] = self.__parse_file(file, raw_locations)
+        raw_locations.clear()
 
         self.log("Calculating 'to' references")
         self.__gen_ref_to(locations)
@@ -89,37 +95,34 @@ class CrossRef(CommonInfo):
                     if val not in raw_locations.get(declaration["file"], []):
                         self.__add_raw_loc(raw_locations, declaration["file"], val)
 
-        for context_file, callgraph in self.extensions["Callgraph"].yield_callgraph():
-            for _, _, file, func, line in traverse(
-                callgraph[context_file], 5, {2: "calls"}
-            ):
-                val = (line, func, "call")
-                self.__add_raw_loc(raw_locations, context_file, val)
+        call: Call
+        for call in self.extensions["Callgraph"].traverse_calls():
+            val = (call.val["line"], call.to_func, "call")
+            self.__add_raw_loc(raw_locations, call.from_file, val)
 
         return raw_locations
 
     def __get_raw_macro_locations(self, raw_locations):
-        for exp_file, expansions in self.extensions["Macros"].yield_expansions():
-            for macro, exp_line in traverse(expansions[exp_file], 2):
-                val = (exp_line, macro, "expand")
-                self.__add_raw_loc(raw_locations, exp_file, val)
+        expansion: Expansion
+        for expansion in self.extensions["Macros"].traverse_expansions():
+            val = (expansion.exp_line, expansion.name, "expand")
+            self.__add_raw_loc(raw_locations, expansion.exp_file, val)
 
-        # Load macros dictionary independetly for each file
         for def_file, macros in self.extensions["Macros"].yield_macros():
-            for macro, def_line in traverse(macros[def_file], 2):
-                if def_file == "unknown":
-                    continue
+            if def_file == "unknown":
+                continue
 
-                val = (def_line, macro, "def_macro")
+            for definition in macros[def_file]:
+                val = (definition["line"], definition["name"], "def_macro")
                 self.__add_raw_loc(raw_locations, def_file, val)
 
         return raw_locations
 
     def __add_raw_loc(self, raw_locations, file, val):
         if file in raw_locations:
-            raw_locations[file].append(val)
+            raw_locations[file].add(val)
         else:
-            raw_locations[file] = [val]
+            raw_locations[file] = {val}
 
     def __parse_file(self, file, raw_locations, ignore_errors=False, encoding="utf8"):
         storage_file = self.extensions["Storage"].get_storage_path(file)
@@ -133,7 +136,7 @@ class CrossRef(CommonInfo):
 
         locations = nested_dict()
 
-        sorted_locs = sorted(raw_locations[file], key=lambda x: int(x[0]))
+        sorted_locs = sorted(raw_locations[file], key=lambda x: x[0])
         sorted_pos = 0
 
         try:
@@ -148,10 +151,10 @@ class CrossRef(CommonInfo):
 
                 while (
                     sorted_pos < len(sorted_locs)
-                    and int(sorted_locs[sorted_pos][0]) <= i + 1
+                    and sorted_locs[sorted_pos][0] <= i + 1
                 ):
-                    if i == int(sorted_locs[sorted_pos][0]) - 1:
-                        line = int(sorted_locs[sorted_pos][0])
+                    if i == sorted_locs[sorted_pos][0] - 1:
+                        line = sorted_locs[sorted_pos][0]
                         name = sorted_locs[sorted_pos][1]
                         ctype = sorted_locs[sorted_pos][2]
 
@@ -219,14 +222,14 @@ class CrossRef(CommonInfo):
                         continue
 
                     if definition["line"]:
-                        def_line = int(definition["line"])
+                        def_line = definition["line"]
 
                         for loc_el in loc_list:
                             val = (loc_el, (file, def_line))
                             self.__add_ref(ref_to, context_file, "def_func", val)
 
                     for declaration in definition["declarations"]:
-                        decl_line = int(declaration["line"])
+                        decl_line = declaration["line"]
 
                         for loc_el in loc_list:
                             val = (loc_el, (declaration["file"], decl_line))
@@ -235,7 +238,9 @@ class CrossRef(CommonInfo):
             self.__dump_ref_to(ref_to)
 
     def __gen_ref_to_macro(self, locations):
-        for exp_file, expansions in self.extensions["Macros"].yield_expansions():
+        for exp_file, expansions in self.extensions[
+            "Macros"
+        ].yield_reversed_expansions():
             if exp_file == "unknown" or "expand" not in locations[exp_file]:
                 continue
 
@@ -243,16 +248,20 @@ class CrossRef(CommonInfo):
 
             for macro, loc_list in traverse(locations[exp_file]["expand"], 2):
                 for loc_el in loc_list:
-                    exp_line = str(loc_el[0])
+                    exp_line = loc_el[0]
 
-                    for def_file, def_line in traverse(
-                        expansions[exp_file][macro][exp_line], 2
-                    ):
+                    for def_file, exp_vals in traverse(expansions[exp_file][macro], 2):
                         if def_file == "unknown":
                             continue
 
-                        val = (loc_el, (def_file, int(def_line)))
-                        self.__add_ref(ref_to, exp_file, "def_macro", val)
+                        def_lines = {
+                            exp_val["def_line"]
+                            for exp_val in exp_vals
+                            if exp_val["exp_line"] == exp_line
+                        }
+                        for def_line in def_lines:
+                            val = (loc_el, (def_file, def_line))
+                            self.__add_ref(ref_to, exp_file, "def_macro", val)
 
             self.__dump_ref_to(ref_to)
 
@@ -329,15 +338,16 @@ class CrossRef(CommonInfo):
         for context_file in called_in:
             lines = []
 
-            for _, line in traverse(called_in[context_file], 2):
-                lines.append(int(line))
+            for _, call_vals in traverse(called_in[context_file], 2):
+                for call_val in call_vals:
+                    lines.append(call_val["line"])
 
             locs.append((context_file, tuple(lines)))
 
         return locs
 
     def __gen_ref_from_macro(self, locations):
-        for def_file, macros in self.extensions["Macros"].yield_macros():
+        for def_file, expansions in self.extensions["Macros"].yield_expansions():
             if def_file == "unknown" or "def_macro" not in locations[def_file]:
                 continue
 
@@ -345,12 +355,18 @@ class CrossRef(CommonInfo):
 
             for macro, loc_list in traverse(locations[def_file]["def_macro"], 2):
                 for loc_el in loc_list:
-                    def_line = str(loc_el[0])
+                    def_line = loc_el[0]
 
-                    for exp_file in macros[def_file][macro][def_line]:
-                        exp_lines = [
-                            int(l) for l in macros[def_file][macro][def_line][exp_file]
-                        ]
+                    if macro not in expansions[def_file]:
+                        continue
+
+                    for exp_file, exp_vals in traverse(expansions[def_file][macro], 2):
+                        exp_lines = {
+                            exp_val["exp_line"]
+                            for exp_val in exp_vals
+                            if exp_val["def_line"] == def_line
+                        }
+
                         val = (loc_el, (exp_file, tuple(exp_lines)))
                         self.__add_ref(ref_from, def_file, "expand", val)
 

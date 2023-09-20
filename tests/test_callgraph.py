@@ -20,17 +20,15 @@ from tests.test_project import main_c, zero_c
 
 
 def callgraph_is_ok(callgraph):
-    call_line = "10"
+    call_line = 10
     match_type = 4
 
-    assert (
-        callgraph[zero_c]["zero"]["called_in"][main_c]["main"][call_line]["match_type"]
-        == match_type
-    )
-    assert (
-        callgraph[main_c]["main"]["calls"][zero_c]["zero"][call_line]["match_type"]
-        == match_type
-    )
+    assert {"match": match_type, "line": call_line} in callgraph[zero_c]["zero"][
+        "called_in"
+    ][main_c]["main"]
+    assert {"match": match_type, "line": call_line} in callgraph[main_c]["main"][
+        "calls"
+    ][zero_c]["zero"]
 
 
 def callgraph_by_file_is_ok(callgraph, callgraph_by_zero_c):

@@ -19,8 +19,8 @@ from tests.test_project import zero_c
 
 
 def calls_by_ptr_is_ok(calls_by_ptr):
-    assert calls_by_ptr[zero_c]["func_with_pointers"]["fp1"] == ["17"]
-    assert calls_by_ptr[zero_c]["func_with_pointers"]["fp2"] == ["17"]
+    assert calls_by_ptr[zero_c]["func_with_pointers"]["fp1"] == [17]
+    assert calls_by_ptr[zero_c]["func_with_pointers"]["fp2"] == [17]
 
 
 @pytest.mark.cif

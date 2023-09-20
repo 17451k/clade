@@ -36,7 +36,7 @@ class SrcGraph(Extension):
         self.src_info = dict()
         self.src_info_file = "src_info.json"
 
-    def load_src_graph(self, files=None):
+    def load_src_graph(self, files=None) -> dict[str, dict[int, list[int]]]:
         """Load source graph."""
         src_graph = self.load_data_by_key(self.src_graph_folder, files)
 
@@ -136,14 +136,14 @@ class SrcGraph(Extension):
             self.warning("Cannot get size of file {}".format(file))
             return 0
 
-    def in_source_graph(self, file, cmd_id):
+    def in_source_graph(self, file: str, cmd_id: int) -> bool:
         """Check that file and command_id is indeed present in the source graph"""
         if not hasattr(self, "src_graph") or not self.src_graph:
             self.src_graph = self.load_src_graph()
 
         return file in self.src_graph and cmd_id in self.src_graph[file]
 
-    def get_used_by(self, file, cmd_id):
+    def get_used_by(self, file: str, cmd_id: int) -> list[int]:
         """Get all commands that use given file"""
         if not hasattr(self, "src_graph") or not self.src_graph:
             self.src_graph = self.load_src_graph()

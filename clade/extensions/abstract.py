@@ -249,11 +249,14 @@ class Extension(metaclass=abc.ABCMeta):
             file_name = self.__get_file_name_by_key(key, folder)
             self.dump_data({key: data[key]}, file_name)
 
+    def file_exists_by_key(self, key, folder):
+        return os.path.exists(self.__get_file_name_by_key(key, folder))
+
     def __get_file_name_by_key(self, key, folder):
         file_name = folder + os.sep + key + ".json"
         file_name = os.path.normpath(file_name)
 
-        return file_name
+        return os.path.join(self.work_dir, file_name)
 
     def get_ext_version(self):
         version = self.__version__

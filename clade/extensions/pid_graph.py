@@ -39,16 +39,16 @@ class PidGraph(Extension):
         self.dump_dict_with_int_keys(self.pid_by_id, self.pid_by_id_file)
         self.pid_by_id.clear()
 
-    def load_pid_graph(self):
+    def load_pid_graph(self) -> dict[int, list[int]]:
         pid_by_id = self.load_pid_by_id()
-        pid_graph = dict()
+        pid_graph: dict[int, list[int]] = dict()
 
         for key in sorted(pid_by_id.keys()):
             pid_graph[key] = [pid_by_id[key]] + pid_graph.get(pid_by_id[key], [])
 
         return pid_graph
 
-    def load_pid_by_id(self):
+    def load_pid_by_id(self) -> dict[int, int]:
         return self.load_dict_with_int_keys(self.pid_by_id_file)
 
     def filter_cmds_by_pid(self, cmds, parsed_ids=None):
@@ -61,8 +61,8 @@ class PidGraph(Extension):
 
         filtered_cmds = []
 
-        for cmd in sorted(cmds, key=lambda x: int(x["id"])):
-            if not (set(pid_graph[cmd["id"]]) & parsed_ids):
+        for cmd in sorted(cmds, key=lambda x: x["id"]):
+            if not (set(pid_graph[cmd["id"]]).intersection(parsed_ids)):
                 filtered_cmds.append(cmd)
 
             parsed_ids.add(cmd["id"])

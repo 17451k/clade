@@ -32,7 +32,7 @@ class Info(Extension):
     always_requires = ["SrcGraph", "Storage", "Alternatives"]
     requires = always_requires + ["CC", "CL"]
 
-    __version__ = "5"
+    __version__ = "6"
 
     def __init__(self, work_dir, conf=None):
         if not conf:
@@ -69,8 +69,10 @@ class Info(Extension):
         self.init_global = os.path.join(self.work_dir, "init_global.zip")
         # Info about macro functions
         self.define = os.path.join(self.work_dir, "define.zip")
-        # Info about macros
+        # Info about macro expansions
         self.expand = os.path.join(self.work_dir, "expand.zip")
+        # Info about args of macro expansions
+        self.expand_args = os.path.join(self.work_dir, "expand_args.zip")
         # Info about exported functions (Linux kernel only)
         self.exported = os.path.join(self.work_dir, "exported.zip")
         # Info about typedefs
@@ -86,6 +88,7 @@ class Info(Extension):
             self.init_global,
             self.define,
             self.expand,
+            self.expand_args,
             self.exported,
             self.typedefs,
         ]
@@ -467,14 +470,24 @@ class Info(Extension):
     def iter_macros_expansions(self):
         """Yield exp_file, def_file, macro, exp_line, def_line, args_str"""
 
-        regex = re.compile(r"\"(.*?)\" \"(.*?)\" (\S*) (\S*) (\S*)(.*)")
-        arg_regex = re.compile(r" actual_arg\d+=(.*)")
+        regex = re.compile(r"\"(.*?)\" \"(.*?)\" (\S*) (\S*) (\S*)")
 
         for orig_content in self.__iter_file_regex(self.expand, regex):
             content = list(orig_content)
 
             # Make def_file canonical
             content[1] = self.extensions["Alternatives"].get_canonical_path(content[1])
+
+            yield content
+
+    def iter_macros_args(self):
+        """Yield exp_file, macro, args_str"""
+
+        regex = re.compile(r"\"(.*?)\" (\S*)(.*)")
+        arg_regex = re.compile(r" actual_arg\d+=(.*)")
+
+        for orig_content in self.__iter_file_regex(self.expand_args, regex):
+            content = list(orig_content)
 
             args = list()
 

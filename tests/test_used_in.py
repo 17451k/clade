@@ -20,8 +20,12 @@ from tests.test_project import zero_c
 
 def used_in_is_ok(used_in):
     assert not used_in[zero_c]["zero"]["used_in_file"]
-    assert used_in[zero_c]["zero"]["used_in_func"][zero_c]["func_with_pointers"]["15"] == 3
-    assert used_in[zero_c]["zero"]["used_in_func"][zero_c]["func_with_pointers"]["16"] == 3
+    assert {"line": 15, "match": 3} in used_in[zero_c]["zero"]["used_in_func"][zero_c][
+        "func_with_pointers"
+    ]
+    assert {"line": 16, "match": 3} in used_in[zero_c]["zero"]["used_in_func"][zero_c][
+        "func_with_pointers"
+    ]
 
 
 @pytest.mark.cif

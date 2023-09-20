@@ -700,15 +700,17 @@ class Clade:
             macros_names: A list of macros names to find and return
         """
 
-        exps = self.Macros.load_expansions(files)
+        exps = self.Macros.load_reversed_expansions(files)
         expansions = nested_dict()
 
         # Map new format of macros to the old one
-        for exp_file, macro, _, _, _, args in traverse(exps, 6):
-            if expansions[exp_file][macro]["args"]:
-                expansions[exp_file][macro]["args"].extend(args)
-            else:
-                expansions[exp_file][macro]["args"] = args
+        for exp_file, macro in traverse(exps, 2):
+            expansions[exp_file][macro]["args"] = list()
+
+        expansions_with_args = self.Macros.load_args(files)
+        # Map new format of macros to the old one
+        for exp_file, macro in traverse(expansions_with_args, 2):
+            expansions[exp_file][macro]["args"] = expansions_with_args[exp_file][macro]
 
         if macros_names:
             filtered_expansions = nested_dict()
@@ -736,11 +738,12 @@ class Clade:
         definitions = nested_dict()
 
         # Map new format of macros to the old one
-        for file, macro, line in traverse(macros, 3):
-            if definitions[file][macro]:
-                definitions[file][macro].append(line)
-            else:
-                definitions[file][macro] = [line]
+        for file in macros:
+            for definition in macros[file]:
+                if definitions[file][definition["name"]]:
+                    definitions[file][definition["name"]].append(definition["line"])
+                else:
+                    definitions[file][definition["name"]] = [definition["line"]]
 
         # Filter macro definitions by names
         if macros_names:

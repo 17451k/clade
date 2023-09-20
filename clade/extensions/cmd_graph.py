@@ -45,7 +45,7 @@ class CmdGraph(Extension):
 
         self.pdf_file = os.path.join(self.work_dir, "cmd_graph")
 
-    def load_cmd_graph(self):
+    def load_cmd_graph(self) -> dict[int, dict[str, list[int]]]:
         """Load command graph."""
         return self.load_dict_with_int_keys(self.graph_file)
 
@@ -96,7 +96,7 @@ class CmdGraph(Extension):
         return cmd
 
     @Extension.prepare
-    def parse(self, cmds_file):
+    def parse(self, _):
         cmds = self.load_all_cmds()
         self.log("Parsing {} commands".format(len(cmds)))
 
@@ -171,12 +171,12 @@ class CmdGraph(Extension):
         """True if CmdGraph exists and can be used"""
         return self.file_exists(self.graph_file)
 
-    def find_used_by(self, cmd_id):
+    def find_used_by(self, cmd_id: int) -> set[int]:
         """Find all commands that use (possibly indirectly) output file from the given command"""
         if not self.graph:
             self.graph = self.load_cmd_graph()
 
-        used_by = set()
+        used_by: set[int] = set()
 
         if cmd_id not in self.graph:
             return used_by

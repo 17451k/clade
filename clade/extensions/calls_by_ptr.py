@@ -19,7 +19,7 @@ from clade.types.nested_dict import nested_dict
 class CallsByPtr(Extension):
     requires = ["Info"]
 
-    __version__ = "1"
+    __version__ = "2"
 
     def __init__(self, work_dir, conf=None):
         super().__init__(work_dir, conf)
@@ -36,14 +36,16 @@ class CallsByPtr(Extension):
         ].iter_calls_by_pointers():
             self.debug(
                 "Processing calls by pointers: "
-                + " ".join([context_file, context_func, func_ptr, call_line])
+                + " ".join([context_file, context_func, func_ptr])
             )
 
             if func_ptr not in self.calls_by_ptr[context_file][context_func]:
-                self.calls_by_ptr[context_file][context_func][func_ptr] = [call_line]
+                self.calls_by_ptr[context_file][context_func][func_ptr] = [
+                    int(call_line)
+                ]
             else:
                 self.calls_by_ptr[context_file][context_func][func_ptr].append(
-                    call_line
+                    int(call_line)
                 )
 
         self.dump_data(self.calls_by_ptr, self.calls_by_ptr_file)

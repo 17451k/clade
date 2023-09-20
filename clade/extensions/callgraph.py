@@ -14,16 +14,25 @@
 # limitations under the License.
 
 import re
+from typing import Any, Generator, NamedTuple
 
 from clade.extensions.abstract import Extension
 from clade.extensions.common_info import CommonInfo
 from clade.types.nested_dict import nested_dict, traverse
 
 
+class Call(NamedTuple):
+    from_file: str
+    from_func: str
+    to_file: str
+    to_func: str
+    val: dict[str, Any]
+
+
 class Callgraph(CommonInfo):
     requires = ["SrcGraph", "Info", "Functions"]
 
-    __version__ = "1"
+    __version__ = "2"
 
     def __init__(self, work_dir, conf=None):
         super().__init__(work_dir, conf)
@@ -75,7 +84,9 @@ class Callgraph(CommonInfo):
                 int(cmd_id) for cmd_id in context_cmd_id_list.split(",")
             ]
 
-            # args are excluded from the debug log
+            # Convert line from string to int
+            call_line = int(call_line)
+
             self.debug(
                 "Processing function calls: "
                 + " ".join(
@@ -83,8 +94,6 @@ class Callgraph(CommonInfo):
                         context_file,
                         context_func,
                         func,
-                        call_line,
-                        call_type,
                     ]
                 )
             )
@@ -105,21 +114,18 @@ class Callgraph(CommonInfo):
                 self._warning(f"Multiple matches: {func}", context_file)
 
             for possible_file in matched_files:
-                call_val = {
-                    "match_type": index,
-                }
+                call = Call(
+                    from_file=context_file,
+                    from_func=context_func,
+                    to_file=possible_file,
+                    to_func=func,
+                    val={"line": call_line, "match": index},
+                )
 
                 if args:
-                    call_val["args"] = args
+                    call.val["args"] = args
 
-                self.callgraph[possible_file][func]["called_in"][context_file][
-                    context_func
-                ][call_line] = call_val
-
-                # Create reversed callgraph
-                self.callgraph[context_file][context_func]["calls"][possible_file][
-                    func
-                ][call_line] = call_val
+                self.__add_call(call)
 
                 if possible_file == "unknown" and index == 0:
                     self._warning(f"Can't match definition: {func}", context_file)
@@ -133,11 +139,10 @@ class Callgraph(CommonInfo):
     def __add_types(self):
         # Keep function types in the callgraph
         for path, func in traverse(self.callgraph, 2):
-            funcs = self.extensions["Functions"].load_functions([func])
-            if path == "unknown" and func not in funcs:
+            if path == "unknown":
                 continue
 
-            for definition in funcs[func]:
+            for definition in self.extensions["Functions"].load_definitions(func):
                 # Warning: may be innacurate
                 if definition["file"] == path:
                     self.callgraph[path][func]["type"] = definition["type"]
@@ -146,16 +151,18 @@ class Callgraph(CommonInfo):
                 self.callgraph[path][func]["type"] = "extern"
 
     def __get_definitions(self, func, context_definition):
-        funcs = self.extensions["Functions"].load_functions([func])
+        definitions = self.extensions["Functions"].load_definitions(func)
+
+        if not definitions:
+            self._warning(f"Can't find '{func}' in Functions")
+
         # For each function call there can be many definitions with the same name, defined in different
         # files. possible_definitions is a list of them.
-        possible_definitions = []
-        if func in funcs:
-            for definition in funcs[func]:
-                if definition["type"] in (context_definition["type"], "exported"):
-                    possible_definitions.append(definition)
-        else:
-            self._warning(f"Can't find '{func}' in Functions")
+        possible_definitions = [
+            d
+            for d in definitions
+            if d["type"] in (context_definition["type"], "exported")
+        ]
 
         matched_files = []
         # Assign priority number for each possible definition (see index variable)
@@ -202,3 +209,50 @@ class Callgraph(CommonInfo):
             index -= 1
 
         return matched_files, index
+
+    def __add_call(self, call: Call):
+        # Add "called_in" and "calls" entries to the callgraph
+        called_in = self.callgraph[call.to_file][call.to_func]["called_in"][
+            call.from_file
+        ]
+
+        if call.from_func not in called_in:
+            called_in[call.from_func] = list()
+
+        called_in[call.from_func].append(call.val)
+
+        # Create reversed callgraph
+        calls = self.callgraph[call.from_file][call.from_func]["calls"][call.to_file]
+        if call.to_func not in calls:
+            calls[call.to_func] = list()
+
+        calls[call.to_func].append(call.val)
+
+    def traverse_called_in(self) -> Generator[Call, None, None]:
+        """Traverse all "called ins" from the callgraph."""
+        for to_file, callgraph in self.yield_callgraph():
+            for to_func, _, from_file, from_func, call_vals in traverse(
+                callgraph[to_file], 5, {2: "called_in"}
+            ):
+                for call_val in call_vals:
+                    yield Call(
+                        from_file=from_file,
+                        from_func=from_func,
+                        to_file=to_file,
+                        to_func=to_func,
+                        val=call_val,
+                    )
+
+    def traverse_calls(self) -> Generator[Call, None, None]:
+        for from_file, callgraph in self.yield_callgraph():
+            for from_func, _, to_file, to_func, call_vals in traverse(
+                callgraph[from_file], 5, {2: "calls"}
+            ):
+                for call_val in call_vals:
+                    yield Call(
+                        from_file=from_file,
+                        from_func=from_func,
+                        to_file=to_file,
+                        to_func=to_func,
+                        val=call_val,
+                    )

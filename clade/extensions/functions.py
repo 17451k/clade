@@ -23,7 +23,7 @@ from clade.extensions.utils import Location
 class Functions(CommonInfo):
     requires = ["SrcGraph", "Info"]
 
-    __version__ = "2"
+    __version__ = "3"
 
     def __init__(self, work_dir, conf=None):
         super().__init__(work_dir, conf)
@@ -53,12 +53,32 @@ class Functions(CommonInfo):
         """Load information about functions."""
         return self.load_data_by_key(self.funcs_folder, funcs)
 
+    def load_definitions(self, func):
+        """Load all available definitions for a given function."""
+        funcs = self.load_functions([func])
+
+        if funcs:
+            return funcs[func]
+
+        return []
+
     def load_functions_by_file(self, files=None):
         """Load information about functions grouped by files."""
         return self.load_data_by_key(self.funcs_by_file_folder, files)
 
-    def yield_functions_by_file(self, files=None):
-        yield from self.yield_data_by_key(self.funcs_by_file_folder, files)
+    def yield_functions_by_file(self, files=None, strip_list=None):
+        for file, funcs in self.yield_data_by_key(self.funcs_by_file_folder, files):
+            if strip_list:
+                for definition in funcs[file]:
+                    for key in strip_list:
+                        del definition[key]
+
+                    if "declarations" in definition:
+                        for declaration in definition["declarations"]:
+                            for key in strip_list:
+                                del declaration[key]
+
+            yield file, funcs
 
     def __process_definitions(self):
         self.log("Parsing definitions")
@@ -73,13 +93,16 @@ class Functions(CommonInfo):
         ) in self.extensions["Info"].iter_definitions():
             self.debug(
                 "Processing definition: "
-                + " ".join([src_file, func, def_line, func_type, signature])
+                + " ".join([src_file, func, func_type, signature])
             )
             # Split a string with CMD_IDs separated by comma
             # into an actual Python list
             src_cmd_id_list = array.array(
                 "L", [int(x) for x in src_cmd_id_list.split(",")]
             )
+
+            # Convert line from string to int
+            def_line = int(def_line)
 
             if func not in self.funcs:
                 self.funcs[func] = []
@@ -119,9 +142,12 @@ class Functions(CommonInfo):
                 "L", [int(x) for x in decl_cmd_id_list.split(",")]
             )
 
+            # Convert line from string to int
+            decl_line = int(decl_line)
+
             self.debug(
                 "Processing declaration: "
-                + " ".join([decl_file, decl_name, decl_line, decl_type, decl_signature])
+                + " ".join([decl_file, decl_name, decl_type, decl_signature])
             )
 
             decl_val = {
@@ -233,3 +259,11 @@ class Functions(CommonInfo):
             "compiled_in": cmd_id_list,
             "declarations": declarations,
         }
+
+    def definitions_exist(self, file):
+        """Check that there is file on disk with info about definitions from the given file."""
+        return self.file_exists_by_key(file, self.funcs_by_file_folder)
+
+    def function_exists(self, func):
+        """Check that there is file on disk with info about given function."""
+        return self.file_exists_by_key(func, self.funcs_folder)

@@ -22,12 +22,12 @@ zero_c = os.path.abspath("tests/test_project/zero.c")
 
 
 def definitions_are_ok(definitions):
-    assert definitions[zero_c]["WEIRD_ZERO"] == ["3"]
-    assert definitions[zero_c]["ZERO"] == ["4"]
+    assert definitions[zero_c]["WEIRD_ZERO"] == [3]
+    assert definitions[zero_c]["ZERO"] == [4]
 
 
 def expansions_are_ok(expansions):
-    assert expansions[zero_c]["WEIRD_ZERO"]
+    assert expansions[zero_c]["WEIRD_ZERO"]["args"] == [["10"]]
     assert expansions[zero_c]["ZERO"]
 
 

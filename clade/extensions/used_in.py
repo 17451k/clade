@@ -23,12 +23,10 @@ from clade.types.nested_dict import nested_dict
 class UsedIn(CommonInfo):
     requires = ["SrcGraph", "Info", "Functions"]
 
-    __version__ = "1"
+    __version__ = "2"
 
     def __init__(self, work_dir, conf=None):
         super().__init__(work_dir, conf)
-
-        self.funcs = dict()
 
         self.used_in = nested_dict()
         self.used_in_file = "used_in.json"
@@ -38,8 +36,6 @@ class UsedIn(CommonInfo):
     @Extension.prepare
     def parse(self, _):
         self.log("Processing function usages")
-
-        self.funcs = self.extensions["Functions"].load_functions()
 
         self.__process_functions_usages()
         self._clean_warn_log()
@@ -74,7 +70,6 @@ class UsedIn(CommonInfo):
                         context_file,
                         context_func,
                         func,
-                        line,
                         context_type,
                     ]
                 )
@@ -84,18 +79,21 @@ class UsedIn(CommonInfo):
                 continue
 
             context_definition = self.extensions["Functions"].construct_definition(
-                context_file, context_cmd_id_list, context_type, line
+                context_file, context_cmd_id_list, context_type, int(line)
             )
 
             # For each function call there can be many definitions with the same name, defined in different
             # files. possible_definitions is a list of them.
             possible_definitions = []
-            if func in self.funcs:
-                for definition in self.funcs[func]:
-                    if definition["type"] in (context_definition["type"], "exported"):
-                        possible_definitions.append(definition)
-            else:
+
+            definitions = self.extensions["Functions"].load_definitions(func)
+
+            if not definitions:
                 self._warning(f"Can't find '{func}' in Functions")
+
+            for definition in definitions:
+                if definition["type"] in (context_definition["type"], "exported"):
+                    possible_definitions.append(definition)
 
             # Assign priority number for each possible definition (see index variable)
             index = 3
@@ -138,14 +136,24 @@ class UsedIn(CommonInfo):
                         "used_in_func": nested_dict(),
                     }
 
+                val = {"line": int(line), "match": index}
+
                 if context_func == "NULL":
-                    self.used_in[possible_file][func]["used_in_file"][context_file][
-                        line
-                    ] = index
+                    used_in_file = self.used_in[possible_file][func]["used_in_file"]
+
+                    if context_file not in used_in_file:
+                        used_in_file[context_file] = list()
+
+                    used_in_file[context_file].append(val)
                 else:
-                    self.used_in[possible_file][func]["used_in_func"][context_file][
-                        context_func
-                    ][line] = index
+                    used_in_func = self.used_in[possible_file][func]["used_in_func"][
+                        context_file
+                    ]
+
+                    if context_func not in used_in_func:
+                        used_in_func[context_func] = list()
+
+                    used_in_func[context_func].append(val)
 
                 if possible_file == "unknown" and index == 0:
                     self._warning(f"Can't match definition: {func}", context_file)
