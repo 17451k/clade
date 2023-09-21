@@ -53,6 +53,9 @@ class Functions(CommonInfo):
         """Load information about functions."""
         return self.load_data_by_key(self.funcs_folder, funcs)
 
+    def yield_functions(self, funcs=None):
+        yield from self.yield_data_by_key(self.funcs_folder, funcs)
+
     def load_definitions(self, func):
         """Load all available definitions for a given function."""
         funcs = self.load_functions([func])

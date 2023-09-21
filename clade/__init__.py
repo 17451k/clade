@@ -679,6 +679,17 @@ class Clade:
 
         return self.Functions.load_functions_by_file(files)
 
+    def load_definitions(self, func: str):
+        """Load all available definitions for a given function.
+
+        Args:
+            func: A function name
+
+        Returns:
+            A list of definitions
+        """
+        return self.Functions.load_definitions(func)
+
     def get_typedefs(self, files=None):
         """Get dictionary with type definitions (C only)."""
         t = self.__get_ext_obj("Typedefs")

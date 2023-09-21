@@ -20,11 +20,11 @@ import os
 import re
 import sys
 
-from typing import List
-
+from typing import TypeAlias, List, Dict
 from clade import Clade
 
 Function = collections.namedtuple("Function", ["name", "path"])
+Trace: TypeAlias = Dict[Function, List[Function]]
 
 
 def nested_dict():
@@ -38,15 +38,20 @@ class Tracer:
         if not self.clade.work_dir_ok():
             raise RuntimeError("Specified Clade build base is not valid")
 
-    def find_functions(self, func_names: List[str]):
+    def find_functions(self, func_names: List[str]) -> List[Function]:
+        # Find functions in the Clade build base, and convert list of strings
+        # to a list of Function objects required by most Tracer methods
+
+        if not func_names:
+            return list()
+
         functions = set()
 
-        s_regex = re.compile("^" + ("$|^".join(func_names)) + "$")
+        for func in func_names:
+            definitions = self.clade.load_definitions(func)
 
-        for func in self.clade.functions:
-            if s_regex.match(func):
-                for definition in self.clade.functions[func]:
-                    functions.add(Function(func, definition["file"]))
+            for definition in definitions:
+                functions.add(Function(func, definition["file"]))
 
         if not functions:
             raise RuntimeError(
@@ -64,7 +69,23 @@ class Tracer:
 
         return list(functions)
 
-    def find_functions_with_prefix(self, prefix):
+    def load_all_functions(self) -> List[Function]:
+        # Return all available functions from the Clade builds base.
+
+        functions = set()
+
+        # Loading all available functions
+        for func, funcs in self.clade.Functions.yield_functions():
+            for definition in funcs[func]:
+                functions.add(Function(func, definition["file"]))
+
+        return list(functions)
+
+    def find_functions_with_prefix(self, prefix: str) -> List[Function]:
+        # Find functions in the Clade build base whose name match the
+        # specified prefix, and convert them to a list of Function
+        # objects required by most Tracer methods
+
         functions = set()
 
         for func in self.clade.functions:
@@ -79,10 +100,15 @@ class Tracer:
 
         return list(functions)
 
-    def trace(self, from_func: Function, to_func: Function):
+    def trace(
+        self, from_func: Function, to_func: Function
+    ) -> Dict[Function, List[Function]]:
+        # Get all call traces between 'from_func' and 'to_func' functions.
         return self.trace_list([from_func], [to_func])
 
-    def trace_list(self, from_funcs: List[Function], to_funcs: List[Function]):
+    def trace_list(self, from_funcs: List[Function], to_funcs: List[Function]) -> Trace:
+        # Get all call traces between 2 groups of functions (from_funcs and to_funcs).
+
         trace = dict()
 
         queue = collections.deque()
@@ -110,12 +136,31 @@ class Tracer:
                     if called_func not in to_funcs and called_func not in visited:
                         queue.append(called_func)
 
-        trace = self.__reverse_trace(trace)
-        trace = self.__filter_trace(trace, to_funcs)
+        if to_funcs:
+            trace = self.__remove_extra_paths(trace, to_funcs)
+
+        return trace
+
+    def trace_full(self) -> Trace:
+        # Get full callgraph from the Clade database, in the Trace format.
+
+        trace = dict()
+
+        for call in self.clade.Callgraph.traverse_calls():
+            from_func = Function(name=call.from_func, path=call.from_file)
+            to_func = Function(name=call.to_func, path=call.to_file)
+
+            if from_func not in trace:
+                trace[from_func] = set()
+
+            trace[from_func].add(to_func)
+
         return trace
 
     @staticmethod
-    def __reverse_trace(trace):
+    def __reverse_trace(trace: Trace) -> Trace:
+        # Reverse a trace, so it can be more easily filtered later.
+
         reversed_trace = dict()
 
         for func in trace:
@@ -128,11 +173,15 @@ class Tracer:
         return reversed_trace
 
     @staticmethod
-    def __filter_trace(trace, to_funcs):
-        filtered_trace = dict()
+    def __remove_extra_paths(trace: Trace, from_funcs: List[Function]) -> Trace:
+        # Remove all paths from the trace, which are not started from one
+        # of the "from_funcs" functions
+
+        reversed_trace = Tracer.__reverse_trace(trace)
+        trimmed_trace = dict()
 
         queue = collections.deque()
-        queue.extend(to_funcs)
+        queue.extend(from_funcs)
         visited = set()
 
         while len(queue) > 0:
@@ -140,22 +189,24 @@ class Tracer:
 
             visited.add(called_func)
 
-            if called_func not in trace:
+            if called_func not in reversed_trace:
                 continue
 
-            for func in trace[called_func]:
-                if func in filtered_trace:
-                    filtered_trace[func].append(called_func)
+            for func in reversed_trace[called_func]:
+                if func in trimmed_trace:
+                    trimmed_trace[func].append(called_func)
                 else:
-                    filtered_trace[func] = [called_func]
+                    trimmed_trace[func] = [called_func]
 
                 if func not in visited:
                     queue.append(func)
 
-        return filtered_trace
+        return trimmed_trace
 
     @staticmethod
-    def print_dot(trace, filename):
+    def print_dot(trace: Trace, filename: str) -> None:
+        # Print trace to a pdf file
+
         dot = graphviz.Digraph(
             graph_attr={"rankdir": "LR"}, node_attr={"shape": "rectangle"}
         )
@@ -163,20 +214,32 @@ class Tracer:
         nodes = set()
 
         for func in trace:
+            func_node_name = Tracer.__func_to_node_name(func)
+
+            if func.name not in nodes:
+                nodes.add(func.name)
+                dot.node(func_node_name)
+
             for called_func in trace[func]:
-                if func.name not in nodes:
-                    nodes.add(func.name)
-                    dot.node(func.name)
+                called_func_node_name = Tracer.__func_to_node_name(called_func)
 
                 if called_func.name not in nodes:
                     nodes.add(called_func.name)
-                    dot.node(called_func.name)
+                    dot.node(called_func_node_name)
 
-                dot.edge(func.name, called_func.name)
+                dot.edge(func_node_name, called_func_node_name)
 
-        dot.render(filename)
+        dot.render(filename, cleanup=True)
 
-    def __calls_somebody(self, func):
+    @staticmethod
+    def __func_to_node_name(func: Function) -> str:
+        # Construct a name for the Graphviz node
+        # that represents a Function object.
+
+        return f"[{os.path.basename(func.path)}]\n{func.name}"
+
+    def __calls_somebody(self, func: Function) -> bool:
+        # Check that a function contains function calls in its body.
         if func.path not in self.clade.callgraph:
             return False
 
@@ -188,10 +251,46 @@ class Tracer:
 
         return True
 
+    def filter_trace_from(self, trace: Trace, from_filter=List[Function]) -> Trace:
+        # Remove all paths from the trace that start with one of the "from_filter"
+        # functions.
+
+        if not from_filter:
+            return trace
+
+        from_trace = self.trace_list(from_filter, list())
+
+        for key in from_filter:
+            del trace[key]
+
+        for key in trace:
+            trace[key] = [f for f in trace[key] if f not in from_trace.get(key, [])]
+
+        return trace
+
+    def filter_trace_to(self, trace: Trace, to_filter=List[Function]) -> Trace:
+        # Remove all paths from the trace that finish with one of the "from_filter"
+        # functions.
+
+        if not to_filter:
+            return trace
+
+        to_trace = self.trace_list(self.load_all_functions(), to_filter)
+
+        for key in to_filter:
+            del trace[key]
+
+        for key in trace:
+            trace[key] = [
+                f for f in trace[key] if f not in f not in to_trace.get(key, [])
+            ]
+
+        return trace
+
 
 def parse_args(args):
     parser = argparse.ArgumentParser(
-        description="Create a graph of all call paths between 2 functions."
+        description="Create a graph of all call paths between specified functions."
     )
 
     parser.add_argument(
@@ -215,11 +314,21 @@ def parse_args(args):
     )
 
     parser.add_argument(
-        "-o",
-        "--output",
-        help="path to the output directory where generated graphs will be saved",
-        metavar="DIR",
-        default=os.path.curdir,
+        "--from-filter",
+        help="name of the function, from which call paths will not be included in the callgraph",
+        metavar="NAME",
+        default=[],
+        action="append",
+        dest="from_filter",
+    )
+
+    parser.add_argument(
+        "--to-filter",
+        help="name of the function, to which call paths will not be included in the callgraph",
+        metavar="NAME",
+        default=[],
+        action="append",
+        dest="to_filter",
     )
 
     parser.add_argument(
@@ -241,15 +350,28 @@ def main(args=None):
 
     t = Tracer(args.clade)
 
-    from_funcs = t.find_functions(args.from_funcs)
-    to_funcs = t.find_functions(args.to_funcs)
+    if not args.from_funcs and not args.to_funcs:
+        trace = t.trace_full()
+    else:
+        if args.from_funcs:
+            from_funcs = t.find_functions(args.from_funcs)
+        else:
+            from_funcs = t.load_all_functions()
 
-    for from_func in from_funcs:
-        for to_func in to_funcs:
-            trace = t.trace(from_func, to_func)
+        if args.to_funcs:
+            to_funcs = t.find_functions(args.to_funcs)
+        else:
+            to_funcs = list()
 
-            filename = os.path.join(args.output, f"{from_func.name}-{to_func.name}.dot")
-            t.print_dot(trace, filename)
+        trace = t.trace_list(from_funcs, to_funcs)
+
+    if not trace:
+        sys.exit("Something is wrong: callgraph is empty")
+
+    trace = t.filter_trace_from(trace, t.find_functions(args.from_filter))
+    trace = t.filter_trace_to(trace, t.find_functions(args.to_filter))
+
+    t.print_dot(trace, "callgraph")
 
 
 if __name__ == "__main__":
