@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import List, Dict
 
 from clade.cmds import iter_cmds, get_last_id
 from clade.extensions.abstract import Extension
@@ -39,16 +40,16 @@ class PidGraph(Extension):
         self.dump_dict_with_int_keys(self.pid_by_id, self.pid_by_id_file)
         self.pid_by_id.clear()
 
-    def load_pid_graph(self) -> dict[int, list[int]]:
+    def load_pid_graph(self) -> Dict[int, List[int]]:
         pid_by_id = self.load_pid_by_id()
-        pid_graph: dict[int, list[int]] = dict()
+        pid_graph: Dict[int, List[int]] = dict()
 
         for key in sorted(pid_by_id.keys()):
             pid_graph[key] = [pid_by_id[key]] + pid_graph.get(pid_by_id[key], [])
 
         return pid_graph
 
-    def load_pid_by_id(self) -> dict[int, int]:
+    def load_pid_by_id(self) -> Dict[int, int]:
         return self.load_dict_with_int_keys(self.pid_by_id_file)
 
     def filter_cmds_by_pid(self, cmds, parsed_ids=None):

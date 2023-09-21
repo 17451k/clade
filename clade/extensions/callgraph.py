@@ -14,7 +14,7 @@
 # limitations under the License.
 
 import re
-from typing import Any, Generator, NamedTuple
+from typing import Any, Generator, NamedTuple, Dict
 
 from clade.extensions.abstract import Extension
 from clade.extensions.common_info import CommonInfo
@@ -26,7 +26,7 @@ class Call(NamedTuple):
     from_func: str
     to_file: str
     to_func: str
-    val: dict[str, Any]
+    val: Dict[str, Any]
 
 
 class Callgraph(CommonInfo):

@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import List, Dict
+
 from clade.extensions.abstract import Extension
 
 
@@ -36,7 +38,7 @@ class SrcGraph(Extension):
         self.src_info = dict()
         self.src_info_file = "src_info.json"
 
-    def load_src_graph(self, files=None) -> dict[str, dict[int, list[int]]]:
+    def load_src_graph(self, files=None) -> Dict[str, Dict[int, List[int]]]:
         """Load source graph."""
         src_graph = self.load_data_by_key(self.src_graph_folder, files)
 
@@ -143,7 +145,7 @@ class SrcGraph(Extension):
 
         return file in self.src_graph and cmd_id in self.src_graph[file]
 
-    def get_used_by(self, file: str, cmd_id: int) -> list[int]:
+    def get_used_by(self, file: str, cmd_id: int) -> List[int]:
         """Get all commands that use given file"""
         if not hasattr(self, "src_graph") or not self.src_graph:
             self.src_graph = self.load_src_graph()

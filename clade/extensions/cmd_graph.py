@@ -16,6 +16,7 @@
 import re
 import os
 
+from typing import List, Dict, Set
 from graphviz import Digraph
 
 from clade.extensions.abstract import Extension
@@ -45,7 +46,7 @@ class CmdGraph(Extension):
 
         self.pdf_file = os.path.join(self.work_dir, "cmd_graph")
 
-    def load_cmd_graph(self) -> dict[int, dict[str, list[int]]]:
+    def load_cmd_graph(self) -> Dict[int, Dict[str, List[int]]]:
         """Load command graph."""
         return self.load_dict_with_int_keys(self.graph_file)
 
@@ -171,12 +172,12 @@ class CmdGraph(Extension):
         """True if CmdGraph exists and can be used"""
         return self.file_exists(self.graph_file)
 
-    def find_used_by(self, cmd_id: int) -> set[int]:
+    def find_used_by(self, cmd_id: int) -> Set[int]:
         """Find all commands that use (possibly indirectly) output file from the given command"""
         if not self.graph:
             self.graph = self.load_cmd_graph()
 
-        used_by: set[int] = set()
+        used_by: Set[int] = set()
 
         if cmd_id not in self.graph:
             return used_by
