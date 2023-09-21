@@ -20,11 +20,11 @@ import os
 import re
 import sys
 
-from typing import TypeAlias, List, Dict
+from typing import List, Dict
 from clade import Clade
 
 Function = collections.namedtuple("Function", ["name", "path"])
-Trace: TypeAlias = Dict[Function, List[Function]]
+Trace = Dict[Function, List[Function]]
 
 
 def nested_dict():
