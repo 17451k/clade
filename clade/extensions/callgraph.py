@@ -66,7 +66,7 @@ class Callgraph(CommonInfo):
         yield from self.yield_data_by_key(self.callgraph_folder, files)
 
     def __process_calls(self):
-        # TODO: Linux kernel cpecific, move to the configuration
+        # TODO: Linux kernel specific, move to the configuration
         is_bad = re.compile(r"__bad")
 
         for (
@@ -143,7 +143,7 @@ class Callgraph(CommonInfo):
                 continue
 
             for definition in self.extensions["Functions"].load_definitions(func):
-                # Warning: may be innacurate
+                # Warning: may be inaccurate
                 if definition["file"] == path:
                     self.callgraph[path][func]["type"] = definition["type"]
                     break

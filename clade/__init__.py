@@ -263,7 +263,7 @@ class Clade:
         return [e for e in ext_objs if e.name in ext_names]
 
     def __get_ext_obj_list(self, ext_names):
-        """Return correctly initialised list of extension objects
+        """Return correctly initialized list of extension objects
         for the given list of extension names.
 
         List includes extensions that are required implicitly.
