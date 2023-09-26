@@ -61,13 +61,35 @@ def test_main_bad_preset(tmpdir, cmds_file):
 
 def test_main_good_json(tmpdir, cmds_file):
     with pytest.raises(SystemExit) as e:
-        main(["-w", str(tmpdir), "--cmds", cmds_file, "-e", "PidGraph", "--conf", '{"CmdGraph.requires": []}'])
+        main(
+            [
+                "-w",
+                str(tmpdir),
+                "--cmds",
+                cmds_file,
+                "-e",
+                "PidGraph",
+                "--conf",
+                '{"CmdGraph.requires": []}',
+            ]
+        )
 
     assert "0" == str(e.value)
 
 
 def test_main_bad_json(tmpdir, cmds_file):
     with pytest.raises(SystemExit) as e:
-        main(["-w", str(tmpdir), "--cmds", cmds_file, "-e", "PidGraph", "--conf", '{"CmdGraph.requires": [}'])
+        main(
+            [
+                "-w",
+                str(tmpdir),
+                "--cmds",
+                cmds_file,
+                "-e",
+                "PidGraph",
+                "--conf",
+                '{"CmdGraph.requires": [}',
+            ]
+        )
 
     assert "-1" == str(e.value)

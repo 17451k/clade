@@ -24,9 +24,7 @@ def main(args=sys.argv[1:]):
         description="Check that Clade working directory exists and not corrupted."
     )
 
-    parser.add_argument(
-        dest="work_dir", help="path to the Clade working directory"
-    )
+    parser.add_argument(dest="work_dir", help="path to the Clade working directory")
 
     args = parser.parse_args(args)
 

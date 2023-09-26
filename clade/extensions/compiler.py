@@ -22,10 +22,7 @@ class Compiler(Common):
     """Parent class for all C compiler classes."""
 
     requires = Common.requires + ["Storage"]
-    file_extensions = [
-        ".c", ".i",
-        ".cpp", ".C", ".cc", ".cxx", "c++"  # C++
-    ]
+    file_extensions = [".c", ".i", ".cpp", ".C", ".cc", ".cxx", "c++"]
 
     __version__ = "2"
 
@@ -86,8 +83,17 @@ class Compiler(Common):
         self.debug("{} is not a compilation command".format(cmd))
         return False
 
-    def load_all_cmds(self, filter_by_pid=True, with_opts=False, with_raw=False, with_deps=False, compile_only=False):
-        cmds = super().load_all_cmds(with_opts=with_opts, with_raw=with_raw, filter_by_pid=filter_by_pid)
+    def load_all_cmds(
+        self,
+        filter_by_pid=True,
+        with_opts=False,
+        with_raw=False,
+        with_deps=False,
+        compile_only=False,
+    ):
+        cmds = super().load_all_cmds(
+            with_opts=with_opts, with_raw=with_raw, filter_by_pid=filter_by_pid
+        )
 
         # compile only - ignore linker commands, like gcc func.o main.o -o main
         # or cl /EP /P file.c
@@ -97,7 +103,12 @@ class Compiler(Common):
 
             if compile_only:
                 # Remove .o files from compile-and-link commands, like gcc main.c -o main.o func.o
-                cmd["in"] = [cmd_in for cmd_in in cmd["in"] if os.path.splitext(os.path.basename(cmd_in))[1] in self.file_extensions]
+                cmd["in"] = [
+                    cmd_in
+                    for cmd_in in cmd["in"]
+                    if os.path.splitext(os.path.basename(cmd_in))[1]
+                    in self.file_extensions
+                ]
                 if not cmd["in"]:
                     continue
 

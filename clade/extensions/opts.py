@@ -251,7 +251,7 @@ clang_opts = [
     "-weak_reference_mismatches",
     "-working-directory",
     "-x",
-    "-z"
+    "-z",
 ]
 
 cc_preprocessor_opts = [
@@ -500,7 +500,7 @@ requires_value = {
     "Objcopy": set(objcopy_opts),
     "CL": set(cl_opts),
     "Link": set(),
-    "Install": set(install_opts)
+    "Install": set(install_opts),
 }
 
 # Some options require multiple values
@@ -536,7 +536,13 @@ gcc_optimization_opts = [
 ]
 
 cif_supported_opts = (
-    ["-D", "-U", "-std", "--std", "-c", ]
+    [
+        "-D",
+        "-U",
+        "-std",
+        "--std",
+        "-c",
+    ]
     # Relation to a host environment such as the standard library. This is especially important for OS kernels.
     + ["-nostdinc", "-fno-builtin", "-fno-hosted", "-ffreestanding"]
     # Options controlling types representation.
@@ -549,9 +555,7 @@ cif_supported_opts = (
     + include_opts
 )
 
-clang_supported_opts = (
-    cif_supported_opts + ["--target", "--sysroot", "-target"]
-)
+clang_supported_opts = cif_supported_opts + ["--target", "--sysroot", "-target"]
 
 
 def compile_s_regex(opts):

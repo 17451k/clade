@@ -17,7 +17,16 @@ import os
 import pytest
 import shutil
 
-from clade.cmds import iter_cmds, iter_cmds_by_which, open_cmds_file, get_build_dir, get_last_id, get_stats, join_cmd, get_all_cmds
+from clade.cmds import (
+    iter_cmds,
+    iter_cmds_by_which,
+    open_cmds_file,
+    get_build_dir,
+    get_last_id,
+    get_stats,
+    join_cmd,
+    get_all_cmds,
+)
 from clade.scripts.stats import print_cmds_stats
 
 # TODO: Replace >= by ==

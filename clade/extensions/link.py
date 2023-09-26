@@ -34,9 +34,7 @@ class Link(Common):
         parsed_cmd = self._get_cmd_dict(cmd)
 
         if self.name not in requires_value:
-            raise RuntimeError(
-                "Command type '{}' is not supported".format(self.name)
-            )
+            raise RuntimeError("Command type '{}' is not supported".format(self.name))
 
         opts = iter(cmd["command"][1:])
 

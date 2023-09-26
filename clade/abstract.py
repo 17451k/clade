@@ -39,7 +39,16 @@ class Intercept(metaclass=abc.ABCMeta):
         RuntimeError: Clade installation is corrupted, or intercepting process failed
     """
 
-    def __init__(self, command, cwd=os.getcwd(), output: str = "cmds.txt", append=False, intercept_open=False, intercept_envs=False, conf=None):
+    def __init__(
+        self,
+        command,
+        cwd=os.getcwd(),
+        output: str = "cmds.txt",
+        append=False,
+        intercept_open=False,
+        intercept_envs=False,
+        conf=None,
+    ):
         self.command = command
         self.cwd = cwd
         self.output = os.path.abspath(output)
@@ -99,6 +108,7 @@ class Intercept(metaclass=abc.ABCMeta):
         It runs build command under socket server allowing preprocessing of intercepted build commands
         before their execution by a suitable extension.
         """
+
         def execute_wrapper(self, *args, **kwargs):
             if not self.conf.get("Intercept.preprocess"):
                 return execute(self, *args, **kwargs)

@@ -37,10 +37,13 @@ class Copy(Common):
         command = cmd["command"][1:]
 
         if len(cmd["command"]) >= 2:
-            if cmd["command"][0].endswith("cmd.exe") and cmd["command"][1] in ["/c", "-c"]:
+            if cmd["command"][0].endswith("cmd.exe") and cmd["command"][1] in [
+                "/c",
+                "-c",
+            ]:
                 try:
                     copy_index = cmd["command"].index("copy")
-                    command = cmd["command"][copy_index + 1:]
+                    command = cmd["command"][copy_index + 1 :]
                 except ValueError:
                     return
             else:
@@ -66,7 +69,9 @@ class Copy(Common):
 
                 # workaround for "cmd.exe /c if exist a copy a b" commands
                 if os.path.isdir(cmd_out) and parsed_cmd["in"]:
-                    cmd_out = os.path.join(cmd_out, os.path.basename(parsed_cmd["in"][0]))
+                    cmd_out = os.path.join(
+                        cmd_out, os.path.basename(parsed_cmd["in"][0])
+                    )
                 parsed_cmd["out"].append(cmd_out)
 
         if self.is_bad(parsed_cmd):

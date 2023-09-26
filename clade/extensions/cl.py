@@ -44,12 +44,14 @@ class CL(Compiler):
             return
 
         if self.conf.get("Compiler.get_deps"):
-            deps = set(self.__get_deps(cmd["id"], cmd["which"], parsed_cmd) + parsed_cmd["in"])
+            deps = set(
+                self.__get_deps(cmd["id"], cmd["which"], parsed_cmd) + parsed_cmd["in"]
+            )
             self.dump_deps_by_id(cmd["id"], deps, parsed_cmd["cwd"])
 
-            if self.conf.get(
-                "Compiler.store_deps"
-            ) and self.is_a_compilation_command(parsed_cmd):
+            if self.conf.get("Compiler.store_deps") and self.is_a_compilation_command(
+                parsed_cmd
+            ):
                 self.store_deps_files(deps, parsed_cmd["cwd"])
 
         self.dump_cmd_by_id(cmd["id"], parsed_cmd)
@@ -58,9 +60,7 @@ class CL(Compiler):
         parsed_cmd = self._get_cmd_dict(cmd)
 
         if self.name not in requires_value:
-            raise RuntimeError(
-                "Command type '{}' is not supported".format(self.name)
-            )
+            raise RuntimeError("Command type '{}' is not supported".format(self.name))
 
         opts = iter(cmd["command"][1:])
         input_opts = ["/Tc", "-Tc", "/Tp", "-Tp"]
@@ -98,9 +98,7 @@ class CL(Compiler):
                         obj_path = re.sub(r"[/-]Fo", "", opt)
 
                         if not os.path.isabs(obj_path):
-                            obj_path = os.path.join(
-                                parsed_cmd["cwd"], obj_path
-                            )
+                            obj_path = os.path.join(parsed_cmd["cwd"], obj_path)
 
                         if obj_path.endswith(".obj"):
                             parsed_cmd["out"].append(obj_path)
@@ -108,23 +106,17 @@ class CL(Compiler):
                             obj_name = os.path.basename(
                                 os.path.splitext(cmd_in)[0] + ".obj"
                             )
-                            parsed_cmd["out"].append(
-                                os.path.join(obj_path, obj_name)
-                            )
+                            parsed_cmd["out"].append(os.path.join(obj_path, obj_name))
 
                         break
                 else:
-                    obj_name = os.path.basename(
-                        os.path.splitext(cmd_in)[0] + ".obj"
-                    )
+                    obj_name = os.path.basename(os.path.splitext(cmd_in)[0] + ".obj")
                     cmd_out = os.path.join(parsed_cmd["cwd"], obj_name)
                     parsed_cmd["out"].append(cmd_out)
 
         if not parsed_cmd["out"]:
             for cmd_in in parsed_cmd["in"]:
-                exe_name = os.path.basename(
-                    os.path.splitext(cmd_in)[0] + ".obj"
-                )
+                exe_name = os.path.basename(os.path.splitext(cmd_in)[0] + ".obj")
                 cmd_out = os.path.join(parsed_cmd["cwd"], exe_name)
                 parsed_cmd["out"].append(cmd_out)
 
@@ -151,9 +143,7 @@ class CL(Compiler):
                     break
             else:
                 for cmd_in in parsed_cmd["in"]:
-                    i_name = os.path.basename(
-                        os.path.splitext(cmd_in)[0] + ".i"
-                    )
+                    i_name = os.path.basename(os.path.splitext(cmd_in)[0] + ".i")
                     parsed_cmd["out"].append(os.path.join(cmd["cwd"], i_name))
 
         return parsed_cmd
@@ -170,7 +160,11 @@ class CL(Compiler):
     def __collect_deps(self, cmd_id, which, cmd, cmd_in):
         deps_file = os.path.join(self.temp_dir, "{}-deps.txt".format(cmd_id))
 
-        opts = ["/showIncludes", "/P"] if self.conf.get("Compiler.preprocess_cmds") else ["/showIncludes"]
+        opts = (
+            ["/showIncludes", "/P"]
+            if self.conf.get("Compiler.preprocess_cmds")
+            else ["/showIncludes"]
+        )
 
         deps_cmd = (
             [which]
@@ -181,8 +175,10 @@ class CL(Compiler):
         )
 
         self.debug("CWD: {!r}".format(cmd["cwd"]))
-        self.debug("Executing command: {!r}".format(
-            " ".join([shlex.quote(x) for x in deps_cmd]))
+        self.debug(
+            "Executing command: {!r}".format(
+                " ".join([shlex.quote(x) for x in deps_cmd])
+            )
         )
 
         if not os.path.exists(which):

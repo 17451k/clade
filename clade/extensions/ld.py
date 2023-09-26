@@ -45,7 +45,13 @@ class LD(Linker):
         searchdirs = []
 
         try:
-            r = subprocess.run(f"{which} --verbose | grep SEARCH_DIR", shell=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            r = subprocess.run(
+                f"{which} --verbose | grep SEARCH_DIR",
+                shell=True,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
 
             for line in r.stdout.split(";"):
                 m = re.search(r"SEARCH_DIR\(\"\=(.*)\"\)", line)

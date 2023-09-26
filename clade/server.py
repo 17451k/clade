@@ -70,7 +70,9 @@ class SocketServer(parent):
         super().__init__(address, rh)
 
     def start(self):
-        if sys.platform == "win32" or (sys.platform == "darwin" and sys.version_info[1] >= 8):
+        if sys.platform == "win32" or (
+            sys.platform == "darwin" and sys.version_info[1] >= 8
+        ):
             self.process = threading.Thread(target=self.serve_forever)
         else:
             self.process = multiprocessing.Process(target=self.serve_forever)

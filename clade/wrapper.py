@@ -22,13 +22,30 @@ from clade.abstract import Intercept
 
 
 class Wrapper(Intercept):
-    def __init__(self, command, cwd=os.getcwd(), output="cmds.txt", append=False, intercept_open=False, intercept_envs=False, conf=None):
+    def __init__(
+        self,
+        command,
+        cwd=os.getcwd(),
+        output="cmds.txt",
+        append=False,
+        intercept_open=False,
+        intercept_envs=False,
+        conf=None,
+    ):
         if intercept_open:
             raise RuntimeError("wrappers can't be used to intercept open()")
 
         self.wrappers_dir = tempfile.mkdtemp()
 
-        super().__init__(command, cwd=cwd, output=output, append=append, intercept_open=intercept_open, intercept_envs=intercept_envs, conf=conf)
+        super().__init__(
+            command,
+            cwd=cwd,
+            output=output,
+            append=append,
+            intercept_open=intercept_open,
+            intercept_envs=intercept_envs,
+            conf=conf,
+        )
 
         self.wrapper = self.__find_wrapper()
         self.wrapper_postfix = ".clade"
@@ -37,7 +54,9 @@ class Wrapper(Intercept):
         env = super()._setup_env()
 
         env["PATH"] = self.wrappers_dir + os.pathsep + os.environ.get("PATH", "")
-        self.logger.debug("Add directory with wrappers to PATH: {!r}".format(self.wrappers_dir))
+        self.logger.debug(
+            "Add directory with wrappers to PATH: {!r}".format(self.wrappers_dir)
+        )
 
         return env
 
@@ -56,7 +75,9 @@ class Wrapper(Intercept):
         self.__create_exe_wrappers()
 
     def __create_path_wrappers(self):
-        self.logger.debug("Create temporary directory for wrappers: {!r}".format(self.wrappers_dir))
+        self.logger.debug(
+            "Create temporary directory for wrappers: {!r}".format(self.wrappers_dir)
+        )
 
         if os.path.exists(self.wrappers_dir):
             shutil.rmtree(self.wrappers_dir)
@@ -66,13 +87,19 @@ class Wrapper(Intercept):
         paths = os.environ.get("PATH", "").split(os.pathsep)
 
         counter = 0
-        self.logger.debug("Walk through every directory in PATH to create wrappers: {!r}".format(paths))
+        self.logger.debug(
+            "Walk through every directory in PATH to create wrappers: {!r}".format(
+                paths
+            )
+        )
         for path in paths:
             try:
                 for file in os.listdir(path):
                     if os.access(os.path.join(path, file), os.X_OK):
                         try:
-                            os.symlink(self.wrapper, os.path.join(self.wrappers_dir, file))
+                            os.symlink(
+                                self.wrapper, os.path.join(self.wrappers_dir, file)
+                            )
                             counter += 1
                         except FileExistsError:
                             continue
@@ -97,11 +124,19 @@ class Wrapper(Intercept):
                     for file in os.listdir(path):
                         self.__create_exe_wrapper(os.path.join(path, file))
             else:
-                self.logger.error("{!r} file or directory from 'Wrapper.wrap_list' option does not exist".format(path))
+                self.logger.error(
+                    "{!r} file or directory from 'Wrapper.wrap_list' option does not exist".format(
+                        path
+                    )
+                )
                 sys.exit(-1)
 
     def __create_exe_wrapper(self, path):
-        if not(os.path.isfile(path) and os.access(path, os.X_OK) and not os.path.basename(path) == "wrapper"):
+        if not (
+            os.path.isfile(path)
+            and os.access(path, os.X_OK)
+            and not os.path.basename(path) == "wrapper"
+        ):
             return
 
         self.logger.debug("Create exe wrapper: {!r}".format(path))
@@ -110,12 +145,16 @@ class Wrapper(Intercept):
             os.rename(path, path + self.wrapper_postfix)
             os.symlink(self.wrapper, path)
         except PermissionError:
-            self.logger.warning("You do not have permissions to modify {!r}".format(path))
+            self.logger.warning(
+                "You do not have permissions to modify {!r}".format(path)
+            )
         except Exception as e:
             self.logger.warning(e)
 
     def __delete_wrappers(self):
-        self.logger.debug("Delete temporary directory with wrappers: {!r}".format(self.wrappers_dir))
+        self.logger.debug(
+            "Delete temporary directory with wrappers: {!r}".format(self.wrappers_dir)
+        )
 
         if os.path.exists(self.wrappers_dir):
             shutil.rmtree(self.wrappers_dir)
@@ -136,7 +175,11 @@ class Wrapper(Intercept):
                         self.__delete_exe_wrapper(os.path.join(path, file))
 
     def __delete_exe_wrapper(self, path):
-        if not(os.path.isfile(path) and os.access(path, os.X_OK) and not path.endswith(self.wrapper_postfix)):
+        if not (
+            os.path.isfile(path)
+            and os.access(path, os.X_OK)
+            and not path.endswith(self.wrapper_postfix)
+        ):
             return
 
         try:

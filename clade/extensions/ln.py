@@ -89,7 +89,9 @@ class LN(Common):
                 parsed_cmd["in"].append(files[0])
 
                 if os.path.isdir(files[1]):
-                    parsed_cmd["out"].append(os.path.join(files[1], os.path.basename(files[0])))
+                    parsed_cmd["out"].append(
+                        os.path.join(files[1], os.path.basename(files[0]))
+                    )
                 else:
                     parsed_cmd["out"].append(files[1])
             else:
@@ -114,7 +116,7 @@ class LN(Common):
         return parsed_cmd
 
     def get_pairs(self):
-        '''Returns iterator for all (file, its symlink) pairs'''
+        """Returns iterator for all (file, its symlink) pairs"""
         cmds = self.load_all_cmds()
 
         for cmd in cmds:

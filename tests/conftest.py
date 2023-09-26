@@ -38,7 +38,7 @@ def envs_file():
     # Disable multiprocessing
     os.environ["CLADE_DEBUG"] = "1"
 
-    c = Clade(work_dir=test_project + '/clade')
+    c = Clade(work_dir=test_project + "/clade")
     c.intercept(command=test_project_make, use_wrappers=True, intercept_envs=True)
     yield os.path.join(c.work_dir, "envs.txt")
 
@@ -55,8 +55,10 @@ def clade_api(tmpdir_factory):
 
 
 def pytest_collection_modifyitems(config, items):
-    skip_cif = pytest.mark.skipif(not shutil.which("cif"), reason="cif is not installed")
+    skip_cif = pytest.mark.skipif(
+        not shutil.which("cif"), reason="cif is not installed"
+    )
 
     for item in items:
-        if 'cif' in item.keywords:
+        if "cif" in item.keywords:
             item.add_marker(skip_cif)

@@ -61,7 +61,9 @@ def test_files_to_add(tmpdir, cmds_file):
 
 
 def test_folders_to_add(tmpdir, cmds_file):
-    c = Clade(tmpdir, cmds_file, conf={"Storage.files_to_add": [os.path.dirname(__file__)]})
+    c = Clade(
+        tmpdir, cmds_file, conf={"Storage.files_to_add": [os.path.dirname(__file__)]}
+    )
     c.parse("Storage")
 
     storage_path = c.get_storage_path(__file__)

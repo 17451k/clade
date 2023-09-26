@@ -24,7 +24,9 @@ from clade.scripts.compilation_database import main
 def test_cdb(tmpdir, cmds_file, filter_opts):
     cdb_json = os.path.join(str(tmpdir), "cdb.json")
 
-    c = Clade(tmpdir, cmds_file, conf={"CDB.output": cdb_json, "CDB.filter_opts": filter_opts})
+    c = Clade(
+        tmpdir, cmds_file, conf={"CDB.output": cdb_json, "CDB.filter_opts": filter_opts}
+    )
     e = c.parse("CDB")
 
     cdb = e.load_cdb()

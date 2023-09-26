@@ -105,7 +105,7 @@ def test_cc_ignore_cc1(tmpdir, cmds_file, ignore_cc1):
     found_cc1 = False
 
     for cmd in e.load_all_cmds(with_opts=True):
-        if"-cc1" in cmd["opts"]:
+        if "-cc1" in cmd["opts"]:
             found_cc1 = True
 
     if ignore_cc1 or found_cc1:
@@ -129,11 +129,13 @@ def test_cc_exclude_list_deps(tmpdir, cmds_file, compile_only):
 @pytest.mark.parametrize("exclude_list", [[], ["/dev/null"]])
 @pytest.mark.parametrize("exclude_list_in", [[], ["-"]])
 @pytest.mark.parametrize("exclude_list_out", [[], ["/dev/null"]])
-def test_cc_exclude_list(tmpdir, cmds_file, exclude_list, exclude_list_in, exclude_list_out):
+def test_cc_exclude_list(
+    tmpdir, cmds_file, exclude_list, exclude_list_in, exclude_list_out
+):
     conf = {
         "Common.exclude_list": exclude_list,
         "Common.exclude_list_in": exclude_list_in,
-        "Common.exclude_list_out": exclude_list_out
+        "Common.exclude_list_out": exclude_list_out,
     }
 
     c = Clade(tmpdir, cmds_file, conf)
@@ -144,9 +146,7 @@ def test_cc_exclude_list(tmpdir, cmds_file, exclude_list, exclude_list_in, exclu
 
 @pytest.mark.parametrize("include_list", [[], ["test_project"]])
 def test_cc_include_list(tmpdir, cmds_file, include_list):
-    conf = {
-        "Common.include_list": include_list
-    }
+    conf = {"Common.include_list": include_list}
 
     c = Clade(tmpdir, cmds_file, conf)
     e = c.parse("CC")
@@ -162,9 +162,7 @@ def test_cc_empty_conf(tmpdir, cmds_file):
 
 
 def test_cc_empty_which_list(tmpdir, cmds_file):
-    conf = {
-        "CC.which_list": []
-    }
+    conf = {"CC.which_list": []}
 
     c = Clade(tmpdir, cmds_file, conf)
     e = c.parse("CC")
@@ -173,9 +171,7 @@ def test_cc_empty_which_list(tmpdir, cmds_file):
 
 
 def test_cc_preprocess(tmpdir, cmds_file):
-    conf = {
-        "Compiler.preprocess_cmds": True
-    }
+    conf = {"Compiler.preprocess_cmds": True}
 
     c = Clade(tmpdir, cmds_file, conf)
     e = c.parse("CC")

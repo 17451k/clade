@@ -48,7 +48,7 @@ class Linker(Compiler):
 
     @abc.abstractmethod
     def _get_default_searchdirs(self, which, parse_cmd):
-        '''Returns default search dir, where linker searches for libraries'''
+        """Returns default search dir, where linker searches for libraries"""
         pass
 
     def __get_searchdirs(self, which, parsed_cmd):

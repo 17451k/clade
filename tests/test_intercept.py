@@ -48,7 +48,9 @@ def test_no_fallback_with_server(tmpdir):
     output = os.path.join(str(tmpdir), "cmds.txt")
     conf = {"Intercept.preprocess": True}
 
-    assert not intercept(command=test_project_make, output=output, use_wrappers=False, conf=conf)
+    assert not intercept(
+        command=test_project_make, output=output, use_wrappers=False, conf=conf
+    )
 
     if sys.platform != "darwin":
         assert os.path.isfile(output)
@@ -66,20 +68,28 @@ def test_fallback(tmpdir):
 def test_fallback_with_exe_wrappers(tmpdir):
     output = os.path.join(str(tmpdir), "cmds.txt")
     cc_path = shutil.which("cc")
-    conf = {"Wrapper.wrap_list": [cc_path, os.path.dirname(cc_path)],
-            "Wrapper.recursive_wrap": False}
+    conf = {
+        "Wrapper.wrap_list": [cc_path, os.path.dirname(cc_path)],
+        "Wrapper.recursive_wrap": False,
+    }
 
-    assert not intercept(command=test_project_make, output=output, use_wrappers=True, conf=conf)
+    assert not intercept(
+        command=test_project_make, output=output, use_wrappers=True, conf=conf
+    )
     assert os.path.isfile(output)
     assert calculate_loc(output) > 1
 
 
 def test_fallback_with_exe_wrappers_recursive(tmpdir):
     output = os.path.join(str(tmpdir), "cmds.txt")
-    conf = {"Wrapper.wrap_list": [os.path.dirname(__file__), __file__],
-            "Wrapper.recursive_wrap": True}
+    conf = {
+        "Wrapper.wrap_list": [os.path.dirname(__file__), __file__],
+        "Wrapper.recursive_wrap": True,
+    }
 
-    assert not intercept(command=test_project_make, output=output, use_wrappers=True, conf=conf)
+    assert not intercept(
+        command=test_project_make, output=output, use_wrappers=True, conf=conf
+    )
     assert os.path.isfile(output)
     assert calculate_loc(output) > 1
 
@@ -88,6 +98,8 @@ def test_fallback_with_unix_server(tmpdir):
     output = os.path.join(str(tmpdir), "cmds.txt")
     conf = {"Intercept.preprocess": True}
 
-    assert not intercept(command=test_project_make, output=output, use_wrappers=True, conf=conf)
+    assert not intercept(
+        command=test_project_make, output=output, use_wrappers=True, conf=conf
+    )
     assert os.path.isfile(output)
     assert calculate_loc(output) > 1

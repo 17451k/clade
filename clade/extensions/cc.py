@@ -74,9 +74,7 @@ class CC(Linker):
 
         is_compilation_command = self.is_a_compilation_command(parsed_cmd)
 
-        if self.conf.get(
-            "Compiler.preprocess_cmds"
-        ) and is_compilation_command:
+        if self.conf.get("Compiler.preprocess_cmds") and is_compilation_command:
             pre = self.__preprocess_cmd(parsed_cmd, cmd["which"])
             self.debug("Preprocessed files of command {}: {}".format(cmd["id"], pre))
             self.store_pre_files(pre, parsed_cmd["cwd"])
@@ -89,9 +87,7 @@ class CC(Linker):
             deps = self.__get_deps(cmd_id, cmd["which"], parsed_cmd)
             self.dump_deps_by_id(cmd_id, deps, parsed_cmd["cwd"])
 
-            if self.conf.get(
-                "Compiler.store_deps"
-            ) and is_compilation_command:
+            if self.conf.get("Compiler.store_deps") and is_compilation_command:
                 self.store_deps_files(deps, parsed_cmd["cwd"])
 
         self.dump_cmd_by_id(cmd_id, parsed_cmd)
@@ -101,9 +97,11 @@ class CC(Linker):
         deps = []
 
         for cmd_in in cmd["in"]:
-            self.debug("Collecting dependencies for {!r} from command {}".format(
-                cmd_in, cmd_id
-            ))
+            self.debug(
+                "Collecting dependencies for {!r} from command {}".format(
+                    cmd_in, cmd_id
+                )
+            )
             deps_file = self.__collect_deps(cmd_id, which, cmd, cmd_in)
 
             deps.extend(self.__parse_deps(deps_file))
@@ -138,8 +136,10 @@ class CC(Linker):
             return deps_file
 
         self.debug("CWD: {!r}".format(cmd["cwd"]))
-        self.debug("Executing command: {!r}".format(
-            " ".join([shlex.quote(x) for x in command]))
+        self.debug(
+            "Executing command: {!r}".format(
+                " ".join([shlex.quote(x) for x in command])
+            )
         )
 
         subprocess.call(
@@ -211,9 +211,7 @@ class CC(Linker):
             if not os.path.isabs(cmd_in):
                 cmd_in = os.path.join(cmd["cwd"], cmd_in)
 
-            self.debug("Preprocessing {!r} from command {}".format(
-                cmd_in, cmd["id"]
-            ))
+            self.debug("Preprocessing {!r} from command {}".format(cmd_in, cmd["id"]))
 
             pre_file = os.path.splitext(cmd_in)[0] + ".i"
             command = (
@@ -226,12 +224,16 @@ class CC(Linker):
             )
 
             self.debug("CWD: {!r}".format(cmd["cwd"]))
-            self.debug("Executing command: {!r}".format(
-                " ".join([shlex.quote(x) for x in command]))
+            self.debug(
+                "Executing command: {!r}".format(
+                    " ".join([shlex.quote(x) for x in command])
+                )
             )
 
             if not os.path.exists(cmd["cwd"]):
-                self.warning("CWD for command {!r} was deleted after build".format(cmd["id"]))
+                self.warning(
+                    "CWD for command {!r} was deleted after build".format(cmd["id"])
+                )
                 return pre
 
             r = subprocess.check_call(
@@ -259,7 +261,13 @@ class CC(Linker):
             return searchdirs
 
         try:
-            r = subprocess.run(f"{which} -print-search-dirs | grep libraries", shell=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            r = subprocess.run(
+                f"{which} -print-search-dirs | grep libraries",
+                shell=True,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
 
             libraries = r.stdout.replace("libraries: =", "").strip()
 

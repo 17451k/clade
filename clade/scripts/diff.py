@@ -25,9 +25,7 @@ from clade import Clade
 logger = logging.getLogger("Diff")
 handler = logging.StreamHandler(stream=sys.stdout)
 handler.setFormatter(
-    logging.Formatter(
-        "%(asctime)s clade %(levelname)s: %(message)s", "%H:%M:%S"
-    )
+    logging.Formatter("%(asctime)s clade %(levelname)s: %(message)s", "%H:%M:%S")
 )
 logger.addHandler(handler)
 
@@ -58,9 +56,7 @@ class Diff:
         b = self.__get_extension_list(self.work_dir2)
 
         if a == b:
-            logger.info(
-                "Sets of extensions are the same: {!r}".format(", ".join(a))
-            )
+            logger.info("Sets of extensions are the same: {!r}".format(", ".join(a)))
         else:
             logger.error("Sets of extensions are different")
             logger.error("First  set: {!r}".format(", ".join(a)))
@@ -91,14 +87,10 @@ class Diff:
             added = [x for x in keys2 if x not in common_ids]
 
             if removed:
-                logger.error(
-                    "{!r} ids were removed from the pid graph".format(removed)
-                )
+                logger.error("{!r} ids were removed from the pid graph".format(removed))
 
             if added:
-                logger.error(
-                    "{!r}  ids were added to the pid graph".format(added)
-                )
+                logger.error("{!r}  ids were added to the pid graph".format(added))
 
         for key in common_ids:
             if pid_by_id1[key] != pid_by_id2[key]:
@@ -131,11 +123,7 @@ class Diff:
         elif indirect_parents_are_same and not keys_are_same:
             logger.debug("All common ids have the same indirect parents")
 
-        if (
-            keys_are_same
-            and direct_parents_are_same
-            and indirect_parents_are_same
-        ):
+        if keys_are_same and direct_parents_are_same and indirect_parents_are_same:
             logger.info("Pid graphs are the same")
         else:
             logger.info("Pid graphs are different")
@@ -210,12 +198,8 @@ class Diff:
         ]
 
         for cmd_id in common_compilation_cmds_ids:
-            cmd_deps1 = set(
-                self.cl1.get_cmd(cmd_id, with_deps=True)["deps"]
-            )
-            cmd_deps2 = set(
-                self.cl2.get_cmd(cmd_id, with_deps=True)["deps"]
-            )
+            cmd_deps1 = set(self.cl1.get_cmd(cmd_id, with_deps=True)["deps"])
+            cmd_deps2 = set(self.cl2.get_cmd(cmd_id, with_deps=True)["deps"])
 
             if cmd_deps1 != cmd_deps2:
                 removed = cmd_deps1 - cmd_deps2
@@ -237,12 +221,7 @@ class Diff:
 
                 deps_are_same = False
 
-        if (
-            keys_are_same
-            and inputs_are_same
-            and outputs_are_same
-            and deps_are_same
-        ):
+        if keys_are_same and inputs_are_same and outputs_are_same and deps_are_same:
             logger.info("Parsed commands are the same")
         else:
             logger.info("Parsed commands are different")
@@ -279,9 +258,7 @@ class Diff:
             added = storage_files2 - storage_files1
 
             for file in removed:
-                logger.error(
-                    "{!r} file was removed from the Storage".format(file)
-                )
+                logger.error("{!r} file was removed from the Storage".format(file))
 
             for file in added:
                 logger.error("{!r} file was added to the Storage".format(file))
@@ -388,14 +365,10 @@ class Diff:
             added = files2 - files1
 
             for file in removed:
-                logger.error(
-                    "{!r} file was removed from the source graph".format(file)
-                )
+                logger.error("{!r} file was removed from the source graph".format(file))
 
             for file in added:
-                logger.error(
-                    "{!r} file was added to the source graph".format(file)
-                )
+                logger.error("{!r} file was added to the source graph".format(file))
 
             keys_are_same = False
 
@@ -485,9 +458,7 @@ class Diff:
 
             for file, func in removed:
                 logger.error(
-                    "{!r} function from {!r} file was removed".format(
-                        func, file
-                    )
+                    "{!r} function from {!r} file was removed".format(func, file)
                 )
 
             for file, func in added:
@@ -641,9 +612,7 @@ class Diff:
 
             for exp_file in removed:
                 logger.error(
-                    "{!r} file was removed from macros expansions".format(
-                        exp_file
-                    )
+                    "{!r} file was removed from macros expansions".format(exp_file)
                 )
 
             for exp_file in added:
@@ -682,8 +651,12 @@ class Diff:
                 exp_names_are_same = False
 
             for exp_name in common_exp_names:
-                args1 = set([x for sublist in exp1[exp_file][exp_name]["args"] for x in sublist])
-                args2 = set([x for sublist in exp2[exp_file][exp_name]["args"] for x in sublist])
+                args1 = set(
+                    [x for sublist in exp1[exp_file][exp_name]["args"] for x in sublist]
+                )
+                args2 = set(
+                    [x for sublist in exp2[exp_file][exp_name]["args"] for x in sublist]
+                )
 
                 if args1 != args2:
                     removed = args1 - args2
@@ -730,16 +703,12 @@ class Diff:
 
             for def_file in removed:
                 logger.error(
-                    "{!r} file was removed from macros definitions".format(
-                        def_file
-                    )
+                    "{!r} file was removed from macros definitions".format(def_file)
                 )
 
             for def_file in added:
                 logger.error(
-                    "{!r} file was added to macros definitions".format(
-                        def_file
-                    )
+                    "{!r} file was added to macros definitions".format(def_file)
                 )
 
             def_files_are_same = False
@@ -827,14 +796,10 @@ class Diff:
             added = files2 - files1
 
             for file in removed:
-                logger.error(
-                    "{!r} file was removed from the callgraph".format(file)
-                )
+                logger.error("{!r} file was removed from the callgraph".format(file))
 
             for file in added:
-                logger.error(
-                    "{!r} file was added to the callgraph".format(file)
-                )
+                logger.error("{!r} file was added to the callgraph".format(file))
 
             files_are_same = False
 
@@ -871,9 +836,7 @@ class Diff:
                 if called_in_files1 == called_in_files2:
                     common_called_in_files = called_in_files2
                 else:
-                    common_called_in_files = (
-                        called_in_files1 & called_in_files2
-                    )
+                    common_called_in_files = called_in_files1 & called_in_files2
 
                     removed = called_in_files1 - called_in_files2
                     added = called_in_files2 - called_in_files1
@@ -895,19 +858,13 @@ class Diff:
                     called_in_files_are_same = False
 
                 for called_in_file in common_called_in_files:
-                    called_in_funcs1 = set(
-                        c1[file][func]["called_in"][called_in_file]
-                    )
-                    called_in_funcs2 = set(
-                        c2[file][func]["called_in"][called_in_file]
-                    )
+                    called_in_funcs1 = set(c1[file][func]["called_in"][called_in_file])
+                    called_in_funcs2 = set(c2[file][func]["called_in"][called_in_file])
 
                     if called_in_funcs1 == called_in_funcs2:
                         common_called_in_funcs = called_in_funcs2
                     else:
-                        common_called_in_funcs = (
-                            called_in_funcs1 & called_in_funcs2
-                        )
+                        common_called_in_funcs = called_in_funcs1 & called_in_funcs2
 
                         removed = called_in_funcs1 - called_in_funcs2
                         added = called_in_funcs2 - called_in_funcs1
@@ -930,14 +887,10 @@ class Diff:
 
                     for called_in_func in common_called_in_funcs:
                         call_lines1 = set(
-                            c1[file][func]["called_in"][called_in_file][
-                                called_in_func
-                            ]
+                            c1[file][func]["called_in"][called_in_file][called_in_func]
                         )
                         call_lines2 = set(
-                            c2[file][func]["called_in"][called_in_file][
-                                called_in_func
-                            ]
+                            c2[file][func]["called_in"][called_in_file][called_in_func]
                         )
 
                         if call_lines1 == call_lines2:
@@ -975,8 +928,12 @@ class Diff:
                         if common_call_lines:
                             call_line = list(common_call_lines)[0]
 
-                            match_type1 = c1[file][func]["called_in"][called_in_file][called_in_func][call_line]["match_type"]
-                            match_type2 = c2[file][func]["called_in"][called_in_file][called_in_func][call_line]["match_type"]
+                            match_type1 = c1[file][func]["called_in"][called_in_file][
+                                called_in_func
+                            ][call_line]["match_type"]
+                            match_type2 = c2[file][func]["called_in"][called_in_file][
+                                called_in_func
+                            ][call_line]["match_type"]
 
                             if match_type1 != match_type2:
                                 logger.error(
@@ -1006,7 +963,9 @@ class Diff:
 
     @staticmethod
     def __get_extension_list(work_dir):
-        return [f for f in os.listdir(work_dir) if os.path.isdir(os.path.join(work_dir, f))]
+        return [
+            f for f in os.listdir(work_dir) if os.path.isdir(os.path.join(work_dir, f))
+        ]
 
     def __ext_work_dirs_exist(self, ext_name):
         a = os.path.join(self.work_dir1, ext_name)

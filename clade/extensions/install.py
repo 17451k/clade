@@ -60,10 +60,12 @@ class Install(Common):
                 out = os.path.normpath(opt)
             else:
                 print(parsed_cmd)
-                self.error(f"Files from the command {cmd} probably do not exist anymore")
+                self.error(
+                    f"Files from the command {cmd} probably do not exist anymore"
+                )
                 return
 
-        if (parsed_cmd["out"] and out):
+        if parsed_cmd["out"] and out:
             self.error(f"install command {cmd} is incorrectly parsed: {parsed_cmd}")
             return
 
@@ -80,7 +82,7 @@ class Install(Common):
         return parsed_cmd
 
     def get_pairs(self):
-        '''Returns iterator for all (file, its symlink) pairs'''
+        """Returns iterator for all (file, its symlink) pairs"""
         cmds = self.load_all_cmds()
 
         for cmd in cmds:

@@ -33,14 +33,10 @@ class DotWithFiles:
         self.exclude_regex = None
 
         if include_files:
-            self.include_regex = re.compile(
-                "(" + ")|(".join(include_files) + ")"
-            )
+            self.include_regex = re.compile("(" + ")|(".join(include_files) + ")")
 
         if exclude_files:
-            self.exclude_regex = re.compile(
-                "(" + ")|(".join(exclude_files) + ")"
-            )
+            self.exclude_regex = re.compile("(" + ")|(".join(exclude_files) + ")")
 
     def add_node(self, file):
         if self.__filter_file(file):
