@@ -78,6 +78,8 @@ python3 -m pip install clade
 Following documentation is available:
 * [Basic usage](docs/usage.md)
 * [Available configuration options](docs/configuration.md)
+* [Extensions](docs/extensions.md)
+* [Scripts](docs/scripts.md)
 * [Troubleshooting](docs/troubleshooting.md)
 * [Development documentation](docs/dev.md)
 
