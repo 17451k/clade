@@ -68,6 +68,9 @@ def test_fallback(tmpdir):
 def test_fallback_with_exe_wrappers(tmpdir):
     output = os.path.join(str(tmpdir), "cmds.txt")
     cc_path = shutil.which("cc")
+
+    assert cc_path
+
     conf = {
         "Wrapper.wrap_list": [cc_path, os.path.dirname(cc_path)],
         "Wrapper.recursive_wrap": False,
