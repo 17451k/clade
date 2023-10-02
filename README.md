@@ -83,6 +83,9 @@ Following documentation is available:
 * [Troubleshooting](docs/troubleshooting.md)
 * [Development documentation](docs/dev.md)
 
+You can also see an example of Clade output on the Linux kernel
+(configuration tinyconfig) [here](https://github.com/17451k/clade/suites/16787197653/artifacts/958711967).
+
 ## Acknowledgments
 
 Clade is inspired by the [Bear](https://github.com/rizsotto/Bear) project created by [László Nagy](https://github.com/rizsotto).

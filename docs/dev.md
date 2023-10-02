@@ -23,6 +23,12 @@ the test suite from the repository (doesn't work on Windows yet):
 pytest
 ```
 
+## Disable parallelism
+
+Some issues in Clade are hard to debug, because a lot of stuff happens inside
+child processes. You can disable parallelism by setting *CLADE_DEBUG*
+environment value.
+
 ## Measuring code coverage
 
 To measure coverage you need to execute the following commands:
