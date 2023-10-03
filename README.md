@@ -84,7 +84,7 @@ Following documentation is available:
 * [Development documentation](docs/dev.md)
 
 You can also download an example of Clade output on the Linux kernel
-(configuration tinyconfig) [from here](https://github.com/17451k/clade/suites/16787197653/artifacts/958711967) (around 40MB).
+(configuration tinyconfig) [from here](https://github.com/17451k/clade/suites/16820630511/artifacts/960641341) (around 40MB).
 
 ## Acknowledgments
 
