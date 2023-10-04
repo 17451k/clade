@@ -117,7 +117,7 @@ class SrcGraph(Extension):
                     self.src_info[src_file] = {"loc": self.__count_file_loc(src_file)}
 
                 # The following means: source file src_file is compiled
-                # in commaind with id=cmd_id, and is indirectly used by commands
+                # in command with id=cmd_id, and is indirectly used by commands
                 # from the self.src_graph[src_file][cmd_id] set
                 self.src_graph[src_file][cmd["id"]] = used_by
 
