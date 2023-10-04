@@ -23,7 +23,7 @@ from clade.extensions.abstract import Extension
 
 
 class CmdGraph(Extension):
-    always_requires = ["PidGraph"]
+    always_requires = ["PidGraph", "Alternatives"]
     requires = always_requires  # exact list is specified in preset.json
 
     __version__ = "3"
@@ -87,12 +87,15 @@ class CmdGraph(Extension):
 
         return [cmd for cmd in cmds if cmd["id"] in cmd_graph]
 
-    def load_cmd_by_id(self, cmd_id):
+    def load_cmd_by_id(self, cmd_id, with_opts=False):
         if not hasattr(self, "cmd_type") or not self.cmd_type:
             self.cmd_type = self.load_cmd_type()
 
         cmd = self.extensions[self.cmd_type[cmd_id]].load_cmd_by_id(cmd_id)
         cmd["type"] = self.cmd_type[cmd_id]
+
+        if with_opts:
+            cmd["opts"] = self.extensions[self.cmd_type[cmd_id]].load_opts_by_id(cmd_id)
 
         return cmd
 
@@ -101,7 +104,7 @@ class CmdGraph(Extension):
         cmds = self.load_all_cmds()
         self.log("Parsing {} commands".format(len(cmds)))
 
-        for cmd in sorted(cmds, key=lambda x: int(x["id"])):
+        for cmd in sorted(cmds, key=lambda x: x["id"]):
             self.__add_to_graph(cmd)
 
         self.dump_dict_with_int_keys(self.graph, self.graph_file)
@@ -124,7 +127,14 @@ class CmdGraph(Extension):
         if out_id not in self.graph:
             self.graph[out_id] = self.__get_new_value()
 
-        for cmd_in in (i for i in cmd["in"] if i in self.out_dict):
+        # For each source file, there may be several identical ones,
+        # produced by cp, ln, or install commands.
+        # Here we replace each path by its canonical path.
+        canonical_ins = [
+            self.extensions["Alternatives"].get_canonical_path(i) for i in cmd["in"]
+        ]
+
+        for cmd_in in (i for i in canonical_ins if i in self.out_dict):
             in_id = self.out_dict[cmd_in]
 
             if out_id not in self.graph[in_id]["used_by"]:
@@ -133,7 +143,9 @@ class CmdGraph(Extension):
                 self.graph[out_id]["using"].append(in_id)
 
         # Rewrite out_dict[cmd_out] values to keep the latest used command id
-        for cmd_out in cmd["out"]:
+        for cmd_out in [
+            self.extensions["Alternatives"].get_canonical_path(i) for i in cmd["out"]
+        ]:
             self.out_dict[cmd_out] = out_id
 
     def __print_cmd_graph(self):
