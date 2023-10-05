@@ -83,6 +83,10 @@ class FileGraph:
         self.exclude_files = args.exclude_files
         self.include_files = args.include_files
         self.include_deps = args.include_deps
+        self.relative = args.relative
+
+        if self.relative:
+            self.relative = os.path.abspath(self.relative)
 
     def print(self):
         cmd_graph = self.clade.cmd_graph
@@ -90,25 +94,28 @@ class FileGraph:
         dot = DotWithFiles(self.include_files, self.exclude_files)
 
         for cmd_id in cmd_graph:
-            cmd = self.clade.CmdGraph.load_cmd_by_id(cmd_id)
+            cmd = self.clade.CmdGraph.load_cmd_by_id(cmd_id, with_opts=True)
 
             if cmd["type"] in self.exclude_cmd_types:
                 continue
 
             for i, cmd_out in enumerate(cmd["out"]):
-                dot.add_node(cmd_out)
+                dot.add_node(self.__dot_path(cmd_out))
 
-                # Properly print compiler commands with "-c" option
-                if cmd["type"] in ["CC", "CL", "LN"]:
-                    if not cmd["in"]:
-                        continue
-                    cmd_ins = [cmd["in"][i]]
-                else:
-                    cmd_ins = cmd["in"]
+                cmd_ins = cmd["in"]
+
+                if cmd["type"] in ["CC", "CL", "LN", "CXX"]:
+                    # Properly print compiler commands with "-c" option
+                    if "-c" in cmd["opts"]:
+                        cmd_ins = [cmd["in"][i]]
 
                 for cmd_in in cmd_ins:
-                    dot.add_node(cmd_in)
-                    dot.add_edge(cmd_in, cmd_out, f'{cmd["type"]} ({cmd_id})')
+                    dot.add_node(self.__dot_path(cmd_in))
+                    dot.add_edge(
+                        self.__dot_path(cmd_in),
+                        self.__dot_path(cmd_out),
+                        f'{cmd["type"]} ({cmd_id})',
+                    )
 
                     if not self.include_deps:
                         continue
@@ -124,10 +131,25 @@ class FileGraph:
                         if dep in cmd["in"]:
                             continue
 
-                        dot.add_node(dep)
-                        dot.add_edge(dep, cmd_in, f"Include ({cmd_id})")
+                        dot.add_node(self.__dot_path(dep))
+                        dot.add_edge(
+                            self.__dot_path(dep),
+                            self.__dot_path(cmd_in),
+                            f"Include ({cmd_id})",
+                        )
 
         dot.dot.render("file_graph", directory=self.output, cleanup=True)
+
+    def __dot_path(self, path):
+        path = self.clade.get_canonical_path(path)
+
+        if not self.relative:
+            return path
+
+        if not self.relative in path:
+            return path
+
+        return os.path.relpath(path, self.relative)
 
 
 def parse_args(args):
@@ -169,6 +191,12 @@ def parse_args(args):
         dest="exclude_cmd_types",
     )
 
+    parser.add_argument(
+        "--relative",
+        help="makes all paths in the output graph relative to the given directory",
+        metavar="PATH",
+        default=None,
+    )
     parser.add_argument(
         "-o",
         "--output",
