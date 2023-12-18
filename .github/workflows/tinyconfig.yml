@@ -49,7 +49,7 @@ jobs:
         PATH=$GITHUB_WORKSPACE/cif/bin:$PATH clade -p linux_kernel -e Callgraph -e Macros make -j$(nproc)
         zip -r clade-linux-kernel-tinyconfig.zip clade
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: clade-linux-kernel-tinyconfig
         path: linux/clade-linux-kernel-tinyconfig.zip
