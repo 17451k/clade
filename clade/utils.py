@@ -96,8 +96,10 @@ def get_clade_version():
         version = subprocess.check_output(
             desc, cwd=location, stderr=subprocess.DEVNULL, universal_newlines=True
         ).strip()
-    finally:
-        return version
+    except (subprocess.CalledProcessError, OSError):
+        pass
+
+    return version
 
 
 def get_program_version(program, version_arg="--version"):
@@ -106,10 +108,13 @@ def get_program_version(program, version_arg="--version"):
         version = subprocess.check_output(
             [program, version_arg], stderr=subprocess.DEVNULL, universal_newlines=True
         ).strip()
-    finally:
-        if version.startswith("gcc"):
-            version = re.sub(r"\nCopyright[\s\S]*", "", version)
-        return version
+    except (subprocess.CalledProcessError, OSError):
+        pass
+
+    if version.startswith("gcc"):
+        version = re.sub(r"\nCopyright[\s\S]*", "", version)
+
+    return version
 
 
 def array_hook(obj):
