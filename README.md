@@ -44,6 +44,7 @@ need to install some prerequisites beforehand:
 
 *Windows only*:
 
+- 64-bit Windows: 32-bit (x86) Windows is not supported
 - Microsoft Visual C++ Build Tools
 
 Optional dependencies:
