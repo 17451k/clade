@@ -20,46 +20,37 @@ import unittest.mock
 from clade import Clade
 
 
-def test_cc_parallel(tmpdir, cmds_file):
-    del os.environ["CLADE_DEBUG"]
+def test_cc_parallel(tmpdir, cmds_file, monkeypatch):
+    monkeypatch.delenv("CLADE_DEBUG")
 
-    try:
+    c = Clade(tmpdir, cmds_file)
+    e = c.parse("CC")
+
+    assert e.load_all_cmds()
+
+
+def test_cc_parallel_with_exception(tmpdir, cmds_file, monkeypatch):
+    monkeypatch.delenv("CLADE_DEBUG")
+
+    # Force results() method of a future object to raise Exception
+    with unittest.mock.patch("concurrent.futures.Future.result") as result_mock:
+        result_mock.side_effect = Exception
+
+        c = Clade(tmpdir, cmds_file)
+        with pytest.raises(Exception):
+            c.parse("CC")
+
+
+def test_cc_parallel_with_print(tmpdir, cmds_file, monkeypatch):
+    monkeypatch.delenv("CLADE_DEBUG")
+
+    with unittest.mock.patch("sys.stdout.isatty") as isatty_mock:
+        isatty_mock.return_value = True
+
         c = Clade(tmpdir, cmds_file)
         e = c.parse("CC")
 
         assert e.load_all_cmds()
-    finally:
-        os.environ["CLADE_DEBUG"] = "1"
-
-
-def test_cc_parallel_with_exception(tmpdir, cmds_file):
-    del os.environ["CLADE_DEBUG"]
-
-    try:
-        # Force results() method of a future object to raise Exception
-        with unittest.mock.patch("concurrent.futures.Future.result") as result_mock:
-            result_mock.side_effect = Exception
-
-            c = Clade(tmpdir, cmds_file)
-            with pytest.raises(Exception):
-                c.parse("CC")
-    finally:
-        os.environ["CLADE_DEBUG"] = "1"
-
-
-def test_cc_parallel_with_print(tmpdir, cmds_file):
-    del os.environ["CLADE_DEBUG"]
-
-    try:
-        with unittest.mock.patch("sys.stdout.isatty") as isatty_mock:
-            isatty_mock.return_value = True
-
-            c = Clade(tmpdir, cmds_file)
-            e = c.parse("CC")
-
-            assert e.load_all_cmds()
-    finally:
-        os.environ["CLADE_DEBUG"] = "1"
 
 
 @pytest.mark.parametrize("force", [True, False])

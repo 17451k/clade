@@ -23,11 +23,17 @@ from clade.intercept import intercept
 from tests.test_intercept import test_project_make, test_project
 
 
+@pytest.fixture(scope="session", autouse=True)
+def disable_multiprocessing():
+    # Multiprocessing makes tests several times slower without covering
+    # noticeably more code. Tests that need it unset CLADE_DEBUG themselves
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setenv("CLADE_DEBUG", "1")
+        yield
+
+
 @pytest.fixture(scope="session")
 def cmds_file():
-    # Disable multiprocessing
-    os.environ["CLADE_DEBUG"] = "1"
-
     with tempfile.NamedTemporaryFile() as fh:
         intercept(command=test_project_make, output=fh.name, use_wrappers=True)
         yield fh.name
@@ -35,9 +41,6 @@ def cmds_file():
 
 @pytest.fixture(scope="session")
 def envs_file():
-    # Disable multiprocessing
-    os.environ["CLADE_DEBUG"] = "1"
-
     c = Clade(work_dir=test_project + "/clade")
     c.intercept(command=test_project_make, use_wrappers=True, intercept_envs=True)
     yield os.path.join(c.work_dir, "envs.txt")
