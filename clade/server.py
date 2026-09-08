@@ -72,7 +72,8 @@ class SocketServer(parent):
         self.process = threading.Thread(
             # poll_interval defines for how long terminate() blocks
             # waiting to notice shutdown()
-            target=self.serve_forever, kwargs={"poll_interval": 0.01}
+            target=self.serve_forever,
+            kwargs={"poll_interval": 0.01},
         )
         self.process.daemon = True
         self.process.start()

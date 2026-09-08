@@ -270,9 +270,10 @@ class CL(Compiler):
         os.remove(pre_to)
 
     def __normalize_paths(self, c_file, cwd, encoding):
-        with open(c_file, "r", encoding=encoding) as c_file_fh, open(
-            c_file + ".new", "w", encoding="utf-8"
-        ) as c_file_new_fh:
+        with (
+            open(c_file, "r", encoding=encoding) as c_file_fh,
+            open(c_file + ".new", "w", encoding="utf-8") as c_file_new_fh,
+        ):
             for line in c_file_fh:
                 m = re.match(r"\s*#line \d* \"(.*?)\"", line)
 

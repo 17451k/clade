@@ -19,7 +19,6 @@ import sys
 
 from clade.intercept import intercept
 
-
 test_project = os.path.join(os.path.dirname(__file__), "test_project")
 test_project_make = ["make", "-C", test_project]
 

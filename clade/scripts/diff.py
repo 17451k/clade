@@ -20,7 +20,6 @@ import sys
 
 from clade import Clade
 
-
 # Setup extensions logger
 logger = logging.getLogger("Diff")
 handler = logging.StreamHandler(stream=sys.stdout)
