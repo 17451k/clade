@@ -30,9 +30,9 @@ is written in C and it needs to be compiled before use.
 It will be performed automatically at the installation stage, but you will
 need to install some prerequisites beforehand:
 
-- Python 3 (>=3.5)
+- Python 3 (>=3.10)
 - pip (Python package manager)
-- cmake (>=3.3)
+- cmake (>=3.10)
 
 *Linux only*:
 
