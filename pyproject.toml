@@ -86,3 +86,8 @@ skip = ["*-win32"]
 
 [tool.ruff.lint]
 ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# requires and always_requires are class defaults that extensions are
+# meant to override per instance, which ClassVar would forbid
+"clade/extensions/*.py" = ["RUF012"]
