@@ -22,6 +22,7 @@ import sys
 import tempfile
 
 from setuptools import dist
+from setuptools.command.bdist_wheel import bdist_wheel
 from setuptools.command.build_py import build_py
 
 LIBINT_SRC = os.path.abspath(
@@ -153,6 +154,14 @@ class CustomBuildPy(build_py):
         super().run()
 
 
+class CustomBdistWheel(bdist_wheel):
+    def get_tag(self):
+        # The bundled binaries are loaded by the OS, not imported by CPython,
+        # so the wheel is platform-specific but works with any Python 3
+        _, _, plat = super().get_tag()
+        return "py3", "none", plat
+
+
 class CustomDist(dist.Distribution):
     def is_pure(self):
         return False
@@ -162,6 +171,6 @@ class CustomDist(dist.Distribution):
 
 
 setuptools.setup(
-    cmdclass={"build_py": CustomBuildPy},
+    cmdclass={"bdist_wheel": CustomBdistWheel, "build_py": CustomBuildPy},
     distclass=CustomDist,
 )
