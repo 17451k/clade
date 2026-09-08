@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import codecs
 import fnmatch
 import gc
 import hashlib
@@ -558,7 +557,7 @@ def normalize_file(file):
 
     # Read large files (>= 100mb) line by line
     if os.path.getsize(file) >= 104857600:
-        with codecs.open(file, "rb") as fh:
+        with open(file, "rb") as fh:
             with open(new_file, "wb") as new_fh:
                 for line in fh:
                     if not line:
@@ -574,7 +573,7 @@ def normalize_file(file):
                     new_fh.write(line)  # type: ignore
     else:
         lines = []
-        with codecs.open(file, "rb") as fh:
+        with open(file, "rb") as fh:
             lines = fh.readlines()
 
             new_lines = []
