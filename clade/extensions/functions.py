@@ -28,10 +28,10 @@ class Functions(CommonInfo):
     def __init__(self, work_dir, conf=None):
         super().__init__(work_dir, conf)
 
-        self.funcs = dict()
+        self.funcs = {}
         self.funcs_folder = "functions"
 
-        self.funcs_by_file = dict()
+        self.funcs_by_file = {}
         self.funcs_by_file_folder = "functions_by_file"
 
     @Extension.prepare

@@ -80,7 +80,7 @@ def parse_args(args, work_dir):
 
 
 def prepare_conf(args):
-    conf = dict()
+    conf = {}
 
     if args.config:
         try:

@@ -505,13 +505,13 @@ requires_value = {
 
 # Some options require multiple values
 requires_mult_values = {
-    "CC": dict(),
-    "CXX": dict(),
+    "CC": {},
+    "CXX": {},
     "LD": {"-platform_version": 3},
-    "AS": dict(),
-    "Objcopy": dict(),
-    "CL": dict(),
-    "Link": dict(),
+    "AS": {},
+    "Objcopy": {},
+    "CL": {},
+    "Link": {},
 }
 
 include_opts = [

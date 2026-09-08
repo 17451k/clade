@@ -216,14 +216,14 @@ class Callgraph(CommonInfo):
         ]
 
         if call.from_func not in called_in:
-            called_in[call.from_func] = list()
+            called_in[call.from_func] = []
 
         called_in[call.from_func].append(call.val)
 
         # Create reversed callgraph
         calls = self.callgraph[call.from_file][call.from_func]["calls"][call.to_file]
         if call.to_func not in calls:
-            calls[call.to_func] = list()
+            calls[call.to_func] = []
 
         calls[call.to_func].append(call.val)
 

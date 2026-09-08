@@ -24,7 +24,7 @@ class Typedefs(Extension):
     def __init__(self, work_dir, conf=None):
         super().__init__(work_dir, conf)
 
-        self.typedefs = dict()
+        self.typedefs = {}
         self.typedefs_folder = "typedefs"
 
     @Extension.prepare

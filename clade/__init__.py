@@ -55,7 +55,7 @@ class Clade:
         self.conf_file = os.path.join(self.work_dir, "conf.json")
 
         # "Name -> Object" storage of all available extensions
-        self.extensions = dict()
+        self.extensions = {}
 
         self.__prepare_to_init()
 
@@ -74,7 +74,7 @@ class Clade:
         self._cdb = None
 
     def __prepare_conf(self, preset, conf):
-        conf = dict(conf) if conf else dict()
+        conf = dict(conf) if conf else {}
         conf = merge_preset_to_conf(preset, conf)
 
         conf["work_dir"] = self.work_dir
@@ -711,7 +711,7 @@ class Clade:
 
         # Map new format of macros to the old one
         for exp_file, macro in traverse(exps, 2):
-            expansions[exp_file][macro]["args"] = list()
+            expansions[exp_file][macro]["args"] = []
 
         expansions_with_args = self.Macros.load_args(files)
         # Map new format of macros to the old one

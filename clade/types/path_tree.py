@@ -18,7 +18,7 @@ class PathTree:
     KEY = "__val__"
 
     def __init__(self):
-        self.data = dict()
+        self.data = {}
 
     def __setitem__(self, key: str, value):
         data = self.data
@@ -27,7 +27,7 @@ class PathTree:
             if not new_key:
                 continue
 
-            data = self.__get_or_create(data, new_key, dict())
+            data = self.__get_or_create(data, new_key, {})
 
         data[self.KEY] = value
 

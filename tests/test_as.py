@@ -23,7 +23,7 @@ def test_as(tmpdir, cmds_file):
     e = c.parse("AS")
 
     cmds = e.load_all_cmds(with_opts=True, with_raw=True)
-    target_cmd = dict()
+    target_cmd = {}
 
     for cmd in cmds:
         for cmd_in in cmd["in"]:

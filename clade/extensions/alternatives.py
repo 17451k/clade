@@ -45,7 +45,7 @@ class Alternatives(Extension):
             "Alternatives.requires", []
         )
 
-        self.alts = dict()
+        self.alts = {}
         self.alts_file = "alts.json"
 
         # Helper variable for optimisation purposes
@@ -171,7 +171,7 @@ class Alternatives(Extension):
         return [path] + self.alts[path]
 
     def __load_cmds(self):
-        cmds = list()
+        cmds = []
 
         for ext_name in self.extensions:
             if ext_name in self.always_requires:

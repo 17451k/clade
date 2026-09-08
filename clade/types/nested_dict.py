@@ -33,7 +33,7 @@ def traverse(ndict, depth, restrict=None, allow_smaller=False):
     """
 
     if not restrict:
-        restrict = dict()
+        restrict = {}
 
     for l in __traverse(ndict, depth):
         if not restrict:

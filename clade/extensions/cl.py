@@ -123,10 +123,10 @@ class CL(Compiler):
 
         for opt in parsed_cmd["opts"]:
             if re.search(r"[/-](E|EP)$", opt):
-                parsed_cmd["out"] = list()
+                parsed_cmd["out"] = []
 
         if any(i for i in parsed_cmd["opts"] if i in ["/P", "-P"]):
-            parsed_cmd["out"] = list()
+            parsed_cmd["out"] = []
 
             for opt in parsed_cmd["opts"]:
                 if re.search(r"[/-]Fi", opt):
@@ -211,7 +211,7 @@ class CL(Compiler):
         return deps_file
 
     def __parse_deps(self, deps_file):
-        deps = list()
+        deps = []
         output_bytes = None
 
         if not os.path.exists(deps_file):

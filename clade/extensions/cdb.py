@@ -26,7 +26,7 @@ class CDB(Extension):
 
     def __init__(self, work_dir, conf=None):
         if not conf:
-            conf = dict()
+            conf = {}
 
         super().__init__(work_dir, conf)
 

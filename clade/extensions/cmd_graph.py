@@ -28,20 +28,20 @@ class CmdGraph(Extension):
     __version__ = "3"
 
     def __init__(self, work_dir, conf=None):
-        conf = conf if conf else dict()
+        conf = conf if conf else {}
 
         if "CmdGraph.requires" in conf:
             self.requires = self.always_requires + conf["CmdGraph.requires"]
 
         super().__init__(work_dir, conf)
 
-        self.graph = dict()
+        self.graph = {}
         self.graph_file = "cmd_graph.json"
 
-        self.cmd_type = dict()
+        self.cmd_type = {}
         self.cmd_type_file = "cmd_type.json"
 
-        self.out_dict = dict()
+        self.out_dict = {}
 
         self.pdf_file = os.path.join(self.work_dir, "cmd_graph")
 
@@ -54,8 +54,8 @@ class CmdGraph(Extension):
         return self.load_dict_with_int_keys(self.cmd_type_file)
 
     def load_all_cmds(self, with_opts=False, with_raw=False, filter_by_pid=False):
-        cmds = list()
-        bad_ids = list()
+        cmds = []
+        bad_ids = []
         for ext_name in [x for x in self.extensions if x not in self.always_requires]:
             for cmd in self.extensions[ext_name].load_all_cmds(
                 with_opts=with_opts, with_raw=with_raw, filter_by_pid=False
@@ -167,7 +167,7 @@ class CmdGraph(Extension):
 
     @staticmethod
     def __get_new_value():
-        return {"used_by": list(), "using": list()}
+        return {"used_by": [], "using": []}
 
     def get_ext_obj(self, ext_name):
         if ext_name not in self.extensions:

@@ -35,7 +35,7 @@ class Info(Extension):
 
     def __init__(self, work_dir, conf=None):
         if not conf:
-            conf = dict()
+            conf = {}
 
         # Without this option it will be difficult to link data
         # coming from Info and by CC extensions
@@ -354,7 +354,7 @@ class Info(Extension):
         # Set of files to remove from cif_output
         to_remove = set()
 
-        paths = dict()
+        paths = {}
         for output_file in cif_output:
             npath = self.__normalize_path(output_file)
 
@@ -483,7 +483,7 @@ class Info(Extension):
         for orig_content in self.__iter_file_regex(self.expand_args, regex):
             content = list(orig_content)
 
-            args = list()
+            args = []
 
             # Replace last element of content list (string with arguments)
             # with list of these arguments
@@ -599,7 +599,7 @@ def normalize_file(file):
 # into
 #   62543,62756,72341 is_acpi_node is_acpi_device_node 415 none NULL
 def combine_ids(file):
-    d = dict()
+    d = {}
 
     with open(file) as in_fh:
         for line in in_fh:

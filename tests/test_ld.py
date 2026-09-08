@@ -24,7 +24,7 @@ def test_ld(tmpdir, cmds_file):
 
     cmds = list(e.load_all_cmds(with_opts=True, with_raw=True))
 
-    target_cmd = dict()
+    target_cmd = {}
 
     for cmd in cmds:
         for cmd_out in cmd["out"]:

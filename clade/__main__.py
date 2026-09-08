@@ -143,7 +143,7 @@ def parse_args(args):
 
 
 def prepare_conf(args):
-    conf = dict()
+    conf = {}
 
     if args.config:
         try:

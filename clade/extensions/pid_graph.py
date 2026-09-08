@@ -24,7 +24,7 @@ class PidGraph(Extension):
     def __init__(self, work_dir, conf=None):
         super().__init__(work_dir, conf)
 
-        self.pid_by_id = dict()
+        self.pid_by_id = {}
         self.pid_by_id_file = "pid_by_id.json"
 
     @Extension.prepare
@@ -39,7 +39,7 @@ class PidGraph(Extension):
 
     def load_pid_graph(self) -> dict[int, list[int]]:
         pid_by_id = self.load_pid_by_id()
-        pid_graph: dict[int, list[int]] = dict()
+        pid_graph: dict[int, list[int]] = {}
 
         for key in sorted(pid_by_id.keys()):
             pid_graph[key] = [pid_by_id[key]] + pid_graph.get(pid_by_id[key], [])

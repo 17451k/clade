@@ -31,7 +31,7 @@ class CrossRef(CommonInfo):
     def __init__(self, work_dir, conf=None):
         super().__init__(work_dir, conf)
 
-        self.funcs = dict()
+        self.funcs = {}
 
         self.ref_to_folder = "ref_to"
         self.ref_from_folder = "ref_from"
@@ -48,7 +48,7 @@ class CrossRef(CommonInfo):
         raw_locations = self.__get_raw_locations()
 
         self.log("Parsing files")
-        locations = dict()
+        locations = {}
         for file in raw_locations:
             locations[file] = self.__parse_file(file, raw_locations)
         raw_locations.clear()
@@ -68,7 +68,7 @@ class CrossRef(CommonInfo):
         return self.load_data_by_key(self.ref_from_folder, files)
 
     def __get_raw_locations(self):
-        raw_locations = dict()
+        raw_locations = {}
 
         raw_locations = self.__get_raw_func_locations(raw_locations)
         raw_locations = self.__get_raw_macro_locations(raw_locations)

@@ -78,7 +78,7 @@ def iter_cmds(cmds_file):
 
 def split_cmd(line):
     """Convert a single intercepted command into dictionary."""
-    cmd = dict()
+    cmd = {}
     cmd["cwd"], cmd["pid"], cmd["which"], *cmd["command"] = line.strip().split(
         DELIMITER
     )
@@ -132,7 +132,7 @@ def get_all_cmds(cmds_file):
 
 def get_stats(cmds_file):
     """Get statistics of intercepted commands number."""
-    stats = dict()
+    stats = {}
     for cmd in iter_cmds(cmds_file):
         if cmd["which"] in stats:
             stats[cmd["which"]] += 1

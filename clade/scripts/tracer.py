@@ -43,7 +43,7 @@ class Tracer:
         # to a list of Function objects required by most Tracer methods
 
         if not func_names:
-            return list()
+            return []
 
         functions = set()
 
@@ -105,7 +105,7 @@ class Tracer:
     def trace_list(self, from_funcs: list[Function], to_funcs: list[Function]) -> Trace:
         # Get all call traces between 2 groups of functions (from_funcs and to_funcs).
 
-        trace = dict()
+        trace = {}
 
         queue = collections.deque()
         queue.extend(from_funcs)
@@ -140,7 +140,7 @@ class Tracer:
     def trace_full(self) -> Trace:
         # Get full callgraph from the Clade database, in the Trace format.
 
-        trace = dict()
+        trace = {}
 
         for call in self.clade.Callgraph.traverse_calls():
             from_func = Function(name=call.from_func, path=call.from_file)
@@ -157,7 +157,7 @@ class Tracer:
     def __reverse_trace(trace: Trace) -> Trace:
         # Reverse a trace, so it can be more easily filtered later.
 
-        reversed_trace = dict()
+        reversed_trace = {}
 
         for func in trace:
             for called_func in trace[func]:
@@ -174,7 +174,7 @@ class Tracer:
         # of the "from_funcs" functions
 
         reversed_trace = Tracer.__reverse_trace(trace)
-        trimmed_trace = dict()
+        trimmed_trace = {}
 
         queue = collections.deque()
         queue.extend(from_funcs)
@@ -254,7 +254,7 @@ class Tracer:
         if not from_filter:
             return trace
 
-        from_trace = self.trace_list(from_filter, list())
+        from_trace = self.trace_list(from_filter, [])
 
         for key in from_filter:
             del trace[key]
@@ -355,7 +355,7 @@ def main(args=None):
         if args.to_funcs:
             to_funcs = t.find_functions(args.to_funcs)
         else:
-            to_funcs = list()
+            to_funcs = []
 
         trace = t.trace_list(from_funcs, to_funcs)
 

@@ -63,7 +63,7 @@ class CommonInfo(Extension):
             if not os.path.isfile(log_file):
                 return
 
-            dup_lines = dict()
+            dup_lines = {}
 
             with open(log_file, "r") as output_fh:
                 for line in output_fh:

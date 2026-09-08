@@ -26,7 +26,7 @@ import orjson
 
 def get_logger(name, with_name=True, conf=None):
     if not conf:
-        conf = dict()
+        conf = {}
 
     logger = logging.getLogger(name)
 

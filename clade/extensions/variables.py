@@ -30,10 +30,10 @@ class Variables(CommonInfo):
     def __init__(self, work_dir, conf=None):
         super().__init__(work_dir, conf)
 
-        self.variables = dict()
+        self.variables = {}
         self.variables_folder = "variables"
 
-        self.used_in_vars = dict()
+        self.used_in_vars = {}
         self.used_in_vars_file = "used_in_vars.json"
 
         self.function_name_re = re.compile(r"\(?\s*&?\s*(\w+)\s*\)?$")

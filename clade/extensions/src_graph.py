@@ -24,17 +24,17 @@ class SrcGraph(Extension):
     requires = always_requires  # exact list is specified in presets.json
 
     def __init__(self, work_dir, conf=None):
-        conf = conf if conf else dict()
+        conf = conf if conf else {}
 
         if "SrcGraph.requires" in conf:
             self.requires = self.always_requires + conf["SrcGraph.requires"]
 
         super().__init__(work_dir, conf)
 
-        self.src_graph = dict()
+        self.src_graph = {}
         self.src_graph_folder = "src_graph"
 
-        self.src_info = dict()
+        self.src_info = {}
         self.src_info_file = "src_info.json"
 
     def load_src_graph(self, files=None) -> dict[str, dict[int, list[int]]]:
@@ -112,7 +112,7 @@ class SrcGraph(Extension):
                 src_file = self.extensions["Alternatives"].get_canonical_path(src_file)
 
                 if src_file not in self.src_graph:
-                    self.src_graph[src_file] = dict()
+                    self.src_graph[src_file] = {}
                     self.src_info[src_file] = {"loc": self.__count_file_loc(src_file)}
 
                 # The following means: source file src_file is compiled
@@ -164,7 +164,7 @@ class SrcGraph(Extension):
 
     def dump_src_graph(self):
         # Replace int keys with string ones
-        src_graph = dict()
+        src_graph = {}
 
         for file in self.src_graph:
             src_graph[file] = {

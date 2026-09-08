@@ -54,14 +54,14 @@ class Extension(metaclass=abc.ABCMeta):
         self.work_dir = os.path.join(self.clade_work_dir, self.name)
         self.temp_dir = ""
 
-        self.conf = conf if conf else dict()
+        self.conf = conf if conf else {}
 
         self.logger = None
 
         if not hasattr(self, "requires"):
             self.requires = []
 
-        self.extensions = dict()
+        self.extensions = {}
 
         self.ext_meta = {"version": self.get_ext_version(), "corrupted": False}
         self.global_meta_file = os.path.abspath(
@@ -151,7 +151,7 @@ class Extension(metaclass=abc.ABCMeta):
             else:
                 self.debug(message)
 
-            return dict()
+            return {}
 
         self.debug(f"Loading {file_name!r}")
 
@@ -189,7 +189,7 @@ class Extension(metaclass=abc.ABCMeta):
 
     def load_data_by_key(self, folder, keys=None):
         """Load data stored in multiple json files using dump_data_by_key()."""
-        data = dict()
+        data = {}
 
         for key, value in self.__yield_data_by_key(folder, keys=keys):
             data.update(value)
@@ -342,7 +342,7 @@ class Extension(metaclass=abc.ABCMeta):
             stored_meta["build_dir"] = self.conf["build_dir"]
 
         if "versions" not in stored_meta:
-            stored_meta["versions"] = dict()
+            stored_meta["versions"] = {}
 
         if "clade" not in stored_meta["versions"]:
             stored_meta["versions"]["clade"] = get_clade_version()

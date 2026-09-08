@@ -76,7 +76,7 @@ class Macros(Extension):
             self.debug("Processing definition: " + " ".join([file, macro, line]))
 
             if file not in self.macros:
-                self.macros[file] = list()
+                self.macros[file] = []
 
             self.macros[file].append({"name": macro, "line": int(line)})
 
@@ -95,7 +95,7 @@ class Macros(Extension):
                 def_file = "unknown"
 
             if exp_file not in self.exps[def_file][macro]:
-                self.exps[def_file][macro][exp_file] = list()
+                self.exps[def_file][macro][exp_file] = []
 
             self.exps[def_file][macro][exp_file].append(exp_val)
 
@@ -105,7 +105,7 @@ class Macros(Extension):
             self.debug("Processing args: " + " ".join([exp_file, macro]))
 
             if macro not in self.args[exp_file]:
-                self.args[exp_file][macro] = list()
+                self.args[exp_file][macro] = []
 
             if args:
                 self.args[exp_file][macro].append(args)

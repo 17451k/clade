@@ -142,7 +142,7 @@ class UsedIn(CommonInfo):
                     used_in_file = self.used_in[possible_file][func]["used_in_file"]
 
                     if context_file not in used_in_file:
-                        used_in_file[context_file] = list()
+                        used_in_file[context_file] = []
 
                     used_in_file[context_file].append(val)
                 else:
@@ -151,7 +151,7 @@ class UsedIn(CommonInfo):
                     ]
 
                     if context_func not in used_in_func:
-                        used_in_func[context_func] = list()
+                        used_in_func[context_func] = []
 
                     used_in_func[context_func].append(val)
 
