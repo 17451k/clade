@@ -1,7 +1,0 @@
-[run]
-concurrency =
-    multiprocessing
-    concurrent.futures
-source = clade
-omit =
-    clade/scripts/*

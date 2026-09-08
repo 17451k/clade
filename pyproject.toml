@@ -35,7 +35,7 @@ classifiers = [
 Homepage = "https://github.com/17451k/clade"
 
 [project.optional-dependencies]
-dev = ["pytest", "black", "mypy", "ruff"]
+dev = ["pytest", "coverage[toml]", "black", "mypy", "ruff"]
 
 [project.scripts]
 clade = "clade.__main__:main"
@@ -70,6 +70,14 @@ include = ["clade*"]
     "intercept/wrapper",
     "intercept/debugger.exe",
 ]
+
+[tool.pytest.ini_options]
+markers = ["cif: tests that require CIF"]
+
+[tool.coverage.run]
+concurrency = ["multiprocessing", "thread"]
+source = ["clade"]
+omit = ["clade/scripts/*"]
 
 [tool.cibuildwheel]
 # Wheels are tagged py3-none, so one build per platform covers every Python
