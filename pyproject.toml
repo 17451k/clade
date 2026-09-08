@@ -35,7 +35,7 @@ classifiers = [
 Homepage = "https://github.com/17451k/clade"
 
 [project.optional-dependencies]
-dev = ["pytest", "coverage[toml]", "black", "mypy", "ruff"]
+dev = ["pytest", "coverage[toml]", "black", "ty", "ruff"]
 
 [project.scripts]
 clade = "clade.__main__:main"
