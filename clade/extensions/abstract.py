@@ -456,12 +456,10 @@ class Extension(metaclass=abc.ABCMeta):
                         msg = f"Processed {finished_objs} out of {total_objs} [{finished_objs / total_objs * 100:.0f}%]"
                         self.progress(msg)
 
-                    # Check return value of all finished futures
+                    # Check return value of all finished futures.
+                    # result() re-raises whatever the worker raised
                     for f in done_futures:
-                        try:
-                            f.result()
-                        except Exception as e:
-                            raise e
+                        f.result()
 
                     # Submit next chunk if the current one is almost processed
                     finished_chunk_objs = len([x for x in chunk_futures if x.done()])
