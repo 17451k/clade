@@ -232,9 +232,7 @@ class CC(Linker):
                 )
                 return pre
 
-            r = subprocess.check_call(
-                command, cwd=cmd["cwd"], stderr=subprocess.DEVNULL
-            )
+            r = subprocess.call(command, cwd=cmd["cwd"], stderr=subprocess.DEVNULL)
 
             if not r:
                 pre.append(pre_file)
