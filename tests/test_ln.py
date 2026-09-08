@@ -15,8 +15,16 @@
 import os
 import pathlib
 import subprocess
+import sys
+
+import pytest
 
 from clade.extensions.ln import LN
+
+# -t and --target-directory are GNU extensions, absent from BSD ln
+gnu_ln_only = pytest.mark.skipif(
+    sys.platform == "darwin", reason="BSD ln has no --target-directory"
+)
 
 
 def get_cmd(tmp_path, command):
@@ -112,6 +120,7 @@ def check_target(parsed_cmd, in_file, out_dir):
     assert str(out_dir) in parsed_cmd["out"][0]
 
 
+@gnu_ln_only
 def test_ln_t1(tmp_path: pathlib.Path):
     ln = LN(tmp_path)
 
@@ -125,6 +134,7 @@ def test_ln_t1(tmp_path: pathlib.Path):
     check_target(parsed_cmd, in_file, out_dir)
 
 
+@gnu_ln_only
 def test_ln_t2(tmp_path: pathlib.Path):
     ln = LN(tmp_path)
 
@@ -138,6 +148,7 @@ def test_ln_t2(tmp_path: pathlib.Path):
     check_target(parsed_cmd, in_file, out_dir)
 
 
+@gnu_ln_only
 def test_ln_target1(tmp_path: pathlib.Path):
     ln = LN(tmp_path)
 
@@ -151,6 +162,7 @@ def test_ln_target1(tmp_path: pathlib.Path):
     check_target(parsed_cmd, in_file, out_dir)
 
 
+@gnu_ln_only
 def test_ln_target2(tmp_path: pathlib.Path):
     ln = LN(tmp_path)
 
