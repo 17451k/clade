@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import multiprocessing
 import threading
 import os
 import socketserver
@@ -70,19 +69,24 @@ class SocketServer(parent):
         super().__init__(address, rh)
 
     def start(self):
-        if sys.platform == "win32" or (
-            sys.platform == "darwin" and sys.version_info[1] >= 8
-        ):
-            self.process = threading.Thread(target=self.serve_forever)
-        else:
-            self.process = multiprocessing.Process(target=self.serve_forever)
+        self.process = threading.Thread(
+            # poll_interval defines for how long terminate() blocks
+            # waiting to notice shutdown()
+            target=self.serve_forever, kwargs={"poll_interval": 0.01}
+        )
         self.process.daemon = True
         self.process.start()
 
     def terminate(self):
+        # serve_forever() runs in a separate thread, so it must be stopped
+        # explicitly
+        self.shutdown()
+        self.server_close()
+        self.process.join()
+
         # if UNIX socket was used, it's parent directory needs to be closed
         if self.socket_fh:
-            self.socket_fh.close()
+            self.socket_fh.cleanup()
 
 
 class PreprocessServer:
@@ -112,7 +116,7 @@ class PreprocessServer:
         server = SocketServer(name, self.output, self.conf)
 
         # Without this file object will be closed automatically after exiting from this function
-        server.sock_fh = f
+        server.socket_fh = f
 
         return server
 
@@ -145,7 +149,6 @@ class PreprocessServer:
         return env
 
     def start(self):
-        # Create separate server process
         self.server.start()
 
     def terminate(self):
