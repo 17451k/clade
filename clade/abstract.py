@@ -91,9 +91,8 @@ class Intercept(metaclass=abc.ABCMeta):
         else:
             last_used_id = "0"
 
-        f = tempfile.NamedTemporaryFile(mode="w", delete=False)
-        f.write(last_used_id)
-        f.flush()
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
+            f.write(last_used_id)
 
         self.clade_if_file = f.name
         env["CLADE_ID_FILE"] = self.clade_if_file

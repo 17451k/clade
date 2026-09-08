@@ -256,7 +256,8 @@ class CL(Compiler):
         if self.conf.get("CL.pre_encoding"):
             encoding = self.conf.get("CL.pre_encoding")
         else:
-            rawdata = open(pre_to, "rb").read()
+            with open(pre_to, "rb") as fh:
+                rawdata = fh.read()
             encoding = charset_normalizer.detect(rawdata)["encoding"]
 
         # Normalize paths in line directives
