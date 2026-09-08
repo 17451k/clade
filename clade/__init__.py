@@ -16,7 +16,6 @@
 import json
 import os
 import shutil
-from typing import List
 
 from clade.cmds import iter_cmds, iter_cmds_by_which
 from clade.envs import iter_envs
