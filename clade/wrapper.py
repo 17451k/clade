@@ -140,7 +140,7 @@ class Wrapper(Intercept):
             os.symlink(self.wrapper, path)
         except PermissionError:
             self.logger.warning(f"You do not have permissions to modify {path!r}")
-        except Exception as e:
+        except OSError as e:
             self.logger.warning(e)
 
     def __delete_wrappers(self):
@@ -181,7 +181,7 @@ class Wrapper(Intercept):
                 os.rename(path + self.wrapper_postfix, path)
         except PermissionError:
             return
-        except Exception as e:
+        except OSError as e:
             self.logger.warning(e)
 
     @Intercept.preprocess

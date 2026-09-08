@@ -62,7 +62,7 @@ class LD(Linker):
 
                 if os.path.isdir(m.group(1)):
                     searchdirs.append(m.group(1))
-        except Exception:
+        except (OSError, UnicodeDecodeError):
             return searchdirs
 
         return searchdirs

@@ -138,7 +138,7 @@ class Storage(Extension):
 
             try:
                 shutil.copymode(filename, f.name)
-            except Exception:
+            except OSError:
                 self.warning(f"Couldn't set permissions for {filename!r}")
 
             try:

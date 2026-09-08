@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import inspect
 import os
 import socketserver
 import sys
@@ -59,11 +60,11 @@ class SocketServer(parent):
         # Request handler must have access to extensions
         extensions = []
         for cls in Extension.get_all_extensions():
-            try:
-                extensions.append(cls(conf.get("work_dir", "Clade"), conf))
-            except Exception:
-                # Some extension classes are abstract and can't be instantiated
+            # Some extension classes are abstract and can't be instantiated
+            if inspect.isabstract(cls):
                 continue
+
+            extensions.append(cls(conf.get("work_dir", "Clade"), conf))
         rh.extensions = extensions
 
         super().__init__(address, rh)

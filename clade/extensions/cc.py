@@ -276,7 +276,7 @@ class CC(Linker):
             for line in lines:
                 if os.path.isdir(line):
                     searchdirs.append(os.path.normpath(line))
-        except Exception:
+        except (OSError, UnicodeDecodeError):
             return searchdirs
 
         return searchdirs
