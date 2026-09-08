@@ -247,7 +247,7 @@ class Tracer:
 
         return True
 
-    def filter_trace_from(self, trace: Trace, from_filter=list[Function]) -> Trace:
+    def filter_trace_from(self, trace: Trace, from_filter: list[Function]) -> Trace:
         # Remove all paths from the trace that start with one of the "from_filter"
         # functions.
 
@@ -264,7 +264,7 @@ class Tracer:
 
         return trace
 
-    def filter_trace_to(self, trace: Trace, to_filter=list[Function]) -> Trace:
+    def filter_trace_to(self, trace: Trace, to_filter: list[Function]) -> Trace:
         # Remove all paths from the trace that finish with one of the "from_filter"
         # functions.
 
@@ -277,9 +277,7 @@ class Tracer:
             del trace[key]
 
         for key in trace:
-            trace[key] = [
-                f for f in trace[key] if f not in f not in to_trace.get(key, [])
-            ]
+            trace[key] = [f for f in trace[key] if f not in to_trace.get(key, [])]
 
         return trace
 
