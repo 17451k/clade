@@ -33,12 +33,12 @@ def test_cc_parallel(tmpdir, cmds_file, monkeypatch):
 def test_cc_parallel_with_exception(tmpdir, cmds_file, monkeypatch):
     monkeypatch.delenv("CLADE_DEBUG")
 
-    # Force results() method of a future object to raise Exception
+    # Force results() method of a future object to raise an exception
     with unittest.mock.patch("concurrent.futures.Future.result") as result_mock:
-        result_mock.side_effect = Exception
+        result_mock.side_effect = RuntimeError("mocked future failure")
 
         c = Clade(tmpdir, cmds_file)
-        with pytest.raises(Exception):
+        with pytest.raises(RuntimeError, match="mocked future failure"):
             c.parse("CC")
 
 
