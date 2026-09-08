@@ -25,7 +25,7 @@ class Wrapper(Intercept):
     def __init__(
         self,
         command,
-        cwd=os.getcwd(),
+        cwd=None,
         output="cmds.txt",
         append=False,
         intercept_open=False,

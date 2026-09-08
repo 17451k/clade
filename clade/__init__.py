@@ -148,7 +148,7 @@ class Clade:
     def intercept(
         self,
         command,
-        cwd=os.getcwd(),
+        cwd=None,
         append=False,
         use_wrappers=False,
         intercept_open=False,

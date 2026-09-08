@@ -42,7 +42,7 @@ class Intercept(metaclass=abc.ABCMeta):
     def __init__(
         self,
         command,
-        cwd=os.getcwd(),
+        cwd=None,
         output: str = "cmds.txt",
         append=False,
         intercept_open=False,
@@ -50,7 +50,7 @@ class Intercept(metaclass=abc.ABCMeta):
         conf=None,
     ):
         self.command = command
-        self.cwd = cwd
+        self.cwd = cwd if cwd is not None else os.getcwd()
         self.output = os.path.abspath(output)
         self.output_open = os.path.join(os.path.dirname(self.output), "open.txt")
         self.output_envs = os.path.join(os.path.dirname(self.output), "envs.txt")

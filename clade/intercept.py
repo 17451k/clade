@@ -23,7 +23,7 @@ from clade.wrapper import Wrapper
 
 def intercept(
     command,
-    cwd=os.getcwd(),
+    cwd=None,
     output="cmds.txt",
     append=False,
     conf=None,
