@@ -17,7 +17,6 @@ import codecs
 import os
 import re
 
-
 from clade.extensions.abstract import Extension
 from clade.extensions.callgraph import Call
 from clade.extensions.common_info import CommonInfo
@@ -195,7 +194,7 @@ class CrossRef(CommonInfo):
                 callgraph[context_file], 3, {2: "calls"}
             ):
                 if file not in self.funcs:
-                    self._warning("Can't find file: {!r}".format(file))
+                    self._warning(f"Can't find file: {file!r}")
                     continue
 
                 for func in callgraph[context_file][context_func]["calls"][file]:

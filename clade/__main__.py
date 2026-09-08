@@ -15,10 +15,11 @@
 
 import argparse
 import datetime
-import orjson
 import os
 import sys
 import time
+
+import orjson
 
 from clade import Clade
 from clade.utils import get_clade_version, load
@@ -213,9 +214,7 @@ def main(sys_args=sys.argv[1:]):
 
         # Clade can still proceed further if exit code != 0
         c.logger.error(
-            "Build finished in {} with exit code {}".format(
-                build_delta_str, build_exit_code
-            )
+            f"Build finished in {build_delta_str} with exit code {build_exit_code}"
         )
 
         if args.intercept and os.path.exists(conf["cmds_file"]):
@@ -239,13 +238,11 @@ def main(sys_args=sys.argv[1:]):
 
         ext_delta = datetime.timedelta(seconds=(time.time() - ext_time_start))
         ext_delta_str = str(ext_delta).split(".")[0]
-        c.logger.info("Extensions finished in {}".format(ext_delta_str))
+        c.logger.info(f"Extensions finished in {ext_delta_str}")
 
         if build_exit_code != 0:
             c.logger.warning(
-                "[WARNING] Reminder that build finished with exit code {}".format(
-                    build_exit_code
-                )
+                f"[WARNING] Reminder that build finished with exit code {build_exit_code}"
             )
     except RuntimeError as e:
         if e.args:

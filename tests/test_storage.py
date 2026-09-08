@@ -14,10 +14,11 @@
 # limitations under the License.
 
 import os
-import pytest
 import shutil
 import stat
 import unittest.mock
+
+import pytest
 
 from clade import Clade
 

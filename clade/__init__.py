@@ -16,15 +16,14 @@
 import json
 import os
 import shutil
-
 from typing import List
 
-from clade.utils import get_logger, merge_preset_to_conf
-from clade.intercept import intercept
-from clade.extensions.abstract import Extension
-from clade.types.nested_dict import nested_dict, traverse
 from clade.cmds import iter_cmds, iter_cmds_by_which
 from clade.envs import iter_envs
+from clade.extensions.abstract import Extension
+from clade.intercept import intercept
+from clade.types.nested_dict import nested_dict, traverse
+from clade.utils import get_logger, merge_preset_to_conf
 
 
 class Clade:
@@ -112,9 +111,7 @@ class Clade:
         if path and os.path.exists(path):
             if not os.access(path, os.X_OK | os.W_OK):
                 self.logger.error(
-                    "Permission error: can't write files to the {!r} directory".format(
-                        path
-                    )
+                    f"Permission error: can't write files to the {path!r} directory"
                 )
                 raise PermissionError
 
@@ -198,8 +195,7 @@ class Clade:
         for e in ext_objs:
             if e.name == ext_name:
                 return e
-        else:
-            raise RuntimeError("Cant find required extension {!r}".format(ext_name))
+        raise RuntimeError(f"Cant find required extension {ext_name!r}")
 
     def are_parsed(self, ext_name):
         """Check whether build commands are parsed or not.
@@ -244,7 +240,7 @@ class Clade:
         ext_objs = self.__get_ext_obj_list(ext_names)
 
         for ext_obj in ext_objs:
-            ext_obj.debug("Extension requirements: {!r}".format(ext_obj.requires))
+            ext_obj.debug(f"Extension requirements: {ext_obj.requires!r}")
 
             if clean and ext_obj.name in ext_names and os.path.isdir(ext_obj.work_dir):
                 shutil.rmtree(ext_obj.work_dir)
@@ -360,7 +356,7 @@ class Clade:
         for cmd in iter_cmds(self.cmds_file):
             yield cmd
 
-    def get_raw_cmds_by_which(self, which_list: List[str]):
+    def get_raw_cmds_by_which(self, which_list: list[str]):
         """Get an iterator over all unparsed commands filtered by 'which' field."""
         for cmd in iter_cmds_by_which(self.cmds_file, which_list):
             yield cmd
@@ -371,7 +367,7 @@ class Clade:
             if cmd["id"] == cmd_id:
                 return cmd
 
-        return RuntimeError("No command with id {}".format(cmd_id))
+        return RuntimeError(f"No command with id {cmd_id}")
 
     def get_envs(self):
         """Get an iterator over all environment variables."""
@@ -384,7 +380,7 @@ class Clade:
             if envs["id"] == cmd_id:
                 return envs["envs"]
 
-        raise RuntimeError("No envs with id {}".format(cmd_id))
+        raise RuntimeError(f"No envs with id {cmd_id}")
 
     def get_env_value_by_id(self, cmd_id: int, name: str):
         """Get environment variable by its intercepted command identifier and name."""
@@ -392,7 +388,7 @@ class Clade:
         if name in envs:
             return envs[name]
         else:
-            raise RuntimeError("No envs with id {} and name {}".format(cmd_id, name))
+            raise RuntimeError(f"No envs with id {cmd_id} and name {name}")
 
     def get_cmds(self, with_opts=False, with_raw=False):
         """Get list with all parsed commands."""
@@ -475,7 +471,7 @@ class Clade:
     def get_root_cmds(self, cmd_id):
         """Get list of identifiers of all root commands from a command graph of a given command identifier."""
         if cmd_id not in self.cmd_graph:
-            raise KeyError("Can't find {!r} id in the command graph".format(cmd_id))
+            raise KeyError(f"Can't find {cmd_id!r} id in the command graph")
 
         using = list(self.cmd_graph[cmd_id]["using"])
 
@@ -494,7 +490,7 @@ class Clade:
     def get_leaf_cmds(self, cmd_id):
         """Get list of identifiers of all leaf commands from a command graph of a given command identifier."""
         if cmd_id not in self.cmd_graph:
-            raise KeyError("Can't find {!r} id in the command graph".format(cmd_id))
+            raise KeyError(f"Can't find {cmd_id!r} id in the command graph")
 
         used_by = self.cmd_graph[cmd_id]["used_by"]
 
@@ -540,7 +536,7 @@ class Clade:
         try:
             return int(self.src_info[file]["loc"])
         except KeyError:
-            raise RuntimeError("Can't find {!r} file in the source graph".format(file))
+            raise RuntimeError(f"Can't find {file!r} file in the source graph")
 
     def get_compilation_cmds_ids_by_file(self, file):
         """Get list of identifiers of compilation commands in which the file was compiled.

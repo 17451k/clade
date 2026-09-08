@@ -13,8 +13,8 @@
 # limitations under the License.
 
 import os
-import subprocess
 import pathlib
+import subprocess
 
 from clade.extensions.ln import LN
 

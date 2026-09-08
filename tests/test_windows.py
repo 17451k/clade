@@ -14,8 +14,9 @@
 # limitations under the License.
 
 import os
-import pytest
 import sys
+
+import pytest
 
 from clade import Clade
 

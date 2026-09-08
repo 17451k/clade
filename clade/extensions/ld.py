@@ -18,8 +18,8 @@ import os
 import re
 import subprocess
 
-from clade.extensions.linker import Linker
 from clade.extensions.common import Common
+from clade.extensions.linker import Linker
 
 
 class LD(Linker):
@@ -40,7 +40,7 @@ class LD(Linker):
         self.dump_cmd_by_id(cmd["id"], parsed_cmd)
 
     @staticmethod
-    @functools.lru_cache()
+    @functools.lru_cache
     def _get_default_searchdirs(which):
         searchdirs = []
 

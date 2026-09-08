@@ -14,18 +14,19 @@
 # limitations under the License.
 
 import os
-import pytest
 import shutil
 
+import pytest
+
 from clade.cmds import (
-    iter_cmds,
-    iter_cmds_by_which,
-    open_cmds_file,
+    get_all_cmds,
     get_build_dir,
     get_last_id,
     get_stats,
+    iter_cmds,
+    iter_cmds_by_which,
     join_cmd,
-    get_all_cmds,
+    open_cmds_file,
 )
 from clade.scripts.stats import print_cmds_stats
 

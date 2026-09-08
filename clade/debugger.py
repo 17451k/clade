@@ -57,14 +57,14 @@ class Debugger(Intercept):
         debugger = os.path.join(os.path.dirname(__file__), "intercept", "debugger.exe")
 
         if not os.path.exists(debugger):
-            raise RuntimeError("debugger is not found in {!r}".format(debugger))
+            raise RuntimeError(f"debugger is not found in {debugger!r}")
 
-        self.logger.debug("Path to the debugger: {!r}".format(debugger))
+        self.logger.debug(f"Path to the debugger: {debugger!r}")
 
         return debugger
 
     @Intercept.preprocess
     def execute(self):
         self.command.insert(0, self.debugger)
-        self.logger.debug("Execute {!r} command".format(self.command))
+        self.logger.debug(f"Execute {self.command!r} command")
         return subprocess.call(self.command, env=self.env, shell=False, cwd=self.cwd)

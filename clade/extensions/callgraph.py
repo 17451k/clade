@@ -14,7 +14,8 @@
 # limitations under the License.
 
 import re
-from typing import Any, Generator, NamedTuple, Dict
+from collections.abc import Generator
+from typing import Any, NamedTuple
 
 from clade.extensions.abstract import Extension
 from clade.extensions.common_info import CommonInfo
@@ -26,7 +27,7 @@ class Call(NamedTuple):
     from_func: str
     to_file: str
     to_func: str
-    val: Dict[str, Any]
+    val: dict[str, Any]
 
 
 class Callgraph(CommonInfo):
@@ -101,7 +102,7 @@ class Callgraph(CommonInfo):
             if self.is_builtin.match(func) or (
                 is_bad.match(func) and func not in self.callgraph
             ):
-                self.debug("Function {} is bad".format(func))
+                self.debug(f"Function {func} is bad")
                 continue
 
             context_definition = self.extensions["Functions"].construct_definition(
@@ -131,9 +132,7 @@ class Callgraph(CommonInfo):
                     self._warning(f"Can't match definition: {func}", context_file)
                 else:
                     self.debug(
-                        "Function {} from {} is called in {}:{} in {}".format(
-                            func, possible_file, context_file, call_line, context_func
-                        )
+                        f"Function {func} from {possible_file} is called in {context_file}:{call_line} in {context_func}"
                     )
 
     def __add_types(self):

@@ -15,7 +15,6 @@
 
 import sys
 
-
 from clade.cmds import get_stats
 
 
@@ -27,7 +26,7 @@ def print_cmds_stats(args=sys.argv[1:]):
 
     total_count = sum(stats.values())
     for key in sorted(stats, key=stats.get):
-        print("{}: {}".format(stats[key], key))
+        print(f"{stats[key]}: {key}")
 
     print("-------------" + "-" * len(str(total_count)))
-    print("Total count: {}".format(total_count))
+    print(f"Total count: {total_count}")

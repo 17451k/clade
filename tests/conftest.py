@@ -14,13 +14,14 @@
 # limitations under the License.
 
 import os
-import pytest
 import shutil
 import tempfile
 
+import pytest
+
 from clade import Clade
 from clade.intercept import intercept
-from tests.test_intercept import test_project_make, test_project
+from tests.test_intercept import test_project, test_project_make
 
 
 @pytest.fixture(scope="session", autouse=True)

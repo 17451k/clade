@@ -25,7 +25,7 @@ def test_isysroot(tmpdir):
     filtered_opts = filter_opts(opts, c.get_storage_path)
 
     assert len(filtered_opts) == len(opts)
-    assert filtered_opts[0] == "-isysroot={}/test/path".format(c.storage_dir)
+    assert filtered_opts[0] == f"-isysroot={c.storage_dir}/test/path"
     assert filtered_opts[1] == opts[1]
 
 

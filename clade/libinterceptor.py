@@ -65,7 +65,7 @@ class Libinterceptor(Intercept):
             libinterceptor_name = "libinterceptor.dylib"
         else:
             raise NotImplementedError(
-                "Libinterceptor doesn't work on {!r}".format(sys.platform)
+                f"Libinterceptor doesn't work on {sys.platform!r}"
             )
 
         libinterceptor = os.path.join(
@@ -73,9 +73,7 @@ class Libinterceptor(Intercept):
         )
 
         if not os.path.exists(libinterceptor):
-            raise RuntimeError(
-                "libinterceptor is not found in {!r}".format(libinterceptor)
-            )
+            raise RuntimeError(f"libinterceptor is not found in {libinterceptor!r}")
 
         # Multilib support, Linux only
         path = os.path.join(LIB, libinterceptor_name)
@@ -84,13 +82,11 @@ class Libinterceptor(Intercept):
         if os.path.exists(path) and os.path.exists(path64):
             libinterceptor = libinterceptor_name
             self.logger.debug(
-                "Path to libinterceptor library locations: {!r}, {!r}".format(
-                    path, path64
-                )
+                f"Path to libinterceptor library locations: {path!r}, {path64!r}"
             )
         else:
             self.logger.debug(
-                "Path to libinterceptor library location: {!r}".format(libinterceptor)
+                f"Path to libinterceptor library location: {libinterceptor!r}"
             )
 
         return libinterceptor

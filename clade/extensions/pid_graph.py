@@ -13,9 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List, Dict
 
-from clade.cmds import iter_cmds, get_last_id
+from clade.cmds import get_last_id, iter_cmds
 from clade.extensions.abstract import Extension
 
 
@@ -30,9 +29,7 @@ class PidGraph(Extension):
 
     @Extension.prepare
     def parse(self, cmds_file):
-        self.log(
-            "Parsing {} commands".format(get_last_id(cmds_file, raise_exception=True))
-        )
+        self.log(f"Parsing {get_last_id(cmds_file, raise_exception=True)} commands")
 
         for cmd in iter_cmds(cmds_file):
             self.pid_by_id[cmd["id"]] = cmd["pid"]
@@ -40,16 +37,16 @@ class PidGraph(Extension):
         self.dump_dict_with_int_keys(self.pid_by_id, self.pid_by_id_file)
         self.pid_by_id.clear()
 
-    def load_pid_graph(self) -> Dict[int, List[int]]:
+    def load_pid_graph(self) -> dict[int, list[int]]:
         pid_by_id = self.load_pid_by_id()
-        pid_graph: Dict[int, List[int]] = dict()
+        pid_graph: dict[int, list[int]] = dict()
 
         for key in sorted(pid_by_id.keys()):
             pid_graph[key] = [pid_by_id[key]] + pid_graph.get(pid_by_id[key], [])
 
         return pid_graph
 
-    def load_pid_by_id(self) -> Dict[int, int]:
+    def load_pid_by_id(self) -> dict[int, int]:
         return self.load_dict_with_int_keys(self.pid_by_id_file)
 
     def filter_cmds_by_pid(self, cmds, parsed_ids=None):
@@ -68,6 +65,6 @@ class PidGraph(Extension):
 
             parsed_ids.add(cmd["id"])
 
-        self.debug("Filtered out commands: {}".format(list(parsed_ids)))
+        self.debug(f"Filtered out commands: {list(parsed_ids)}")
 
         return filtered_cmds

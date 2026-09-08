@@ -15,12 +15,12 @@
 
 import glob
 import os
-import setuptools
 import shutil
 import subprocess
 import sys
 import tempfile
 
+import setuptools
 from setuptools import dist
 from setuptools.command.bdist_wheel import bdist_wheel
 from setuptools.command.build_py import build_py
@@ -73,9 +73,7 @@ def build_target(target, build_dir, src_dir, options=None, quiet=False):
     except subprocess.CalledProcessError as e:
         if not quiet:
             print(e.output)
-        raise RuntimeError(
-            "Can't build target {!r} - something went wrong".format(target)
-        )
+        raise RuntimeError(f"Can't build target {target!r} - something went wrong")
 
 
 def build_wrapper(build_dir):
@@ -140,7 +138,7 @@ def build_libinterceptor():
         elif sys.platform == "win32":
             build_debugger(build_dir)
         else:
-            exit("Your platform {!r} is not supported yet.".format(sys.platform))
+            exit(f"Your platform {sys.platform!r} is not supported yet.")
     finally:
         shutil.rmtree(build_dir)
 

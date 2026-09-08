@@ -13,14 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import charset_normalizer
 import os
 import re
 import shlex
 import subprocess
 
+import charset_normalizer
+
 from clade.extensions.compiler import Compiler
-from clade.extensions.opts import requires_value, cl_preprocessor_deps_opts
+from clade.extensions.opts import cl_preprocessor_deps_opts, requires_value
 
 # TODO: Support /FA and /Fa options (output assembler code, .cod or .asm)
 # TODO: Support /Fe option (Name of the output EXE file)
@@ -36,7 +37,7 @@ class CL(Compiler):
         super().parse(cmds_file, self.conf.get("CL.which_list", []))
 
     def parse_cmd(self, cmd):
-        self.debug("Parse: {}".format(cmd))
+        self.debug(f"Parse: {cmd}")
         parsed_cmd = self.__parse_opts(cmd)
 
         if self.is_bad(parsed_cmd):
@@ -60,7 +61,7 @@ class CL(Compiler):
         parsed_cmd = self._get_cmd_dict(cmd)
 
         if self.name not in requires_value:
-            raise RuntimeError("Command type '{}' is not supported".format(self.name))
+            raise RuntimeError(f"Command type '{self.name}' is not supported")
 
         opts = iter(cmd["command"][1:])
         input_opts = ["/Tc", "-Tc", "/Tp", "-Tp"]
@@ -158,7 +159,7 @@ class CL(Compiler):
         return deps
 
     def __collect_deps(self, cmd_id, which, cmd, cmd_in):
-        deps_file = os.path.join(self.temp_dir, "{}-deps.txt".format(cmd_id))
+        deps_file = os.path.join(self.temp_dir, f"{cmd_id}-deps.txt")
 
         opts = (
             ["/showIncludes", "/P"]
@@ -182,11 +183,11 @@ class CL(Compiler):
         )
 
         if not os.path.exists(which):
-            self.warning("Compiler {!r} is no longer exists".format(which))
+            self.warning(f"Compiler {which!r} is no longer exists")
             return deps_file
 
         if not os.path.exists(cmd["cwd"]):
-            self.warning("CWD for command {!r} was deleted after build".format(cmd_id))
+            self.warning(f"CWD for command {cmd_id!r} was deleted after build")
             return deps_file
 
         with open(deps_file, "wb") as deps_fh:
@@ -204,9 +205,7 @@ class CL(Compiler):
                 self.__preprocess_cmd(cmd, cmd_in)
             else:
                 self.warning(
-                    "Can't preprocess command with ID={!r} and input file {!r}".format(
-                        cmd_id, cmd_in
-                    )
+                    f"Can't preprocess command with ID={cmd_id!r} and input file {cmd_in!r}"
                 )
 
         return deps_file
@@ -264,7 +263,7 @@ class CL(Compiler):
         self.__normalize_paths(pre_to, cmd["cwd"], encoding)
 
         if self.conf.get("Compiler.preprocess_cmds"):
-            self.debug("Preprocessed file: {}".format(pre_to))
+            self.debug(f"Preprocessed file: {pre_to}")
             self.store_pre_files([pre_to], cmd["cwd"], encoding)
 
         os.remove(pre_to)

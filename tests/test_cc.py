@@ -14,8 +14,9 @@
 # limitations under the License.
 
 import os
-import pytest
 import re
+
+import pytest
 
 from clade import Clade
 from clade.extensions.opts import cc_preprocessor_opts

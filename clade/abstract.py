@@ -20,8 +20,8 @@ import subprocess
 import tempfile
 
 from clade.cmds import get_last_id
-from clade.utils import get_logger
 from clade.server import PreprocessServer
+from clade.utils import get_logger
 
 
 class Intercept(metaclass=abc.ABCMeta):
@@ -139,7 +139,7 @@ class Intercept(metaclass=abc.ABCMeta):
         """
 
         shell_command = " ".join([shlex.quote(x) for x in self.command])
-        self.logger.debug("Execute {!r} command".format(shell_command))
+        self.logger.debug(f"Execute {shell_command!r} command")
         r = subprocess.call(shell_command, env=self.env, shell=True, cwd=self.cwd)
 
         if self.clade_if_file and os.path.exists(self.clade_if_file):

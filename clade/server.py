@@ -13,15 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import threading
 import os
 import socketserver
 import sys
 import tempfile
+import threading
 
-from clade.utils import get_logger
+from clade.cmds import join_cmd, split_cmd
 from clade.extensions.abstract import Extension
-from clade.cmds import split_cmd, join_cmd
+from clade.utils import get_logger
 
 if sys.platform == "linux" or sys.platform == "darwin":
     parent = socketserver.UnixStreamServer

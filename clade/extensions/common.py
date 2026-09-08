@@ -19,9 +19,9 @@ import os
 import re
 import sys
 
-from clade.extensions.abstract import Extension
-from clade.extensions.opts import requires_value, requires_mult_values
 from clade.cmds import iter_cmds_by_which, number_of_cmds_by_which
+from clade.extensions.abstract import Extension
+from clade.extensions.opts import requires_mult_values, requires_value
 
 
 def unwrap(self, cmd):
@@ -98,11 +98,11 @@ class Common(Extension, metaclass=abc.ABCMeta):
 
     def parse_cmd(self, cmd, cmd_type):
         """Parse single build command."""
-        self.debug("Parse: {}".format(cmd))
+        self.debug(f"Parse: {cmd}")
         parsed_cmd = self._get_cmd_dict(cmd)
 
         if cmd_type not in requires_value:
-            raise RuntimeError("Command type '{}' is not supported".format(cmd_type))
+            raise RuntimeError(f"Command type '{cmd_type}' is not supported")
 
         opts = iter(cmd["command"][1:])
 
@@ -132,28 +132,28 @@ class Common(Extension, metaclass=abc.ABCMeta):
         return parsed_cmd
 
     def load_cmd_by_id(self, id):
-        return self.load_data(os.path.join(self.cmds_dir, "{}.json".format(id)))
+        return self.load_data(os.path.join(self.cmds_dir, f"{id}.json"))
 
     def dump_cmd_by_id(self, id, cmd):
         cmd = self._normalize_paths(cmd)
-        self.debug("Parsed command {}".format(cmd))
+        self.debug(f"Parsed command {cmd}")
 
         self.dump_opts_by_id(cmd["id"], cmd["opts"])
         del cmd["opts"]
         self.dump_raw_by_id(cmd["id"], cmd["command"])
         del cmd["command"]
 
-        self.dump_data(cmd, os.path.join(self.cmds_dir, "{}.json".format(id)))
+        self.dump_data(cmd, os.path.join(self.cmds_dir, f"{id}.json"))
 
     def load_raw_by_id(self, id):
-        raw_file = os.path.join(self.raw_dir, "{}.json".format(id))
+        raw_file = os.path.join(self.raw_dir, f"{id}.json")
         return self.load_data(raw_file, raise_exception=True)
 
     def dump_raw_by_id(self, id, raw_command):
-        self.dump_data(raw_command, os.path.join(self.raw_dir, "{}.json".format(id)))
+        self.dump_data(raw_command, os.path.join(self.raw_dir, f"{id}.json"))
 
     def load_opts_by_id(self, id):
-        opts_file = os.path.join(self.opts_dir, "{}.json".format(id))
+        opts_file = os.path.join(self.opts_dir, f"{id}.json")
         opts = self.load_data(opts_file, raise_exception=False)
 
         # if load_data can't find file, it returns empty dict()
@@ -165,13 +165,13 @@ class Common(Extension, metaclass=abc.ABCMeta):
         if not opts:
             return
 
-        self.dump_data(opts, os.path.join(self.opts_dir, "{}.json".format(id)))
+        self.dump_data(opts, os.path.join(self.opts_dir, f"{id}.json"))
 
     def dump_bad_cmd_id(self, cmd_id):
         os.makedirs(os.path.dirname(self.bad_ids), exist_ok=True)
 
         with open(self.bad_ids, "a") as fh:
-            fh.write("{}\n".format(cmd_id))
+            fh.write(f"{cmd_id}\n")
 
     def get_bad_ids(self):
         if not os.path.exists(self.bad_ids):
@@ -214,7 +214,7 @@ class Common(Extension, metaclass=abc.ABCMeta):
 
         if filter_by_pid and self.conf.get("PidGraph.filter_cmds_by_pid", True):
             bad_ids = self.get_bad_ids()
-            self.debug("Bad commands: {}".format(bad_ids))
+            self.debug(f"Bad commands: {bad_ids}")
             cmds = self.extensions["PidGraph"].filter_cmds_by_pid(
                 cmds, parsed_ids=bad_ids
             )
@@ -234,34 +234,28 @@ class Common(Extension, metaclass=abc.ABCMeta):
     def is_bad(self, cmd):
         cmd_ins = [os.path.join(cmd["cwd"], cmd_in) for cmd_in in cmd["in"]]
         if any(
-            (
-                True
-                for cmd_in in cmd_ins
-                if self.regex_exclude_in and self.regex_exclude_in.search(cmd_in)
-            )
+            True
+            for cmd_in in cmd_ins
+            if self.regex_exclude_in and self.regex_exclude_in.search(cmd_in)
         ):
-            self.debug("Command {} is bad".format(cmd))
+            self.debug(f"Command {cmd} is bad")
             return True
 
         if any(
-            (
-                True
-                for cmd_in in cmd_ins
-                if self.regex_include_in and not self.regex_include_in.search(cmd_in)
-            )
+            True
+            for cmd_in in cmd_ins
+            if self.regex_include_in and not self.regex_include_in.search(cmd_in)
         ):
-            self.debug("Command {} is bad".format(cmd))
+            self.debug(f"Command {cmd} is bad")
             return True
 
         cmd_outs = [os.path.join(cmd["cwd"], cmd_out) for cmd_out in cmd["out"]]
         if any(
-            (
-                True
-                for cmd_out in cmd_outs
-                if self.regex_exclude_out and self.regex_exclude_out.search(cmd_out)
-            )
+            True
+            for cmd_out in cmd_outs
+            if self.regex_exclude_out and self.regex_exclude_out.search(cmd_out)
         ):
-            self.debug("Command {} is bad".format(cmd))
+            self.debug(f"Command {cmd} is bad")
             return True
 
         return False

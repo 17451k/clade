@@ -15,16 +15,16 @@
 
 import argparse
 import collections
-import graphviz
 import os
 import re
 import sys
 
-from typing import List, Dict
+import graphviz
+
 from clade import Clade
 
 Function = collections.namedtuple("Function", ["name", "path"])
-Trace = Dict[Function, List[Function]]
+Trace = dict[Function, list[Function]]
 
 
 def nested_dict():
@@ -38,7 +38,7 @@ class Tracer:
         if not self.clade.work_dir_ok():
             raise RuntimeError("Specified Clade build base is not valid")
 
-    def find_functions(self, func_names: List[str]) -> List[Function]:
+    def find_functions(self, func_names: list[str]) -> list[Function]:
         # Find functions in the Clade build base, and convert list of strings
         # to a list of Function objects required by most Tracer methods
 
@@ -62,14 +62,12 @@ class Tracer:
                 x for x in func_names if x not in [y.name for y in functions]
             ]:
                 raise RuntimeError(
-                    "{!r} function was not found in the Clade build base".format(
-                        func_name
-                    )
+                    f"{func_name!r} function was not found in the Clade build base"
                 )
 
         return list(functions)
 
-    def load_all_functions(self) -> List[Function]:
+    def load_all_functions(self) -> list[Function]:
         # Return all available functions from the Clade builds base.
 
         functions = set()
@@ -81,7 +79,7 @@ class Tracer:
 
         return list(functions)
 
-    def find_functions_with_prefix(self, prefix: str) -> List[Function]:
+    def find_functions_with_prefix(self, prefix: str) -> list[Function]:
         # Find functions in the Clade build base whose name match the
         # specified prefix, and convert them to a list of Function
         # objects required by most Tracer methods
@@ -89,24 +87,22 @@ class Tracer:
         functions = set()
 
         for func in self.clade.functions:
-            if re.search(prefix, func, flags=re.I):
+            if re.search(prefix, func, flags=re.IGNORECASE):
                 for definition in self.clade.functions[func]:
                     functions.add(Function(func, definition["file"]))
 
         if not functions:
-            raise RuntimeError(
-                "Functions with prefix {!r} were not found".format(prefix)
-            )
+            raise RuntimeError(f"Functions with prefix {prefix!r} were not found")
 
         return list(functions)
 
     def trace(
         self, from_func: Function, to_func: Function
-    ) -> Dict[Function, List[Function]]:
+    ) -> dict[Function, list[Function]]:
         # Get all call traces between 'from_func' and 'to_func' functions.
         return self.trace_list([from_func], [to_func])
 
-    def trace_list(self, from_funcs: List[Function], to_funcs: List[Function]) -> Trace:
+    def trace_list(self, from_funcs: list[Function], to_funcs: list[Function]) -> Trace:
         # Get all call traces between 2 groups of functions (from_funcs and to_funcs).
 
         trace = dict()
@@ -173,7 +169,7 @@ class Tracer:
         return reversed_trace
 
     @staticmethod
-    def __remove_extra_paths(trace: Trace, from_funcs: List[Function]) -> Trace:
+    def __remove_extra_paths(trace: Trace, from_funcs: list[Function]) -> Trace:
         # Remove all paths from the trace, which are not started from one
         # of the "from_funcs" functions
 
@@ -251,7 +247,7 @@ class Tracer:
 
         return True
 
-    def filter_trace_from(self, trace: Trace, from_filter=List[Function]) -> Trace:
+    def filter_trace_from(self, trace: Trace, from_filter=list[Function]) -> Trace:
         # Remove all paths from the trace that start with one of the "from_filter"
         # functions.
 
@@ -268,7 +264,7 @@ class Tracer:
 
         return trace
 
-    def filter_trace_to(self, trace: Trace, to_filter=List[Function]) -> Trace:
+    def filter_trace_to(self, trace: Trace, to_filter=list[Function]) -> Trace:
         # Remove all paths from the trace that finish with one of the "from_filter"
         # functions.
 

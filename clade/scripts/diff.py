@@ -86,17 +86,15 @@ class Diff:
             added = [x for x in keys2 if x not in common_ids]
 
             if removed:
-                logger.error("{!r} ids were removed from the pid graph".format(removed))
+                logger.error(f"{removed!r} ids were removed from the pid graph")
 
             if added:
-                logger.error("{!r}  ids were added to the pid graph".format(added))
+                logger.error(f"{added!r}  ids were added to the pid graph")
 
         for key in common_ids:
             if pid_by_id1[key] != pid_by_id2[key]:
                 logger.error(
-                    "ID {!r} has different direct parents: {!r} vs {!r}".format(
-                        key, pid_by_id1[key], pid_by_id2[key]
-                    )
+                    f"ID {key!r} has different direct parents: {pid_by_id1[key]!r} vs {pid_by_id2[key]!r}"
                 )
                 direct_parents_are_same = False
 
@@ -111,9 +109,7 @@ class Diff:
         for key in common_ids:
             if pid_graph1[key] != pid_graph2[key]:
                 logger.error(
-                    "ID {!r} has different indirect parents: {!r} vs {!r}".format(
-                        key, pid_graph1[key], pid_graph2[key]
-                    )
+                    f"ID {key!r} has different indirect parents: {pid_graph1[key]!r} vs {pid_graph2[key]!r}"
                 )
                 indirect_parents_are_same = False
 
@@ -154,16 +150,12 @@ class Diff:
 
             for cmd_id in removed:
                 logger.error(
-                    "{!r} command with ID={!r} was removed".format(
-                        self.cl1.get_cmd_type(cmd_id), cmd_id
-                    )
+                    f"{self.cl1.get_cmd_type(cmd_id)!r} command with ID={cmd_id!r} was removed"
                 )
 
             for cmd_id in added:
                 logger.error(
-                    "{!r} command with ID={!r} was added".format(
-                        self.cl2.get_cmd_type(cmd_id), cmd_id
-                    )
+                    f"{self.cl2.get_cmd_type(cmd_id)!r} command with ID={cmd_id!r} was added"
                 )
 
         for cmd_id in common_ids:
@@ -206,16 +198,12 @@ class Diff:
 
                 for dep in removed:
                     logger.error(
-                        "{!r} command with ID={!r} no longer has dependency: {!r}".format(
-                            self.cl1.get_cmd_type(cmd_id), cmd_id, dep
-                        )
+                        f"{self.cl1.get_cmd_type(cmd_id)!r} command with ID={cmd_id!r} no longer has dependency: {dep!r}"
                     )
 
                 for dep in added:
                     logger.error(
-                        "{!r} command with ID={!r} has new dependency: {!r}".format(
-                            self.cl1.get_cmd_type(cmd_id), cmd_id, dep
-                        )
+                        f"{self.cl1.get_cmd_type(cmd_id)!r} command with ID={cmd_id!r} has new dependency: {dep!r}"
                     )
 
                 deps_are_same = False
@@ -257,10 +245,10 @@ class Diff:
             added = storage_files2 - storage_files1
 
             for file in removed:
-                logger.error("{!r} file was removed from the Storage".format(file))
+                logger.error(f"{file!r} file was removed from the Storage")
 
             for file in added:
-                logger.error("{!r} file was added to the Storage".format(file))
+                logger.error(f"{file!r} file was added to the Storage")
 
     def compare_cmd_graphs(self):
         if not self.__ext_work_dirs_exist("CmdGraph"):
@@ -364,10 +352,10 @@ class Diff:
             added = files2 - files1
 
             for file in removed:
-                logger.error("{!r} file was removed from the source graph".format(file))
+                logger.error(f"{file!r} file was removed from the source graph")
 
             for file in added:
-                logger.error("{!r} file was added to the source graph".format(file))
+                logger.error(f"{file!r} file was added to the source graph")
 
             keys_are_same = False
 
@@ -456,14 +444,10 @@ class Diff:
             added = keys2 - keys1
 
             for file, func in removed:
-                logger.error(
-                    "{!r} function from {!r} file was removed".format(func, file)
-                )
+                logger.error(f"{func!r} function from {file!r} file was removed")
 
             for file, func in added:
-                logger.error(
-                    "{!r} function from {!r} file was added".format(func, file)
-                )
+                logger.error(f"{func!r} function from {file!r} file was added")
 
             keys_are_same = False
 
@@ -473,9 +457,7 @@ class Diff:
 
             if type1 != type2:
                 logger.error(
-                    "{!r} function from {!r} file changed its type from {!r} to {!r}".format(
-                        func, file, type1, type2
-                    )
+                    f"{func!r} function from {file!r} file changed its type from {type1!r} to {type2!r}"
                 )
 
                 types_are_same = False
@@ -485,9 +467,7 @@ class Diff:
 
             if line1 != line2:
                 logger.error(
-                    "{!r} function from {!r} file changed its definition line from {!r} to {!r}".format(
-                        func, file, line1, line2
-                    )
+                    f"{func!r} function from {file!r} file changed its definition line from {line1!r} to {line2!r}"
                 )
 
                 lines_are_same = False
@@ -497,9 +477,7 @@ class Diff:
 
             if signature1 != signature2:
                 logger.error(
-                    "{!r} function from {!r} file changed its signature from {!r} to {!r}".format(
-                        func, file, signature1, signature2
-                    )
+                    f"{func!r} function from {file!r} file changed its signature from {signature1!r} to {signature2!r}"
                 )
 
                 signatures_are_same = False
@@ -523,16 +501,12 @@ class Diff:
 
                 for decl_file in removed:
                     logger.error(
-                        "{!r} function from {!r} file no longer has declaration in {!r}".format(
-                            func, file, decl_file
-                        )
+                        f"{func!r} function from {file!r} file no longer has declaration in {decl_file!r}"
                     )
 
                 for decl_file in added:
                     logger.error(
-                        "{!r} function from {!r} file has new declaration in {!r}".format(
-                            func, file, decl_file
-                        )
+                        f"{func!r} function from {file!r} file has new declaration in {decl_file!r}"
                     )
 
                 decls_are_same = False
@@ -546,9 +520,7 @@ class Diff:
 
                 if line1 != line2:
                     logger.error(
-                        "{!r} function from {!r} file changed its declaration line from {!r} to {!r}".format(
-                            func, file, line1, line2
-                        )
+                        f"{func!r} function from {file!r} file changed its declaration line from {line1!r} to {line2!r}"
                     )
                     decls_are_same = False
 
@@ -557,9 +529,7 @@ class Diff:
 
                 if signature1 != signature2:
                     logger.error(
-                        "{!r} function from {!r} file changed its declaration signature from {!r} to {!r}".format(
-                            func, file, signature1, signature2
-                        )
+                        f"{func!r} function from {file!r} file changed its declaration signature from {signature1!r} to {signature2!r}"
                     )
 
                     decls_are_same = False
@@ -569,9 +539,7 @@ class Diff:
 
                 if type1 != type2:
                     logger.error(
-                        "{!r} function from {!r} file changed its declaration type from {!r} to {!r}".format(
-                            func, file, type1, type2
-                        )
+                        f"{func!r} function from {file!r} file changed its declaration type from {type1!r} to {type2!r}"
                     )
 
                     decls_are_same = False
@@ -610,14 +578,10 @@ class Diff:
             added = exp_files2 - exp_files1
 
             for exp_file in removed:
-                logger.error(
-                    "{!r} file was removed from macros expansions".format(exp_file)
-                )
+                logger.error(f"{exp_file!r} file was removed from macros expansions")
 
             for exp_file in added:
-                logger.error(
-                    "{!r} file was added to macros expansions".format(exp_file)
-                )
+                logger.error(f"{exp_file!r} file was added to macros expansions")
 
             exp_files_are_same = False
 
@@ -635,16 +599,12 @@ class Diff:
 
                 for exp_name in removed:
                     logger.error(
-                        "Expansion of macro {!r} from {!r} file was removed".format(
-                            exp_name, exp_file
-                        )
+                        f"Expansion of macro {exp_name!r} from {exp_file!r} file was removed"
                     )
 
                 for exp_name in added:
                     logger.error(
-                        "Expansion of macro {!r} from {!r} file was added".format(
-                            exp_name, exp_file
-                        )
+                        f"Expansion of macro {exp_name!r} from {exp_file!r} file was added"
                     )
 
                 exp_names_are_same = False
@@ -663,16 +623,12 @@ class Diff:
 
                     for args in removed:
                         logger.error(
-                            "Macro {!r} from {!r} file no longer has these expansion args: {!r}".format(
-                                exp_name, exp_file, args
-                            )
+                            f"Macro {exp_name!r} from {exp_file!r} file no longer has these expansion args: {args!r}"
                         )
 
                     for args in added:
                         logger.error(
-                            "Macro {!r} from {!r} file now has new expansion args: {!r}".format(
-                                exp_name, exp_file, args
-                            )
+                            f"Macro {exp_name!r} from {exp_file!r} file now has new expansion args: {args!r}"
                         )
 
                     exp_args_are_same = False
@@ -701,14 +657,10 @@ class Diff:
             added = def_files2 - def_files1
 
             for def_file in removed:
-                logger.error(
-                    "{!r} file was removed from macros definitions".format(def_file)
-                )
+                logger.error(f"{def_file!r} file was removed from macros definitions")
 
             for def_file in added:
-                logger.error(
-                    "{!r} file was added to macros definitions".format(def_file)
-                )
+                logger.error(f"{def_file!r} file was added to macros definitions")
 
             def_files_are_same = False
 
@@ -726,16 +678,12 @@ class Diff:
 
                 for def_name in removed:
                     logger.error(
-                        "Definition of macro {!r} from {!r} file was removed".format(
-                            def_name, def_file
-                        )
+                        f"Definition of macro {def_name!r} from {def_file!r} file was removed"
                     )
 
                 for def_name in added:
                     logger.error(
-                        "Definition of macro {!r} from {!r} file was added".format(
-                            def_name, def_file
-                        )
+                        f"Definition of macro {def_name!r} from {def_file!r} file was added"
                     )
 
                 def_names_are_same = False
@@ -750,16 +698,12 @@ class Diff:
 
                     for line in removed:
                         logger.error(
-                            "Macro {!r} from {!r} file no longer has definition on line {!r}".format(
-                                def_name, def_file, line
-                            )
+                            f"Macro {def_name!r} from {def_file!r} file no longer has definition on line {line!r}"
                         )
 
                     for line in added:
                         logger.error(
-                            "Macro {!r} from {!r} file now has definition on line {!r}".format(
-                                def_name, def_file, line
-                            )
+                            f"Macro {def_name!r} from {def_file!r} file now has definition on line {line!r}"
                         )
 
                     def_lines_are_same = False
@@ -795,10 +739,10 @@ class Diff:
             added = files2 - files1
 
             for file in removed:
-                logger.error("{!r} file was removed from the callgraph".format(file))
+                logger.error(f"{file!r} file was removed from the callgraph")
 
             for file in added:
-                logger.error("{!r} file was added to the callgraph".format(file))
+                logger.error(f"{file!r} file was added to the callgraph")
 
             files_are_same = False
 
@@ -816,16 +760,12 @@ class Diff:
 
                 for func in removed:
                     logger.error(
-                        "{!r} function from {!r} file was removed from the callgraph".format(
-                            func, file
-                        )
+                        f"{func!r} function from {file!r} file was removed from the callgraph"
                     )
 
                 for func in added:
                     logger.error(
-                        "{!r} function from {!r} file was added to the callgraph".format(
-                            func, file
-                        )
+                        f"{func!r} function from {file!r} file was added to the callgraph"
                     )
 
             for func in common_funcs:
@@ -842,16 +782,12 @@ class Diff:
 
                     for called_in_file in removed:
                         logger.error(
-                            "{!r} function from {!r} file is no longer called in {!r} file".format(
-                                func, file, called_in_file
-                            )
+                            f"{func!r} function from {file!r} file is no longer called in {called_in_file!r} file"
                         )
 
                     for called_in_file in added:
                         logger.error(
-                            "{!r} function from {!r} file is now called in {!r} file".format(
-                                func, file, called_in_file
-                            )
+                            f"{func!r} function from {file!r} file is now called in {called_in_file!r} file"
                         )
 
                     called_in_files_are_same = False
@@ -870,16 +806,12 @@ class Diff:
 
                         for called_in_func in removed:
                             logger.error(
-                                "{!r} function from {!r} file is no longer called in {!r} func from {!r} file".format(
-                                    func, file, called_in_func, called_in_file
-                                )
+                                f"{func!r} function from {file!r} file is no longer called in {called_in_func!r} func from {called_in_file!r} file"
                             )
 
                         for called_in_func in added:
                             logger.error(
-                                "{!r} function from {!r} file is now called in {!r} func from {!r} file".format(
-                                    func, file, called_in_func, called_in_file
-                                )
+                                f"{func!r} function from {file!r} file is now called in {called_in_func!r} func from {called_in_file!r} file"
                             )
 
                         called_in_funcs_are_same = False
@@ -902,24 +834,12 @@ class Diff:
 
                             for call_line in removed:
                                 logger.error(
-                                    "{!r} function from {!r} file is no longer called in {!r} func from {!r} file on line {!r}".format(
-                                        func,
-                                        file,
-                                        called_in_func,
-                                        called_in_file,
-                                        call_line,
-                                    )
+                                    f"{func!r} function from {file!r} file is no longer called in {called_in_func!r} func from {called_in_file!r} file on line {call_line!r}"
                                 )
 
                             for call_line in added:
                                 logger.error(
-                                    "{!r} function from {!r} file is now called in {!r} func from {!r} file on line {!r}".format(
-                                        func,
-                                        file,
-                                        called_in_func,
-                                        called_in_file,
-                                        call_line,
-                                    )
+                                    f"{func!r} function from {file!r} file is now called in {called_in_func!r} func from {called_in_file!r} file on line {call_line!r}"
                                 )
 
                             call_lines_are_same = False
@@ -936,14 +856,7 @@ class Diff:
 
                             if match_type1 != match_type2:
                                 logger.error(
-                                    "Match type of {!r} ({!r}) call in {!r} ({!r}) was changed from {!r} to {!r}".format(
-                                        func,
-                                        file,
-                                        called_in_func,
-                                        called_in_file,
-                                        match_type1,
-                                        match_type2,
-                                    )
+                                    f"Match type of {func!r} ({file!r}) call in {called_in_func!r} ({called_in_file!r}) was changed from {match_type1!r} to {match_type2!r}"
                                 )
 
                                 match_types_are_same = False

@@ -25,7 +25,7 @@ import subprocess
 import zipfile
 
 from clade.extensions.abstract import Extension
-from clade.extensions.opts import filter_opts, compile_s_regex, cif_supported_opts
+from clade.extensions.opts import cif_supported_opts, compile_s_regex, filter_opts
 
 
 class Info(Extension):
@@ -124,9 +124,7 @@ class Info(Extension):
             raise RuntimeError("Something is wrong with every compilation command")
 
         if not os.path.exists(self.cif_output_dir) and os.path.exists(self.err_log):
-            raise RuntimeError(
-                "CIF failed on every command. Log: {}".format(self.err_log)
-            )
+            raise RuntimeError(f"CIF failed on every command. Log: {self.err_log}")
 
         if not os.path.exists(self.err_log):
             self.log("CIF finished without errors")
@@ -270,16 +268,16 @@ class Info(Extension):
 
     def __is_cmd_bad_for_cif(self, cmd):
         if not cmd["in"]:
-            self.debug("Command {} is bad for CIF".format(cmd))
+            self.debug(f"Command {cmd} is bad for CIF")
             return True
 
         for cif_in in cmd["in"]:
             if cif_in == "-" or cif_in == "/dev/null":
-                self.debug("Command {} is bad for CIF".format(cmd))
+                self.debug(f"Command {cmd} is bad for CIF")
                 return True
             elif re.search(r"\.[sS]$", cif_in):
                 # Assembler files are not supported
-                self.debug("Command {} is bad for CIF".format(cmd))
+                self.debug(f"Command {cmd} is bad for CIF")
                 return True
 
         return False
@@ -288,15 +286,13 @@ class Info(Extension):
         os.makedirs(self.work_dir, exist_ok=True)
 
         with open(file, "a") as log_fh:
-            log_fh.write("COMMAND_ID: {}\n".format(cmd_id))
-            log_fh.write("CWD: {}\n".format(cwd))
+            log_fh.write(f"COMMAND_ID: {cmd_id}\n")
+            log_fh.write(f"CWD: {cwd}\n")
 
             log_fh.write("CIF ARGS:")
-            for key in env:
-                log_fh.write(" {}={}".format(key, shlex.quote(env[key])))
+            log_fh.writelines(f" {key}={shlex.quote(env[key])}" for key in env)
 
-            for arg in args:
-                log_fh.write(" {}".format(shlex.quote(arg)))
+            log_fh.writelines(f" {shlex.quote(arg)}" for arg in args)
             log_fh.write("\n\n")
 
             log_fh.writelines(log)
@@ -374,8 +370,7 @@ class Info(Extension):
 
             with open(normal_path, "a") as normal_fh:
                 with open(output_file, "r") as wrong_fh:
-                    for line in wrong_fh:
-                        normal_fh.write(line)
+                    normal_fh.writelines(wrong_fh)
 
             os.remove(output_file)
             to_remove.add(output_file)
@@ -518,9 +513,7 @@ class Info(Extension):
                     m = regex.match(line)
 
                     if not m:
-                        self.error(
-                            "CIF output has unexpected format: {!r}".format(line)
-                        )
+                        self.error(f"CIF output has unexpected format: {line!r}")
                         raise SyntaxError
 
                     content = list(m.groups())
@@ -536,7 +529,7 @@ class Info(Extension):
         path = os.path.dirname(file)
 
         if "\\/" in path:
-            raise RuntimeError("Normalized path looks weird: {!r}".format(path))
+            raise RuntimeError(f"Normalized path looks weird: {path!r}")
 
         # Path to the defenition of macro expansion
         def_path = None

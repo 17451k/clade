@@ -13,9 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
 import os
 import sys
+
+import pytest
 
 from clade.__main__ import main
 

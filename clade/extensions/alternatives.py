@@ -17,7 +17,6 @@ import hashlib
 import itertools
 import os
 
-from typing import List
 from clade.extensions.abstract import Extension
 
 
@@ -165,7 +164,7 @@ class Alternatives(Extension):
         list_of_paths = [self.__construct_paths(path) for path in paths]
         return list(itertools.chain.from_iterable(list_of_paths))
 
-    def __construct_paths(self, path: str) -> List[str]:
+    def __construct_paths(self, path: str) -> list[str]:
         if path not in self.alts:
             return [path]
 
@@ -185,7 +184,7 @@ class Alternatives(Extension):
         return cmds
 
     @staticmethod
-    @functools.lru_cache()
+    @functools.lru_cache
     def __get_file_checksum(file):
         try:
             with open(file, "rb") as fh:

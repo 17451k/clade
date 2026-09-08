@@ -14,30 +14,30 @@
 # limitations under the License.
 
 import os
+
 import pytest
 
 from clade import Clade
 from clade.cmds import iter_cmds, iter_cmds_by_which
 from clade.envs import iter_envs
-
-from tests.test_intercept import test_project_make, calculate_loc
-from tests.test_functions import (
-    funcs_are_ok,
-    funcs_by_file_are_ok,
-    funcs_are_consistent,
-    filtered_funcs_by_file_are_ok,
-)
-from tests.test_callgraph import callgraph_is_ok, callgraph_by_file_is_ok
-from tests.test_variables import variables_are_ok, used_in_vars_is_ok
-from tests.test_typedefs import typedefs_are_ok
-from tests.test_macros import definitions_are_ok, expansions_are_ok
+from tests.test_callgraph import callgraph_by_file_is_ok, callgraph_is_ok
 from tests.test_cross_ref import (
-    ref_to_are_ok,
+    filtered_ref_from_are_ok,
     filtered_ref_to_are_ok,
     ref_from_are_ok,
-    filtered_ref_from_are_ok,
+    ref_to_are_ok,
 )
+from tests.test_functions import (
+    filtered_funcs_by_file_are_ok,
+    funcs_are_consistent,
+    funcs_are_ok,
+    funcs_by_file_are_ok,
+)
+from tests.test_intercept import calculate_loc, test_project_make
+from tests.test_macros import definitions_are_ok, expansions_are_ok
 from tests.test_project import main_c, zero_c
+from tests.test_typedefs import typedefs_are_ok
+from tests.test_variables import used_in_vars_is_ok, variables_are_ok
 
 
 def test_intercept(tmpdir):

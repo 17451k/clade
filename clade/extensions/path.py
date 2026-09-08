@@ -18,8 +18,6 @@ import glob
 import os
 import sys
 
-from typing import List
-
 from clade.cmds import get_build_dir
 from clade.extensions.abstract import Extension
 
@@ -32,11 +30,11 @@ class Path(Extension):
         build_cwd = get_build_dir(cmds_file)
         self.conf["build_dir"] = self.normalize_abs_path(build_cwd)
 
-    def normalize_rel_paths(self, paths: List[str], cwd: str) -> List[str]:
+    def normalize_rel_paths(self, paths: list[str], cwd: str) -> list[str]:
         return [self.normalize_rel_path(path, cwd) for path in paths]
 
     @staticmethod
-    @functools.lru_cache()
+    @functools.lru_cache
     def normalize_rel_path(path: str, cwd: str) -> str:
         cwd = cwd.strip()
         path = path.strip()
@@ -53,7 +51,7 @@ class Path(Extension):
         return Path.normalize_abs_path(abs_path)
 
     @staticmethod
-    @functools.lru_cache()
+    @functools.lru_cache
     def normalize_abs_path(path: str) -> str:
         path = path.strip()
 

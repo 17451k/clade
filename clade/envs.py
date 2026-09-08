@@ -23,9 +23,9 @@ def open_envs_file(envs_file):
         RuntimeError: Specified file does not exist or empty.
     """
     if not os.path.exists(envs_file):
-        raise RuntimeError("Specified {} file does not exist".format(envs_file))
+        raise RuntimeError(f"Specified {envs_file} file does not exist")
     if not os.path.getsize(envs_file):
-        raise RuntimeError("Specified {} file is empty".format(envs_file))
+        raise RuntimeError(f"Specified {envs_file} file is empty")
 
     return open(envs_file)
 

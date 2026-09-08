@@ -49,7 +49,6 @@ class Linker(Compiler):
     @abc.abstractmethod
     def _get_default_searchdirs(self, which, parse_cmd):
         """Returns default search dir, where linker searches for libraries"""
-        pass
 
     def __get_searchdirs(self, which, parsed_cmd):
         # sysroot paths are not supported (searchdir begins with "=")
@@ -114,4 +113,4 @@ class Linker(Compiler):
                 continue
             break
         else:
-            self.warning("Couldn't find {!r} archive in {}".format(name, searchdirs))
+            self.warning(f"Couldn't find {name!r} archive in {searchdirs}")

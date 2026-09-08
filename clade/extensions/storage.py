@@ -13,11 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import charset_normalizer
 import functools
 import os
 import shutil
 import tempfile
+
+import charset_normalizer
 
 from clade.extensions.abstract import Extension
 
@@ -36,10 +37,10 @@ class Storage(Extension):
 
         for file in files_to_add:
             file = os.path.abspath(file)
-            self.debug("Saving {!r} to the Storage".format(file))
+            self.debug(f"Saving {file!r} to the Storage")
 
             if not os.path.exists(file):
-                self.error("File does not exist: {!r}".format(file))
+                self.error(f"File does not exist: {file!r}")
                 raise RuntimeError
 
             if os.path.isfile(file):
@@ -94,7 +95,7 @@ class Storage(Extension):
         os.makedirs(os.path.dirname(dst), exist_ok=True)
 
         if not self.conf.get("Storage.convert_to_utf8"):
-            self.debug("Storing {!r}".format(filename))
+            self.debug(f"Storing {filename!r}")
             shutil.copyfile(filename, dst)
         else:
             with open(filename, "rb") as fh:
@@ -109,16 +110,12 @@ class Storage(Extension):
                 confidence = 1
 
             if not confidence:
-                self.warning(
-                    "Can't confidently detect encoding of {!r}.".format(filename)
-                )
+                self.warning(f"Can't confidently detect encoding of {filename!r}.")
                 shutil.copyfile(filename, dst)
                 return
 
             self.debug(
-                "Trying to store {!r}. Detected encoding: {} (confidence = {})".format(
-                    filename, encoding, confidence
-                )
+                f"Trying to store {filename!r}. Detected encoding: {encoding} (confidence = {confidence})"
             )
 
             with tempfile.NamedTemporaryFile(mode="wb", delete=False) as f:
@@ -142,7 +139,7 @@ class Storage(Extension):
             try:
                 shutil.copymode(filename, f.name)
             except Exception:
-                self.warning("Couldn't set permissions for {!r}".format(filename))
+                self.warning(f"Couldn't set permissions for {filename!r}")
 
             try:
                 os.replace(f.name, dst)

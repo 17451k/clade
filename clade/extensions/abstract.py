@@ -19,20 +19,19 @@ import fnmatch
 import importlib
 import importlib.metadata
 import json
+import os
 import pathlib
 import platform
-import os
 import shutil
 import sys
 import tempfile
 import time
 import uuid
-
 from concurrent.futures import ProcessPoolExecutor
 
 from clade.cmds import get_build_dir
 from clade.extensions.utils import yield_chunk
-from clade.utils import get_clade_version, get_program_version, get_logger, load, dump
+from clade.utils import dump, get_clade_version, get_logger, get_program_version, load
 
 
 class Extension(metaclass=abc.ABCMeta):
@@ -108,7 +107,7 @@ class Extension(metaclass=abc.ABCMeta):
                 raise
             finally:
                 if os.path.exists(self.temp_dir):
-                    self.debug("Removing temp directory: {!r}".format(self.temp_dir))
+                    self.debug(f"Removing temp directory: {self.temp_dir!r}")
                     shutil.rmtree(self.temp_dir)
 
                 delta = datetime.timedelta(seconds=(time.time() - time_start))
@@ -119,7 +118,7 @@ class Extension(metaclass=abc.ABCMeta):
                 # 5 is an arbitrary threshold to supress printing unnessesary
                 # log messages for extensions that finished quickly
                 if delta.seconds > 5:
-                    self.log("Finished in {}".format(delta_str))
+                    self.log(f"Finished in {delta_str}")
 
                 if os.path.exists(os.path.dirname(self.work_dir)):
                     self.dump_global_meta(args[0])
@@ -129,7 +128,6 @@ class Extension(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def parse(self, cmds_file):
         """Parse intercepted commands."""
-        pass
 
     def file_exists(self, file_name):
         """File exists in the working directory"""
@@ -145,7 +143,7 @@ class Extension(metaclass=abc.ABCMeta):
             file_name = os.path.join(self.work_dir, file_name)
 
         if not os.path.isfile(file_name):
-            message = "{!r} file is not found".format(file_name)
+            message = f"{file_name!r} file is not found"
 
             if raise_exception:
                 self.error(message)
@@ -155,7 +153,7 @@ class Extension(metaclass=abc.ABCMeta):
 
             return dict()
 
-        self.debug("Loading {!r}".format(file_name))
+        self.debug(f"Loading {file_name!r}")
 
         return load(file_name)
 
@@ -176,20 +174,18 @@ class Extension(metaclass=abc.ABCMeta):
 
         os.makedirs(os.path.dirname(file_name), exist_ok=True)
 
-        self.debug("Dumping {!r}".format(file_name))
+        self.debug(f"Dumping {file_name!r}")
 
         try:
             dump(data, file_name)
         except RecursionError:
             # This is a workaround, but it is rarely required
             self.warning(
-                "Do not print data to file due to recursion limit {!r}".format(
-                    file_name
-                )
+                f"Do not print data to file due to recursion limit {file_name!r}"
             )
         except FileNotFoundError:
             # Workaround for Python 3.5 and Windows
-            self.error("Can't create file {!r}".format(file_name))
+            self.error(f"Can't create file {file_name!r}")
 
     def load_data_by_key(self, folder, keys=None):
         """Load data stored in multiple json files using dump_data_by_key()."""
@@ -207,20 +203,18 @@ class Extension(metaclass=abc.ABCMeta):
     def __yield_data_by_key(self, folder, keys=None):
         if keys and not isinstance(keys, list) and not isinstance(keys, set):
             raise TypeError(
-                "Provide a list or set of files to retrieve data but not {!r}".format(
-                    type(keys).__name__
-                )
+                f"Provide a list or set of files to retrieve data but not {type(keys).__name__!r}"
             )
 
         if not os.path.isabs(folder):
             folder = os.path.join(self.work_dir, folder)
 
         if not os.path.exists(folder):
-            self.debug("{!r} folder is not found".format(folder))
+            self.debug(f"{folder!r} folder is not found")
             return
 
         if keys:
-            self.debug("Yielding data from {!r}: {!r}".format(folder, keys))
+            self.debug(f"Yielding data from {folder!r}: {keys!r}")
             for key in keys:
                 file_name = self.__get_file_name_by_key(key, folder)
 
@@ -228,7 +222,7 @@ class Extension(metaclass=abc.ABCMeta):
                 for key in data:
                     yield key, data
         else:
-            self.debug("Yielding all data from {!r}".format(folder))
+            self.debug(f"Yielding all data from {folder!r}")
             for file_name in self.__get_all_json_files_in_folder(folder):
                 data = self.load_data(file_name, raise_exception=False)
                 for key in data:
@@ -243,7 +237,7 @@ class Extension(metaclass=abc.ABCMeta):
 
     def dump_data_by_key(self, data, folder):
         """Dump data to multiple json files in the object working directory."""
-        self.debug("Dumping data to {!r}".format(folder))
+        self.debug(f"Dumping data to {folder!r}")
 
         for key in data:
             file_name = self.__get_file_name_by_key(key, folder)
@@ -459,11 +453,7 @@ class Extension(metaclass=abc.ABCMeta):
                     if total_objs:
                         finished_objs += len(done_futures)
 
-                        msg = "Processed {} out of {} [{:.0f}%]".format(
-                            finished_objs,
-                            total_objs,
-                            finished_objs / total_objs * 100,
-                        )
+                        msg = f"Processed {finished_objs} out of {total_objs} [{finished_objs / total_objs * 100:.0f}%]"
                         self.progress(msg)
 
                     # Check return value of all finished futures
@@ -529,8 +519,7 @@ class Extension(metaclass=abc.ABCMeta):
         for ext_class in Extension.__get_all_subclasses(Extension):
             if ext_name == ext_class.__name__:
                 return ext_class
-        else:
-            raise NotImplementedError("Can't find {!r} class".format(ext_name))
+        raise NotImplementedError(f"Can't find {ext_name!r} class")
 
     def log(self, message):
         """Print debug message.
@@ -538,7 +527,7 @@ class Extension(metaclass=abc.ABCMeta):
         self.conf["log_level"] must be set to INFO or DEBUG in order to see the message.
         """
         self.__get_logger()
-        self.logger.info("{}: {}".format(self.name, message))
+        self.logger.info(f"{self.name}: {message}")
 
     def debug(self, message):
         """Print debug message.
@@ -548,7 +537,7 @@ class Extension(metaclass=abc.ABCMeta):
         WARNING: debug messages can have a great impact on the performance.
         """
         self.__get_logger()
-        self.logger.debug("{}: [DEBUG] {}".format(self.name, message))
+        self.logger.debug(f"{self.name}: [DEBUG] {message}")
 
     def warning(self, message):
         """Print warning message.
@@ -556,7 +545,7 @@ class Extension(metaclass=abc.ABCMeta):
         self.conf["log_level"] must be set to WARNING, INFO or DEBUG in order to see the message.
         """
         self.__get_logger()
-        self.logger.warning("{}: [WARNING] {}".format(self.name, message))
+        self.logger.warning(f"{self.name}: [WARNING] {message}")
 
     def error(self, message):
         """Print error message.
@@ -564,7 +553,7 @@ class Extension(metaclass=abc.ABCMeta):
         self.conf["log_level"] must be set to ERROR, WARNING, INFO or DEBUG in order to see the message.
         """
         self.__get_logger()
-        self.logger.error("{}: [ERROR] {}".format(self.name, message))
+        self.logger.error(f"{self.name}: [ERROR] {message}")
 
     def progress(self, message):
         # Track progress (only if stdout is not redirected)

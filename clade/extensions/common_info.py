@@ -36,7 +36,7 @@ class CommonInfo(Extension):
         os.makedirs(self.work_dir, exist_ok=True)
 
         with open(self.warn_log, "a") as err_fh:
-            err_fh.write("{}\n".format(msg))
+            err_fh.write(f"{msg}\n")
 
         # If file specified, then also print the message to separate file log
         if file:

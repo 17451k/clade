@@ -14,9 +14,9 @@
 # limitations under the License.
 
 import os
-import tempfile
 import shutil
 import sys
+import tempfile
 
 from clade.abstract import Intercept
 
@@ -54,9 +54,7 @@ class Wrapper(Intercept):
         env = super()._setup_env()
 
         env["PATH"] = self.wrappers_dir + os.pathsep + os.environ.get("PATH", "")
-        self.logger.debug(
-            "Add directory with wrappers to PATH: {!r}".format(self.wrappers_dir)
-        )
+        self.logger.debug(f"Add directory with wrappers to PATH: {self.wrappers_dir!r}")
 
         return env
 
@@ -64,9 +62,9 @@ class Wrapper(Intercept):
         wrapper = os.path.join(os.path.dirname(__file__), "intercept", "wrapper")
 
         if not os.path.exists(wrapper):
-            raise RuntimeError("wrapper is not found in {!r}".format(wrapper))
+            raise RuntimeError(f"wrapper is not found in {wrapper!r}")
 
-        self.logger.debug("Path to the wrapper: {!r}".format(wrapper))
+        self.logger.debug(f"Path to the wrapper: {wrapper!r}")
 
         return wrapper
 
@@ -76,7 +74,7 @@ class Wrapper(Intercept):
 
     def __create_path_wrappers(self):
         self.logger.debug(
-            "Create temporary directory for wrappers: {!r}".format(self.wrappers_dir)
+            f"Create temporary directory for wrappers: {self.wrappers_dir!r}"
         )
 
         if os.path.exists(self.wrappers_dir):
@@ -88,9 +86,7 @@ class Wrapper(Intercept):
 
         counter = 0
         self.logger.debug(
-            "Walk through every directory in PATH to create wrappers: {!r}".format(
-                paths
-            )
+            f"Walk through every directory in PATH to create wrappers: {paths!r}"
         )
         for path in paths:
             try:
@@ -106,11 +102,11 @@ class Wrapper(Intercept):
             except (FileNotFoundError, PermissionError):
                 continue
 
-        self.logger.debug("{} path wrappers were created".format(counter))
+        self.logger.debug(f"{counter} path wrappers were created")
 
     def __create_exe_wrappers(self):
         wrap_list = self.conf.get("Wrapper.wrap_list", [])
-        self.logger.debug("Wrap list: {!r}".format(wrap_list))
+        self.logger.debug(f"Wrap list: {wrap_list!r}")
 
         for path in wrap_list:
             if os.path.isfile(path):
@@ -125,9 +121,7 @@ class Wrapper(Intercept):
                         self.__create_exe_wrapper(os.path.join(path, file))
             else:
                 self.logger.error(
-                    "{!r} file or directory from 'Wrapper.wrap_list' option does not exist".format(
-                        path
-                    )
+                    f"{path!r} file or directory from 'Wrapper.wrap_list' option does not exist"
                 )
                 sys.exit(-1)
 
@@ -139,21 +133,19 @@ class Wrapper(Intercept):
         ):
             return
 
-        self.logger.debug("Create exe wrapper: {!r}".format(path))
+        self.logger.debug(f"Create exe wrapper: {path!r}")
 
         try:
             os.rename(path, path + self.wrapper_postfix)
             os.symlink(self.wrapper, path)
         except PermissionError:
-            self.logger.warning(
-                "You do not have permissions to modify {!r}".format(path)
-            )
+            self.logger.warning(f"You do not have permissions to modify {path!r}")
         except Exception as e:
             self.logger.warning(e)
 
     def __delete_wrappers(self):
         self.logger.debug(
-            "Delete temporary directory with wrappers: {!r}".format(self.wrappers_dir)
+            f"Delete temporary directory with wrappers: {self.wrappers_dir!r}"
         )
 
         if os.path.exists(self.wrappers_dir):
@@ -184,7 +176,7 @@ class Wrapper(Intercept):
 
         try:
             if os.path.isfile(path + self.wrapper_postfix):
-                self.logger.debug("Delete exe wrapper: {!r}".format(path))
+                self.logger.debug(f"Delete exe wrapper: {path!r}")
                 os.remove(path)
                 os.rename(path + self.wrapper_postfix, path)
         except PermissionError:

@@ -51,7 +51,7 @@ class Compiler(Common):
             self.extensions["Storage"].add_file(file, encoding=encoding)
 
     def load_deps_by_id(self, cmd_id):
-        deps_file = os.path.join("deps", "{}.json".format(cmd_id))
+        deps_file = os.path.join("deps", f"{cmd_id}.json")
         deps = self.load_data(deps_file, raise_exception=False)
 
         # if load_data can't find file, it returns empty dict()
@@ -67,20 +67,18 @@ class Compiler(Common):
         deps = self.extensions["Path"].normalize_rel_paths(deps, cwd)
         deps = list(set(deps))
 
-        self.debug("Dependencies of command {}: {}".format(cmd_id, deps))
-        self.dump_data(deps, os.path.join(self.deps_dir, "{}.json".format(cmd_id)))
+        self.debug(f"Dependencies of command {cmd_id}: {deps}")
+        self.dump_data(deps, os.path.join(self.deps_dir, f"{cmd_id}.json"))
 
     def is_a_compilation_command(self, cmd):
         if any(
-            (
-                True
-                for cmd_in in cmd["in"]
-                if os.path.splitext(os.path.basename(cmd_in))[1] in self.file_extensions
-            )
+            True
+            for cmd_in in cmd["in"]
+            if os.path.splitext(os.path.basename(cmd_in))[1] in self.file_extensions
         ):
             return True
 
-        self.debug("{} is not a compilation command".format(cmd))
+        self.debug(f"{cmd} is not a compilation command")
         return False
 
     def load_all_cmds(
@@ -136,7 +134,7 @@ class Compiler(Common):
             if os.path.exists(pre_file):
                 pre_files.append(pre_file)
 
-        self.debug("Getting preprocessed files: {}".format(pre_files))
+        self.debug(f"Getting preprocessed files: {pre_files}")
         return pre_files
 
     def get_pre_file_by_path(self, path, cwd):
@@ -148,5 +146,5 @@ class Compiler(Common):
         pre_file = os.path.splitext(abs_path)[0] + ".i"
         pre_file = self.extensions["Storage"].get_storage_path(pre_file)
 
-        self.debug("Getting preprocessed file: {}".format(pre_file))
+        self.debug(f"Getting preprocessed file: {pre_file}")
         return pre_file

@@ -97,11 +97,7 @@ class CC(Linker):
         deps = []
 
         for cmd_in in cmd["in"]:
-            self.debug(
-                "Collecting dependencies for {!r} from command {}".format(
-                    cmd_in, cmd_id
-                )
-            )
+            self.debug(f"Collecting dependencies for {cmd_in!r} from command {cmd_id}")
             deps_file = self.__collect_deps(cmd_id, which, cmd, cmd_in)
 
             deps.extend(self.__parse_deps(deps_file))
@@ -109,12 +105,12 @@ class CC(Linker):
         return deps
 
     def __collect_deps(self, cmd_id, which, cmd, cmd_in):
-        deps_file = os.path.join(self.temp_dir, "{}-deps.txt".format(cmd_id))
+        deps_file = os.path.join(self.temp_dir, f"{cmd_id}-deps.txt")
 
         if self.conf.get("CC.with_system_header_files"):
-            additional_opts = ["-Wp,-MD,{}".format(deps_file), "-M"]
+            additional_opts = [f"-Wp,-MD,{deps_file}", "-M"]
         else:
-            additional_opts = ["-Wp,-MMD,{}".format(deps_file), "-MM"]
+            additional_opts = [f"-Wp,-MMD,{deps_file}", "-MM"]
 
         if not os.path.isabs(which):
             which = os.path.join(cmd["cwd"], which)
@@ -124,15 +120,15 @@ class CC(Linker):
 
         # Do not execute a command that does not contain any input files
         if not cmd["in"] or "-" in cmd["in"]:
-            self.debug("Command {} does not contain any input files".format(cmd_id))
+            self.debug(f"Command {cmd_id} does not contain any input files")
             return deps_file
 
         if not os.path.exists(which):
-            self.warning("Compiler {!r} is no longer exists".format(which))
+            self.warning(f"Compiler {which!r} is no longer exists")
             return deps_file
 
         if not os.path.exists(cmd["cwd"]):
-            self.warning("CWD for command {!r} was deleted after build".format(cmd_id))
+            self.warning(f"CWD for command {cmd_id!r} was deleted after build")
             return deps_file
 
         self.debug("CWD: {!r}".format(cmd["cwd"]))
@@ -155,10 +151,10 @@ class CC(Linker):
         deps = []
 
         if os.path.isfile(deps_file):
-            self.debug("Parsing dependencies file {!r}".format(deps_file))
+            self.debug(f"Parsing dependencies file {deps_file!r}")
             with open(deps_file, encoding="utf8") as fp:
-                for line in fp.readlines():
-                    self.debug("Line: {!r}".format(line))
+                for line in fp:
+                    self.debug(f"Line: {line!r}")
                     line = line.lstrip(" ")
                     line = line.rstrip(" \\\n")
                     line = line.rstrip(":")
@@ -178,13 +174,13 @@ class CC(Linker):
 
     def is_bad(self, cmd):
         if super().is_bad(cmd):
-            self.debug("Command {} is bad".format(cmd))
+            self.debug(f"Command {cmd} is bad")
             return True
 
         if self.conf.get("CC.ignore_cc1", True) and (
             "-cc1" in cmd["opts"] or cmd["command"][0].endswith("cc1")
         ):
-            self.debug("Command {} is bad".format(cmd))
+            self.debug(f"Command {cmd} is bad")
             return True
 
         return False
@@ -199,7 +195,7 @@ class CC(Linker):
             opts = cmd["opts"]
 
         if set(opts).intersection(cc_preprocessor_opts):
-            self.debug("{} is not a compilation command".format(cmd))
+            self.debug(f"{cmd} is not a compilation command")
             return False
 
         return True
@@ -252,7 +248,7 @@ class CC(Linker):
         return pre
 
     @staticmethod
-    @functools.lru_cache()
+    @functools.lru_cache
     def _get_default_searchdirs(which):
         searchdirs = []
 

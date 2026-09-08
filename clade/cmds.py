@@ -26,9 +26,9 @@ def open_cmds_file(cmds_file):
         RuntimeError: Specified file does not exist or empty.
     """
     if not os.path.exists(cmds_file):
-        raise RuntimeError("Specified {} file does not exist".format(cmds_file))
+        raise RuntimeError(f"Specified {cmds_file} file does not exist")
     if not os.path.getsize(cmds_file):
-        raise RuntimeError("Specified {} file is empty".format(cmds_file))
+        raise RuntimeError(f"Specified {cmds_file} file is empty")
 
     return open(cmds_file)
 

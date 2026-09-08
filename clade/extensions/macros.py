@@ -13,7 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Generator, NamedTuple
+from collections.abc import Generator
+from typing import NamedTuple
 
 from clade.extensions.abstract import Extension
 from clade.types.nested_dict import nested_dict, traverse

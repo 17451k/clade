@@ -20,6 +20,7 @@ import os
 import re
 import subprocess
 import sys
+
 import orjson
 
 
@@ -35,7 +36,7 @@ def get_logger(name, with_name=True, conf=None):
 
     if with_name:
         formatter = logging.Formatter(
-            "%(asctime)s clade {}: %(message)s".format(name), "%H:%M:%S"
+            f"%(asctime)s clade {name}: %(message)s", "%H:%M:%S"
         )
     else:
         formatter = logging.Formatter("%(asctime)s clade: %(message)s", "%H:%M:%S")
@@ -70,7 +71,7 @@ def merge_preset_to_conf(preset_name, conf):
     presets = load(preset_file)
 
     if preset_name not in presets:
-        raise RuntimeError("Preset {!r} is not found".format(preset_name))
+        raise RuntimeError(f"Preset {preset_name!r} is not found")
 
     preset_conf = presets[preset_name]
     parent_preset = preset_conf.get("extends")

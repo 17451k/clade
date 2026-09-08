@@ -14,11 +14,12 @@
 # limitations under the License.
 
 import os
-import pytest
 import shutil
 
+import pytest
+
 from clade import Clade
-from tests.test_project import main_c, zero_c, tmp_main
+from tests.test_project import main_c, tmp_main, zero_c
 
 
 def test_cmd_graph_requires(tmpdir, cmds_file):

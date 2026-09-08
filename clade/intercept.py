@@ -38,7 +38,7 @@ def intercept(
     elif sys.platform == "win32":
         cl = Debugger
     else:
-        sys.exit("Your platform {!r} is not supported yet.".format(sys.platform))
+        sys.exit(f"Your platform {sys.platform!r} is not supported yet.")
 
     i = cl(
         command=command,

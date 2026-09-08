@@ -212,8 +212,7 @@ class Functions(CommonInfo):
                     set(declaration["compiled_in"]).union(set(decl_val["compiled_in"]))
                 )
                 return
-        else:
-            definition["declarations"].append(decl_val)
+        definition["declarations"].append(decl_val)
 
     def __process_exported(self):
         # Linux kernel only

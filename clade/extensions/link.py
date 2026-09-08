@@ -30,11 +30,11 @@ class Link(Common):
         super().parse(cmds_file, self.conf.get("Link.which_list", []))
 
     def parse_cmd(self, cmd):
-        self.debug("Parse: {}".format(cmd))
+        self.debug(f"Parse: {cmd}")
         parsed_cmd = self._get_cmd_dict(cmd)
 
         if self.name not in requires_value:
-            raise RuntimeError("Command type '{}' is not supported".format(self.name))
+            raise RuntimeError(f"Command type '{self.name}' is not supported")
 
         opts = iter(cmd["command"][1:])
 
@@ -45,7 +45,9 @@ class Link(Common):
                 val = next(opts)
                 parsed_cmd["opts"].extend([opt, val])
             elif re.search(r"[/-]out:", opt, re.IGNORECASE):
-                parsed_cmd["out"].append(re.sub(r"[/-]OUT:", "", opt, flags=re.I))
+                parsed_cmd["out"].append(
+                    re.sub(r"[/-]OUT:", "", opt, flags=re.IGNORECASE)
+                )
             elif re.search(r"^[/-]", opt):
                 parsed_cmd["opts"].append(opt)
 
