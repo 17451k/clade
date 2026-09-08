@@ -23,7 +23,7 @@ def get_cmd(tmp_path, command):
     cwd = tmp_path / "cwd"
     cwd.mkdir()
 
-    subprocess.run(command, cwd=cwd, shell=True)
+    subprocess.run(command, cwd=cwd, shell=True, check=True)
 
     return {
         "cwd": str(cwd),

@@ -51,6 +51,8 @@ class LD(Linker):
                 text=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
+                # grep exits with 1 when it finds nothing, which is expected
+                check=False,
             )
 
             for line in r.stdout.split(";"):
