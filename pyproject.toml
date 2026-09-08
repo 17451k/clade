@@ -1,0 +1,75 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "clade"
+version = "4.1"
+description = "Clade is a tool for extracting information about software build process and source code"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [{name = "Ilya Shchepetkov", email = "ilya.shchepetkov@17451k.space"}]
+dependencies = [
+    "orjson",
+    "charset_normalizer",
+    "graphviz",
+    "ply",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+]
+
+[project.urls]
+Homepage = "https://github.com/17451k/clade"
+
+[project.optional-dependencies]
+dev = ["pytest", "black", "mypy", "ruff"]
+
+[project.scripts]
+clade = "clade.__main__:main"
+clade-cdb = "clade.scripts.compilation_database:main"
+clade-cmds-stats = "clade.scripts.stats:print_cmds_stats"
+clade-diff = "clade.scripts.diff:main"
+clade-check = "clade.scripts.check:main"
+clade-trace = "clade.scripts.tracer:main"
+clade-file-graph = "clade.scripts.file_graph:main"
+clade-pid-graph = "clade.scripts.pid_graph:main"
+
+[tool.setuptools]
+include-package-data = false
+
+[tool.setuptools.packages.find]
+include = ["clade*"]
+
+[tool.setuptools.package-data]
+"clade.extensions" = ["info/*.aspect", "presets/*.json"]
+"clade" = [
+    "intercept/CMakeLists.txt",
+    "intercept/unix/*.c",
+    "intercept/unix/*.h",
+    "intercept/unix/CMakeLists.txt",
+    "intercept/windows/*.cpp",
+    "intercept/windows/*.h",
+    "intercept/windows/CMakeLists.txt",
+    "intercept/libinterceptor.so",
+    "intercept/libinterceptor.dylib",
+    "intercept/lib/libinterceptor.so",
+    "intercept/lib64/libinterceptor.so",
+    "intercept/wrapper",
+    "intercept/debugger.exe",
+]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
+ignore = ["E501"]

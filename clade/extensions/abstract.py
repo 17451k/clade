@@ -17,9 +17,9 @@ import abc
 import datetime
 import fnmatch
 import importlib
+import importlib.metadata
 import json
 import pathlib
-import pkg_resources
 import platform
 import os
 import shutil
@@ -357,9 +357,10 @@ class Extension(metaclass=abc.ABCMeta):
             stored_meta["versions"]["python"] = platform.python_version()
 
         if "pip" not in stored_meta["versions"]:
-            stored_meta["versions"]["pip"] = pkg_resources.get_distribution(
-                "pip"
-            ).version
+            try:
+                stored_meta["versions"]["pip"] = importlib.metadata.version("pip")
+            except importlib.metadata.PackageNotFoundError:
+                stored_meta["versions"]["pip"] = None
 
         if "gcc" not in stored_meta["versions"]:
             stored_meta["versions"]["gcc"] = get_program_version("gcc")
@@ -375,9 +376,9 @@ class Extension(metaclass=abc.ABCMeta):
 
         if "requirements" not in stored_meta:
             stored_meta["requirements"] = [
-                "{}=={}".format(d.project_name, d.version)
-                for d in pkg_resources.working_set
-                if d.project_name in sys.modules and d.project_name != "clade"
+                "{}=={}".format(d.metadata["Name"], d.version)
+                for d in importlib.metadata.distributions()
+                if d.metadata["Name"] in sys.modules and d.metadata["Name"] != "clade"
             ]
 
         if "date" not in stored_meta:

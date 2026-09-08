@@ -21,11 +21,8 @@ import subprocess
 import sys
 import tempfile
 
-from distutils.command.build import build
-from setuptools.command.develop import develop
-from setuptools.command.install import install
 from setuptools import dist
-
+from setuptools.command.build_py import build_py
 
 LIBINT_SRC = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "clade", "intercept")
@@ -147,50 +144,13 @@ def build_libinterceptor():
         shutil.rmtree(build_dir)
 
 
-def package_files(package_directory):
-    paths = []
-
-    for path, _, filenames in os.walk(package_directory):
-        for filename in filenames:
-            paths.append(
-                os.path.relpath(os.path.join(path, filename), start=package_directory)
-            )
-
-    # Add files created on the build step
-    paths.extend(
-        [
-            os.path.join("intercept", "libinterceptor.so"),
-            os.path.join("intercept", "libinterceptor.dylib"),
-            os.path.join("intercept", "lib", "libinterceptor.so"),
-            os.path.join("intercept", "lib64", "libinterceptor.so"),
-            os.path.join("intercept", "wrapper"),
-            os.path.join("intercept", "debugger.exe"),
-        ]
-    )
-
-    return paths
-
-
-class CustomBuild(build):
+# build_py is the only build step that both wheel and PEP 660 editable
+# installs are guaranteed to run, and it runs before package data is
+# collected, so the artifacts it produces end up in the wheel
+class CustomBuildPy(build_py):
     def run(self):
         build_libinterceptor()
         super().run()
-
-    def finalize_options(self):
-        super().finalize_options()
-
-
-class CustomDevelop(develop):
-    def run(self):
-        build_libinterceptor()
-        super().run()
-
-
-class CustomInstall(install):
-    def finalize_options(self):
-        install.finalize_options(self)
-        if self.distribution.has_ext_modules():
-            self.install_lib = self.install_platlib
 
 
 class CustomDist(dist.Distribution):
@@ -201,77 +161,7 @@ class CustomDist(dist.Distribution):
         return True
 
 
-try:
-    from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
-
-    class bdist_wheel(_bdist_wheel):
-        def finalize_options(self):
-            _bdist_wheel.finalize_options(self)
-            # Mark us as not a pure python package
-            self.root_is_pure = False
-
-except ImportError:
-    bdist_wheel = None
-
 setuptools.setup(
-    name="clade",
-    version="4.1",
-    author="Ilya Shchepetkov",
-    author_email="shchepetkov@ispras.ru",
-    url="https://github.com/17451k/clade",
-    license="LICENSE.txt",
-    description="Clade is a tool for extracting information about software build process and source code",
-    long_description=open("README.md", encoding="utf8").read(),
-    long_description_content_type="text/markdown",
-    python_requires=">=3.8",
-    packages=["clade"],
-    package_data={"clade": package_files("clade")},
-    entry_points={
-        "console_scripts": [
-            "clade=clade.__main__:main",
-            "clade-cdb=clade.scripts.compilation_database:main",
-            "clade-cmds-stats=clade.scripts.stats:print_cmds_stats",
-            "clade-diff=clade.scripts.diff:main",
-            "clade-check=clade.scripts.check:main",
-            "clade-trace=clade.scripts.tracer:main",
-            "clade-file-graph=clade.scripts.file_graph:main",
-            "clade-pid-graph=clade.scripts.pid_graph:main",
-        ]
-    },
-    cmdclass={
-        "build": CustomBuild,
-        "develop": CustomDevelop,
-        "install": CustomInstall,
-        "bdist_wheel": bdist_wheel,
-    },
+    cmdclass={"build_py": CustomBuildPy},
     distclass=CustomDist,
-    install_requires=[
-        "orjson",
-        "charset_normalizer",
-        "graphviz",
-        "ply",
-    ],
-    extras_require={
-        "dev": [
-            "pytest",
-            "black",
-            "flake8",
-            "mypy",
-            "ruff",
-        ]
-    },
-    classifiers=[
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.11",
-        "Programming Language :: Python :: 3.12",
-        "Programming Language :: Python :: Implementation :: CPython",
-        "Programming Language :: Python :: Implementation :: PyPy",
-        "License :: OSI Approved :: Apache Software License",
-        "Operating System :: POSIX :: Linux",
-        "Operating System :: MacOS :: MacOS X",
-        "Operating System :: Microsoft :: Windows",
-    ],
 )

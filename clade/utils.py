@@ -14,8 +14,8 @@
 # limitations under the License.
 
 import array
+import importlib.metadata
 import logging
-import pkg_resources
 import os
 import re
 import subprocess
@@ -84,8 +84,9 @@ def merge_preset_to_conf(preset_name, conf):
 
 
 def get_clade_version():
-    version = pkg_resources.get_distribution("clade").version
-    location = pkg_resources.get_distribution("clade").location
+    version = importlib.metadata.version("clade")
+    # For editable installs this is the source tree, so git describe works
+    location = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
     if not os.path.exists(os.path.join(location, ".git")):
         return version

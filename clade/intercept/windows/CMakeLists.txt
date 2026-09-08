@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.3)
+cmake_minimum_required(VERSION 3.10)
 
 add_executable(debugger debugger.cpp)
 add_library(client_win STATIC client.cpp)
