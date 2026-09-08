@@ -564,13 +564,13 @@ def normalize_file(file):
                         continue
 
                     # Storing hash of string instead of string itself reduces memory usage by 30-40%
-                    h = hashlib.md5(line).hexdigest()  # type: ignore
+                    h = hashlib.md5(line).hexdigest()
                     if h in seen:
                         continue
 
                     seen.add(h)
 
-                    new_fh.write(line)  # type: ignore
+                    new_fh.write(line)
     else:
         lines = []
         with open(file, "rb") as fh:
@@ -578,7 +578,7 @@ def normalize_file(file):
 
             new_lines = []
             for line in lines:
-                h = hashlib.md5(line).hexdigest()  # type: ignore
+                h = hashlib.md5(line).hexdigest()
                 if h in seen:
                     continue
 
