@@ -26,9 +26,6 @@ class Link(Common):
     def __init__(self, work_dir, conf=None):
         super().__init__(work_dir, conf)
 
-    def parse(self, cmds_file):
-        super().parse(cmds_file, self.conf.get("Link.which_list", []))
-
     def parse_cmd(self, cmd):
         self.debug(f"Parse: {cmd}")
         parsed_cmd = self._get_cmd_dict(cmd)

@@ -20,6 +20,7 @@ import shlex
 import shutil
 import subprocess
 
+from clade.extensions.abstract import Extension
 from clade.extensions.linker import Linker
 from clade.extensions.opts import cc_preprocessor_opts
 
@@ -29,13 +30,14 @@ class CC(Linker):
 
     __version__ = "1"
 
+    @Extension.prepare
     def parse(self, cmds_file):
-        which_list = list(self.conf.get("CC.which_list", []))
+        which_list = list(self.conf.get(f"{self.name}.which_list", []))
 
-        if self.conf.get("CC.process_ccache"):
+        if self.conf.get(f"{self.name}.process_ccache"):
             which_list.append("ccache")
 
-        super().parse(cmds_file, which_list)
+        self.parse_cmds(cmds_file, which_list)
 
     def parse_cmd(self, cmd):
         cmd_id = cmd["id"]
@@ -53,7 +55,7 @@ class CC(Linker):
                 self.debug(f"{cmd} is not a {self.name} command")
                 return
 
-        parsed_cmd = super().parse_cmd(cmd, self.name)
+        parsed_cmd = super().parse_cmd(cmd)
         self._parse_linker_opts(cmd["which"], parsed_cmd)
 
         if not parsed_cmd["out"] and "-c" in parsed_cmd["opts"]:

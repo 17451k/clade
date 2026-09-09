@@ -209,7 +209,7 @@ class Info(Extension):
             ]
 
             if self.conf.get("Info.aspectator"):
-                cif_args.extend(["--aspectator", self.conf.get("Info.aspectator")])
+                cif_args.extend(["--aspectator", self.conf["Info.aspectator"]])
 
             if use_pre:
                 opts = []

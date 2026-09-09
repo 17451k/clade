@@ -524,8 +524,7 @@ class Extension(metaclass=abc.ABCMeta):
 
         self.conf["log_level"] must be set to INFO or DEBUG in order to see the message.
         """
-        self.__get_logger()
-        self.logger.info(f"{self.name}: {message}")
+        self.__get_logger().info(f"{self.name}: {message}")
 
     def debug(self, message):
         """Print debug message.
@@ -534,24 +533,21 @@ class Extension(metaclass=abc.ABCMeta):
 
         WARNING: debug messages can have a great impact on the performance.
         """
-        self.__get_logger()
-        self.logger.debug(f"{self.name}: [DEBUG] {message}")
+        self.__get_logger().debug(f"{self.name}: [DEBUG] {message}")
 
     def warning(self, message):
         """Print warning message.
 
         self.conf["log_level"] must be set to WARNING, INFO or DEBUG in order to see the message.
         """
-        self.__get_logger()
-        self.logger.warning(f"{self.name}: [WARNING] {message}")
+        self.__get_logger().warning(f"{self.name}: [WARNING] {message}")
 
     def error(self, message):
         """Print error message.
 
         self.conf["log_level"] must be set to ERROR, WARNING, INFO or DEBUG in order to see the message.
         """
-        self.__get_logger()
-        self.logger.error(f"{self.name}: [ERROR] {message}")
+        self.__get_logger().error(f"{self.name}: [ERROR] {message}")
 
     def progress(self, message):
         # Track progress (only if stdout is not redirected)
@@ -567,3 +563,5 @@ class Extension(metaclass=abc.ABCMeta):
 
         if not self.logger:
             self.logger = get_logger("clade", with_name=False, conf=self.conf)
+
+        return self.logger

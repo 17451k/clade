@@ -21,9 +21,6 @@ from clade.extensions.common import Common
 class Copy(Common):
     __version__ = "1"
 
-    def parse(self, cmds_file):
-        super().parse(cmds_file, self.conf.get("Copy.which_list", []))
-
     def parse_cmd(self, cmd):
         parsed_cmd = {
             "id": cmd["id"],

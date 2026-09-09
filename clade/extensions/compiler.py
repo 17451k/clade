@@ -31,8 +31,8 @@ class Compiler(Common):
 
         self.deps_dir = os.path.join(self.work_dir, "deps")
 
-    def parse(self, cmds_file, which_list):
-        super().parse(cmds_file, which_list)
+    def parse_cmds(self, cmds_file, which_list):
+        super().parse_cmds(cmds_file, which_list)
 
         if os.path.exists(self.cmds_file) and not os.path.exists(self.deps_dir):
             self.warning("All files with dependencies are empty")
@@ -83,9 +83,9 @@ class Compiler(Common):
 
     def load_all_cmds(
         self,
-        filter_by_pid=True,
         with_opts=False,
         with_raw=False,
+        filter_by_pid=True,
         with_deps=False,
         compile_only=False,
     ):

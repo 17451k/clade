@@ -22,9 +22,6 @@ from clade.extensions.opts import requires_value
 class Install(Common):
     __version__ = "1"
 
-    def parse(self, cmds_file):
-        super().parse(cmds_file, self.conf.get("Install.which_list", []))
-
     def parse_cmd(self, cmd):
         parsed_cmd = {
             "id": cmd["id"],

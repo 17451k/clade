@@ -20,11 +20,3 @@ class CXX(CC):
     """Class for parsing C++ build commands."""
 
     __version__ = "1"
-
-    def parse(self, cmds_file):
-        which_list = list(self.conf.get("CXX.which_list", []))
-
-        if self.conf.get("CXX.process_ccache"):
-            which_list.append("ccache")
-
-        super(CC, self).parse(cmds_file, which_list)

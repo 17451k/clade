@@ -22,9 +22,6 @@ from clade.extensions.common import Common
 class LN(Common):
     __version__ = "1"
 
-    def parse(self, cmds_file):
-        super().parse(cmds_file, self.conf.get("LN.which_list", []))
-
     def parse_cmd(self, cmd):
         parsed_cmd = {
             "id": cmd["id"],
@@ -37,7 +34,7 @@ class LN(Common):
 
         opts = iter(cmd["command"][1:])
         files = []
-        out = None
+        out = ""
 
         # First we parse only options, leaving all the files unparsed
         for opt in opts:

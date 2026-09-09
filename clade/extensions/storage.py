@@ -109,7 +109,7 @@ class Storage(Extension):
                 # Encoding is specified by the user
                 confidence = 1
 
-            if not confidence:
+            if not confidence or not encoding:
                 self.warning(f"Can't confidently detect encoding of {filename!r}.")
                 shutil.copyfile(filename, dst)
                 return

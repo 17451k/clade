@@ -74,7 +74,10 @@ class Common(Extension, metaclass=abc.ABCMeta):
             self.regex_include_in = re.compile("(" + ")|(".join(include_list) + ")")
 
     @Extension.prepare
-    def parse(self, cmds_file, which_list):
+    def parse(self, cmds_file):
+        self.parse_cmds(cmds_file, self.conf.get(f"{self.name}.which_list", []))
+
+    def parse_cmds(self, cmds_file, which_list):
         """Multiprocess parsing of build commands filtered by 'which' field."""
 
         total_cmds = number_of_cmds_by_which(cmds_file, which_list)
@@ -96,10 +99,11 @@ class Common(Extension, metaclass=abc.ABCMeta):
             "command": [os.path.normpath(cmd["which"])] + cmd["command"][1:],
         }
 
-    def parse_cmd(self, cmd, cmd_type):
+    def parse_cmd(self, cmd):
         """Parse single build command."""
         self.debug(f"Parse: {cmd}")
         parsed_cmd = self._get_cmd_dict(cmd)
+        cmd_type = self.name
 
         if cmd_type not in requires_value:
             raise RuntimeError(f"Command type '{cmd_type}' is not supported")

@@ -36,6 +36,9 @@ else:
 # class SocketServer(ForkingMixIn, parent):
 class SocketServer(parent):
     class RequestHandler(socketserver.StreamRequestHandler):
+        output: str
+        extensions: list[Extension]
+
         def handle(self):
             data = self.rfile.readline().strip().decode("utf-8")
             cmd = split_cmd(data)
@@ -49,7 +52,13 @@ class SocketServer(parent):
                 clade_fh.write(data + "\n")
 
     def __init__(self, address, output, conf):
-        self.process = None
+        self.process = threading.Thread(
+            # poll_interval defines for how long terminate() blocks
+            # waiting to notice shutdown()
+            target=self.serve_forever,
+            kwargs={"poll_interval": 0.01},
+            daemon=True,
+        )
         # Variable to store file object of UNIX socket parent directory
         self.socket_fh = None
 
@@ -70,13 +79,6 @@ class SocketServer(parent):
         super().__init__(address, rh)
 
     def start(self):
-        self.process = threading.Thread(
-            # poll_interval defines for how long terminate() blocks
-            # waiting to notice shutdown()
-            target=self.serve_forever,
-            kwargs={"poll_interval": 0.01},
-        )
-        self.process.daemon = True
         self.process.start()
 
     def terminate(self):
@@ -133,7 +135,7 @@ class PreprocessServer:
         )
 
         # If "Server.port" is 0, than dynamic port assignment is used and the value needs to be updated
-        self.conf["Server.port"] = str(server.server_address[1])
+        self.conf["Server.port"] = str(server.socket.getsockname()[1])
 
         return server
 

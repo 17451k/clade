@@ -33,9 +33,6 @@ class CL(Compiler):
 
     __version__ = "1"
 
-    def parse(self, cmds_file):
-        super().parse(cmds_file, self.conf.get("CL.which_list", []))
-
     def parse_cmd(self, cmd):
         self.debug(f"Parse: {cmd}")
         parsed_cmd = self.__parse_opts(cmd)

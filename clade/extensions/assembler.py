@@ -19,11 +19,8 @@ from clade.extensions.common import Common
 class AS(Common):
     __version__ = "1"
 
-    def parse(self, cmds_file):
-        super().parse(cmds_file, self.conf.get("AS.which_list", []))
-
     def parse_cmd(self, cmd):
-        parsed_cmd = super().parse_cmd(cmd, self.name)
+        parsed_cmd = super().parse_cmd(cmd)
 
         if self.is_bad(parsed_cmd):
             self.dump_bad_cmd_id(parsed_cmd["id"])

@@ -78,12 +78,8 @@ def iter_cmds(cmds_file):
 
 def split_cmd(line):
     """Convert a single intercepted command into dictionary."""
-    cmd = {}
-    cmd["cwd"], cmd["pid"], cmd["which"], *cmd["command"] = line.strip().split(
-        DELIMITER
-    )
-    cmd["pid"] = int(cmd["pid"])
-    return cmd
+    cwd, pid, which, *command = line.strip().split(DELIMITER)
+    return {"cwd": cwd, "pid": int(pid), "which": which, "command": command}
 
 
 def join_cmd(cmd):

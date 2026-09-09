@@ -151,7 +151,7 @@ class Tracer:
 
             trace[from_func].add(to_func)
 
-        return trace
+        return {func: list(called) for func, called in trace.items()}
 
     @staticmethod
     def __reverse_trace(trace: Trace) -> Trace:

@@ -87,7 +87,7 @@ class Intercept(metaclass=abc.ABCMeta):
 
         # Prepare environment variables for PID graph
         if self.append:
-            last_used_id = get_last_id(self.output)
+            last_used_id = str(get_last_id(self.output))
         else:
             last_used_id = "0"
 

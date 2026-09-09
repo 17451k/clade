@@ -18,6 +18,7 @@ import os
 import re
 import subprocess
 
+from clade.extensions.abstract import Extension
 from clade.extensions.common import Common
 from clade.extensions.linker import Linker
 
@@ -25,11 +26,12 @@ from clade.extensions.linker import Linker
 class LD(Linker):
     __version__ = "1"
 
+    @Extension.prepare
     def parse(self, cmds_file):
-        Common.parse(self, cmds_file, self.conf.get("LD.which_list", []))
+        Common.parse_cmds(self, cmds_file, self.conf.get("LD.which_list", []))
 
     def parse_cmd(self, cmd):
-        parsed_cmd = super().parse_cmd(cmd, self.name)
+        parsed_cmd = super().parse_cmd(cmd)
 
         if self.is_bad(parsed_cmd):
             self.dump_bad_cmd_id(parsed_cmd["id"])
