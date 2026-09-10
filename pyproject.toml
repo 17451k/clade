@@ -34,8 +34,9 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/17451k/clade"
 
-[project.optional-dependencies]
-dev = ["pytest", "coverage[toml]", "black", "ty", "ruff"]
+[dependency-groups]
+# setuptools lets ty resolve the imports in setup.py
+dev = ["pytest", "coverage[toml]", "black", "ty", "ruff", "setuptools"]
 
 [project.scripts]
 clade = "clade.__main__:main"

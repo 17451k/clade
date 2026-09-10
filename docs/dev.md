@@ -7,8 +7,19 @@ Python packages for testing, measuring code coverage and profiling, using the
 following command:
 
 ``` shell
-python3 -m pip install -e ".[dev]"
+uv sync
 ```
+
+or, without `uv`:
+
+``` shell
+python3 -m pip install -e . --group dev
+```
+
+Formatting and linting (`black`, `ruff`, `ty`) run on every commit through
+[pre-commit](https://pre-commit.com); enable the hook once with
+`uvx pre-commit install`, or run everything by hand with
+`uvx pre-commit run --all-files`.
 
 Note that this command installs Clade in "editable" mode directly from the
 repository (you need to clone it on your computer beforehand and execute
