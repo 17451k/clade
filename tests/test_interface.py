@@ -305,7 +305,7 @@ def test_get_raw_cmd_by_id(clade_api: Clade):
 
 @pytest.mark.cif
 def test_get_envs_by_id(clade_api: Clade):
-    assert clade_api.get_envs_by_id(1) == list(clade_api.get_envs())[0]["envs"]
+    assert clade_api.get_envs_by_id(1) == next(iter(clade_api.get_envs()))["envs"]
 
 
 @pytest.mark.cif

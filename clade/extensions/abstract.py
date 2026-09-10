@@ -258,9 +258,9 @@ class Extension(metaclass=abc.ABCMeta):
         """Dump data to multiple json files in the object working directory."""
         self.debug(f"Dumping data to {folder!r}")
 
-        for key in data:
+        for key, value in data.items():
             file_name = self.__get_file_name_by_key(key, folder)
-            self.dump_data({key: data[key]}, file_name)
+            self.dump_data({key: value}, file_name)
 
     def file_exists_by_key(self, key: str, folder: str) -> bool:
         return os.path.exists(self.__get_file_name_by_key(key, folder))
@@ -395,7 +395,9 @@ class Extension(metaclass=abc.ABCMeta):
             ]
 
         if "date" not in stored_meta:
-            stored_meta["date"] = datetime.datetime.today().strftime("%Y-%m-%d %H:%M")
+            stored_meta["date"] = (
+                datetime.datetime.now().astimezone().strftime("%Y-%m-%d %H:%M")
+            )
 
         with open(self.global_meta_file, "w") as fh:
             fh.write(json.dumps(stored_meta, indent=4))

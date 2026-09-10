@@ -57,8 +57,6 @@ def test_join_env(envs_file):
 
 
 def test_get_all_envs(envs_file):
-    envs = []
-    for env in iter_envs(envs_file):
-        envs.append(env)
+    envs = list(iter_envs(envs_file))
 
     assert envs == get_all_envs(envs_file)

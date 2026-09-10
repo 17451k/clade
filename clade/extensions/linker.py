@@ -38,7 +38,7 @@ class Linker(Compiler):
                 self.__find_archive(name, searchdirs, parsed_cmd)
             elif opt in requires_value[self.name]:
                 continue
-            elif opt.startswith("-l") or opt.startswith("--library="):
+            elif opt.startswith(("-l", "--library=")):
                 name = re.sub(r"^-l", "", opt)
                 name = re.sub(r"^--library=", "", name)
 
@@ -65,7 +65,7 @@ class Linker(Compiler):
 
                 path = os.path.normpath(os.path.join(parsed_cmd["cwd"], path))
                 searchdirs.append(path)
-            elif opt.startswith("-L") or opt.startswith("--library-path="):
+            elif opt.startswith(("-L", "--library-path=")):
                 path = re.sub(r"^-L", "", opt)
                 path = re.sub(r"^--library-path=", "", path)
 

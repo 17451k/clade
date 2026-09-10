@@ -42,7 +42,7 @@ class Install(Common):
                 if opt == "-t" or opt == "--target-directory":
                     # Value is the next option.
                     out = os.path.normpath(next(opts))
-                elif opt.startswith("--target-directory=") or opt.startswith("-t"):
+                elif opt.startswith(("--target-directory=", "-t")):
                     out = opt.replace("--target-directory=", "")
                     out = opt.replace("-t", "")
                 elif opt in requires_value[self.name]:

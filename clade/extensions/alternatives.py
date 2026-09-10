@@ -147,9 +147,9 @@ class Alternatives(Extension):
         paths = sorted(paths, reverse=True)
 
         # Try to return first path that exists
-        for path in paths:
-            if os.path.exists(self.extensions["Storage"].get_storage_path(path)):
-                return path
+        for candidate in paths:
+            if os.path.exists(self.extensions["Storage"].get_storage_path(candidate)):
+                return candidate
 
         # Otherwise simply return the path itself
         return paths[0]

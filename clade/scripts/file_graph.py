@@ -65,10 +65,7 @@ class DotWithFiles:
         if self.include_regex and not self.include_regex.search(file):
             return True
 
-        if self.exclude_regex and self.exclude_regex.search(file):
-            return True
-
-        return False
+        return bool(self.exclude_regex and self.exclude_regex.search(file))
 
 
 class FileGraph:
@@ -104,10 +101,9 @@ class FileGraph:
 
                 cmd_ins = cmd["in"]
 
-                if cmd["type"] in ["CC", "CL", "LN", "CXX"]:
-                    # Properly print compiler commands with "-c" option
-                    if "-c" in cmd["opts"]:
-                        cmd_ins = [cmd["in"][i]]
+                # Properly print compiler commands with "-c" option
+                if cmd["type"] in ["CC", "CL", "LN", "CXX"] and "-c" in cmd["opts"]:
+                    cmd_ins = [cmd["in"][i]]
 
                 for cmd_in in cmd_ins:
                     dot.add_node(self.__dot_path(cmd_in))

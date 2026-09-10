@@ -53,7 +53,7 @@ class Copy(Common):
             if cmd["command"][0].endswith("cmd.exe") and ">" in opt or "<" in opt:
                 continue
 
-            if opt.startswith("/") or opt.startswith("-"):
+            if opt.startswith(("/", "-")):
                 parsed_cmd["opts"].append(opt)
             elif not parsed_cmd["in"]:
                 cmd_in = os.path.normpath(opt)

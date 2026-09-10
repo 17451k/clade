@@ -82,7 +82,7 @@ class Path(Extension):
         # disk letter
         test_path = [dirs[0].upper()]
         for d in dirs[1:]:
-            test_path += ["%s[%s]" % (d[:-1], d[-1])]
+            test_path += [f"{d[:-1]}[{d[-1]}]"]
         res = glob.glob("\\".join(test_path))
         if not res:
             # File not found

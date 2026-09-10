@@ -89,14 +89,7 @@ class Callgraph(CommonInfo):
             call_line = int(call_line)
 
             self.debug(
-                "Processing function calls: "
-                + " ".join(
-                    [
-                        context_file,
-                        context_func,
-                        func,
-                    ]
-                )
+                f"Processing function calls: {context_file} {context_func} {func}"
             )
 
             if self.is_builtin.match(func) or (

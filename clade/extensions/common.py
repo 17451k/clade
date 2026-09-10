@@ -112,7 +112,7 @@ class Common(Extension, metaclass=abc.ABCMeta):
 
         for opt in opts:
             # Options with multiple values.
-            if opt in requires_mult_values[cmd_type].keys():
+            if opt in requires_mult_values[cmd_type]:
                 vals = []
                 for _ in range(requires_mult_values[cmd_type][opt]):
                     vals.append(next(opts))

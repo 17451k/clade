@@ -300,7 +300,4 @@ class CL(Compiler):
         else:
             opts = cmd["opts"]
 
-        if set(opts).intersection(cl_preprocessor_deps_opts):
-            return False
-
-        return True
+        return not set(opts).intersection(cl_preprocessor_deps_opts)

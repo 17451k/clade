@@ -129,7 +129,7 @@ class Wrapper(Intercept):
         if not (
             os.path.isfile(path)
             and os.access(path, os.X_OK)
-            and not os.path.basename(path) == "wrapper"
+            and os.path.basename(path) != "wrapper"
         ):
             return
 

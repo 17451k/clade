@@ -35,8 +35,7 @@ class CallsByPtr(Extension):
             "Info"
         ].iter_calls_by_pointers():
             self.debug(
-                "Processing calls by pointers: "
-                + " ".join([context_file, context_func, func_ptr])
+                f"Processing calls by pointers: {context_file} {context_func} {func_ptr}"
             )
 
             if func_ptr not in self.calls_by_ptr[context_file][context_func]:

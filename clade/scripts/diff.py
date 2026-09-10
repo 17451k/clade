@@ -610,12 +610,12 @@ class Diff:
                 exp_names_are_same = False
 
             for exp_name in common_exp_names:
-                args1 = set(
-                    [x for sublist in exp1[exp_file][exp_name]["args"] for x in sublist]
-                )
-                args2 = set(
-                    [x for sublist in exp2[exp_file][exp_name]["args"] for x in sublist]
-                )
+                args1 = {
+                    x for sublist in exp1[exp_file][exp_name]["args"] for x in sublist
+                }
+                args2 = {
+                    x for sublist in exp2[exp_file][exp_name]["args"] for x in sublist
+                }
 
                 if args1 != args2:
                     removed = args1 - args2
@@ -845,7 +845,7 @@ class Diff:
                             call_lines_are_same = False
 
                         if common_call_lines:
-                            call_line = list(common_call_lines)[0]
+                            call_line = next(iter(common_call_lines))
 
                             match_type1 = c1[file][func]["called_in"][called_in_file][
                                 called_in_func
@@ -883,10 +883,7 @@ class Diff:
         a = os.path.join(self.work_dir1, ext_name)
         b = os.path.join(self.work_dir2, ext_name)
 
-        if os.path.exists(a) and os.path.exists(b):
-            return True
-        else:
-            return False
+        return os.path.exists(a) and os.path.exists(b)
 
 
 def parse_argv(argv):

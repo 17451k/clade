@@ -59,7 +59,7 @@ def split_env(line):
 
 def join_env(env):
     """Convert a single intercepted environment variable from dictionary to envs.txt line."""
-    line = "=".join(list(env.items())[0])
+    line = "=".join(next(iter(env.items())))
     return line
 
 

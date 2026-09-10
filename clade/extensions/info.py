@@ -367,9 +367,8 @@ class Info(Extension):
             # in paths[npath]. Combine these 2 files:
             normal_path = paths[npath]
 
-            with open(normal_path, "a") as normal_fh:
-                with open(output_file, "r") as wrong_fh:
-                    normal_fh.writelines(wrong_fh)
+            with open(normal_path, "a") as normal_fh, open(output_file) as wrong_fh:
+                normal_fh.writelines(wrong_fh)
 
             os.remove(output_file)
             to_remove.add(output_file)
@@ -415,8 +414,7 @@ class Info(Extension):
 
         regex = re.compile(r"\"(.*?)\" (\S*)")
 
-        for content in self.__iter_file_regex(self.exported, regex):
-            yield content
+        yield from self.__iter_file_regex(self.exported, regex)
 
     def iter_calls(self):
         """Yield context_file, context_cmd_id_list, context_func, func, call_line, call_type, args"""
@@ -439,8 +437,7 @@ class Info(Extension):
 
         regex = re.compile(r"\"(.*?)\" (\S*) (\S*) (\S*)")
 
-        for content in self.__iter_file_regex(self.callp, regex):
-            yield content
+        yield from self.__iter_file_regex(self.callp, regex)
 
     def iter_functions_usages(self):
         """Yield context_file, context_cmd_id, context_func, func, line, call_type"""
@@ -458,8 +455,7 @@ class Info(Extension):
 
         regex = re.compile(r"\"(.*?)\" (\S*) (\S*)")
 
-        for content in self.__iter_file_regex(self.define, regex):
-            yield content
+        yield from self.__iter_file_regex(self.define, regex)
 
     def iter_macros_expansions(self):
         """Yield exp_file, def_file, macro, exp_line, def_line, args_str"""
@@ -502,8 +498,7 @@ class Info(Extension):
 
         regex = re.compile(r"\"(.*?)\" typedef (.*)")
 
-        for content in self.__iter_file_regex(self.typedefs, regex):
-            yield content
+        yield from self.__iter_file_regex(self.typedefs, regex)
 
     def __iter_file_regex(self, archive, regex):
         with zipfile.ZipFile(archive, "r") as zip_fh:
@@ -533,7 +528,7 @@ class Info(Extension):
         # Path to the defenition of macro expansion
         def_path = None
 
-        expand_file = True if file.endswith("expand.txt") else False
+        expand_file = file.endswith("expand.txt")
 
         if expand_file:
             path, def_path = path.split("/CLADE-EXPAND")
@@ -557,20 +552,19 @@ def normalize_file(file):
 
     # Read large files (>= 100mb) line by line
     if os.path.getsize(file) >= 104857600:
-        with open(file, "rb") as fh:
-            with open(new_file, "wb") as new_fh:
-                for line in fh:
-                    if not line:
-                        continue
+        with open(file, "rb") as fh, open(new_file, "wb") as new_fh:
+            for line in fh:
+                if not line:
+                    continue
 
-                    # Storing hash of string instead of string itself reduces memory usage by 30-40%
-                    h = hashlib.md5(line).hexdigest()
-                    if h in seen:
-                        continue
+                # Storing hash of string instead of string itself reduces memory usage by 30-40%
+                h = hashlib.md5(line).hexdigest()
+                if h in seen:
+                    continue
 
-                    seen.add(h)
+                seen.add(h)
 
-                    new_fh.write(line)
+                new_fh.write(line)
     else:
         lines = []
         with open(file, "rb") as fh:
@@ -622,7 +616,7 @@ def combine_ids(file):
 
     new_file = file + ".tmp"
     with open(new_file, "w") as new_fh:
-        for line in d:
-            new_fh.write(f"{','.join(d[line])} {line}\n")
+        for line, cmd_ids in d.items():
+            new_fh.write(f"{','.join(cmd_ids)} {line}\n")
 
     os.replace(new_file, file)

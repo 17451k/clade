@@ -91,7 +91,8 @@ class Variables(CommonInfo):
         elif isinstance(value, list):
             [self.__process_values(v) for v in value]
         else:
-            raise RuntimeError(f"Unknown value: {value}")
+            # RuntimeError is what the CLI turns into a clean exit
+            raise RuntimeError(f"Unknown value: {value}")  # noqa: TRY004
 
     def __add_possible_function_name(self, value):
         # Check that the explicit value is a function reference
@@ -118,11 +119,9 @@ class Variables(CommonInfo):
         for func in functions:
             # For each function call there can be many definitions with the same name, defined in different
             # files. possible_definitions is a list of them.
-            possible_definitions = []
-
-            definitions = self.extensions["Functions"].load_definitions(func)
-            for definition in definitions:
-                possible_definitions.append(definition)
+            possible_definitions = list(
+                self.extensions["Functions"].load_definitions(func)
+            )
 
             if not possible_definitions:
                 continue

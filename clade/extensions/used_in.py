@@ -64,15 +64,7 @@ class UsedIn(CommonInfo):
             ]
 
             self.debug(
-                "Processing function usages: "
-                + " ".join(
-                    [
-                        context_file,
-                        context_func,
-                        func,
-                        context_type,
-                    ]
-                )
+                f"Processing function usages: {context_file} {context_func} {func} {context_type}"
             )
 
             if self.is_builtin.match(func):

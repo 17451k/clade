@@ -96,12 +96,11 @@ class Clade:
             shutil.rmtree(self.work_dir)
 
         # Check that Clade has permission to read the working directory (if it exists)
-        if os.path.exists(self.work_dir):
-            if not os.access(self.work_dir, os.R_OK):
-                self.logger.error(
-                    "Permission error: can't read files from the working directory"
-                )
-                raise PermissionError
+        if os.path.exists(self.work_dir) and not os.access(self.work_dir, os.R_OK):
+            self.logger.error(
+                "Permission error: can't read files from the working directory"
+            )
+            raise PermissionError
 
     def __check_write_to_parent_dir(self, path):
         # dirname can be empty if cmds_file is located in the current directory
@@ -113,12 +112,11 @@ class Clade:
         self.__check_write_to_dir(parent_path)
 
     def __check_write_to_dir(self, path):
-        if path and os.path.exists(path):
-            if not os.access(path, os.X_OK | os.W_OK):
-                self.logger.error(
-                    f"Permission error: can't write files to the {path!r} directory"
-                )
-                raise PermissionError
+        if path and os.path.exists(path) and not os.access(path, os.X_OK | os.W_OK):
+            self.logger.error(
+                f"Permission error: can't write files to the {path!r} directory"
+            )
+            raise PermissionError
 
     def __prepare_to_intercept(self):
         # Check that Clade has permission to create the cmds.txt file
@@ -358,13 +356,11 @@ class Clade:
 
     def get_raw_cmds(self):
         """Get an iterator over all unparsed commands."""
-        for cmd in iter_cmds(self.cmds_file):
-            yield cmd
+        yield from iter_cmds(self.cmds_file)
 
     def get_raw_cmds_by_which(self, which_list: list[str]):
         """Get an iterator over all unparsed commands filtered by 'which' field."""
-        for cmd in iter_cmds_by_which(self.cmds_file, which_list):
-            yield cmd
+        yield from iter_cmds_by_which(self.cmds_file, which_list)
 
     def get_raw_cmd_by_id(self, cmd_id: int):
         """Get raw command by its identifier."""
@@ -376,8 +372,7 @@ class Clade:
 
     def get_envs(self):
         """Get an iterator over all environment variables."""
-        for env in iter_envs(os.path.join(self.work_dir, "envs.txt")):
-            yield env
+        yield from iter_envs(os.path.join(self.work_dir, "envs.txt"))
 
     def get_envs_by_id(self, cmd_id: int):
         """Get environment variables by its intercepted command identifier."""
@@ -549,7 +544,7 @@ class Clade:
         Args:
             file: A name of the source file from the source graph
         """
-        return (cmd_id for cmd_id in self.SrcGraph.load_src_graph([file])[file].keys())
+        return (cmd_id for cmd_id in self.SrcGraph.load_src_graph([file])[file])
 
     def get_compilation_cmds_by_file(self, file):
         """Get list of compilation commands in which the file was compiled.
@@ -635,7 +630,7 @@ class Clade:
             files: A list of files to narrow down call graph
             add_unknown: Add functions without known definition
         """
-        if isinstance(files, set) or isinstance(files, list):
+        if isinstance(files, (set, list)):
             files = set(files)
 
             if add_unknown:
@@ -672,7 +667,7 @@ class Clade:
             add_unknown: Add functions without known definition
         """
 
-        if isinstance(files, set) or isinstance(files, list):
+        if isinstance(files, (set, list)):
             files = set(files)
 
             if add_unknown:
@@ -873,13 +868,12 @@ class Clade:
             if ext_obj.name in ext_names
         ]
 
-        if ext_objs:
-            if not ext_objs[0].load_global_meta():
-                if log:
-                    self.logger.error(
-                        "Working directory does not contain file with global meta information"
-                    )
-                return False
+        if ext_objs and not ext_objs[0].load_global_meta():
+            if log:
+                self.logger.error(
+                    "Working directory does not contain file with global meta information"
+                )
+            return False
 
         for ext_obj in ext_objs:
             try:
@@ -912,7 +906,7 @@ class Clade:
             files: A list of files to narrow down data
             add_unknown: Add functions without known definition
         """
-        if isinstance(files, set) or isinstance(files, list):
+        if isinstance(files, (set, list)):
             files = set(files)
 
         return self.CrossRef.load_ref_to_by_file(files)
@@ -923,7 +917,7 @@ class Clade:
         Args:
             files: A list of files to narrow down data
         """
-        if isinstance(files, set) or isinstance(files, list):
+        if isinstance(files, (set, list)):
             files = set(files)
 
         return self.CrossRef.load_ref_from_by_file(files)

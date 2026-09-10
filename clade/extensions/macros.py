@@ -73,7 +73,7 @@ class Macros(Extension):
 
     def __process_macros_definitions(self):
         for file, macro, line in self.extensions["Info"].iter_macros_definitions():
-            self.debug("Processing definition: " + " ".join([file, macro, line]))
+            self.debug(f"Processing definition: {file} {macro} {line}")
 
             if file not in self.macros:
                 self.macros[file] = []
@@ -84,7 +84,7 @@ class Macros(Extension):
         for exp_file, def_file, macro, exp_line, def_line in self.extensions[
             "Info"
         ].iter_macros_expansions():
-            self.debug("Processing expansion: " + " ".join([exp_file, macro, exp_line]))
+            self.debug(f"Processing expansion: {exp_file} {macro} {exp_line}")
 
             exp_val = {
                 "exp_line": int(exp_line),
@@ -102,7 +102,7 @@ class Macros(Extension):
     def __process_macros_args(self):
         for exp_file, macro, args in self.extensions["Info"].iter_macros_args():
             # args are excluded from the debug log
-            self.debug("Processing args: " + " ".join([exp_file, macro]))
+            self.debug(f"Processing args: {exp_file} {macro}")
 
             if macro not in self.args[exp_file]:
                 self.args[exp_file][macro] = []

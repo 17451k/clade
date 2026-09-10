@@ -95,8 +95,7 @@ class Functions(CommonInfo):
             signature,
         ) in self.extensions["Info"].iter_definitions():
             self.debug(
-                "Processing definition: "
-                + " ".join([src_file, func, func_type, signature])
+                f"Processing definition: {src_file} {func} {func_type} {signature}"
             )
             # Split a string with CMD_IDs separated by comma
             # into an actual Python list
@@ -149,8 +148,7 @@ class Functions(CommonInfo):
             decl_line = int(decl_line)
 
             self.debug(
-                "Processing declaration: "
-                + " ".join([decl_file, decl_name, decl_type, decl_signature])
+                f"Processing declaration: {decl_file} {decl_name} {decl_type} {decl_signature}"
             )
 
             decl_val = {
@@ -218,7 +216,7 @@ class Functions(CommonInfo):
         # Linux kernel only
 
         for src_file, func in self.extensions["Info"].iter_exported():
-            self.debug("Processing exported functions: " + " ".join([src_file, func]))
+            self.debug(f"Processing exported functions: {src_file} {func}")
 
             # Variables can also be exported
             if func not in self.funcs:

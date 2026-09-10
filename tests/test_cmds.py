@@ -77,8 +77,6 @@ def test_join_cmd(cmds_file):
 
 
 def test_get_all_cmds(cmds_file):
-    cmds = []
-    for cmd in iter_cmds(cmds_file):
-        cmds.append(cmd)
+    cmds = list(iter_cmds(cmds_file))
 
     assert cmds == get_all_cmds(cmds_file)

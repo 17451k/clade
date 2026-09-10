@@ -242,10 +242,7 @@ class Tracer:
         if func.name not in self.clade.callgraph[func.path]:
             return False
 
-        if "calls" not in self.clade.callgraph[func.path][func.name]:
-            return False
-
-        return True
+        return "calls" in self.clade.callgraph[func.path][func.name]
 
     def filter_trace_from(self, trace: Trace, from_filter: list[Function]) -> Trace:
         # Remove all paths from the trace that start with one of the "from_filter"
