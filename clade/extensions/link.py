@@ -16,6 +16,7 @@
 import os
 import re
 
+from clade.cmds import Cmd
 from clade.extensions.common import Common
 from clade.extensions.opts import requires_value
 
@@ -26,7 +27,7 @@ class Link(Common):
     def __init__(self, work_dir, conf=None):
         super().__init__(work_dir, conf)
 
-    def parse_cmd(self, cmd):
+    def parse_cmd(self, cmd: Cmd):
         self.debug(f"Parse: {cmd}")
         parsed_cmd = self._get_cmd_dict(cmd)
 

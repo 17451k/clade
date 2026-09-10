@@ -78,9 +78,9 @@ class Storage(Extension):
         try:
             self.__copy_file(filename, dst, encoding=encoding)
         except FileNotFoundError as e:
-            self.debug(e)
+            self.debug(str(e))
         except (PermissionError, OSError) as e:
-            self.log(e)
+            self.log(str(e))
         except shutil.SameFileError:
             pass
 

@@ -20,6 +20,7 @@ import subprocess
 
 import charset_normalizer
 
+from clade.cmds import Cmd
 from clade.extensions.compiler import Compiler
 from clade.extensions.opts import cl_preprocessor_deps_opts, requires_value
 
@@ -33,7 +34,7 @@ class CL(Compiler):
 
     __version__ = "1"
 
-    def parse_cmd(self, cmd):
+    def parse_cmd(self, cmd: Cmd):
         self.debug(f"Parse: {cmd}")
         parsed_cmd = self.__parse_opts(cmd)
 

@@ -13,13 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from clade.cmds import Cmd
 from clade.extensions.common import Common
 
 
 class Objcopy(Common):
     __version__ = "1"
 
-    def parse_cmd(self, cmd):
+    def parse_cmd(self, cmd: Cmd):
         parsed_cmd = super().parse_cmd(cmd)
 
         # objcopy has only one input file and no more than one output file.

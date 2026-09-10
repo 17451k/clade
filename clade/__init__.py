@@ -22,7 +22,7 @@ from clade.envs import iter_envs
 from clade.extensions.abstract import Extension
 from clade.intercept import intercept
 from clade.types.nested_dict import nested_dict, traverse
-from clade.utils import get_logger, merge_preset_to_conf
+from clade.utils import Conf, get_logger, merge_preset_to_conf
 
 
 class Clade:
@@ -43,7 +43,13 @@ class Clade:
         Check that intercept() argument is list, not string
     """
 
-    def __init__(self, work_dir="clade", cmds_file=None, conf=None, preset="base"):
+    def __init__(
+        self,
+        work_dir: str = "clade",
+        cmds_file: str | None = None,
+        conf: Conf | None = None,
+        preset: str = "base",
+    ):
         self.work_dir = os.path.abspath(str(work_dir))
 
         if not cmds_file:
@@ -55,7 +61,7 @@ class Clade:
         self.conf_file = os.path.join(self.work_dir, "conf.json")
 
         # "Name -> Object" storage of all available extensions
-        self.extensions = {}
+        self.extensions: dict[str, Extension] = {}
 
         self.__prepare_to_init()
 
@@ -73,7 +79,7 @@ class Clade:
         self._functions_by_file = None
         self._cdb = None
 
-    def __prepare_conf(self, preset, conf):
+    def __prepare_conf(self, preset: str, conf: Conf | None) -> Conf:
         conf = dict(conf) if conf else {}
         conf = merge_preset_to_conf(preset, conf)
 

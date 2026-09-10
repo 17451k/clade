@@ -22,7 +22,7 @@ import threading
 
 from clade.cmds import join_cmd, split_cmd
 from clade.extensions.abstract import Extension
-from clade.utils import get_logger
+from clade.utils import Conf, get_logger
 
 if sys.platform == "linux" or sys.platform == "darwin":
     parent = socketserver.UnixStreamServer
@@ -51,7 +51,7 @@ class SocketServer(parent):
             with open(self.output, "a") as clade_fh:
                 clade_fh.write(data + "\n")
 
-    def __init__(self, address, output, conf):
+    def __init__(self, address, output: str, conf: Conf):
         self.process = threading.Thread(
             # poll_interval defines for how long terminate() blocks
             # waiting to notice shutdown()
@@ -94,7 +94,7 @@ class SocketServer(parent):
 
 
 class PreprocessServer:
-    def __init__(self, conf, output):
+    def __init__(self, conf: Conf, output: str):
         self.conf = conf
         self.output = output
         self.logger = get_logger("Server", conf=self.conf)

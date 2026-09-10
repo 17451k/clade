@@ -15,13 +15,14 @@
 
 import os
 
+from clade.cmds import Cmd
 from clade.extensions.common import Common
 
 
 class Copy(Common):
     __version__ = "1"
 
-    def parse_cmd(self, cmd):
+    def parse_cmd(self, cmd: Cmd):
         parsed_cmd = {
             "id": cmd["id"],
             "in": [],

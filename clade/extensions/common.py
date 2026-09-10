@@ -19,7 +19,7 @@ import os
 import re
 import sys
 
-from clade.cmds import iter_cmds_by_which, number_of_cmds_by_which
+from clade.cmds import Cmd, iter_cmds_by_which, number_of_cmds_by_which
 from clade.extensions.abstract import Extension
 from clade.extensions.opts import requires_mult_values, requires_value
 
@@ -74,10 +74,10 @@ class Common(Extension, metaclass=abc.ABCMeta):
             self.regex_include_in = re.compile("(" + ")|(".join(include_list) + ")")
 
     @Extension.prepare
-    def parse(self, cmds_file):
+    def parse(self, cmds_file: str) -> None:
         self.parse_cmds(cmds_file, self.conf.get(f"{self.name}.which_list", []))
 
-    def parse_cmds(self, cmds_file, which_list):
+    def parse_cmds(self, cmds_file: str, which_list: list[str]) -> None:
         """Multiprocess parsing of build commands filtered by 'which' field."""
 
         total_cmds = number_of_cmds_by_which(cmds_file, which_list)
@@ -89,7 +89,7 @@ class Common(Extension, metaclass=abc.ABCMeta):
 
         self.__merge_all_cmds()
 
-    def _get_cmd_dict(self, cmd):
+    def _get_cmd_dict(self, cmd: Cmd):
         return {
             "id": cmd["id"],
             "in": [],
@@ -99,7 +99,7 @@ class Common(Extension, metaclass=abc.ABCMeta):
             "command": [os.path.normpath(cmd["which"])] + cmd["command"][1:],
         }
 
-    def parse_cmd(self, cmd):
+    def parse_cmd(self, cmd: Cmd):
         """Parse single build command."""
         self.debug(f"Parse: {cmd}")
         parsed_cmd = self._get_cmd_dict(cmd)

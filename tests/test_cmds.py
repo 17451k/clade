@@ -33,7 +33,7 @@ from clade.scripts.stats import print_cmds_stats
 # TODO: Replace >= by ==
 number_of_cmds = 5
 number_of_gcc_cmds = 2
-gcc_which = shutil.which("gcc")
+gcc_which = shutil.which("gcc") or "gcc"
 
 
 def test_bad_open():

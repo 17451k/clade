@@ -19,6 +19,7 @@ import fnmatch
 import importlib
 import importlib.metadata
 import json
+import logging
 import os
 import pathlib
 import platform
@@ -27,11 +28,20 @@ import sys
 import tempfile
 import time
 import uuid
+from collections.abc import Callable, Generator, Iterable
 from concurrent.futures import ProcessPoolExecutor
+from typing import Any
 
-from clade.cmds import get_build_dir
+from clade.cmds import Cmd, get_build_dir
 from clade.extensions.utils import yield_chunk
-from clade.utils import dump, get_clade_version, get_logger, get_program_version, load
+from clade.utils import (
+    Conf,
+    dump,
+    get_clade_version,
+    get_logger,
+    get_program_version,
+    load,
+)
 
 
 class Extension(metaclass=abc.ABCMeta):
@@ -48,22 +58,27 @@ class Extension(metaclass=abc.ABCMeta):
 
     __version__ = "4"
 
-    def __init__(self, work_dir, conf=None):
+    requires: list[str]
+
+    def __init__(self, work_dir: str, conf: Conf | None = None):
         self.name = self.__class__.__name__
         self.clade_work_dir = os.path.abspath(str(work_dir))
         self.work_dir = os.path.join(self.clade_work_dir, self.name)
         self.temp_dir = ""
 
-        self.conf = conf if conf else {}
+        self.conf: Conf = conf if conf else {}
 
-        self.logger = None
+        self.logger: logging.Logger | None = None
 
         if not hasattr(self, "requires"):
             self.requires = []
 
-        self.extensions = {}
+        self.extensions: dict[str, Any] = {}
 
-        self.ext_meta = {"version": self.get_ext_version(), "corrupted": False}
+        self.ext_meta: dict[str, Any] = {
+            "version": self.get_ext_version(),
+            "corrupted": False,
+        }
         self.global_meta_file = os.path.abspath(
             os.path.join(str(work_dir), "meta.json")
         )
@@ -75,16 +90,16 @@ class Extension(metaclass=abc.ABCMeta):
                 pass
             self.conf["force_meta_deleted"] = True
 
-    def is_parsed(self):
+    def is_parsed(self) -> bool:
         """Returns True if build commands are already parsed."""
         return os.path.exists(self.work_dir)
 
-    def preprocess(self, cmd):
+    def preprocess(self, cmd: Cmd) -> None:
         """Preprocess intercepted build command before its execution"""
         return
 
     @staticmethod
-    def prepare(parse):
+    def prepare(parse: Callable[..., None]) -> Callable[..., None]:
         """Decorator for parse() method
 
         It checks configuration consistency, collects meta
@@ -126,17 +141,17 @@ class Extension(metaclass=abc.ABCMeta):
         return parse_wrapper
 
     @abc.abstractmethod
-    def parse(self, cmds_file):
+    def parse(self, cmds_file: str) -> None:
         """Parse intercepted commands."""
 
-    def file_exists(self, file_name):
+    def file_exists(self, file_name: str) -> bool:
         """File exists in the working directory"""
         if not os.path.isabs(file_name):
             file_name = os.path.join(self.work_dir, file_name)
 
         return os.path.exists(file_name)
 
-    def load_data(self, file_name, raise_exception=True):
+    def load_data(self, file_name: str, raise_exception: bool = True) -> Any:
         """Load file by name."""
 
         if not os.path.isabs(file_name):
@@ -157,16 +172,16 @@ class Extension(metaclass=abc.ABCMeta):
 
         return load(file_name)
 
-    def load_dict_with_int_keys(self, file_name):
+    def load_dict_with_int_keys(self, file_name: str) -> dict[int, Any]:
         """Load dictionary and replace back string keys with int ones."""
         data = self.load_data(file_name)
         return {int(key): data[key] for key in data}
 
-    def dump_dict_with_int_keys(self, data, file_name):
+    def dump_dict_with_int_keys(self, data: dict[int, Any], file_name: str) -> None:
         """Dump dictionary with int keys by replacing them with string ones."""
         self.dump_data({str(key): data[key] for key in data}, file_name)
 
-    def dump_data(self, data, file_name):
+    def dump_data(self, data: Any, file_name: str) -> None:
         """Dump data to a file in the object working directory."""
 
         if not os.path.isabs(file_name):
@@ -187,7 +202,9 @@ class Extension(metaclass=abc.ABCMeta):
             # Workaround for Python 3.5 and Windows
             self.error(f"Can't create file {file_name!r}")
 
-    def load_data_by_key(self, folder, keys=None):
+    def load_data_by_key(
+        self, folder: str, keys: list[str] | set[str] | None = None
+    ) -> dict[str, Any]:
         """Load data stored in multiple json files using dump_data_by_key()."""
         data = {}
 
@@ -196,7 +213,9 @@ class Extension(metaclass=abc.ABCMeta):
 
         return data
 
-    def yield_data_by_key(self, folder, keys=None):
+    def yield_data_by_key(
+        self, folder: str, keys: list[str] | set[str] | None = None
+    ) -> Generator[tuple[str, Any], None, None]:
         """Yield data stored in multiple json files using dump_data_by_key()."""
         yield from self.__yield_data_by_key(folder, keys=keys)
 
@@ -235,7 +254,7 @@ class Extension(metaclass=abc.ABCMeta):
 
         return files
 
-    def dump_data_by_key(self, data, folder):
+    def dump_data_by_key(self, data: dict[str, Any], folder: str) -> None:
         """Dump data to multiple json files in the object working directory."""
         self.debug(f"Dumping data to {folder!r}")
 
@@ -243,7 +262,7 @@ class Extension(metaclass=abc.ABCMeta):
             file_name = self.__get_file_name_by_key(key, folder)
             self.dump_data({key: data[key]}, file_name)
 
-    def file_exists_by_key(self, key, folder):
+    def file_exists_by_key(self, key: str, folder: str) -> bool:
         return os.path.exists(self.__get_file_name_by_key(key, folder))
 
     def __get_file_name_by_key(self, key, folder):
@@ -252,7 +271,7 @@ class Extension(metaclass=abc.ABCMeta):
 
         return os.path.join(self.work_dir, file_name)
 
-    def get_ext_version(self):
+    def get_ext_version(self) -> str:
         version = self.__version__
 
         for parent in Extension.__get_all_parents(self.__class__):
@@ -261,7 +280,7 @@ class Extension(metaclass=abc.ABCMeta):
 
         return version
 
-    def check_ext_version(self):
+    def check_ext_version(self) -> None:
         """Check that working directory was creating with the extension of correct version."""
         stored_meta = self.load_global_meta().get(self.name)
 
@@ -275,7 +294,7 @@ class Extension(metaclass=abc.ABCMeta):
             )
             raise RuntimeError
 
-    def check_corrupted(self):
+    def check_corrupted(self) -> None:
         """Check that working directory is not corrupted."""
         if not os.path.exists(self.work_dir):
             return
@@ -286,7 +305,7 @@ class Extension(metaclass=abc.ABCMeta):
             self.error("Working directory is corrupted and can't be used.")
             raise RuntimeError
 
-    def check_conf_consistency(self):
+    def check_conf_consistency(self) -> None:
         """Check configuration consistency.
 
         Any configuration change between launches must not affect already
@@ -302,7 +321,7 @@ class Extension(metaclass=abc.ABCMeta):
                     )
                     raise RuntimeError
 
-    def get_ext_opts(self):
+    def get_ext_opts(self) -> list[str]:
         """Get all options that are related to the current extension."""
         names = [self.name]
         opts = []
@@ -321,10 +340,10 @@ class Extension(metaclass=abc.ABCMeta):
 
         return opts
 
-    def load_global_meta(self):
+    def load_global_meta(self) -> dict[str, Any]:
         return self.load_data(self.global_meta_file, raise_exception=False)
 
-    def dump_global_meta(self, cmds_file):
+    def dump_global_meta(self, cmds_file: str) -> None:
         stored_meta = self.load_global_meta()
         stored_meta[self.name] = self.ext_meta
 
@@ -381,7 +400,7 @@ class Extension(metaclass=abc.ABCMeta):
         with open(self.global_meta_file, "w") as fh:
             fh.write(json.dumps(stored_meta, indent=4))
 
-    def add_data_to_global_meta(self, key, data):
+    def add_data_to_global_meta(self, key: str, data: Any) -> None:
         stored_meta = self.load_global_meta()
         stored_meta[key] = data
 
@@ -400,8 +419,13 @@ class Extension(metaclass=abc.ABCMeta):
         return empty_self
 
     def execute_in_parallel(
-        self, objs, process, args=(), total_objs=None, pass_self=True
-    ):
+        self,
+        objs: Iterable[Any],
+        process: Callable[..., Any],
+        args: tuple[Any, ...] = (),
+        total_objs: int | None = None,
+        pass_self: bool = True,
+    ) -> None:
         # objs is eather list, tuple or generator
         if not total_objs and (type(objs) is list or type(objs) is tuple):
             total_objs = len(objs)
@@ -474,7 +498,7 @@ class Extension(metaclass=abc.ABCMeta):
         print(" " * 79, end="\r")
 
     @staticmethod
-    def get_all_extensions():
+    def get_all_extensions() -> Generator[type["Extension"], None, None]:
         """Get all extension classes."""
 
         Extension._import_extension_modules()
@@ -512,21 +536,21 @@ class Extension(metaclass=abc.ABCMeta):
                     importlib.import_module(module_name, "clade.extensions")
 
     @staticmethod
-    def find_subclass(ext_name):
+    def find_subclass(ext_name: str) -> type["Extension"]:
         """Find a subclass of Interface class."""
         for ext_class in Extension.__get_all_subclasses(Extension):
             if ext_name == ext_class.__name__:
                 return ext_class
         raise NotImplementedError(f"Can't find {ext_name!r} class")
 
-    def log(self, message):
+    def log(self, message: str) -> None:
         """Print debug message.
 
         self.conf["log_level"] must be set to INFO or DEBUG in order to see the message.
         """
         self.__get_logger().info(f"{self.name}: {message}")
 
-    def debug(self, message):
+    def debug(self, message: str) -> None:
         """Print debug message.
 
         self.conf["log_level"] must be set to DEBUG in order to see the message.
@@ -535,21 +559,21 @@ class Extension(metaclass=abc.ABCMeta):
         """
         self.__get_logger().debug(f"{self.name}: [DEBUG] {message}")
 
-    def warning(self, message):
+    def warning(self, message: str) -> None:
         """Print warning message.
 
         self.conf["log_level"] must be set to WARNING, INFO or DEBUG in order to see the message.
         """
         self.__get_logger().warning(f"{self.name}: [WARNING] {message}")
 
-    def error(self, message):
+    def error(self, message: str) -> None:
         """Print error message.
 
         self.conf["log_level"] must be set to ERROR, WARNING, INFO or DEBUG in order to see the message.
         """
         self.__get_logger().error(f"{self.name}: [ERROR] {message}")
 
-    def progress(self, message):
+    def progress(self, message: str) -> None:
         # Track progress (only if stdout is not redirected)
         if sys.stdout.isatty() and self.conf["log_level"] in ["INFO", "DEBUG"]:
             print(" " * 79, end="\r")

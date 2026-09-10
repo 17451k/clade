@@ -15,11 +15,21 @@
 
 import os
 import re
+from collections.abc import Generator
+from typing import TextIO, TypedDict
 
 DELIMITER = "||"
 
 
-def open_cmds_file(cmds_file):
+class Cmd(TypedDict):
+    id: int
+    cwd: str
+    pid: int
+    which: str
+    command: list[str]
+
+
+def open_cmds_file(cmds_file: str) -> TextIO:
     """Open txt file with intercepted commands and return file object.
 
     Raises:
@@ -33,7 +43,9 @@ def open_cmds_file(cmds_file):
     return open(cmds_file)
 
 
-def iter_cmds_by_which(cmds_file, which_list):
+def iter_cmds_by_which(
+    cmds_file: str, which_list: list[str]
+) -> Generator[Cmd, None, None]:
     """Get an iterator over all intercepted commands filtered by 'which' field.
 
     Args:
@@ -47,7 +59,7 @@ def iter_cmds_by_which(cmds_file, which_list):
                 break
 
 
-def number_of_cmds_by_which(cmds_file, which_list):
+def number_of_cmds_by_which(cmds_file: str, which_list: list[str]) -> int:
     """Return number of all intercepted commands filtered by 'which' field.
 
     Args:
@@ -63,7 +75,7 @@ def number_of_cmds_by_which(cmds_file, which_list):
     return i
 
 
-def iter_cmds(cmds_file):
+def iter_cmds(cmds_file: str) -> Generator[Cmd, None, None]:
     """Get an iterator over all intercepted commands.
 
     Args:
@@ -71,35 +83,40 @@ def iter_cmds(cmds_file):
     """
     with open_cmds_file(cmds_file) as cmds_fp:
         for cmd_id, line in enumerate(cmds_fp):
-            cmd = split_cmd(line)
-            cmd["id"] = cmd_id + 1  # cmd_id should be line number in cmds_fp file
-            yield cmd
+            # cmd_id should be line number in cmds_fp file
+            yield split_cmd(line, cmd_id + 1)
 
 
-def split_cmd(line):
+def split_cmd(line: str, cmd_id: int = 0) -> Cmd:
     """Convert a single intercepted command into dictionary."""
     cwd, pid, which, *command = line.strip().split(DELIMITER)
-    return {"cwd": cwd, "pid": int(pid), "which": which, "command": command}
+    return {
+        "id": cmd_id,
+        "cwd": cwd,
+        "pid": int(pid),
+        "which": which,
+        "command": command,
+    }
 
 
-def join_cmd(cmd):
+def join_cmd(cmd: Cmd) -> str:
     """Convert a single intercepted command from dictionary to cmds.txt line."""
     line = DELIMITER.join([cmd["cwd"], str(cmd["pid"]), cmd["which"]] + cmd["command"])
     return line
 
 
-def get_first_cmd(cmds_file):
+def get_first_cmd(cmds_file: str) -> Cmd:
     """Get first intercepted command."""
     return next(iter_cmds(cmds_file))
 
 
-def get_build_dir(cmds_file) -> str:
+def get_build_dir(cmds_file: str) -> str:
     """Get the working directory in which build process occurred."""
     first_cmd = get_first_cmd(cmds_file)
     return first_cmd["cwd"]
 
 
-def get_last_cmd(cmds_file):
+def get_last_cmd(cmds_file: str) -> Cmd:
     """Get last intercepted command."""
     iterable = iter_cmds(cmds_file)
 
@@ -110,7 +127,7 @@ def get_last_cmd(cmds_file):
     return last_cmd
 
 
-def get_last_id(cmds_file, raise_exception=False) -> int:
+def get_last_id(cmds_file: str, raise_exception: bool = False) -> int:
     """Get last used id."""
     try:
         last_cmd = get_last_cmd(cmds_file)
@@ -121,12 +138,12 @@ def get_last_id(cmds_file, raise_exception=False) -> int:
         return 0
 
 
-def get_all_cmds(cmds_file):
+def get_all_cmds(cmds_file: str) -> list[Cmd]:
     """Get list of all intercepted build commands."""
     return list(iter_cmds(cmds_file))
 
 
-def get_stats(cmds_file):
+def get_stats(cmds_file: str) -> dict[str, int]:
     """Get statistics of intercepted commands number."""
     stats = {}
     for cmd in iter_cmds(cmds_file):

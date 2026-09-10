@@ -25,7 +25,7 @@ def print_cmds_stats(args=sys.argv[1:]):
     stats = get_stats(args[0])
 
     total_count = sum(stats.values())
-    for key in sorted(stats, key=stats.get):
+    for key in sorted(stats, key=lambda key: stats[key]):
         print(f"{stats[key]}: {key}")
 
     print("-------------" + "-" * len(str(total_count)))

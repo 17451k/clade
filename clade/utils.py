@@ -20,11 +20,16 @@ import os
 import re
 import subprocess
 import sys
+from typing import Any
 
 import orjson
 
+Conf = dict[str, Any]
 
-def get_logger(name, with_name=True, conf=None):
+
+def get_logger(
+    name: str, with_name: bool = True, conf: Conf | None = None
+) -> logging.Logger:
     if not conf:
         conf = {}
 
@@ -63,7 +68,7 @@ def get_logger(name, with_name=True, conf=None):
     return logger
 
 
-def merge_preset_to_conf(preset_name, conf):
+def merge_preset_to_conf(preset_name: str, conf: Conf) -> Conf:
     preset_file = os.path.join(
         os.path.dirname(__file__), "extensions", "presets", "presets.json"
     )
@@ -124,11 +129,11 @@ def array_hook(obj):
     raise TypeError
 
 
-def dump(data, path):
+def dump(data: Any, path: str) -> None:
     with open(path, "wb") as fh:
         fh.write(orjson.dumps(data, default=array_hook))
 
 
-def load(path):
+def load(path: str) -> Any:
     with open(path, "rb") as f:
         return orjson.loads(f.read())

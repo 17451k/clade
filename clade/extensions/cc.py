@@ -20,6 +20,7 @@ import shlex
 import shutil
 import subprocess
 
+from clade.cmds import Cmd
 from clade.extensions.abstract import Extension
 from clade.extensions.linker import Linker
 from clade.extensions.opts import cc_preprocessor_opts
@@ -39,21 +40,23 @@ class CC(Linker):
 
         self.parse_cmds(cmds_file, which_list)
 
-    def parse_cmd(self, cmd):
+    def parse_cmd(self, cmd: Cmd):
         cmd_id = cmd["id"]
 
         # Some commands can be ccache commands
         if cmd["which"].endswith("ccache"):
             cmd["command"] = [x for x in cmd["command"][1:] if x != "--ccache-skip"]
-            cmd["which"] = shutil.which(cmd["command"][0])
+            which = shutil.which(cmd["command"][0])
 
             # Not all ccache commands are CC commands
-            for which in self.conf.get(self.name + ".which_list", []):
-                if re.search(which, cmd["which"]):
-                    break
-            else:
+            if not which or not any(
+                re.search(regex, which)
+                for regex in self.conf.get(self.name + ".which_list", [])
+            ):
                 self.debug(f"{cmd} is not a {self.name} command")
                 return
+
+            cmd["which"] = which
 
         parsed_cmd = super().parse_cmd(cmd)
         self._parse_linker_opts(cmd["which"], parsed_cmd)
