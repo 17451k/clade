@@ -19,7 +19,7 @@ import os
 import re
 import sys
 
-from clade.cmds import Cmd, iter_cmds_by_which, number_of_cmds_by_which
+from clade.cmds import Cmd, ParsedCmd, iter_cmds_by_which, number_of_cmds_by_which
 from clade.extensions.abstract import Extension
 from clade.extensions.opts import requires_mult_values, requires_value
 
@@ -89,7 +89,7 @@ class Common(Extension, metaclass=abc.ABCMeta):
 
         self.__merge_all_cmds()
 
-    def _get_cmd_dict(self, cmd: Cmd):
+    def _get_cmd_dict(self, cmd: Cmd) -> ParsedCmd:
         return {
             "id": cmd["id"],
             "in": [],
@@ -99,7 +99,7 @@ class Common(Extension, metaclass=abc.ABCMeta):
             "command": [os.path.normpath(cmd["which"])] + cmd["command"][1:],
         }
 
-    def parse_cmd(self, cmd: Cmd):
+    def parse_cmd(self, cmd: Cmd) -> ParsedCmd:
         """Parse single build command."""
         self.debug(f"Parse: {cmd}")
         parsed_cmd = self._get_cmd_dict(cmd)
@@ -135,10 +135,10 @@ class Common(Extension, metaclass=abc.ABCMeta):
 
         return parsed_cmd
 
-    def load_cmd_by_id(self, id):
+    def load_cmd_by_id(self, id: int) -> ParsedCmd:
         return self.load_data(os.path.join(self.cmds_dir, f"{id}.json"))
 
-    def dump_cmd_by_id(self, id, cmd):
+    def dump_cmd_by_id(self, id: int, cmd: ParsedCmd) -> None:
         cmd = self._normalize_paths(cmd)
         self.debug(f"Parsed command {cmd}")
 
@@ -149,14 +149,14 @@ class Common(Extension, metaclass=abc.ABCMeta):
 
         self.dump_data(cmd, os.path.join(self.cmds_dir, f"{id}.json"))
 
-    def load_raw_by_id(self, id):
+    def load_raw_by_id(self, id: int) -> list[str]:
         raw_file = os.path.join(self.raw_dir, f"{id}.json")
         return self.load_data(raw_file, raise_exception=True)
 
     def dump_raw_by_id(self, id, raw_command):
         self.dump_data(raw_command, os.path.join(self.raw_dir, f"{id}.json"))
 
-    def load_opts_by_id(self, id):
+    def load_opts_by_id(self, id: int) -> list[str]:
         opts_file = os.path.join(self.opts_dir, f"{id}.json")
         opts = self.load_data(opts_file, raise_exception=False)
 
@@ -177,14 +177,14 @@ class Common(Extension, metaclass=abc.ABCMeta):
         with open(self.bad_ids, "a") as fh:
             fh.write(f"{cmd_id}\n")
 
-    def get_bad_ids(self):
+    def get_bad_ids(self) -> list[int]:
         if not os.path.exists(self.bad_ids):
             return []
 
         with open(self.bad_ids, "r") as fh:
             return [int(cmd_id) for cmd_id in fh.read().splitlines()]
 
-    def _normalize_paths(self, cmd):
+    def _normalize_paths(self, cmd: ParsedCmd) -> ParsedCmd:
         if "Path" not in self.extensions:
             self.error("Path extension is not available")
             return cmd
@@ -212,7 +212,12 @@ class Common(Extension, metaclass=abc.ABCMeta):
 
         self.dump_data(merged_cmds, self.cmds_file)
 
-    def load_all_cmds(self, with_opts=False, with_raw=False, filter_by_pid=True):
+    def load_all_cmds(
+        self,
+        with_opts: bool = False,
+        with_raw: bool = False,
+        filter_by_pid: bool = True,
+    ) -> list[ParsedCmd]:
         """Load all parsed commands."""
         cmds = self.load_data(self.cmds_file, raise_exception=False)
 
@@ -235,7 +240,7 @@ class Common(Extension, metaclass=abc.ABCMeta):
 
         return cmds
 
-    def is_bad(self, cmd):
+    def is_bad(self, cmd: ParsedCmd) -> bool:
         cmd_ins = [os.path.join(cmd["cwd"], cmd_in) for cmd_in in cmd["in"]]
         if any(
             True

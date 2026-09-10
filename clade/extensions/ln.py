@@ -16,7 +16,7 @@ import os
 import pathlib
 import re
 
-from clade.cmds import Cmd
+from clade.cmds import Cmd, ParsedCmd
 from clade.extensions.common import Common
 
 
@@ -24,7 +24,7 @@ class LN(Common):
     __version__ = "1"
 
     def parse_cmd(self, cmd: Cmd):
-        parsed_cmd = {
+        parsed_cmd: ParsedCmd = {
             "id": cmd["id"],
             "in": [],
             "out": [],

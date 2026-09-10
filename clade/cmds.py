@@ -21,6 +21,23 @@ from typing import TextIO, TypedDict
 DELIMITER = "||"
 
 
+# "in" is a keyword, so the functional form is required
+ParsedCmd = TypedDict(
+    "ParsedCmd",
+    {
+        "id": int,
+        "in": list[str],
+        "out": list[str],
+        "opts": list[str],
+        "cwd": str,
+        "command": list[str],
+        "deps": list[str],
+        "type": str,
+    },
+    total=False,
+)
+
+
 class Cmd(TypedDict):
     id: int
     cwd: str

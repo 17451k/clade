@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from clade.cmds import Cmd
+from clade.cmds import Cmd, ParsedCmd
 from clade.extensions.common import Common
 
 
@@ -22,7 +22,7 @@ class AR(Common):
 
     def parse_cmd(self, cmd: Cmd):
         try:
-            parsed_cmd = {
+            parsed_cmd: ParsedCmd = {
                 "id": cmd["id"],
                 "in": cmd["command"][3:],
                 "out": [cmd["command"][2]],

@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import itertools
 import os
 import re
 import shlex
@@ -20,7 +21,7 @@ import subprocess
 
 import charset_normalizer
 
-from clade.cmds import Cmd
+from clade.cmds import Cmd, ParsedCmd
 from clade.extensions.compiler import Compiler
 from clade.extensions.opts import cl_preprocessor_deps_opts, requires_value
 
@@ -55,7 +56,7 @@ class CL(Compiler):
 
         self.dump_cmd_by_id(cmd["id"], parsed_cmd)
 
-    def __parse_opts(self, cmd):
+    def __parse_opts(self, cmd: Cmd) -> ParsedCmd:
         parsed_cmd = self._get_cmd_dict(cmd)
 
         if self.name not in requires_value:
@@ -70,11 +71,7 @@ class CL(Compiler):
                 parsed_cmd["opts"].extend([opt, val])
 
                 if opt == "/link" or opt == "-link":
-                    while True:
-                        val = next(opts, None)
-                        if not val:
-                            break
-                        parsed_cmd["opts"].append(val)
+                    parsed_cmd["opts"].extend(itertools.takewhile(bool, opts))
 
                 if opt in input_opts:
                     parsed_cmd["in"].append(val)
@@ -128,7 +125,7 @@ class CL(Compiler):
 
             for opt in parsed_cmd["opts"]:
                 if re.search(r"[/-]Fi", opt):
-                    if len(parsed_cmd["in"] != 1):
+                    if len(parsed_cmd["in"]) != 1:
                         raise RuntimeError(
                             "/Fi option could only be used with a single input file"
                         )

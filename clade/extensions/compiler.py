@@ -15,6 +15,7 @@
 
 import os
 
+from clade.cmds import ParsedCmd
 from clade.extensions.common import Common
 
 
@@ -50,7 +51,7 @@ class Compiler(Common):
 
             self.extensions["Storage"].add_file(file, encoding=encoding)
 
-    def load_deps_by_id(self, cmd_id):
+    def load_deps_by_id(self, cmd_id: int) -> list[str]:
         deps_file = os.path.join("deps", f"{cmd_id}.json")
         deps = self.load_data(deps_file, raise_exception=False)
 
@@ -70,7 +71,7 @@ class Compiler(Common):
         self.debug(f"Dependencies of command {cmd_id}: {deps}")
         self.dump_data(deps, os.path.join(self.deps_dir, f"{cmd_id}.json"))
 
-    def is_a_compilation_command(self, cmd):
+    def is_a_compilation_command(self, cmd: ParsedCmd) -> bool:
         if any(
             True
             for cmd_in in cmd["in"]
@@ -88,14 +89,14 @@ class Compiler(Common):
         filter_by_pid=True,
         with_deps=False,
         compile_only=False,
-    ):
-        cmds = super().load_all_cmds(
-            with_opts=with_opts, with_raw=with_raw, filter_by_pid=filter_by_pid
-        )
+    ) -> list[ParsedCmd]:
+        cmds = []
 
         # compile only - ignore linker commands, like gcc func.o main.o -o main
         # or cl /EP /P file.c
-        for cmd in cmds:
+        for cmd in super().load_all_cmds(
+            with_opts=with_opts, with_raw=with_raw, filter_by_pid=filter_by_pid
+        ):
             if compile_only and not self.is_a_compilation_command(cmd):
                 continue
 
@@ -113,7 +114,9 @@ class Compiler(Common):
             if with_deps:
                 cmd["deps"] = self.load_deps_by_id(cmd["id"])
 
-            yield cmd
+            cmds.append(cmd)
+
+        return cmds
 
     def get_all_pre_files(self):
         pre_files = []
