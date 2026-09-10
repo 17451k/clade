@@ -547,6 +547,8 @@ cif_supported_opts = (
     + ["-nostdinc", "-fno-builtin", "-fno-hosted", "-ffreestanding"]
     # Options controlling types representation.
     + ["-fshort-wchar", "-fno-short-wchar", "-fshort-enums", "-fno-short-enums"]
+    # Tagged anonymous struct members (struct tag; inside a struct), used by the Linux kernel.
+    + ["-fms-extensions", "-fms-anonymous-structs"]
     # Machine-dependent options.
     + [
         "-mbig-endian",
