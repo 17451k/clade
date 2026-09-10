@@ -1,7 +1,3 @@
-[![GitHub Actions status](https://github.com/17451k/clade/workflows/test/badge.svg)](https://github.com/17451k/clade/actions?query=workflow%3Atest)
-[![Supported Versions of Python](https://img.shields.io/pypi/pyversions/clade.svg)](https://pypi.org/project/clade)
-[![PyPI package version](https://img.shields.io/pypi/v/clade.svg)](https://pypi.org/project/clade)
-
 # Clade
 
 Clade is a tool for intercepting build commands (stuff like compilation,
