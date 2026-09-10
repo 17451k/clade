@@ -138,7 +138,7 @@ def build_libinterceptor():
         elif sys.platform == "win32":
             build_debugger(build_dir)
         else:
-            exit(f"Your platform {sys.platform!r} is not supported yet.")
+            sys.exit(f"Your platform {sys.platform!r} is not supported yet.")
     finally:
         shutil.rmtree(build_dir)
 
