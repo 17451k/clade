@@ -21,7 +21,7 @@ import pytest
 
 from clade import Clade
 from clade.intercept import intercept
-from tests.test_intercept import test_project, test_project_make
+from tests.test_intercept import test_project_make
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -41,8 +41,8 @@ def cmds_file():
 
 
 @pytest.fixture(scope="session")
-def envs_file():
-    c = Clade(work_dir=test_project + "/clade")
+def envs_file(tmpdir_factory):
+    c = Clade(work_dir=tmpdir_factory.mktemp("Envs"))
     c.intercept(command=test_project_make, use_wrappers=True, intercept_envs=True)
     yield os.path.join(c.work_dir, "envs.txt")
 
