@@ -21,6 +21,7 @@ import re
 import shlex
 import shutil
 import subprocess
+import sys
 import zipfile
 
 from clade.extensions.abstract import Extension
@@ -100,6 +101,15 @@ class Info(Extension):
         self.err_log = os.path.join(self.work_dir, "err.log")
 
         self.expand_regex = re.compile(r"\"(.*?)\"(.*)")
+
+        if sys.platform == "darwin":
+            # Aspectator ignores SDKROOT and its built-in sysroot is that of the machine it was built on
+            self.sdk_path = (
+                os.environ.get("SDKROOT")
+                or subprocess.check_output(
+                    ["xcrun", "--show-sdk-path"], text=True
+                ).strip()
+            )
 
     @Extension.prepare
     def parse(self, _):
@@ -221,6 +231,11 @@ class Info(Extension):
                 )
 
             opts.extend(self.conf.get("Info.extra_CIF_opts", []))
+
+            if sys.platform == "darwin" and not any(
+                opt.startswith("-isysroot") for opt in opts
+            ):
+                opts.extend(["-isysroot", self.sdk_path])
 
             if opts:
                 cif_args.append("--")
