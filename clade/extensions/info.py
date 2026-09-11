@@ -249,6 +249,8 @@ class Info(Extension):
                 self.__save_log(
                     cmd["id"], cwd, cif_args, cif_env, e.output, self.cif_log
                 )
+                # CIF leaves the (partially) instrumented sources behind
+                shutil.rmtree(tmp_dir)
                 return
             except UnicodeDecodeError as e:
                 self.warning(
@@ -337,7 +339,9 @@ class Info(Extension):
         # Join all cif output file into several big .txt files
         for file in self.files:
             output_type = os.path.basename(file).replace(".zip", ".txt")
-            output_files = [f for f in cif_output if f.endswith(output_type)]
+            # Extensions that consume the archives assign declarations to
+            # definitions in encounter order, so keep it reproducible
+            output_files = sorted(f for f in cif_output if f.endswith(output_type))
             self.progress(f"Joining {len(output_files)} {output_type} files")
 
             with zipfile.ZipFile(file, "w") as zip_fh:

@@ -163,6 +163,7 @@ class CmdGraph(Extension):
                 dot.edge(str(using_id), str(cmd_id))
 
         self.debug("Rendering dot file")
+        os.makedirs(self.work_dir, exist_ok=True)
         dot.render(self.pdf_file, cleanup=True)
 
     @staticmethod

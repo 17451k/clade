@@ -30,12 +30,14 @@ class Compiler(Common):
     def __init__(self, work_dir, conf=None):
         super().__init__(work_dir, conf)
 
-        self.deps_dir = os.path.join(self.work_dir, "deps")
+        self.deps_dir = "deps"
 
     def parse_cmds(self, cmds_file, which_list):
         super().parse_cmds(cmds_file, which_list)
 
-        if os.path.exists(self.cmds_file) and not os.path.exists(self.deps_dir):
+        if self.load_all_cmds(filter_by_pid=False) and not any(
+            self.yield_data_by_key(self.deps_dir)
+        ):
             self.warning("All files with dependencies are empty")
 
     def store_deps_files(self, deps, cwd):
@@ -52,12 +54,7 @@ class Compiler(Common):
             self.extensions["Storage"].add_file(file, encoding=encoding)
 
     def load_deps_by_id(self, cmd_id: int) -> list[str]:
-        deps_file = os.path.join("deps", f"{cmd_id}.json")
-        deps = self.load_data(deps_file, raise_exception=False)
-
-        # if load_data can't find file, it returns empty dict()
-        # but deps must be a list
-        return deps if deps else []
+        return self.load_data_by_key(self.deps_dir, [str(cmd_id)]).get(str(cmd_id), [])
 
     def dump_deps_by_id(self, cmd_id, deps, cwd):
         # Do not dump deps if they are empty
@@ -66,10 +63,10 @@ class Compiler(Common):
 
         # Normalize and remove duplicates
         deps = self.extensions["Path"].normalize_rel_paths(deps, cwd)
-        deps = list(set(deps))
+        deps = sorted(set(deps))
 
         self.debug(f"Dependencies of command {cmd_id}: {deps}")
-        self.dump_data(deps, os.path.join(self.deps_dir, f"{cmd_id}.json"))
+        self.dump_data_by_key({str(cmd_id): deps}, self.deps_dir)
 
     def is_a_compilation_command(self, cmd: ParsedCmd) -> bool:
         if any(

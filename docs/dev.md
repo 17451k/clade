@@ -67,8 +67,25 @@ extension implements and uses a simple API:
     Interaction with other extensions is possible via `self.extensions`
     dictionary, where keys are the names of required extensions, and values
     are corresponding objects. This way you can easily access their API.
-- Each extension has a *working directory*, which can be used to store files.
-    It is available via `self.work_dir`.
+- Extensions store their results in the SQLite database shared by the whole
+    working directory (`clade.db`) through `self.dump_data()` /
+    `self.load_data()` for single values and `self.dump_data_by_key()` /
+    `self.load_data_by_key()` / `self.yield_data_by_key()` for maps that are
+    usually read partially (by file, by function name). Values are JSON
+    documents, so anything `orjson` can serialize works. Records are grouped
+    by extension name, and `clade -fe` removes them together with the
+    extension directory.
+- Only the main process writes to the database. Jobs started through
+    `self.execute_in_parallel()` may call `dump_*` too: their records are
+    collected in the worker and written by the main process once the job
+    finishes, so a job must not read back what it has just dumped.
+- Each extension also has a *working directory* for things that must remain
+    plain files, like logs or copies of source code.
+    It is available via `self.work_dir`, but it is not created for you:
+    call `os.makedirs()` before writing there, so that extensions that only
+    use the database leave no empty directories behind. Whether an
+    extension has already been parsed is recorded in `meta.json`, not by the
+    presence of its directory.
 - `Abstract` class implements a bunch of helpful methods, which can be used to
     simplify various things. For example, it implements an API to execute jobs
     on intercepted commands in parallel.

@@ -132,7 +132,7 @@ class Alternatives(Extension):
             return path
 
         if not self.alts:
-            if os.path.exists(self.work_dir):
+            if self.file_exists(self.alts_file):
                 self.alts = self.load_alternatives()
             else:
                 self.alternatives_exist = False

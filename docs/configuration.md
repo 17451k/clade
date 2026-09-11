@@ -106,6 +106,10 @@ Let's describe some of them.
 - "extensions" is a list of extension names to use during this Clade run.
     Default value is `["SrcGraph]`, which will run 
 - "cpu_count" limits the number of CPU cores used by Clade.
+- "compress_db" is a boolean value (default false). If true, values in the
+    `clade.db` database are stored as zlib-compressed blobs, which takes
+    about four times less space but makes them readable only through the
+    Clade API. `clade-db` converts a working directory either way later.
 
 ### Wrapper options
 

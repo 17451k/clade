@@ -250,31 +250,23 @@ As a result, a working directory named `clade` will be created:
 ```
 clade/
 ├── cmds.txt
+├── clade.db
 ├── clade.log
 ├── conf.json
 ├── meta.json
-├── CC/
-│   ├── cmds.json
-│   ├── bad_ids.txt
-│   ├── cmds/
-│   ├── deps/
-│   ├── opts/
-│   └── raw/
-├── PidGraph/
-├── Storage/
-└── ...
+└── Storage/
 ```
 
-Top-level directories are in turn working directories of corresponding
-extensions that were executed inside `clade` command.
-`CC` extension is the one we wanted to execute, but there are also
-other extensions - `PidGraph` and `Storage` - that were executed implicitly
-by `CC` because it depends on the results of their work.
-Let's skip them for now.
-
-Inside `CC` directory there is a bunch of other directories and `cmds.json`
-file with parsed compilation commands.
-Again, it is a list of dictionaries representing each parsed command.
+Everything extensions produce is stored in the `clade.db` SQLite database
+(see [Database](#database) below), keyed by extension name. `CC` is the
+extension we asked for, but `PidGraph`, `Path` and `Storage` were executed
+implicitly because `CC` depends on their results; `meta.json` lists all of
+them. An extension gets a directory of its own only for things that must
+stay plain files: `Storage/` holds copies of the source code, `Info/`
+CIF's archives and logs, `CC/bad_ids.txt` appears when some commands were
+excluded.
+Parsed compilation commands are stored in the database by `CC` as
+dictionaries, one per command.
 Let's look at the parsed command from the above example:
 
 ``` json
@@ -410,11 +402,10 @@ tree clade -L 2
 
 clade
 ├── cmds.txt
-└── PidGraph
-       └── pid_by_id.json
+└── clade.db
 ```
 
-`pid_by_id.json` file will be generated - it is a simple
+A `pid_by_id` mapping will be stored in `clade.db` - it is a simple
 mapping from ids to their pids and looks like this:
 
 ``` json
@@ -507,18 +498,12 @@ clade -e CmdGraph make
 
 clade/
 ├── cmds.txt
-├── CmdGraph/
-│   ├── cmd_graph.json
-│   └── cmd_type.json
-├── CC/
-├── LD/
-├── MV/
-├── PidGraph/
+├── clade.db
 └── Storage/
 ```
 
-where `cmd_graph.json` looks like this (commands are represented by their
-identifiers and the type of extensions that parsed it):
+where the command graph stored in `clade.db` looks like this (commands are
+represented by their identifiers and the type of extensions that parsed it):
 
 ``` json
 {
@@ -578,20 +563,13 @@ clade -e SrcGraph make
 
 clade/
 ├── cmds.txt
-├── SrcGraph/
-│   ├── src_graph
-│   └── src_info.json
-├── CmdGraph/
-├── CC/
-├── LD/
-├── MV/
-├── PidGraph/
+├── clade.db
 └── Storage/
 ```
 
 *Source graph* for the Makefile presented in the *command graph* section above
-will be located in the `src_graph` folder and contain multiple files that,
-when combined, looks like this:
+is stored in `clade.db`, one record per file, and looks like this when
+combined:
 
 ``` json
 {
@@ -750,6 +728,55 @@ for file, func in traverse(callgraph, 2):
 
 functions = c.functions
 # The usage is quite similar, so it is omitted
+```
+
+## Database
+
+`clade.db` is an ordinary SQLite database with a single table:
+
+``` sql
+CREATE TABLE data (
+    ext   TEXT NOT NULL,  -- extension name: CC, CmdGraph, Functions, ...
+    name  TEXT NOT NULL,  -- record group: cmds, opts, deps, functions, ...
+    key   TEXT NOT NULL,  -- command id, file path, function name, or ""
+    value TEXT NOT NULL,  -- the record as JSON
+    PRIMARY KEY (ext, name, key)
+);
+```
+
+Values are JSON text, so any SQLite tool can read and query them, for
+example with the `sqlite3` shell:
+
+``` shell
+sqlite3 clade/clade.db "SELECT ext, name, count(*) FROM data GROUP BY 1, 2"
+sqlite3 clade/clade.db "SELECT value FROM data WHERE ext = 'CC' AND name = 'cmds' AND key = '3'"
+sqlite3 clade/clade.db "SELECT key FROM data WHERE ext = 'Functions' AND name = 'functions' \
+    AND json_extract(value, '$[0].type') = 'static'"
+```
+
+or from Python:
+
+``` python
+import json
+import sqlite3
+
+db = sqlite3.connect("clade/clade.db")
+for key, value in db.execute("SELECT key, value FROM data WHERE ext = 'Callgraph'"):
+    callgraph = json.loads(value)
+```
+
+The Python API described above is still the recommended way: it knows how
+the records fit together and works whatever the encoding.
+
+JSON text takes about four times more space than it would compressed. If
+that matters, set the `"compress_db"` configuration option to `true` before
+parsing and every value is stored as a zlib-compressed blob instead
+(readable through the Clade API only), or convert an existing working
+directory at any time:
+
+``` shell
+clade-db compress clade
+clade-db decompress clade
 ```
 
 ## Compilation database

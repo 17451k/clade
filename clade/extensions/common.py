@@ -14,7 +14,6 @@
 # limitations under the License.
 
 import abc
-import glob
 import os
 import re
 import sys
@@ -45,8 +44,6 @@ class Common(Extension, metaclass=abc.ABCMeta):
         self.raw_dir = "raw"
         self.opts_dir = "opts"
         self.cmds_dir = "cmds"
-
-        self.cmds_file = os.path.join(self.work_dir, "cmds.json")
 
         self.bad_ids = os.path.join(self.work_dir, "bad_ids.txt")
 
@@ -86,8 +83,6 @@ class Common(Extension, metaclass=abc.ABCMeta):
         if total_cmds:
             self.log(f"Parsing {total_cmds} commands")
             self.execute_in_parallel(cmds, unwrap, total_objs=total_cmds)
-
-        self.__merge_all_cmds()
 
     def _get_cmd_dict(self, cmd: Cmd) -> ParsedCmd:
         return {
@@ -136,7 +131,7 @@ class Common(Extension, metaclass=abc.ABCMeta):
         return parsed_cmd
 
     def load_cmd_by_id(self, id: int) -> ParsedCmd:
-        return self.load_data(os.path.join(self.cmds_dir, f"{id}.json"))
+        return self.load_data_by_key(self.cmds_dir, [str(id)])[str(id)]
 
     def dump_cmd_by_id(self, id: int, cmd: ParsedCmd) -> None:
         cmd = self._normalize_paths(cmd)
@@ -147,29 +142,23 @@ class Common(Extension, metaclass=abc.ABCMeta):
         self.dump_raw_by_id(cmd["id"], cmd["command"])
         del cmd["command"]
 
-        self.dump_data(cmd, os.path.join(self.cmds_dir, f"{id}.json"))
+        self.dump_data_by_key({str(id): cmd}, self.cmds_dir)
 
     def load_raw_by_id(self, id: int) -> list[str]:
-        raw_file = os.path.join(self.raw_dir, f"{id}.json")
-        return self.load_data(raw_file, raise_exception=True)
+        return self.load_data_by_key(self.raw_dir, [str(id)])[str(id)]
 
     def dump_raw_by_id(self, id, raw_command):
-        self.dump_data(raw_command, os.path.join(self.raw_dir, f"{id}.json"))
+        self.dump_data_by_key({str(id): raw_command}, self.raw_dir)
 
     def load_opts_by_id(self, id: int) -> list[str]:
-        opts_file = os.path.join(self.opts_dir, f"{id}.json")
-        opts = self.load_data(opts_file, raise_exception=False)
-
-        # if load_data can't find file, it returns empty dict()
-        # but opts must be a list
-        return opts if opts else []
+        return self.load_data_by_key(self.opts_dir, [str(id)]).get(str(id), [])
 
     def dump_opts_by_id(self, id, opts):
         # Do not dump options if they are empty
         if not opts:
             return
 
-        self.dump_data(opts, os.path.join(self.opts_dir, f"{id}.json"))
+        self.dump_data_by_key({str(id): opts}, self.opts_dir)
 
     def dump_bad_cmd_id(self, cmd_id):
         os.makedirs(os.path.dirname(self.bad_ids), exist_ok=True)
@@ -195,23 +184,6 @@ class Common(Extension, metaclass=abc.ABCMeta):
 
         return cmd
 
-    def __merge_all_cmds(self):
-        """Merge all parsed commands into a single json file."""
-        self.debug("Merging all parsed commands")
-        cmd_jsons = glob.glob(os.path.join(self.work_dir, self.cmds_dir, "*[0-9].json"))
-
-        merged_cmds = []
-
-        for cmd_json in cmd_jsons:
-            parsed_cmd = self.load_data(cmd_json)
-            merged_cmds.append(parsed_cmd)
-
-        if not merged_cmds:
-            self.debug("No commands were parsed")
-            return
-
-        self.dump_data(merged_cmds, self.cmds_file)
-
     def load_all_cmds(
         self,
         with_opts: bool = False,
@@ -219,7 +191,7 @@ class Common(Extension, metaclass=abc.ABCMeta):
         filter_by_pid: bool = True,
     ) -> list[ParsedCmd]:
         """Load all parsed commands."""
-        cmds = self.load_data(self.cmds_file, raise_exception=False)
+        cmds = list(self.load_data_by_key(self.cmds_dir).values())
 
         if filter_by_pid and self.conf.get("PidGraph.filter_cmds_by_pid", True):
             bad_ids = self.get_bad_ids()

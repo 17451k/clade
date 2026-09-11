@@ -19,6 +19,15 @@ import unittest.mock
 import pytest
 
 from clade import Clade
+from clade.extensions.cc import CC
+from clade.extensions.pid_graph import PidGraph
+
+
+def parse_spy(cls):
+    """Wrap cls.parse so that a test can see whether it ran."""
+    return unittest.mock.patch.object(
+        cls, "parse", autospec=True, side_effect=cls.parse
+    )
 
 
 def test_cc_parallel(tmpdir, cmds_file, monkeypatch):
@@ -58,23 +67,13 @@ def test_cc_parallel_with_print(tmpdir, cmds_file, monkeypatch):
 def test_force(tmpdir, cmds_file, force):
     conf = {"force": force}
 
-    c1 = Clade(tmpdir, cmds_file, conf=conf)
-    c1.parse("CC")
+    Clade(tmpdir, cmds_file, conf=conf).parse("CC")
 
-    p_work_dir = os.path.join(str(tmpdir), "PidGraph")
-    c_work_dir = os.path.join(str(tmpdir), "CC")
+    with parse_spy(PidGraph) as p, parse_spy(CC) as c:
+        Clade(tmpdir, cmds_file, conf=conf).parse("CC")
 
-    p_mtime1 = os.stat(p_work_dir).st_mtime
-    c_mtime1 = os.stat(c_work_dir).st_mtime
-
-    c2 = Clade(tmpdir, cmds_file, conf=conf)
-    c2.parse("CC")
-
-    p_mtime2 = os.stat(p_work_dir).st_mtime
-    c_mtime2 = os.stat(c_work_dir).st_mtime
-
-    assert force != (p_mtime1 == p_mtime2)
-    assert force != (c_mtime1 == c_mtime2)
+    assert p.called == force
+    assert c.called == force
 
 
 @pytest.mark.parametrize("clean", [True, False])
@@ -82,19 +81,11 @@ def test_parse_clean(tmpdir, cmds_file, clean):
     c = Clade(tmpdir, cmds_file)
     c.parse("CC", clean=clean)
 
-    p_work_dir = os.path.join(str(tmpdir), "PidGraph")
-    c_work_dir = os.path.join(str(tmpdir), "CC")
+    with parse_spy(PidGraph) as p, parse_spy(CC) as cc:
+        c.parse("CC", clean=clean)
 
-    p_mtime1 = os.stat(p_work_dir).st_mtime
-    c_mtime1 = os.stat(c_work_dir).st_mtime
-
-    c.parse("CC", clean=clean)
-
-    p_mtime2 = os.stat(p_work_dir).st_mtime
-    c_mtime2 = os.stat(c_work_dir).st_mtime
-
-    assert clean != (c_mtime1 == c_mtime2)
-    assert p_mtime1 == p_mtime2
+    assert cc.called == clean
+    assert not p.called
 
 
 def test_check_conf_consistency(tmpdir, cmds_file):
@@ -108,3 +99,18 @@ def test_check_conf_consistency(tmpdir, cmds_file):
     c = Clade(tmpdir, cmds_file, conf=changed_conf)
     with pytest.raises(RuntimeError):
         c.parse("CC")
+
+
+def test_no_empty_ext_dirs(tmpdir, cmds_file):
+    c = Clade(tmpdir, cmds_file)
+    c.parse("CmdGraph")
+
+    # Extensions that only write to the database get no directory
+    assert not os.path.exists(os.path.join(str(tmpdir), "CmdGraph"))
+    assert not os.path.exists(os.path.join(str(tmpdir), "PidGraph"))
+    assert c.CmdGraph.is_parsed()
+    assert c.work_dir_ok()
+
+    c.parse_list(["CmdGraph"], clean=True)
+    assert c.CmdGraph.is_parsed()
+    assert c.cmd_graph

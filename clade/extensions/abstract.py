@@ -21,7 +21,6 @@ import importlib.metadata
 import json
 import logging
 import os
-import pathlib
 import platform
 import shutil
 import sys
@@ -33,6 +32,7 @@ from concurrent.futures import ProcessPoolExecutor
 from typing import Any
 
 from clade.cmds import Cmd, get_build_dir
+from clade.db import Database, buffered
 from clade.extensions.utils import yield_chunk
 from clade.utils import (
     Conf,
@@ -42,6 +42,13 @@ from clade.utils import (
     get_program_version,
     load,
 )
+
+
+def _run_buffered(process, self, obj, *args):
+    with buffered() as rows:
+        process(self, obj, *args)
+
+    return rows
 
 
 class Extension(metaclass=abc.ABCMeta):
@@ -68,6 +75,11 @@ class Extension(metaclass=abc.ABCMeta):
 
         self.conf: Conf = conf if conf else {}
 
+        self.db = Database(
+            os.path.join(self.clade_work_dir, "clade.db"),
+            compress=self.conf.get("compress_db", False),
+        )
+
         self.logger: logging.Logger | None = None
 
         if not hasattr(self, "requires"):
@@ -92,7 +104,18 @@ class Extension(metaclass=abc.ABCMeta):
 
     def is_parsed(self) -> bool:
         """Returns True if build commands are already parsed."""
-        return os.path.exists(self.work_dir)
+        return self.name in self.load_global_meta()
+
+    def clean(self) -> None:
+        """Remove everything the extension has stored."""
+        if os.path.isdir(self.work_dir):
+            shutil.rmtree(self.work_dir)
+
+        self.db.delete(self.name)
+
+        stored_meta = self.load_global_meta()
+        if stored_meta.pop(self.name, None) is not None:
+            self.__save_global_meta(stored_meta)
 
     def preprocess(self, cmd: Cmd) -> None:
         """Preprocess intercepted build command before its execution"""
@@ -117,8 +140,7 @@ class Extension(metaclass=abc.ABCMeta):
             try:
                 return parse(self, *args, **kwargs)
             except Exception:
-                if os.path.exists(self.work_dir):
-                    self.ext_meta["corrupted"] = True
+                self.ext_meta["corrupted"] = True
                 raise
             finally:
                 if os.path.exists(self.temp_dir):
@@ -144,20 +166,36 @@ class Extension(metaclass=abc.ABCMeta):
     def parse(self, cmds_file: str) -> None:
         """Parse intercepted commands."""
 
+    def __db_name(self, file_name: str) -> str | None:
+        """Name under which the file is stored in the database.
+
+        Absolute paths outside the working directory are kept as real files.
+        """
+        if not os.path.isabs(file_name):
+            return os.path.normpath(file_name)
+
+        name = os.path.relpath(file_name, self.work_dir)
+        return None if name.startswith("..") else name
+
     def file_exists(self, file_name: str) -> bool:
         """File exists in the working directory"""
-        if not os.path.isabs(file_name):
-            file_name = os.path.join(self.work_dir, file_name)
+        name = self.__db_name(file_name)
 
-        return os.path.exists(file_name)
+        if name is None:
+            return os.path.exists(file_name)
+
+        return self.db.has(self.name, name)
 
     def load_data(self, file_name: str, raise_exception: bool = True) -> Any:
         """Load file by name."""
+        name = self.__db_name(file_name)
 
-        if not os.path.isabs(file_name):
-            file_name = os.path.join(self.work_dir, file_name)
+        if name is None:
+            data = load(file_name) if os.path.isfile(file_name) else None
+        else:
+            data = self.db.get(self.name, name)
 
-        if not os.path.isfile(file_name):
+        if data is None:
             message = f"{file_name!r} file is not found"
 
             if raise_exception:
@@ -168,9 +206,7 @@ class Extension(metaclass=abc.ABCMeta):
 
             return {}
 
-        self.debug(f"Loading {file_name!r}")
-
-        return load(file_name)
+        return data
 
     def load_dict_with_int_keys(self, file_name: str) -> dict[int, Any]:
         """Load dictionary and replace back string keys with int ones."""
@@ -182,94 +218,46 @@ class Extension(metaclass=abc.ABCMeta):
         self.dump_data({str(key): data[key] for key in data}, file_name)
 
     def dump_data(self, data: Any, file_name: str) -> None:
-        """Dump data to a file in the object working directory."""
-
-        if not os.path.isabs(file_name):
-            file_name = os.path.join(self.work_dir, file_name)
-
-        os.makedirs(os.path.dirname(file_name), exist_ok=True)
-
+        """Dump data to the database under a file name in the object working directory."""
+        name = self.__db_name(file_name)
         self.debug(f"Dumping {file_name!r}")
 
-        try:
+        if name is None:
+            os.makedirs(os.path.dirname(file_name), exist_ok=True)
             dump(data, file_name)
-        except RecursionError:
-            # This is a workaround, but it is rarely required
-            self.warning(
-                f"Do not print data to file due to recursion limit {file_name!r}"
-            )
-        except FileNotFoundError:
-            # Workaround for Python 3.5 and Windows
-            self.error(f"Can't create file {file_name!r}")
+        else:
+            self.db.put(self.name, name, "", data)
 
     def load_data_by_key(
         self, folder: str, keys: list[str] | set[str] | None = None
     ) -> dict[str, Any]:
-        """Load data stored in multiple json files using dump_data_by_key()."""
-        data = {}
-
-        for key, value in self.__yield_data_by_key(folder, keys=keys):
-            data.update(value)
-
-        return data
+        """Load data stored in the database using dump_data_by_key()."""
+        self.__check_keys(keys)
+        return dict(self.db.iter(self.name, folder, keys))
 
     def yield_data_by_key(
         self, folder: str, keys: list[str] | set[str] | None = None
     ) -> Generator[tuple[str, Any], None, None]:
-        """Yield data stored in multiple json files using dump_data_by_key()."""
-        yield from self.__yield_data_by_key(folder, keys=keys)
+        """Yield data stored in the database using dump_data_by_key()."""
+        self.__check_keys(keys)
 
-    def __yield_data_by_key(self, folder, keys=None):
-        if keys and not isinstance(keys, list) and not isinstance(keys, set):
+        for key, value in self.db.iter(self.name, folder, keys):
+            yield key, {key: value}
+
+    @staticmethod
+    def __check_keys(keys) -> None:
+        if keys and not isinstance(keys, (list, set)):
             raise TypeError(
                 f"Provide a list or set of files to retrieve data but not {type(keys).__name__!r}"
             )
 
-        if not os.path.isabs(folder):
-            folder = os.path.join(self.work_dir, folder)
-
-        if not os.path.exists(folder):
-            self.debug(f"{folder!r} folder is not found")
-            return
-
-        if keys:
-            self.debug(f"Yielding data from {folder!r}: {keys!r}")
-            for key in keys:
-                file_name = self.__get_file_name_by_key(key, folder)
-
-                data = self.load_data(file_name, raise_exception=False)
-                for key in data:
-                    yield key, data
-        else:
-            self.debug(f"Yielding all data from {folder!r}")
-            for file_name in self.__get_all_json_files_in_folder(folder):
-                data = self.load_data(file_name, raise_exception=False)
-                for key in data:
-                    yield key, data
-
-    def __get_all_json_files_in_folder(self, folder):
-        files = []
-        for p in pathlib.Path(folder).glob("**/*.json"):
-            files.append(str(p))
-
-        return files
-
     def dump_data_by_key(self, data: dict[str, Any], folder: str) -> None:
-        """Dump data to multiple json files in the object working directory."""
+        """Dump data to the database, one record per key."""
         self.debug(f"Dumping data to {folder!r}")
-
-        for key, value in data.items():
-            file_name = self.__get_file_name_by_key(key, folder)
-            self.dump_data({key: value}, file_name)
+        self.db.put_many(self.name, folder, data)
 
     def file_exists_by_key(self, key: str, folder: str) -> bool:
-        return os.path.exists(self.__get_file_name_by_key(key, folder))
-
-    def __get_file_name_by_key(self, key, folder):
-        file_name = folder + os.sep + key + ".json"
-        file_name = os.path.normpath(file_name)
-
-        return os.path.join(self.work_dir, file_name)
+        return self.db.has(self.name, folder, key)
 
     def get_ext_version(self) -> str:
         version = self.__version__
@@ -284,11 +272,7 @@ class Extension(metaclass=abc.ABCMeta):
         """Check that working directory was creating with the extension of correct version."""
         stored_meta = self.load_global_meta().get(self.name)
 
-        if (
-            os.path.exists(self.work_dir)
-            and stored_meta
-            and self.ext_meta["version"] != stored_meta["version"]
-        ):
+        if stored_meta and self.ext_meta["version"] != stored_meta["version"]:
             self.error(
                 "Working directory was created by incompatible version of Clade and can't be used."
             )
@@ -296,9 +280,6 @@ class Extension(metaclass=abc.ABCMeta):
 
     def check_corrupted(self) -> None:
         """Check that working directory is not corrupted."""
-        if not os.path.exists(self.work_dir):
-            return
-
         stored_meta = self.load_global_meta().get(self.name)
 
         if stored_meta and stored_meta["corrupted"]:
@@ -399,13 +380,14 @@ class Extension(metaclass=abc.ABCMeta):
                 datetime.datetime.now().astimezone().strftime("%Y-%m-%d %H:%M")
             )
 
-        with open(self.global_meta_file, "w") as fh:
-            fh.write(json.dumps(stored_meta, indent=4))
+        self.__save_global_meta(stored_meta)
 
     def add_data_to_global_meta(self, key: str, data: Any) -> None:
         stored_meta = self.load_global_meta()
         stored_meta[key] = data
+        self.__save_global_meta(stored_meta)
 
+    def __save_global_meta(self, stored_meta: dict[str, Any]) -> None:
         with open(self.global_meta_file, "w") as fh:
             fh.write(json.dumps(stored_meta, indent=4))
 
@@ -448,7 +430,9 @@ class Extension(metaclass=abc.ABCMeta):
 
         max_workers = self.conf.get("cpu_count", os.cpu_count())
 
-        with ProcessPoolExecutor(max_workers=max_workers) as p:
+        # Only this process writes to the database: workers return
+        # what they would have written and it is stored here
+        with ProcessPoolExecutor(max_workers=max_workers) as p, self.db.transaction():
             chunk_size = 2000
             futures = []
             finished_objs = 0
@@ -459,7 +443,7 @@ class Extension(metaclass=abc.ABCMeta):
 
                 for obj in obj_chunk:
                     if pass_self:
-                        f = p.submit(process, empty_self, obj, *args)
+                        f = p.submit(_run_buffered, process, empty_self, obj, *args)
                     else:
                         f = p.submit(process, obj, *args)
 
@@ -485,7 +469,9 @@ class Extension(metaclass=abc.ABCMeta):
                     # Check return value of all finished futures.
                     # result() re-raises whatever the worker raised
                     for f in done_futures:
-                        f.result()
+                        rows = f.result()
+                        if rows:
+                            self.db.put_rows(rows)
 
                     # Submit next chunk if the current one is almost processed
                     finished_chunk_objs = len([x for x in chunk_futures if x.done()])

@@ -34,6 +34,9 @@ class Functions(CommonInfo):
         self.funcs_by_file = {}
         self.funcs_by_file_folder = "functions_by_file"
 
+        # Callgraph and UsedIn look the same names up over and over
+        self.definitions_cache = {}
+
     @Extension.prepare
     def parse(self, _):
         self.__process_definitions()
@@ -48,6 +51,7 @@ class Functions(CommonInfo):
         self.extensions["SrcGraph"].unload_src_graph()
         self.funcs.clear()
         self.funcs_by_file.clear()
+        self.definitions_cache.clear()
 
     def load_functions(self, funcs=None):
         """Load information about functions."""
@@ -58,12 +62,10 @@ class Functions(CommonInfo):
 
     def load_definitions(self, func):
         """Load all available definitions for a given function."""
-        funcs = self.load_functions([func])
+        if func not in self.definitions_cache:
+            self.definitions_cache[func] = self.load_functions([func]).get(func, [])
 
-        if funcs:
-            return funcs[func]
-
-        return []
+        return self.definitions_cache[func]
 
     def load_functions_by_file(self, files=None):
         """Load information about functions grouped by files."""

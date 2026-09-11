@@ -41,6 +41,7 @@ dev = ["pytest", "coverage[toml]", "black", "ty", "ruff", "setuptools"]
 [project.scripts]
 clade = "clade.__main__:main"
 clade-cdb = "clade.scripts.compilation_database:main"
+clade-db = "clade.scripts.db:main"
 clade-cmds-stats = "clade.scripts.stats:print_cmds_stats"
 clade-diff = "clade.scripts.diff:main"
 clade-check = "clade.scripts.check:main"

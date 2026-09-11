@@ -18,6 +18,7 @@ import os
 import shutil
 
 from clade.cmds import iter_cmds, iter_cmds_by_which
+from clade.db import Database
 from clade.envs import iter_envs
 from clade.extensions.abstract import Extension
 from clade.intercept import intercept
@@ -93,6 +94,7 @@ class Clade:
     def __prepare_to_init(self):
         # Clean working directory
         if self.conf.get("force") and os.path.isdir(self.work_dir):
+            Database(os.path.join(self.work_dir, "clade.db")).close()
             shutil.rmtree(self.work_dir)
 
         # Check that Clade has permission to read the working directory (if it exists)
@@ -245,8 +247,8 @@ class Clade:
         for ext_obj in ext_objs:
             ext_obj.debug(f"Extension requirements: {ext_obj.requires!r}")
 
-            if clean and ext_obj.name in ext_names and os.path.isdir(ext_obj.work_dir):
-                shutil.rmtree(ext_obj.work_dir)
+            if clean and ext_obj.name in ext_names:
+                ext_obj.clean()
 
             # Check that working directory is not corrupted
             ext_obj.check_corrupted()
@@ -857,11 +859,8 @@ class Clade:
                 self.logger.error("Working directory does not exist")
             return False
 
-        ext_names = [
-            f
-            for f in os.listdir(self.work_dir)
-            if os.path.isdir(os.path.join(self.work_dir, f))
-        ]
+        known = {cls.__name__ for cls in Extension.get_all_extensions()}
+        ext_names = [name for name in p.load_global_meta() if name in known]
         ext_objs = [
             ext_obj
             for ext_obj in self.__get_ext_obj_list(ext_names)

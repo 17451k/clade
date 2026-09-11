@@ -10,6 +10,7 @@ The following scripts are available:
 - `clade-check` simply checks that Clade working directory exists and is not
     corrupted.
 - `clade-cdb` can be used to create compilation database.
+- `clade-db` compresses or decompresses the values stored in `clade.db`.
 - `clade-trace` can be used to visualize callgraph between specified functions.
 - `clade-file-graph` can be used to visualize file dependencies between
     intercepted commands.
