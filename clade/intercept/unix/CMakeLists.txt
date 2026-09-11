@@ -2,6 +2,12 @@ cmake_minimum_required(VERSION 3.10)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+# Some Xcode tools (make, clang) are arm64e: dyld refuses to inject an
+# arm64-only dylib into them and aborts the process
+if(APPLE AND CMAKE_SYSTEM_PROCESSOR MATCHES "arm64" AND NOT CMAKE_OSX_ARCHITECTURES)
+    set(CMAKE_OSX_ARCHITECTURES "arm64;arm64e")
+endif()
+
 add_compile_options(
     -Wall
     -Wextra
