@@ -19,8 +19,14 @@ import sys
 import pytest
 
 from clade import Clade
+from tests.test_intercept import test_project
 
-test_build = ["pip", "install", "--user", "--no-binary", ":all:", "--force", "cchardet"]
+# cmd is the parent process the debugger attaches to; cl and link are its children
+test_build = [
+    "cmd",
+    "/c",
+    "cl /c zero.c main.c /D TEST_MACRO /O2 && link zero.obj main.obj /OUT:main.exe",
+]
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="tests only for Windows")
@@ -30,7 +36,7 @@ def test_windows(tmpdir):
 
     c = Clade(work_dir, cmds_file=output)
 
-    assert not c.intercept(command=test_build)
+    assert not c.intercept(command=test_build, cwd=test_project)
 
     c.parse("SrcGraph")
 
@@ -38,3 +44,9 @@ def test_windows(tmpdir):
     assert c.cmds
     assert c.cmd_graph
     assert c.src_graph
+
+    cl_cmds = [x for x in c.cmds if x["which"].lower().endswith("cl.exe")]
+    link_cmds = [x for x in c.cmds if x["which"].lower().endswith("link.exe")]
+
+    assert cl_cmds
+    assert link_cmds
