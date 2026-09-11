@@ -12,3 +12,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+import sys
+
+# Since Windows has no fork, multiprocessing workers don't have access to
+# extensions imported by the parent: import them all when the package is
+# loaded. Doing it from an extension module instead would recurse into
+# modules that are still being imported.
+if sys.platform == "win32":
+    from clade.extensions.abstract import Extension
+
+    Extension._import_extension_modules()

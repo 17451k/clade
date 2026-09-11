@@ -45,8 +45,7 @@ def test_windows(tmpdir):
     assert c.cmd_graph
     assert c.src_graph
 
-    cl_cmds = [x for x in c.cmds if x["which"].lower().endswith("cl.exe")]
-    link_cmds = [x for x in c.cmds if x["which"].lower().endswith("link.exe")]
+    cmd_types = {x["type"] for x in c.cmds}
 
-    assert cl_cmds
-    assert link_cmds
+    assert "CL" in cmd_types
+    assert "Link" in cmd_types
