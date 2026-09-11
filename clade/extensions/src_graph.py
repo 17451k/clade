@@ -15,6 +15,10 @@
 
 
 from clade.extensions.abstract import Extension
+from clade.extensions.alternatives import Alternatives
+from clade.extensions.cmd_graph import CmdGraph
+from clade.extensions.compiler import Compiler
+from clade.extensions.storage import Storage
 
 
 class SrcGraph(Extension):
@@ -79,7 +83,7 @@ class SrcGraph(Extension):
         cmds = []
 
         for ext_name in [x for x in self.extensions if x not in self.always_requires]:
-            for cmd in self.extensions[ext_name].load_all_cmds(
+            for cmd in self.ext(Compiler, ext_name).load_all_cmds(
                 compile_only=True,
                 with_opts=with_opts,
                 with_raw=with_raw,
@@ -92,16 +96,16 @@ class SrcGraph(Extension):
 
     def __generate_src_graph(self, cmds):
         # We can do nothing without command graph
-        if not self.extensions["CmdGraph"].cmd_graph_exists():
+        if not self.ext(CmdGraph).cmd_graph_exists():
             return
 
         for cmd in cmds:
             # used_by is a list of commands that use (possibly indirectly)
             # output of the command with ID=cmd_id
-            used_by = list(self.extensions["CmdGraph"].find_used_by(cmd["id"]))
+            used_by = list(self.ext(CmdGraph).find_used_by(cmd["id"]))
 
             if self.conf.get("Compiler.get_deps"):
-                src_files = self.extensions[cmd["type"]].load_deps_by_id(cmd["id"])
+                src_files = self.ext(Compiler, cmd["type"]).load_deps_by_id(cmd["id"])
             else:
                 src_files = cmd["in"]
 
@@ -109,7 +113,7 @@ class SrcGraph(Extension):
                 # For each source file, there may be several identical ones,
                 # produced by cp, ln, or install commands.
                 # Here we replace each path by its canonical path.
-                src_file = self.extensions["Alternatives"].get_canonical_path(src_file)
+                src_file = self.ext(Alternatives).get_canonical_path(src_file)
 
                 if src_file not in self.src_graph:
                     self.src_graph[src_file] = {}
@@ -123,7 +127,7 @@ class SrcGraph(Extension):
     def __count_file_loc(self, file):
         """Count number of lines of code in the file."""
         if self.conf.get("Compiler.store_deps"):
-            file = self.extensions["Storage"].get_storage_path(file)
+            file = self.ext(Storage).get_storage_path(file)
 
         try:
             i = -1

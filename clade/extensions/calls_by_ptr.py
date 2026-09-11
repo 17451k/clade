@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from clade.extensions.abstract import Extension
+from clade.extensions.info import Info
 from clade.types.nested_dict import nested_dict
 
 
@@ -31,9 +32,9 @@ class CallsByPtr(Extension):
     def parse(self, cmds_file):
         self.log("Parsing calls by pointers")
 
-        for context_file, context_func, func_ptr, call_line in self.extensions[
-            "Info"
-        ].iter_calls_by_pointers():
+        for context_file, context_func, func_ptr, call_line in self.ext(
+            Info
+        ).iter_calls_by_pointers():
             self.debug(
                 f"Processing calls by pointers: {context_file} {context_func} {func_ptr}"
             )

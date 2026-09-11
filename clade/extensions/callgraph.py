@@ -19,6 +19,9 @@ from typing import Any, NamedTuple
 
 from clade.extensions.abstract import Extension
 from clade.extensions.common_info import CommonInfo
+from clade.extensions.functions import Functions
+from clade.extensions.info import Info
+from clade.extensions.src_graph import SrcGraph
 from clade.types.nested_dict import nested_dict, traverse
 
 
@@ -57,7 +60,7 @@ class Callgraph(CommonInfo):
 
         self.dump_data_by_key(self.callgraph, self.callgraph_folder)
 
-        self.extensions["SrcGraph"].unload_src_graph()
+        self.ext(SrcGraph).unload_src_graph()
         self.callgraph.clear()
 
     def load_callgraph(self, files=None):
@@ -78,7 +81,7 @@ class Callgraph(CommonInfo):
             call_line,
             call_type,
             args,
-        ) in self.extensions["Info"].iter_calls():
+        ) in self.ext(Info).iter_calls():
             # Split a string with CMD_IDs separated by comma
             # into an actual Python list
             context_cmd_id_list = [
@@ -98,7 +101,7 @@ class Callgraph(CommonInfo):
                 self.debug(f"Function {func} is bad")
                 continue
 
-            context_definition = self.extensions["Functions"].construct_definition(
+            context_definition = self.ext(Functions).construct_definition(
                 context_file, context_cmd_id_list, call_type, call_line
             )
 
@@ -134,7 +137,7 @@ class Callgraph(CommonInfo):
             if path == "unknown":
                 continue
 
-            for definition in self.extensions["Functions"].load_definitions(func):
+            for definition in self.ext(Functions).load_definitions(func):
                 # Warning: may be inaccurate
                 if definition["file"] == path:
                     self.callgraph[path][func]["type"] = definition["type"]
@@ -143,7 +146,7 @@ class Callgraph(CommonInfo):
                 self.callgraph[path][func]["type"] = "extern"
 
     def __get_definitions(self, func, context_definition):
-        definitions = self.extensions["Functions"].load_definitions(func)
+        definitions = self.ext(Functions).load_definitions(func)
 
         if not definitions:
             self._warning(f"Can't find '{func}' in Functions")

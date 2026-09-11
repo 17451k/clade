@@ -21,6 +21,7 @@ import tempfile
 import charset_normalizer
 
 from clade.extensions.abstract import Extension
+from clade.extensions.path import Path
 
 
 class Storage(Extension):
@@ -67,7 +68,7 @@ class Storage(Extension):
         storage_filename = (
             storage_filename
             if storage_filename
-            else self.extensions["Path"].normalize_abs_path(filename)
+            else self.ext(Path).normalize_abs_path(filename)
         )
 
         dst = os.path.normpath(self.work_dir + os.sep + storage_filename)

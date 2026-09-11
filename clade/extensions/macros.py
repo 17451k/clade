@@ -17,6 +17,7 @@ from collections.abc import Generator
 from typing import NamedTuple
 
 from clade.extensions.abstract import Extension
+from clade.extensions.info import Info
 from clade.types.nested_dict import nested_dict, traverse
 
 
@@ -72,7 +73,7 @@ class Macros(Extension):
         self.exps.clear()
 
     def __process_macros_definitions(self):
-        for file, macro, line in self.extensions["Info"].iter_macros_definitions():
+        for file, macro, line in self.ext(Info).iter_macros_definitions():
             self.debug(f"Processing definition: {file} {macro} {line}")
 
             if file not in self.macros:
@@ -81,9 +82,9 @@ class Macros(Extension):
             self.macros[file].append({"name": macro, "line": int(line)})
 
     def __process_macros_expansions(self):
-        for exp_file, def_file, macro, exp_line, def_line in self.extensions[
-            "Info"
-        ].iter_macros_expansions():
+        for exp_file, def_file, macro, exp_line, def_line in self.ext(
+            Info
+        ).iter_macros_expansions():
             self.debug(f"Processing expansion: {exp_file} {macro} {exp_line}")
 
             exp_val = {
@@ -100,7 +101,7 @@ class Macros(Extension):
             self.exps[def_file][macro][exp_file].append(exp_val)
 
     def __process_macros_args(self):
-        for exp_file, macro, args in self.extensions["Info"].iter_macros_args():
+        for exp_file, macro, args in self.ext(Info).iter_macros_args():
             # args are excluded from the debug log
             self.debug(f"Processing args: {exp_file} {macro}")
 

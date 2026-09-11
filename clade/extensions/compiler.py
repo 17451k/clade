@@ -17,6 +17,8 @@ import os
 
 from clade.cmds import ParsedCmd
 from clade.extensions.common import Common
+from clade.extensions.path import Path
+from clade.extensions.storage import Storage
 
 
 class Compiler(Common):
@@ -49,7 +51,7 @@ class Compiler(Common):
             if not os.path.isabs(file):
                 file = os.path.join(cwd, file)
 
-            self.extensions["Storage"].add_file(file, encoding=encoding)
+            self.ext(Storage).add_file(file, encoding=encoding)
 
     def load_deps_by_id(self, cmd_id: int) -> list[str]:
         deps_file = os.path.join("deps", f"{cmd_id}.json")
@@ -65,7 +67,7 @@ class Compiler(Common):
             return
 
         # Normalize and remove duplicates
-        deps = self.extensions["Path"].normalize_rel_paths(deps, cwd)
+        deps = self.ext(Path).normalize_rel_paths(deps, cwd)
         deps = list(set(deps))
 
         self.debug(f"Dependencies of command {cmd_id}: {deps}")
@@ -147,7 +149,7 @@ class Compiler(Common):
             abs_path = os.path.join(cwd, path)
 
         pre_file = os.path.splitext(abs_path)[0] + ".i"
-        pre_file = self.extensions["Storage"].get_storage_path(pre_file)
+        pre_file = self.ext(Storage).get_storage_path(pre_file)
 
         self.debug(f"Getting preprocessed file: {pre_file}")
         return pre_file

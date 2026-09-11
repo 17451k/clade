@@ -17,6 +17,8 @@ import array
 
 from clade.extensions.abstract import Extension
 from clade.extensions.common_info import CommonInfo
+from clade.extensions.info import Info
+from clade.extensions.src_graph import SrcGraph
 from clade.extensions.utils import Location
 
 
@@ -45,7 +47,7 @@ class Functions(CommonInfo):
         self.dump_data_by_key(self.funcs, self.funcs_folder)
         self.dump_data_by_key(self.funcs_by_file, self.funcs_by_file_folder)
 
-        self.extensions["SrcGraph"].unload_src_graph()
+        self.ext(SrcGraph).unload_src_graph()
         self.funcs.clear()
         self.funcs_by_file.clear()
 
@@ -93,7 +95,7 @@ class Functions(CommonInfo):
             def_line,
             func_type,
             signature,
-        ) in self.extensions["Info"].iter_definitions():
+        ) in self.ext(Info).iter_definitions():
             self.debug(
                 f"Processing definition: {src_file} {func} {func_type} {signature}"
             )
@@ -137,7 +139,7 @@ class Functions(CommonInfo):
             decl_line,
             decl_type,
             decl_signature,
-        ) in self.extensions["Info"].iter_declarations():
+        ) in self.ext(Info).iter_declarations():
             # Split a string with CMD_IDs separated by comma
             # into an actual Python list
             decl_cmd_id_list = array.array(
@@ -215,7 +217,7 @@ class Functions(CommonInfo):
     def __process_exported(self):
         # Linux kernel only
 
-        for src_file, func in self.extensions["Info"].iter_exported():
+        for src_file, func in self.ext(Info).iter_exported():
             self.debug(f"Processing exported functions: {src_file} {func}")
 
             # Variables can also be exported

@@ -19,6 +19,9 @@ import re
 from graphviz import Digraph
 
 from clade.extensions.abstract import Extension
+from clade.extensions.alternatives import Alternatives
+from clade.extensions.common import Common
+from clade.extensions.pid_graph import PidGraph
 
 
 class CmdGraph(Extension):
@@ -57,19 +60,17 @@ class CmdGraph(Extension):
         cmds = []
         bad_ids = []
         for ext_name in [x for x in self.extensions if x not in self.always_requires]:
-            for cmd in self.extensions[ext_name].load_all_cmds(
+            for cmd in self.ext(Common, ext_name).load_all_cmds(
                 with_opts=with_opts, with_raw=with_raw, filter_by_pid=False
             ):
                 cmd["type"] = ext_name
                 cmds.append(cmd)
-            bad_ids.extend(self.extensions[ext_name].get_bad_ids())
+            bad_ids.extend(self.ext(Common, ext_name).get_bad_ids())
 
         self.debug(f"All bad commands: {bad_ids}")
 
         if self.conf.get("PidGraph.filter_cmds_by_pid", True) or filter_by_pid:
-            cmds = self.extensions["PidGraph"].filter_cmds_by_pid(
-                cmds, parsed_ids=bad_ids
-            )
+            cmds = self.ext(PidGraph).filter_cmds_by_pid(cmds, parsed_ids=bad_ids)
 
         return cmds
 
@@ -90,11 +91,13 @@ class CmdGraph(Extension):
         if not hasattr(self, "cmd_type") or not self.cmd_type:
             self.cmd_type = self.load_cmd_type()
 
-        cmd = self.extensions[self.cmd_type[cmd_id]].load_cmd_by_id(cmd_id)
+        cmd = self.ext(Common, self.cmd_type[cmd_id]).load_cmd_by_id(cmd_id)
         cmd["type"] = self.cmd_type[cmd_id]
 
         if with_opts:
-            cmd["opts"] = self.extensions[self.cmd_type[cmd_id]].load_opts_by_id(cmd_id)
+            cmd["opts"] = self.ext(Common, self.cmd_type[cmd_id]).load_opts_by_id(
+                cmd_id
+            )
 
         return cmd
 
@@ -130,7 +133,7 @@ class CmdGraph(Extension):
         # produced by cp, ln, or install commands.
         # Here we replace each path by its canonical path.
         canonical_ins = [
-            self.extensions["Alternatives"].get_canonical_path(i) for i in cmd["in"]
+            self.ext(Alternatives).get_canonical_path(i) for i in cmd["in"]
         ]
 
         for cmd_in in (i for i in canonical_ins if i in self.out_dict):
@@ -143,7 +146,7 @@ class CmdGraph(Extension):
 
         # Rewrite out_dict[cmd_out] values to keep the latest used command id
         for cmd_out in [
-            self.extensions["Alternatives"].get_canonical_path(i) for i in cmd["out"]
+            self.ext(Alternatives).get_canonical_path(i) for i in cmd["out"]
         ]:
             self.out_dict[cmd_out] = out_id
 
@@ -154,7 +157,7 @@ class CmdGraph(Extension):
 
         for cmd_id in self.graph:
             cmd_type = self.cmd_type[cmd_id]
-            cmd = self.extensions[cmd_type].load_cmd_by_id(cmd_id)
+            cmd = self.ext(Common, cmd_type).load_cmd_by_id(cmd_id)
 
             cmd_node = "[{}] {}".format(cmd["id"], cmd_type)
             dot.node(str(cmd_id), label=re.escape(cmd_node))

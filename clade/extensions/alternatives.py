@@ -18,6 +18,8 @@ import itertools
 import os
 
 from clade.extensions.abstract import Extension
+from clade.extensions.common import Common
+from clade.extensions.storage import Storage
 
 
 class Alternatives(Extension):
@@ -148,7 +150,7 @@ class Alternatives(Extension):
 
         # Try to return first path that exists
         for candidate in paths:
-            if os.path.exists(self.extensions["Storage"].get_storage_path(candidate)):
+            if os.path.exists(self.ext(Storage).get_storage_path(candidate)):
                 return candidate
 
         # Otherwise simply return the path itself
@@ -177,7 +179,7 @@ class Alternatives(Extension):
             if ext_name in self.always_requires:
                 continue
 
-            for cmd in self.extensions[ext_name].load_all_cmds():
+            for cmd in self.ext(Common, ext_name).load_all_cmds():
                 cmd["type"] = ext_name
                 cmds.append(cmd)
 

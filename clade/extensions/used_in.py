@@ -17,6 +17,9 @@ import re
 
 from clade.extensions.abstract import Extension
 from clade.extensions.common_info import CommonInfo
+from clade.extensions.functions import Functions
+from clade.extensions.info import Info
+from clade.extensions.src_graph import SrcGraph
 from clade.types.nested_dict import nested_dict
 
 
@@ -40,7 +43,7 @@ class UsedIn(CommonInfo):
         self.__process_functions_usages()
         self._clean_warn_log()
 
-        self.extensions["SrcGraph"].unload_src_graph()
+        self.ext(SrcGraph).unload_src_graph()
         self.dump_data(self.used_in, self.used_in_file)
 
         self.used_in.clear()
@@ -56,7 +59,7 @@ class UsedIn(CommonInfo):
             func,
             line,
             context_type,
-        ) in self.extensions["Info"].iter_functions_usages():
+        ) in self.ext(Info).iter_functions_usages():
             # Split a string with CMD_IDs separated by comma
             # into an actual Python list
             context_cmd_id_list = [
@@ -70,7 +73,7 @@ class UsedIn(CommonInfo):
             if self.is_builtin.match(func):
                 continue
 
-            context_definition = self.extensions["Functions"].construct_definition(
+            context_definition = self.ext(Functions).construct_definition(
                 context_file, context_cmd_id_list, context_type, int(line)
             )
 
@@ -78,7 +81,7 @@ class UsedIn(CommonInfo):
             # files. possible_definitions is a list of them.
             possible_definitions = []
 
-            definitions = self.extensions["Functions"].load_definitions(func)
+            definitions = self.ext(Functions).load_definitions(func)
 
             if not definitions:
                 self._warning(f"Can't find '{func}' in Functions")

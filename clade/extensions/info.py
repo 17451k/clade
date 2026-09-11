@@ -25,7 +25,11 @@ import sys
 import zipfile
 
 from clade.extensions.abstract import Extension
+from clade.extensions.alternatives import Alternatives
+from clade.extensions.compiler import Compiler
 from clade.extensions.opts import cif_supported_opts, compile_s_regex, filter_opts
+from clade.extensions.src_graph import SrcGraph
+from clade.extensions.storage import Storage
 
 
 class Info(Extension):
@@ -115,13 +119,13 @@ class Info(Extension):
     def parse(self, _):
         self.__check_cif()
 
-        cmds = list(self.extensions["SrcGraph"].load_compilation_cmds())
+        cmds = list(self.ext(SrcGraph).load_compilation_cmds())
         total_cmds = len(cmds)
 
         if not cmds:
             raise RuntimeError("There are no parsed compiler commands")
 
-        self.storage_dir = self.extensions["Storage"].get_storage_dir()
+        self.storage_dir = self.ext(Storage).get_storage_dir()
 
         self.log(f"Parsing {total_cmds} commands")
         self.execute_in_parallel(cmds, Info._run_cif, total_objs=total_cmds)
@@ -180,10 +184,10 @@ class Info(Extension):
             cif_s_regex = compile_s_regex(cif_supported_opts + extra_supported_opts)
 
         for cmd_in in cmd["in"]:
-            storage_cmd_in = self.extensions["Storage"].get_storage_path(cmd_in)
+            storage_cmd_in = self.ext(Storage).get_storage_path(cmd_in)
 
             if use_pre:
-                cif_in = self.extensions[cmd["type"]].get_pre_file_by_path(
+                cif_in = self.ext(Compiler, cmd["type"]).get_pre_file_by_path(
                     cmd_in, cmd["cwd"]
                 )
             else:
@@ -224,10 +228,10 @@ class Info(Extension):
             if use_pre:
                 opts = []
             else:
-                opts = self.extensions[cmd["type"]].load_opts_by_id(cmd["id"])
+                opts = self.ext(Compiler, cmd["type"]).load_opts_by_id(cmd["id"])
 
                 opts = filter_opts(
-                    opts, self.extensions["Storage"].get_storage_path, cif_s_regex
+                    opts, self.ext(Storage).get_storage_path, cif_s_regex
                 )
 
             opts.extend(self.conf.get("Info.extra_CIF_opts", []))
@@ -241,7 +245,7 @@ class Info(Extension):
                 cif_args.append("--")
                 cif_args.extend(opts)
 
-            cwd = self.extensions["Storage"].get_storage_path(cmd["cwd"])
+            cwd = self.ext(Storage).get_storage_path(cmd["cwd"])
             os.makedirs(cwd, exist_ok=True)
 
             # env is for subprocess
@@ -481,7 +485,7 @@ class Info(Extension):
             content = list(orig_content)
 
             # Make def_file canonical
-            content[1] = self.extensions["Alternatives"].get_canonical_path(content[1])
+            content[1] = self.ext(Alternatives).get_canonical_path(content[1])
 
             yield content
 
@@ -528,9 +532,7 @@ class Info(Extension):
                     content = list(m.groups())
 
                     # First index is always a path: make it canonical
-                    content[0] = self.extensions["Alternatives"].get_canonical_path(
-                        content[0]
-                    )
+                    content[0] = self.ext(Alternatives).get_canonical_path(content[0])
                     yield content
 
     def __iter_file(self, file, zip_fh):

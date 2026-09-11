@@ -15,6 +15,7 @@
 import os
 
 from clade.extensions.abstract import Extension
+from clade.extensions.src_graph import SrcGraph
 from clade.extensions.utils import Location
 
 
@@ -145,21 +146,19 @@ class CommonInfo(Extension):
         if loc1 == Location("unknown", 0) or loc2 == Location("unknown", 0):
             return False
 
-        if not self.extensions["SrcGraph"].in_source_graph(loc1.file, loc1.cmd_id):
+        if not self.ext(SrcGraph).in_source_graph(loc1.file, loc1.cmd_id):
             self._warning(f"{loc1.file} was not compiled in {loc1.cmd_id}")
             return False
 
-        if not self.extensions["SrcGraph"].in_source_graph(loc2.file, loc2.cmd_id):
+        if not self.ext(SrcGraph).in_source_graph(loc2.file, loc2.cmd_id):
             self._warning(f"{loc2.file} was not compiled in {loc2.cmd_id}")
             return False
 
         return (
             len(
                 set(
-                    self.extensions["SrcGraph"].get_used_by(loc1.file, loc1.cmd_id)
-                ).intersection(
-                    self.extensions["SrcGraph"].get_used_by(loc2.file, loc2.cmd_id)
-                )
+                    self.ext(SrcGraph).get_used_by(loc1.file, loc1.cmd_id)
+                ).intersection(self.ext(SrcGraph).get_used_by(loc2.file, loc2.cmd_id))
             )
             > 0
         )

@@ -17,6 +17,7 @@ import os
 
 from clade.extensions.abstract import Extension
 from clade.extensions.opts import filter_opts_for_clang
+from clade.extensions.src_graph import SrcGraph
 
 
 class CDB(Extension):
@@ -38,7 +39,7 @@ class CDB(Extension):
 
     @Extension.prepare
     def parse(self, cmds_file):
-        cmds = self.extensions["SrcGraph"].load_compilation_cmds(
+        cmds = self.ext(SrcGraph).load_compilation_cmds(
             with_opts=True, with_raw=True, with_deps=False
         )
 

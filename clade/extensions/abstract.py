@@ -30,7 +30,7 @@ import time
 import uuid
 from collections.abc import Callable, Generator, Iterable
 from concurrent.futures import ProcessPoolExecutor
-from typing import Any
+from typing import Any, TypeVar
 
 from clade.cmds import Cmd, get_build_dir
 from clade.extensions.utils import yield_chunk
@@ -42,6 +42,8 @@ from clade.utils import (
     get_program_version,
     load,
 )
+
+T = TypeVar("T", bound="Extension")
 
 
 class Extension(metaclass=abc.ABCMeta):
@@ -73,7 +75,7 @@ class Extension(metaclass=abc.ABCMeta):
         if not hasattr(self, "requires"):
             self.requires = []
 
-        self.extensions: dict[str, Any] = {}
+        self.extensions: dict[str, Extension] = {}
 
         self.ext_meta: dict[str, Any] = {
             "version": self.get_ext_version(),
@@ -270,6 +272,19 @@ class Extension(metaclass=abc.ABCMeta):
         file_name = os.path.normpath(file_name)
 
         return os.path.join(self.work_dir, file_name)
+
+    def ext(self, cls: type[T], name: str | None = None) -> T:
+        """Return a required extension object with its static type.
+
+        The extension is looked up by the class name unless "name" is given,
+        in which case the object must be an instance of "cls".
+        """
+        obj = self.extensions[name or cls.__name__]
+
+        if not isinstance(obj, cls):
+            raise TypeError(f"{obj.name!r} extension is not a {cls.__name__}")
+
+        return obj
 
     def get_ext_version(self) -> str:
         version = self.__version__

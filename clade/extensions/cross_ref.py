@@ -17,9 +17,11 @@ import os
 import re
 
 from clade.extensions.abstract import Extension
-from clade.extensions.callgraph import Call
+from clade.extensions.callgraph import Call, Callgraph
 from clade.extensions.common_info import CommonInfo
-from clade.extensions.macros import Expansion
+from clade.extensions.functions import Functions
+from clade.extensions.macros import Expansion, Macros
+from clade.extensions.storage import Storage
 from clade.types.nested_dict import nested_dict, traverse
 
 
@@ -39,7 +41,7 @@ class CrossRef(CommonInfo):
     @Extension.prepare
     def parse(self, _):
         self.log("Loading data")
-        for file, funcs in self.extensions["Functions"].yield_functions_by_file(
+        for file, funcs in self.ext(Functions).yield_functions_by_file(
             strip_list=["compiled_in", "signature", "type"]
         ):
             self.funcs[file] = funcs[file]
@@ -94,7 +96,7 @@ class CrossRef(CommonInfo):
                         self.__add_raw_loc(raw_locations, declaration["file"], val)
 
         call: Call
-        for call in self.extensions["Callgraph"].traverse_calls():
+        for call in self.ext(Callgraph).traverse_calls():
             val = (call.val["line"], call.to_func, "call")
             self.__add_raw_loc(raw_locations, call.from_file, val)
 
@@ -102,11 +104,11 @@ class CrossRef(CommonInfo):
 
     def __get_raw_macro_locations(self, raw_locations):
         expansion: Expansion
-        for expansion in self.extensions["Macros"].traverse_expansions():
+        for expansion in self.ext(Macros).traverse_expansions():
             val = (expansion.exp_line, expansion.name, "expand")
             self.__add_raw_loc(raw_locations, expansion.exp_file, val)
 
-        for def_file, macros in self.extensions["Macros"].yield_macros():
+        for def_file, macros in self.ext(Macros).yield_macros():
             if def_file == "unknown":
                 continue
 
@@ -123,12 +125,12 @@ class CrossRef(CommonInfo):
             raw_locations[file] = {val}
 
     def __parse_file(self, file, raw_locations, ignore_errors=False, encoding="utf8"):
-        storage_file = self.extensions["Storage"].get_storage_path(file)
+        storage_file = self.ext(Storage).get_storage_path(file)
 
         if not os.path.exists(storage_file):
             # There may be some header files from CIF that are not in the storage
             if os.path.exists(file):
-                self.extensions["Storage"].add_file(file)
+                self.ext(Storage).add_file(file)
             else:
                 return None
 
@@ -182,7 +184,7 @@ class CrossRef(CommonInfo):
         self.__gen_ref_to_macro(locations)
 
     def __gen_ref_to_func(self, locations):
-        for context_file, callgraph in self.extensions["Callgraph"].yield_callgraph():
+        for context_file, callgraph in self.ext(Callgraph).yield_callgraph():
             calls = set()
 
             for context_func, _, file in traverse(
@@ -232,9 +234,7 @@ class CrossRef(CommonInfo):
             self.__dump_ref_to(ref_to)
 
     def __gen_ref_to_macro(self, locations):
-        for exp_file, expansions in self.extensions[
-            "Macros"
-        ].yield_reversed_expansions():
+        for exp_file, expansions in self.ext(Macros).yield_reversed_expansions():
             if exp_file == "unknown" or "expand" not in locations[exp_file]:
                 continue
 
@@ -284,7 +284,7 @@ class CrossRef(CommonInfo):
         self.__gen_ref_from_macro(locations)
 
     def __gen_ref_from_func(self, locations):
-        for file, callgraph in self.extensions["Callgraph"].yield_callgraph():
+        for file, callgraph in self.ext(Callgraph).yield_callgraph():
             ref_from = nested_dict()
 
             for definition in self.funcs[file]:
@@ -341,7 +341,7 @@ class CrossRef(CommonInfo):
         return locs
 
     def __gen_ref_from_macro(self, locations):
-        for def_file, expansions in self.extensions["Macros"].yield_expansions():
+        for def_file, expansions in self.ext(Macros).yield_expansions():
             if def_file == "unknown" or "def_macro" not in locations[def_file]:
                 continue
 

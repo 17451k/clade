@@ -14,6 +14,7 @@
 # limitations under the License.
 
 from clade.extensions.abstract import Extension
+from clade.extensions.info import Info
 
 
 class Typedefs(Extension):
@@ -36,7 +37,7 @@ class Typedefs(Extension):
         self.typedefs.clear()
 
     def __process_typedefs(self):
-        for scope_file, declaration in self.extensions["Info"].iter_typedefs():
+        for scope_file, declaration in self.ext(Info).iter_typedefs():
             if scope_file not in self.typedefs:
                 self.typedefs[scope_file] = [declaration]
             elif declaration not in self.typedefs[scope_file]:

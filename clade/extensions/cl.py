@@ -24,6 +24,7 @@ import charset_normalizer
 from clade.cmds import Cmd, ParsedCmd
 from clade.extensions.compiler import Compiler
 from clade.extensions.opts import cl_preprocessor_deps_opts, requires_value
+from clade.extensions.path import Path
 
 # TODO: Support /FA and /Fa options (output assembler code, .cod or .asm)
 # TODO: Support /Fe option (Name of the output EXE file)
@@ -275,7 +276,7 @@ class CL(Compiler):
                 if m:
                     inc_file = m.group(1)
 
-                    norm_inc_file = self.extensions["Path"].normalize_rel_path(
+                    norm_inc_file = self.ext(Path).normalize_rel_path(
                         inc_file.strip(), cwd
                     )
 

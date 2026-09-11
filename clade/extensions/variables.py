@@ -20,6 +20,8 @@ import orjson
 
 from clade.extensions.abstract import Extension
 from clade.extensions.common_info import CommonInfo
+from clade.extensions.functions import Functions
+from clade.extensions.info import Info
 
 
 class Variables(CommonInfo):
@@ -52,14 +54,14 @@ class Variables(CommonInfo):
         self.used_in_vars.clear()
 
     def __process_init_global(self):
-        if not os.path.isfile(self.extensions["Info"].init_global):
+        if not os.path.isfile(self.ext(Info).init_global):
             self.log("There is no global variables to parse")
             return
 
         self.log("Parsing global variables initializations")
-        for c_file, signature, cmd_id_list, type, json_str in self.extensions[
-            "Info"
-        ].iter_init_global():
+        for c_file, signature, cmd_id_list, type, json_str in self.ext(
+            Info
+        ).iter_init_global():
             # Split a string with CMD_IDs separated by comma
             # into an actual Python list
             cmd_id_list = [int(cmd_id) for cmd_id in cmd_id_list.split(",")]
@@ -104,24 +106,20 @@ class Variables(CommonInfo):
 
     def __process_callv(self, context_file, context_cmd_id_list):
         functions = {
-            f
-            for f in self.possible_functions
-            if self.extensions["Functions"].function_exists(f)
+            f for f in self.possible_functions if self.ext(Functions).function_exists(f)
         }
 
         if not functions:
             return
 
-        context_definition = self.extensions["Functions"].construct_definition(
+        context_definition = self.ext(Functions).construct_definition(
             context_file, context_cmd_id_list, None, None
         )
 
         for func in functions:
             # For each function call there can be many definitions with the same name, defined in different
             # files. possible_definitions is a list of them.
-            possible_definitions = list(
-                self.extensions["Functions"].load_definitions(func)
-            )
+            possible_definitions = list(self.ext(Functions).load_definitions(func))
 
             if not possible_definitions:
                 continue

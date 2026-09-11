@@ -22,6 +22,8 @@ import sys
 from clade.cmds import Cmd, ParsedCmd, iter_cmds_by_which, number_of_cmds_by_which
 from clade.extensions.abstract import Extension
 from clade.extensions.opts import requires_mult_values, requires_value
+from clade.extensions.path import Path
+from clade.extensions.pid_graph import PidGraph
 
 
 def unwrap(self, cmd):
@@ -189,9 +191,9 @@ class Common(Extension, metaclass=abc.ABCMeta):
             self.error("Path extension is not available")
             return cmd
 
-        cmd["in"] = self.extensions["Path"].normalize_rel_paths(cmd["in"], cmd["cwd"])
-        cmd["out"] = self.extensions["Path"].normalize_rel_paths(cmd["out"], cmd["cwd"])
-        cmd["cwd"] = self.extensions["Path"].normalize_abs_path(cmd["cwd"])
+        cmd["in"] = self.ext(Path).normalize_rel_paths(cmd["in"], cmd["cwd"])
+        cmd["out"] = self.ext(Path).normalize_rel_paths(cmd["out"], cmd["cwd"])
+        cmd["cwd"] = self.ext(Path).normalize_abs_path(cmd["cwd"])
 
         return cmd
 
@@ -224,9 +226,7 @@ class Common(Extension, metaclass=abc.ABCMeta):
         if filter_by_pid and self.conf.get("PidGraph.filter_cmds_by_pid", True):
             bad_ids = self.get_bad_ids()
             self.debug(f"Bad commands: {bad_ids}")
-            cmds = self.extensions["PidGraph"].filter_cmds_by_pid(
-                cmds, parsed_ids=bad_ids
-            )
+            cmds = self.ext(PidGraph).filter_cmds_by_pid(cmds, parsed_ids=bad_ids)
 
         if with_opts:
             for cmd in cmds:
