@@ -25,6 +25,9 @@ void setenv_to_envp(char **envp, const char *key, const char *value);
 #define CLADE_INET_PORT_ENV "CLADE_INET_PORT"
 #define CLADE_PREPROCESS_ENV "CLADE_PREPROCESS"
 #define CLADE_ENV_VARS_ENV "CLADE_ENV_VARS"
+// macOS only: libinterceptor to inject into real tools, and directories with them
+#define CLADE_DYLD_INSERT_LIBRARIES_ENV "CLADE_DYLD_INSERT_LIBRARIES"
+#define CLADE_XCODE_PATH_ENV "CLADE_XCODE_PATH"
 // Do not forget to add new variables to clade_envs inside env.c
 
 #endif /* ENV_H */

@@ -16,6 +16,7 @@
  */
 
 #include <libgen.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,12 +26,29 @@
 #include "data.h"
 #include "which.h"
 
-#define wrapper_postfix ".clade"
+#define wrapper_postfix WRAPPER_POSTFIX
+
+#ifdef __APPLE__
+#include <dlfcn.h>
+#endif
 
 
 int main(int argc, char **argv, char **envp) {
     char *original_exe = malloc(strlen(argv[0]) + strlen(wrapper_postfix) + 1);
     sprintf(original_exe, "%s%s", argv[0], wrapper_postfix);
+
+    bool hooked = false;
+
+#ifdef __APPLE__
+    // Restore DYLD_INSERT_LIBRARIES stripped by platform binaries up the chain,
+    // so that libinterceptor gets into the real tool
+    char *libinterceptor = getenv(CLADE_DYLD_INSERT_LIBRARIES_ENV);
+    if (libinterceptor)
+        setenv("DYLD_INSERT_LIBRARIES", libinterceptor, 0);
+
+    // If libinterceptor is loaded into the wrapper itself, it records the exec below
+    hooked = dlsym(RTLD_DEFAULT, "clade_execve") != NULL;
+#endif
 
     // Copy envp, so we can safely modify it later
     // All missing Clade environment variables will be added to "new_envp"
@@ -70,7 +88,13 @@ int main(int argc, char **argv, char **envp) {
             exit(EXIT_FAILURE);
         }
 
-        if (getenv_from_envp(new_envp, CLADE_INTERCEPT_EXEC_ENV)) {
+#ifdef __APPLE__
+        char *xcode_which = which_xcode(which);
+        if (xcode_which)
+            which = xcode_which;
+#endif
+
+        if (!hooked && getenv_from_envp(new_envp, CLADE_INTERCEPT_EXEC_ENV)) {
             intercept_exec_call(which, (char const *const *)argv, new_envp);
         }
 

@@ -20,7 +20,22 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "env.h"
 #include "which.h"
+
+#ifdef __APPLE__
+// /usr/bin tools are xcode-select shims: Apple platform binaries that ignore
+// DYLD_INSERT_LIBRARIES and strip it from the environment of their children.
+// Lookup the real tool in the developer directory instead, as xcrun would.
+char *which_xcode(const char *path) {
+  char *xcode_path = getenv(CLADE_XCODE_PATH_ENV);
+
+  if (!xcode_path || strncmp(path, "/usr/bin/", 9) != 0)
+    return NULL;
+
+  return which_path(path + 9, xcode_path);
+}
+#endif
 
 // Lookup executable `name` within the PATH environment variable
 char *which(const char *name) {

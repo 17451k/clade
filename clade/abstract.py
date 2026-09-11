@@ -17,8 +17,10 @@ import abc
 import os
 import shlex
 import subprocess
+import sys
 import tempfile
 
+from clade import darwin
 from clade.cmds import get_last_id
 from clade.server import PreprocessServer
 from clade.utils import get_logger
@@ -139,7 +141,15 @@ class Intercept(metaclass=abc.ABCMeta):
 
         shell_command = " ".join([shlex.quote(x) for x in self.command])
         self.logger.debug(f"Execute {shell_command!r} command")
-        r = subprocess.call(shell_command, env=self.env, shell=True, cwd=self.cwd)
+
+        if sys.platform == "darwin":
+            # /bin/sh and /usr/bin tools are Apple platform binaries that strip
+            # DYLD_INSERT_LIBRARIES: run the real tool directly
+            command = list(self.command)
+            command[0] = darwin.resolve_shim(command[0], self.env)
+            r = subprocess.call(command, env=self.env, cwd=self.cwd)
+        else:
+            r = subprocess.call(shell_command, env=self.env, shell=True, cwd=self.cwd)
 
         if self.clade_if_file and os.path.exists(self.clade_if_file):
             os.remove(self.clade_if_file)

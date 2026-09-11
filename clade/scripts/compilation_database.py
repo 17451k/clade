@@ -36,8 +36,9 @@ def parse_args(args, work_dir):
     parser.add_argument(
         "-w",
         "--wrappers",
-        help="enable intercepting mode based on wrappers (not available on Windows)",
+        help="enable intercepting mode based on wrappers (default on macOS, not available on Windows)",
         action="store_true",
+        default=None,
     )
     parser.add_argument(
         "-c",

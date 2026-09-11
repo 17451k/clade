@@ -85,8 +85,9 @@ def parse_args(args):
     parser.add_argument(
         "-wr",
         "--wrappers",
-        help="enable intercepting mode based on wrappers (not supported on Windows)",
+        help="enable intercepting mode based on wrappers (default on macOS, not supported on Windows)",
         action="store_true",
+        default=None,
     )
     parser.add_argument(
         "-i",

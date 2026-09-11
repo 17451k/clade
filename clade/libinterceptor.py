@@ -16,10 +16,29 @@
 import os
 import sys
 
+from clade import darwin
 from clade.abstract import Intercept
 
 LIB = os.path.join(os.path.dirname(__file__), "intercept", "lib")
 LIB64 = os.path.join(os.path.dirname(__file__), "intercept", "lib64")
+
+
+def find_libinterceptor():
+    if sys.platform == "linux":
+        libinterceptor_name = "libinterceptor.so"
+    elif sys.platform == "darwin":
+        libinterceptor_name = "libinterceptor.dylib"
+    else:
+        raise NotImplementedError(f"Libinterceptor doesn't work on {sys.platform!r}")
+
+    libinterceptor = os.path.join(
+        os.path.dirname(__file__), "intercept", libinterceptor_name
+    )
+
+    if not os.path.exists(libinterceptor):
+        raise RuntimeError(f"libinterceptor is not found in {libinterceptor!r}")
+
+    return libinterceptor
 
 
 class Libinterceptor(Intercept):
@@ -31,7 +50,7 @@ class Libinterceptor(Intercept):
         if sys.platform == "darwin":
             self.logger.debug("Set 'DYLD_INSERT_LIBRARIES' environment variable value")
             env["DYLD_INSERT_LIBRARIES"] = libinterceptor
-            env["DYLD_FORCE_FLAT_NAMESPACE"] = "1"
+            darwin.setup_env(env)
         elif sys.platform == "linux":
             existing_preload = env.get("LD_PRELOAD")
             env["LD_PRELOAD"] = libinterceptor
@@ -59,21 +78,8 @@ class Libinterceptor(Intercept):
         return env
 
     def __find_libinterceptor(self):
-        if sys.platform == "linux":
-            libinterceptor_name = "libinterceptor.so"
-        elif sys.platform == "darwin":
-            libinterceptor_name = "libinterceptor.dylib"
-        else:
-            raise NotImplementedError(
-                f"Libinterceptor doesn't work on {sys.platform!r}"
-            )
-
-        libinterceptor = os.path.join(
-            os.path.dirname(__file__), "intercept", libinterceptor_name
-        )
-
-        if not os.path.exists(libinterceptor):
-            raise RuntimeError(f"libinterceptor is not found in {libinterceptor!r}")
+        libinterceptor = find_libinterceptor()
+        libinterceptor_name = os.path.basename(libinterceptor)
 
         # Multilib support, Linux only
         path = os.path.join(LIB, libinterceptor_name)

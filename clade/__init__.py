@@ -154,7 +154,7 @@ class Clade:
         command,
         cwd=None,
         append=False,
-        use_wrappers=False,
+        use_wrappers=None,
         intercept_open=False,
         intercept_envs=False,
     ):
@@ -165,6 +165,7 @@ class Clade:
             cwd: A path to the directory where build command will be executed
             append: A boolean allowing to append intercepted commands to already existing file with commands
             use_wrappers: A boolean enabling intercepting mode based on wrappers
+                (None selects the platform default: wrappers on macOS, library injection otherwise)
 
         Returns:
             0 if everything went successful and error code otherwise

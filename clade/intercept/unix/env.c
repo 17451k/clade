@@ -36,10 +36,11 @@ char *clade_envs[] = {
     CLADE_INET_PORT_ENV,
     CLADE_PREPROCESS_ENV,
     CLADE_ENV_VARS_ENV,
+    CLADE_DYLD_INSERT_LIBRARIES_ENV,
+    CLADE_XCODE_PATH_ENV,
     "LD_PRELOAD",
     "LD_LIBRARY_PATH",
     "DYLD_INSERT_LIBRARIES",
-    "DYLD_FORCE_FLAT_NAMESPACE",
 };
 const size_t clade_envs_len = ARRAY_SIZE(clade_envs);
 

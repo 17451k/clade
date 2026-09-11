@@ -76,7 +76,9 @@ the dynamic linker.
 
 ![Explanation of LD_PRELOAD](pics/libinterceptor.png)
 
-Library injection is used by default.
+Library injection is used by default on Linux.
+On macOS it does not work on its own, so Clade combines it with wrappers
+there (see [Intercepting on macOS](#intercepting-on-macos)).
 
 ### Wrappers
 
@@ -116,6 +118,66 @@ conf = {"Wrapper.wrap_list": ["/usr/bin/gcc", "~/.local/bin"]}
 c = Clade(cmds_file="cmds.txt")
 c.intercept(command=["make"], use_wrappers=True, conf=conf)
 ```
+
+### Intercepting on macOS
+
+On macOS neither of the two methods above is enough by itself, so Clade
+uses both at once. This is the default there, no options are needed.
+
+**Why library injection alone fails.** Most of the programs a build runs
+first are Apple's own: `/bin/sh`, `make`, and every tool in `/usr/bin`
+(`clang`, `gcc`, `ld`, `xcrun`, ...). Apple *platform binaries* are
+protected by the system: the dynamic linker ignores
+*DYLD_INSERT_LIBRARIES* for them and also removes the variable from the
+environment they pass to their children. So the very first `/bin/sh`
+started by `make` drops *libinterceptor*, and nothing below it is
+intercepted.
+
+Also, the tools in `/usr/bin` are not the real compilers. They are small
+shims that find the active developer directory (Xcode or Command Line
+Tools) and run the real tool from there, the same way `xcrun clang` does.
+Even if we could get into a shim, the real tool would start without our
+library.
+
+**Why wrappers alone are not enough.** A wrapper sees only the command
+that was found through `PATH`. It does not see what the tool starts
+internally: for example `clang` spawns `ld` and the assembler as
+separate processes, and these are needed for a complete picture of the
+build.
+
+**How the two are combined.** Clade puts wrappers on `PATH` as usual, so
+the build finds `clade/wrappers/clang` instead of `/usr/bin/clang`. The
+wrapper is our own binary, not a platform one, so it is free to set
+*DYLD_INSERT_LIBRARIES*. Before running the real tool it:
+
+1. restores *DYLD_INSERT_LIBRARIES* from a private copy in
+   `CLADE_DYLD_INSERT_LIBRARIES` (the shell above has already stripped
+   the original);
+2. resolves the tool to the real binary inside the developer directory
+   (found via `xcode-select -p` and stored in `CLADE_XCODE_PATH`),
+   bypassing the `/usr/bin` shim;
+3. sets `SDKROOT` if it is missing, because the shim would normally do
+   this for the tool;
+4. executes the real tool, which is not a platform binary, so
+   *libinterceptor* is loaded into it.
+
+From that point on the injected library works as on Linux: it records
+every exec the tool makes, including `ld`, and re-injects itself into
+those children. If a child is again a `/usr/bin` shim or an `xcrun
+<tool>` call, the library resolves it to the real binary the same way,
+so the chain is not broken.
+
+Two details keep commands from being counted twice. The library skips
+execs of the wrappers themselves (the wrapper logs the command when it
+runs the real tool), and a wrapper that already has *libinterceptor*
+loaded does not log at all, leaving it to the library.
+
+**Why the library uses `__interpose`.** On Linux redefining `execve` in a
+preloaded library is enough. Modern macOS ignores
+*DYLD_FORCE_FLAT_NAMESPACE*, so a redefined symbol never replaces the
+one in libSystem. Instead the library registers its hooks in the
+`__DATA,__interpose` section, which is the supported way to ask dyld to
+redirect calls.
 
 ### Windows debugging API
 

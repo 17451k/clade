@@ -26,10 +26,14 @@ def intercept(
     output="cmds.txt",
     append=False,
     conf=None,
-    use_wrappers=True,
+    use_wrappers=None,
     intercept_open=False,
     intercept_envs=False,
 ):
+    # Library injection alone can't get past Apple platform binaries (see Wrapper)
+    if use_wrappers is None:
+        use_wrappers = sys.platform == "darwin"
+
     if sys.platform in ["linux", "darwin"] and use_wrappers:
         cl = Wrapper
     elif sys.platform in ["linux", "darwin"] and not use_wrappers:

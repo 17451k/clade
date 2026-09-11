@@ -18,7 +18,9 @@ import shutil
 import sys
 import tempfile
 
+from clade import darwin
 from clade.abstract import Intercept
+from clade.libinterceptor import find_libinterceptor
 
 
 class Wrapper(Intercept):
@@ -55,6 +57,12 @@ class Wrapper(Intercept):
 
         env["PATH"] = self.wrappers_dir + os.pathsep + os.environ.get("PATH", "")
         self.logger.debug(f"Add directory with wrappers to PATH: {self.wrappers_dir!r}")
+
+        if sys.platform == "darwin":
+            # Wrappers inject libinterceptor into the real tools they exec
+            env["CLADE_DYLD_INSERT_LIBRARIES"] = find_libinterceptor()
+            env["DYLD_INSERT_LIBRARIES"] = env["CLADE_DYLD_INSERT_LIBRARIES"]
+            darwin.setup_env(env)
 
         return env
 

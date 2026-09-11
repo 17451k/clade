@@ -15,6 +15,8 @@
 
 import os
 import shutil
+import subprocess
+import sys
 
 import pytest
 
@@ -33,7 +35,11 @@ from clade.scripts.stats import print_cmds_stats
 # TODO: Replace >= by ==
 number_of_cmds = 5
 number_of_gcc_cmds = 2
-gcc_which = shutil.which("gcc") or "gcc"
+if sys.platform == "darwin":
+    # Wrappers bypass the /usr/bin shims and exec what xcrun would
+    gcc_which = subprocess.check_output(["xcrun", "-f", "gcc"], text=True).strip()
+else:
+    gcc_which = shutil.which("gcc") or "gcc"
 
 
 def test_bad_open():

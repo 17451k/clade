@@ -15,7 +15,6 @@
 
 import os
 import shutil
-import sys
 
 from clade.intercept import intercept
 
@@ -34,13 +33,8 @@ def test_no_fallback(tmpdir):
     output = os.path.join(str(tmpdir), "cmds.txt")
 
     assert not intercept(command=test_project_make, output=output, use_wrappers=False)
-
-    # LD_PRELOAD may not work on certain systems
-    # Due to SELinux or System Integrity Protection
-
-    if sys.platform != "darwin":
-        assert os.path.isfile(output)
-        assert calculate_loc(output) > 1
+    assert os.path.isfile(output)
+    assert calculate_loc(output) > 1
 
 
 def test_no_fallback_with_server(tmpdir):
@@ -50,10 +44,8 @@ def test_no_fallback_with_server(tmpdir):
     assert not intercept(
         command=test_project_make, output=output, use_wrappers=False, conf=conf
     )
-
-    if sys.platform != "darwin":
-        assert os.path.isfile(output)
-        assert calculate_loc(output) > 1
+    assert os.path.isfile(output)
+    assert calculate_loc(output) > 1
 
 
 def test_fallback(tmpdir):

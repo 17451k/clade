@@ -26,8 +26,12 @@
 #define WHICH_DELIMITER   ":"
 #endif
 
+// Executables replaced by wrappers (Wrapper.wrap_list) are renamed with this postfix
+#define WRAPPER_POSTFIX ".clade"
+
 extern char *which(const char *name);
 extern char *which_path(const char *name, const char *path);
+extern char *which_xcode(const char *path);
 
 
 #endif /* WHICH_H */
