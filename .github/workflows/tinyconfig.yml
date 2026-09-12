@@ -7,7 +7,16 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest 
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-fixed
+            ref: v7.2
+          - name: linux-latest
+            ref: master
 
     steps:
     - uses: actions/checkout@v7
@@ -36,7 +45,7 @@ jobs:
 
     - name: Clone Linux kernel
       run: |
-        git clone --depth 1 https://github.com/torvalds/linux
+        git clone --depth 1 --branch ${{ matrix.ref }} https://github.com/torvalds/linux
 
     - name: Configure Linux kernel
       run: |
@@ -51,6 +60,6 @@ jobs:
 
     - uses: actions/upload-artifact@v7
       with:
-        name: clade-linux-kernel-tinyconfig
+        name: clade-${{ matrix.name }}-tinyconfig
         path: linux/clade-linux-kernel-tinyconfig.zip
 
