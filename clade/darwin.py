@@ -23,10 +23,12 @@ def setup_env(env):
     # DYLD_INSERT_LIBRARIES and strip it from the environment of their children.
     # Real tools live in the developer directory and need SDKROOT, which the
     # shims would have set.
+    # The toolchain must come first: Xcode's Developer/usr/bin also holds shims
+    # (ld) that re-exec "xcrun <tool>", which would resolve back to the shim forever
     dev_dir = subprocess.check_output(["xcode-select", "-p"], text=True).strip()
     bin_dirs = [
-        os.path.join(dev_dir, "usr", "bin"),
         os.path.join(dev_dir, "Toolchains", "XcodeDefault.xctoolchain", "usr", "bin"),
+        os.path.join(dev_dir, "usr", "bin"),
     ]
     env["CLADE_XCODE_PATH"] = os.pathsep.join(d for d in bin_dirs if os.path.isdir(d))
 
