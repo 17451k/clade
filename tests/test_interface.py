@@ -117,7 +117,10 @@ def test_cmd_graph(clade_api: Clade):
 
     if link_cmd_id:
         C = link_cmd_id
-        assert len(c.cmd_graph[C]["used_by"]) == 3
+        # zero.o/main.o are consumed by the link, ar and (on Linux) objcopy commands
+        used_by_types = sorted(c.get_cmd_type(x) for x in c.cmd_graph[C]["used_by"])
+        assert used_by_types[:3] == ["AR", "CC", "LD"]
+        assert set(used_by_types[3:]) <= {"Objcopy"}
         assert c.cmd_graph[C]["using"] == []
         assert set(c.src_graph[main_c][C]) == set(c.cmd_graph[C]["used_by"])
 
