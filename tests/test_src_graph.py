@@ -42,6 +42,20 @@ def test_src_graph(tmpdir, cmds_file):
     assert len(list(itertools.chain(*graph_part[test_file].values()))) == 2
     assert len(src_graph[test_file].keys()) == 3
 
+    link_cmd_id = None
+    for cmd in e.extensions["CC"].load_all_cmds():
+        if any(o.endswith("zero.o") for o in cmd["out"]) and any(
+            o.endswith("main.o") for o in cmd["out"]
+        ):
+            link_cmd_id = cmd["id"]
+
+    assert link_cmd_id
+    C = link_cmd_id
+
+    assert e.in_source_graph(test_file, C)
+    assert not e.in_source_graph(test_file, 999999)
+    assert e.get_used_by(test_file, 999999) == []
+
 
 def test_src_graph_empty_conf(tmpdir, cmds_file):
     c = Clade(tmpdir, cmds_file)

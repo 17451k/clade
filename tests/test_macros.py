@@ -35,7 +35,42 @@ def expansions_are_ok(expansions):
 @pytest.mark.cif
 def test_macros(tmpdir, cmds_file):
     c = Clade(tmpdir, cmds_file)
-    c.parse("Macros")
+    e = c.parse("Macros")
 
     definitions_are_ok(c.get_macros_definitions())
     expansions_are_ok(c.get_macros_expansions())
+
+    from clade.extensions.macros import Expansion
+
+    expansions = e.load_expansions()
+    assert expansions[zero_c]["ZERO"][zero_c] == [{"exp_line": 7, "def_line": 4}]
+    assert expansions[zero_c]["WEIRD_ZERO"][zero_c] == [{"exp_line": 7, "def_line": 3}]
+
+    reversed_expansions = e.load_reversed_expansions()
+    assert reversed_expansions[zero_c]["ZERO"][zero_c] == [
+        {"exp_line": 7, "def_line": 4}
+    ]
+    assert reversed_expansions[zero_c]["WEIRD_ZERO"][zero_c] == [
+        {"exp_line": 7, "def_line": 3}
+    ]
+
+    args = e.load_args()
+    assert args[zero_c] == {"WEIRD_ZERO": [["10"]]}
+    assert "ZERO" not in args[zero_c] or args[zero_c]["ZERO"] == []
+
+    traversed = list(e.traverse_expansions())
+    assert (
+        Expansion(name="ZERO", def_file=zero_c, def_line=4, exp_file=zero_c, exp_line=7)
+        in traversed
+    )
+    assert (
+        Expansion(
+            name="WEIRD_ZERO", def_file=zero_c, def_line=3, exp_file=zero_c, exp_line=7
+        )
+        in traversed
+    )
+
+    assert e.load_macros([zero_c])[zero_c] == [
+        {"name": "WEIRD_ZERO", "line": 3},
+        {"name": "ZERO", "line": 4},
+    ]

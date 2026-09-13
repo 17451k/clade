@@ -94,3 +94,46 @@ def test_main_bad_json(tmpdir, cmds_file):
         )
 
     assert "-1" == str(e.value)
+
+
+def test_version(capsys):
+    with pytest.raises(SystemExit) as e:
+        main(["--version"])
+
+    assert e.value.code in (None, 0)
+
+    captured = capsys.readouterr()
+    assert "Clade" in captured.out
+
+
+def test_intercept_existing_cmds(tmpdir, cmds_file):
+    with pytest.raises(SystemExit) as e:
+        main(["-w", str(tmpdir), "--cmds", cmds_file, "-i", "true"])
+
+    assert "-1" == str(e.value)
+
+
+def test_main_missing_cmds(tmpdir):
+    cmds_file = os.path.join(str(tmpdir), "nope.txt")
+
+    with pytest.raises(SystemExit) as e:
+        main(["-w", str(tmpdir), "--cmds", cmds_file, "-e", "CC"])
+
+    assert "-1" == str(e.value)
+
+
+def test_main_force(tmpdir, cmds_file):
+    with pytest.raises(SystemExit) as e:
+        main(["-w", str(tmpdir), "--cmds", cmds_file, "-e", "CC"])
+
+    assert "0" == str(e.value)
+
+    with pytest.raises(SystemExit) as e:
+        main(["-w", str(tmpdir), "--cmds", cmds_file, "-e", "CC", "-f"])
+
+    assert "0" == str(e.value)
+
+
+def test_main_bad_extension(tmpdir, cmds_file):
+    with pytest.raises(SystemExit):
+        main(["-w", str(tmpdir), "--cmds", cmds_file, "-e", "XYZ"])

@@ -19,6 +19,7 @@ import sys
 
 import pytest
 
+from clade.cmds import Cmd
 from clade.extensions.ln import LN
 
 # -t and --target-directory are GNU extensions, absent from BSD ln
@@ -27,7 +28,7 @@ gnu_ln_only = pytest.mark.skipif(
 )
 
 
-def get_cmd(tmp_path, command):
+def get_cmd(tmp_path, command) -> Cmd:
     cwd = tmp_path / "cwd"
     cwd.mkdir()
 
@@ -35,8 +36,8 @@ def get_cmd(tmp_path, command):
 
     return {
         "cwd": str(cwd),
-        "pid": "0",
-        "id": "1",
+        "pid": 0,
+        "id": 1,
         "which": "/usr/bin/ln",
         "command": command.split(" "),
     }
@@ -116,8 +117,7 @@ def check_target(parsed_cmd, in_file, out_dir):
     assert len(parsed_cmd["in"]) == len(parsed_cmd["out"])
     assert len(parsed_cmd["in"]) == 1
     assert os.path.basename(parsed_cmd["in"][0]) == os.path.basename(in_file)
-    assert os.path.basename(parsed_cmd["out"][0]) == os.path.basename(in_file)
-    assert str(out_dir) in parsed_cmd["out"][0]
+    assert parsed_cmd["out"][0] == os.path.join(str(out_dir), os.path.basename(in_file))
 
 
 @gnu_ln_only
@@ -174,3 +174,57 @@ def test_ln_target2(tmp_path: pathlib.Path):
 
     parsed_cmd = ln.parse_cmd(cmd)
     check_target(parsed_cmd, in_file, out_dir)
+
+
+def test_ln_directory(tmp_path: pathlib.Path):
+    ln = LN(tmp_path)
+
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / "sub").mkdir()
+    create_empty_file(src / "a.txt")
+    create_empty_file(src / "sub" / "b.txt")
+
+    output = tmp_path / "output"
+    output.mkdir()
+
+    cmd = get_cmd(tmp_path, f"ln -s {src} {output}")
+
+    parsed_cmd = ln.parse_cmd(cmd)
+
+    assert parsed_cmd
+    assert set(parsed_cmd["in"]) == {
+        str(src / "a.txt"),
+        str(src / "sub" / "b.txt"),
+    }
+    assert set(parsed_cmd["out"]) == {
+        os.path.join(str(output), "a.txt"),
+        os.path.join(str(output), "sub", "b.txt"),
+    }
+    assert ln.load_opts_by_id(cmd["id"]) == ["-s"]
+
+
+def test_ln_no_files(tmp_path: pathlib.Path):
+    cmd: Cmd = {
+        "cwd": str(tmp_path),
+        "pid": 0,
+        "id": 1,
+        "which": "/usr/bin/ln",
+        "command": ["ln", "-s"],
+    }
+
+    assert LN(tmp_path).parse_cmd(cmd) is None
+
+
+def test_ln_two_files_into_dir(tmp_path: pathlib.Path):
+    ln = LN(tmp_path)
+
+    in_file = create_empty_file(tmp_path / "test.txt")
+    out_dir = tmp_path / "output"
+    out_dir.mkdir()
+
+    cmd = get_cmd(tmp_path, f"ln {in_file} {out_dir}")
+
+    parsed = ln.parse_cmd(cmd)
+
+    assert parsed["out"] == [os.path.join(str(out_dir), os.path.basename(str(in_file)))]

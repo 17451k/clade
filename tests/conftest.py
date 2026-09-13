@@ -47,13 +47,17 @@ def envs_file(tmpdir_factory):
     yield os.path.join(c.work_dir, "envs.txt")
 
 
+CIF_EXTS = ["CrossRef", "Variables", "Macros", "Typedefs", "CDB"]
+NO_CIF_EXTS = ["CmdGraph", "SrcGraph", "PidGraph", "CDB"]
+
+
 @pytest.fixture(scope="session")
 def clade_api(tmpdir_factory):
     tmpdir = tmpdir_factory.mktemp("Clade")
 
     c = Clade(tmpdir)
     c.intercept(command=test_project_make, use_wrappers=True, intercept_envs=True)
-    c.parse_list(["CrossRef", "Variables", "Macros", "Typedefs", "CDB"])
+    c.parse_list(CIF_EXTS if shutil.which("cif") else NO_CIF_EXTS)
 
     yield c
 

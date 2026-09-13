@@ -14,6 +14,21 @@
 # limitations under the License.
 
 from clade import Clade
+from clade.cmds import Cmd
+from clade.extensions.ar import AR
+
+
+def test_ar_bad_cmd(tmp_path):
+    cmd: Cmd = {
+        "cwd": str(tmp_path),
+        "pid": 0,
+        "id": 1,
+        "which": "/usr/bin/ar",
+        "command": ["ar", "rcs"],
+    }
+    e = AR(tmp_path)
+    assert e.parse_cmd(cmd) is None
+    assert e.get_bad_ids() == [1]
 
 
 def test_ar(tmpdir, cmds_file):

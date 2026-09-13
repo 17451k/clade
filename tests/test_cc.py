@@ -15,10 +15,13 @@
 
 import os
 import re
+import shutil
 
 import pytest
 
 from clade import Clade
+from clade.cmds import Cmd
+from clade.extensions.cc import CC
 from clade.extensions.opts import cc_preprocessor_opts
 
 
@@ -178,3 +181,37 @@ def test_cc_preprocess(tmpdir, cmds_file):
     e = c.parse("CC")
 
     assert e.get_all_pre_files()
+
+
+def test_cc_ccache(tmpdir):
+    if shutil.which("gcc") is None:
+        pytest.skip("gcc not found")
+
+    c = Clade(str(tmpdir))
+    conf = dict(c.conf)
+    conf["Compiler.get_deps"] = False
+
+    e = CC(str(tmpdir), conf)
+
+    zero_c = os.path.join(os.path.dirname(__file__), "test_project", "zero.c")
+
+    cmd: Cmd = {
+        "cwd": os.getcwd(),
+        "pid": 0,
+        "id": 1,
+        "which": "/usr/bin/ccache",
+        "command": ["ccache", "gcc", "--ccache-skip", "-c", zero_c, "-o", "/dev/null"],
+    }
+    e.parse_cmd(cmd)
+    parsed = e.load_cmd_by_id(1)
+
+    assert parsed["in"][0].endswith("zero.c")
+
+    raw = e.load_raw_by_id(1)
+
+    assert raw[0] != "/usr/bin/ccache"
+    assert "--ccache-skip" not in raw
+
+    cmd2: Cmd = {**cmd, "id": 2, "command": ["ccache", "definitely-not-a-compiler"]}
+
+    assert e.parse_cmd(cmd2) is None

@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from clade.extensions.utils import yield_chunk
 from clade.utils import get_clade_version, get_program_version, merge_preset_to_conf
 
 
@@ -35,3 +36,8 @@ def test_merge_preset_to_conf():
     conf = {}
 
     assert merge_preset_to_conf("klever_linux_kernel", conf)
+
+
+def test_yield_chunk():
+    assert list(yield_chunk(range(5), chunk_size=2)) == [[0, 1], [2, 3], [4]]
+    assert list(yield_chunk([], 2)) == []

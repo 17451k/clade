@@ -44,8 +44,11 @@ class LN(Common):
                     # Value is the next option.
                     out = os.path.normpath(next(opts))
                 elif opt.startswith(("--target-directory=", "-t")):
-                    out = opt.replace("--target-directory=", "")
-                    out = opt.replace("-t", "")
+                    if opt.startswith("--target-directory="):
+                        out = opt.replace("--target-directory=", "", 1)
+                    else:
+                        out = opt[2:]
+                    out = os.path.normpath(out)
                 else:
                     parsed_cmd["opts"].append(opt)
             else:

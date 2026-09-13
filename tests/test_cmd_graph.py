@@ -32,9 +32,14 @@ def test_cmd_graph_requires(tmpdir, cmds_file):
     cmd_type = e.load_cmd_type()
 
     cmd_id = None
+    link_cmd_id = None
     for cmd in e.extensions["CC"].load_all_cmds():
         if main_c in cmd["in"] and zero_c in cmd["in"] and tmp_main in cmd["out"]:
             cmd_id = cmd["id"]
+        if any(o.endswith("zero.o") for o in cmd["out"]) and any(
+            o.endswith("main.o") for o in cmd["out"]
+        ):
+            link_cmd_id = cmd["id"]
 
     assert cmd_id
     assert cmd_graph
@@ -44,6 +49,26 @@ def test_cmd_graph_requires(tmpdir, cmds_file):
 
     used_by_id = cmd_graph[cmd_id]["used_by"][0]
     assert cmd_graph[used_by_id]["using"] == [cmd_id]
+
+    A, B = cmd_id, used_by_id
+    assert cmd_graph[A] == {"used_by": [B], "using": []}
+    assert cmd_graph[B]["using"] == [A]
+
+    assert e.find_used_by(B) == set()
+    assert e.find_used_by(999999) == set()
+
+    with pytest.raises(RuntimeError):
+        e.get_ext_obj("XYZ")
+
+    if link_cmd_id:
+        C = link_cmd_id
+        assert cmd_graph[C]["using"] == []
+
+        assert e.find_used_by(C) == set(cmd_graph[C]["used_by"])
+
+        full_cmd = e.load_cmd_by_id(C, with_opts=True)
+        assert full_cmd["type"] == "CC"
+        assert "-c" in full_cmd["opts"]
 
 
 def test_cmd_graph_empty_requires(tmpdir, cmds_file):
@@ -71,3 +96,20 @@ def test_cmd_graph_empty_conf(tmpdir, cmds_file):
     e = c.parse("CmdGraph")
 
     assert e.load_cmd_graph()
+
+
+def test_cmd_graph_unknown_ext(tmpdir, cmds_file):
+    c = Clade(tmpdir, cmds_file)
+    e = c.parse("CmdGraph")
+
+    with pytest.raises(RuntimeError):
+        e.get_ext_obj("XYZ")
+
+
+def test_load_all_cmds_by_type_unfiltered(tmpdir, cmds_file):
+    c = Clade(tmpdir, cmds_file)
+    e = c.parse("CmdGraph")
+
+    assert len(e.load_all_cmds_by_type("CC", filter_by_pid=False)) >= len(
+        e.load_all_cmds_by_type("CC")
+    )

@@ -13,11 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pathlib
 import sys
 
 import pytest
 
 from clade import Clade
+from clade.cmds import Cmd
+from clade.extensions.objcopy import Objcopy
 
 
 @pytest.mark.skipif(sys.platform != "linux", reason="test only for Linux")
@@ -31,3 +34,36 @@ def test_objcopy(tmpdir, cmds_file):
         assert len(cmd["in"]) == 1
         assert len(cmd["out"]) == 1
         assert len(cmd["opts"]) == 1
+
+
+def get_cmd(tmp_path, command) -> Cmd:
+    return {
+        "cwd": str(tmp_path),
+        "pid": 0,
+        "id": 1,
+        "which": "/usr/bin/objcopy",
+        "command": command,
+    }
+
+
+def test_objcopy_single_file(tmp_path: pathlib.Path):
+    e = Objcopy(tmp_path)
+
+    cmd = get_cmd(tmp_path, ["objcopy", "--strip-all", "main.o"])
+    e.parse_cmd(cmd)
+
+    parsed_cmd = e.load_cmd_by_id(1)
+    assert parsed_cmd["in"] == ["main.o"]
+    assert parsed_cmd["out"] == ["main.o"]
+    assert e.load_opts_by_id(1) == ["--strip-all"]
+
+
+def test_objcopy_in_out(tmp_path: pathlib.Path):
+    e = Objcopy(tmp_path)
+
+    cmd = get_cmd(tmp_path, ["objcopy", "main.o", "zero.o", "--strip-all"])
+    e.parse_cmd(cmd)
+
+    parsed_cmd = e.load_cmd_by_id(1)
+    assert parsed_cmd["in"] == ["main.o"]
+    assert parsed_cmd["out"] == ["zero.o"]

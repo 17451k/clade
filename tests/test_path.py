@@ -43,3 +43,11 @@ def test_path_capital(tmpdir, cmds_file):
 
     assert "test.c" in c.Path.normalize_rel_path("test.c", tmpdir)
     assert "TEST.c" in c.Path.normalize_rel_path("TEST.c", tmpdir)
+
+
+def test_path_abs_and_whitespace():
+    from clade.extensions.path import Path
+
+    assert Path.normalize_rel_path("/a/b/../c ", "/cwd") == "/a/c"
+    assert Path.normalize_rel_path("x/./y", "/cwd") == "/cwd/x/y"
+    assert Path.normalize_abs_path(" /a//b/ ") == "/a/b"

@@ -49,7 +49,7 @@ class Link(Common):
             elif re.search(r"^[/-]", opt):
                 parsed_cmd["opts"].append(opt)
 
-                m = re.search(r"^[/-]libpath:(.*)", opt)
+                m = re.search(r"^[/-]libpath:(.*)", opt, re.IGNORECASE)
 
                 if m:
                     libpaths.append(m.group(1))

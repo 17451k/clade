@@ -14,7 +14,7 @@
 # limitations under the License.
 
 from clade import Clade
-from clade.extensions.opts import filter_opts
+from clade.extensions.opts import filter_opts, filter_opts_for_clang
 
 
 def test_isysroot(tmpdir):
@@ -50,3 +50,54 @@ def test_bad_opt():
     opts = ["-ABC", "-Dtest"]
 
     assert filter_opts(opts) == ["-Dtest"]
+
+
+def test_separate_value(tmpdir):
+    c = Clade(tmpdir)
+
+    opts = ["-I", "/usr/include", "-D", "X=1"]
+
+    filtered_opts = filter_opts(opts, c.get_storage_path)
+
+    assert filtered_opts == ["-I", f"{c.storage_dir}/usr/include", "-D", "X=1"]
+
+
+def test_isysroot_separate(tmpdir):
+    c = Clade(tmpdir)
+
+    opts = ["-isysroot", "/sdk", "-I", "/usr/include"]
+
+    filtered_opts = filter_opts(opts, c.get_storage_path)
+
+    # isysroot's value is routed through storage
+    assert filtered_opts[0] == "-isysroot"
+    assert filtered_opts[1] == f"{c.storage_dir}/sdk"
+
+    # since isysroot is present, the -I value is left unchanged
+    assert filtered_opts[2] == "-I"
+    assert filtered_opts[3] == "/usr/include"
+
+
+def test_relative_include_unchanged(tmpdir):
+    c = Clade(tmpdir)
+
+    opts = ["-Iinclude"]
+
+    assert filter_opts(opts, c.get_storage_path) == ["-Iinclude"]
+
+
+def test_clang_opts():
+    opts = ["--target=x86_64", "-O2", "-Wall"]
+
+    assert filter_opts_for_clang(opts) == ["--target=x86_64", "-O2"]
+
+    # --target is only supported for clang, not for the default (gcc) regex
+    assert filter_opts(["--target=x86_64"]) == []
+
+
+def test_optimization_exact_match():
+    # gcc_optimization_opts are matched with a "$" anchor, so "-O3x" is not
+    # a valid optimization option and must not be included
+    opts = ["-O3", "-Os", "-Ofast", "-O3x"]
+
+    assert filter_opts(opts) == ["-O3", "-Os", "-Ofast"]

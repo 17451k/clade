@@ -29,6 +29,41 @@ def funcs_are_ok(funcs):
     assert definition["type"] == "extern"
     assert len(funcs["print"]) >= 2
 
+    prints = funcs["print"]
+    assert len(prints) == 2
+    assert all(d["type"] == "static" for d in prints)
+    assert {d["file"] for d in prints} == {main_c, zero_c}
+    assert {d["line"] for d in prints} == {4, 10}
+    assert all(d["declarations"] == [] for d in prints)
+
+    zero_decls = funcs["zero"][0]["declarations"]
+    assert len(zero_decls) == 1
+    assert zero_decls[0]["file"] == zero_h
+    assert zero_decls[0]["line"] == 1
+    assert zero_decls[0]["signature"] == "int zero();"
+    assert zero_decls[0]["type"] == "extern"
+
+    printfs = funcs["printf"]
+    assert len(printfs) == 1
+    printf_def = printfs[0]
+    assert printf_def["file"] == "unknown"
+    assert printf_def["line"] is None
+    assert printf_def["signature"] is None
+    assert printf_def["compiled_in"] == [0]
+    assert printf_def["declarations"]
+    assert any(
+        d["file"].endswith("stdio.h") or d["file"].endswith("_printf.h")
+        for d in printf_def["declarations"]
+    )
+    assert printf_def["declarations"][0]["signature"].startswith("int printf(")
+
+    assert funcs["func_with_pointers"][0]["line"] == 14
+
+    main_def = funcs["main"][0]
+    zero_def = funcs["zero"][0]
+    assert set(main_def["compiled_in"]) == set(zero_def["compiled_in"])
+    assert len(main_def["compiled_in"]) >= 1
+
 
 def funcs_by_file_are_ok(funcs_by_file):
     assert funcs_by_file
@@ -92,3 +127,17 @@ def test_functions(tmpdir, cmds_file):
     funcs_by_file_are_ok(funcs_by_file)
     funcs_are_consistent(funcs, funcs_by_file)
     filtered_funcs_by_file_are_ok(funcs_by_file, funcs_by_main_c)
+
+    assert len(e.load_definitions("print")) == 2
+    assert e.load_definitions("nope") == []
+    assert e.function_exists("main")
+    assert not e.function_exists("nope")
+    assert e.definitions_exist(main_c)
+
+    stripped = list(e.yield_functions_by_file([main_c], strip_list=["compiled_in"]))
+    assert len(stripped) == 1
+    for file, funcs_data in stripped:
+        for definition in funcs_data[file]:
+            assert "compiled_in" not in definition
+            for declaration in definition.get("declarations", []):
+                assert "compiled_in" not in declaration

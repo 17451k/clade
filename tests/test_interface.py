@@ -50,7 +50,6 @@ def test_intercept(tmpdir):
     assert calculate_loc(output) > 1
 
 
-@pytest.mark.cif
 def test_cmd_graph(clade_api: Clade):
     c = clade_api
 
@@ -109,8 +108,20 @@ def test_cmd_graph(clade_api: Clade):
     with pytest.raises(KeyError):
         assert c.get_leaf_cmds("-1")
 
+    link_cmd_id = None
+    for cmd in cc_cmds:
+        if any(o.endswith("zero.o") for o in cmd["out"]) and any(
+            o.endswith("main.o") for o in cmd["out"]
+        ):
+            link_cmd_id = cmd["id"]
 
-@pytest.mark.cif
+    if link_cmd_id:
+        C = link_cmd_id
+        assert len(c.cmd_graph[C]["used_by"]) == 3
+        assert c.cmd_graph[C]["using"] == []
+        assert set(c.src_graph[main_c][C]) == set(c.cmd_graph[C]["used_by"])
+
+
 def test_src_graph(clade_api: Clade):
     c = clade_api
 
@@ -123,7 +134,6 @@ def test_src_graph(clade_api: Clade):
         assert c.get_file_size("this_file_does_not_exist.c")
 
 
-@pytest.mark.cif
 def test_pid_graph(clade_api: Clade):
     c = clade_api
 
@@ -203,12 +213,10 @@ def test_get_macros_definitions(clade_api: Clade):
     definitions_are_ok(c.get_macros_definitions())
 
 
-@pytest.mark.cif
 def test_cdb(clade_api: Clade):
     assert clade_api.compilation_database
 
 
-@pytest.mark.cif
 def test_meta_good(clade_api: Clade):
     c = clade_api
 
@@ -251,7 +259,6 @@ def test_cant_create_work_dir():
         c.parse("CC")
 
 
-@pytest.mark.cif
 def test_check_work_dir(clade_api: Clade):
     assert clade_api.work_dir_ok(log=True)
 
@@ -286,36 +293,30 @@ def test_parse_undef(tmpdir):
         c.parse("XYZ")
 
 
-@pytest.mark.cif
 def test_get_raw_cmds(clade_api: Clade):
     assert list(clade_api.get_raw_cmds()) == list(iter_cmds(clade_api.cmds_file))
 
 
-@pytest.mark.cif
 def test_get_raw_cmds_by_which(clade_api: Clade):
     assert list(clade_api.get_raw_cmds_by_which(["/usr/bin/make"])) == list(
         iter_cmds_by_which(clade_api.cmds_file, ["/usr/bin/make"])
     )
 
 
-@pytest.mark.cif
 def test_get_raw_cmd_by_id(clade_api: Clade):
     assert clade_api.get_raw_cmd_by_id(1)["id"] == 1
 
 
-@pytest.mark.cif
 def test_get_envs_by_id(clade_api: Clade):
     assert clade_api.get_envs_by_id(1) == next(iter(clade_api.get_envs()))["envs"]
 
 
-@pytest.mark.cif
 def test_get_envs(clade_api: Clade):
     assert list(clade_api.get_envs()) == list(
         iter_envs(os.path.join(clade_api.work_dir, "envs.txt"))
     )
 
 
-@pytest.mark.cif
 def test_get_get_env_value_by_id(clade_api: Clade):
     assert (
         clade_api.get_env_value_by_id(1, "HOME")
@@ -323,3 +324,173 @@ def test_get_get_env_value_by_id(clade_api: Clade):
             "HOME"
         ]
     )
+
+
+def test_get_cmd_by_type(clade_api: Clade):
+    c = clade_api
+
+    cc_cmds = c.get_all_cmds_by_type("CC")
+    cmd_id = cc_cmds[0]["id"]
+
+    assert c.get_cmd(cmd_id, cmd_type="CC")["id"] == cmd_id
+    assert c.get_cmd_opts(cmd_id) == c.get_cmd(cmd_id, with_opts=True)["opts"]
+
+    raw = c.get_cmd_raw(cmd_id)
+    assert isinstance(raw, list)
+    assert raw
+    assert all(isinstance(x, str) for x in raw)
+
+    assert c.get_cmd_deps(cmd_id) == c.get_cmd(cmd_id, with_deps=True)["deps"]
+
+    with pytest.raises(RuntimeError):
+        c.get_all_cmds_by_type("XYZ")
+
+
+def test_root_and_leaf_cmds(clade_api: Clade):
+    c = clade_api
+
+    A = None
+    C = None
+    for cmd in c.get_all_cmds_by_type("CC"):
+        if (
+            main_c in cmd["in"]
+            and zero_c in cmd["in"]
+            and any(o.endswith("tmp_main") for o in cmd["out"])
+        ):
+            A = cmd["id"]
+        if any(o.endswith("zero.o") for o in cmd["out"]) and any(
+            o.endswith("main.o") for o in cmd["out"]
+        ):
+            C = cmd["id"]
+
+    assert A is not None
+    B = c.cmd_graph[A]["used_by"][0]
+
+    assert c.get_root_cmds(B) == [A]
+    assert c.get_leaf_cmds(A) == [B]
+    assert c.get_root_cmds_by_type(B, "CC") == [A]
+    assert c.get_root_cmds_by_type(B, "LD") == []
+
+    assert C is not None
+    assert set(c.get_leaf_cmds(C)) == set(c.cmd_graph[C]["used_by"])
+
+
+def test_compilation_cmds_by_file(clade_api: Clade):
+    c = clade_api
+
+    A = None
+    C = None
+    for cmd in c.get_all_cmds_by_type("CC"):
+        if (
+            main_c in cmd["in"]
+            and zero_c in cmd["in"]
+            and any(o.endswith("tmp_main") for o in cmd["out"])
+        ):
+            A = cmd["id"]
+        if any(o.endswith("zero.o") for o in cmd["out"]) and any(
+            o.endswith("main.o") for o in cmd["out"]
+        ):
+            C = cmd["id"]
+
+    ids = list(c.get_compilation_cmds_ids_by_file(main_c))
+    assert A in ids
+    assert C in ids
+
+    for cmd in c.get_compilation_cmds_by_file(main_c):
+        assert main_c in cmd["in"]
+
+    assert c.get_file_size(main_c) == 11
+    assert c.src_info[main_c]["loc"] == 11
+
+
+def test_get_raw_cmd_by_id_missing(clade_api: Clade):
+    # TODO: should raise
+    result = clade_api.get_raw_cmd_by_id(999999)
+    assert isinstance(result, RuntimeError)
+
+    with pytest.raises(RuntimeError):
+        clade_api.get_envs_by_id(999999)
+
+    with pytest.raises(RuntimeError):
+        clade_api.get_env_value_by_id(1, "THIS_ENV_DOES_NOT_EXIST")
+
+
+@pytest.mark.cif
+def test_get_expansions_and_macros(clade_api: Clade):
+    c = clade_api
+
+    expansions = c.get_expansions([zero_c])
+    assert expansions[zero_c]["ZERO"][zero_c] == [{"exp_line": 7, "def_line": 4}]
+    assert expansions[zero_c]["WEIRD_ZERO"][zero_c] == [{"exp_line": 7, "def_line": 3}]
+
+    macros = c.get_macros([zero_c])
+    assert macros[zero_c] == [
+        {"name": "WEIRD_ZERO", "line": 3},
+        {"name": "ZERO", "line": 4},
+    ]
+
+    assert len(c.load_definitions("print")) == 2
+    assert c.load_definitions("no_such_function") == []
+
+    typedefs_are_ok(c.get_typedefs([zero_c]))
+
+
+@pytest.mark.cif
+def test_get_macros_by_file(clade_api: Clade):
+    c = clade_api
+
+    assert c.get_macros_definitions(files=[zero_c])[zero_c]["ZERO"] == [4]
+    assert main_c not in c.get_macros_expansions(files=[zero_c])
+
+
+def test_work_dir_ok_no_meta(tmpdir, cmds_file):
+    c = Clade(tmpdir, cmds_file)
+    c.parse("PidGraph")
+
+    os.remove(os.path.join(str(tmpdir), "meta.json"))
+
+    assert not c.work_dir_ok(log=True)
+
+
+def test_work_dir_ok_corrupted(tmpdir, cmds_file):
+    import orjson
+
+    c = Clade(tmpdir, cmds_file)
+    c.parse("PidGraph")
+
+    meta_file = os.path.join(str(tmpdir), "meta.json")
+    with open(meta_file, "rb") as fh:
+        meta = orjson.loads(fh.read())
+
+    meta["PidGraph"]["corrupted"] = True
+
+    with open(meta_file, "wb") as fh:
+        fh.write(orjson.dumps(meta))
+
+    assert not Clade(tmpdir, cmds_file).work_dir_ok()
+
+
+def test_work_dir_ok_version(tmpdir, cmds_file):
+    import orjson
+
+    c = Clade(tmpdir, cmds_file)
+    c.parse("PidGraph")
+
+    meta_file = os.path.join(str(tmpdir), "meta.json")
+    with open(meta_file, "rb") as fh:
+        meta = orjson.loads(fh.read())
+
+    meta["PidGraph"]["version"] = "0"
+
+    with open(meta_file, "wb") as fh:
+        fh.write(orjson.dumps(meta))
+
+    assert not Clade(tmpdir, cmds_file).work_dir_ok()
+
+
+def test_add_file_to_storage_named(tmpdir):
+    c = Clade(tmpdir)
+
+    path = c.add_file_to_storage(__file__, storage_filename="renamed.py")
+    assert path.endswith("renamed.py")
+    assert os.path.exists(path)
