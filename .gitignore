@@ -134,3 +134,6 @@ pyrightconfig.json
 
 # documents
 *.pdf
+
+# ruff
+.ruff_cache/

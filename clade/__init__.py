@@ -369,7 +369,7 @@ class Clade:
             if cmd["id"] == cmd_id:
                 return cmd
 
-        return RuntimeError(f"No command with id {cmd_id}")
+        raise RuntimeError(f"No command with id {cmd_id}")
 
     def get_envs(self):
         """Get an iterator over all environment variables."""

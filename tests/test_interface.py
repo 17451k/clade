@@ -404,9 +404,8 @@ def test_compilation_cmds_by_file(clade_api: Clade):
 
 
 def test_get_raw_cmd_by_id_missing(clade_api: Clade):
-    # TODO: should raise
-    result = clade_api.get_raw_cmd_by_id(999999)
-    assert isinstance(result, RuntimeError)
+    with pytest.raises(RuntimeError):
+        clade_api.get_raw_cmd_by_id(999999)
 
     with pytest.raises(RuntimeError):
         clade_api.get_envs_by_id(999999)
