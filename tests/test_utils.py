@@ -29,7 +29,10 @@ def test_get_program_version():
 
     assert version
     assert type(version) == str
-    assert get_clade_version() in get_program_version("clade")
+    assert "Copyright" not in version
+
+    assert get_program_version("this_program_does_not_exist") == "unknown"
+    assert get_program_version("false") == "unknown"
 
 
 def test_merge_preset_to_conf():

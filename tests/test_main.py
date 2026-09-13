@@ -19,6 +19,7 @@ import sys
 import pytest
 
 from clade.__main__ import main
+from clade.utils import get_clade_version
 
 test_project = os.path.join(os.path.dirname(__file__), "test_project")
 test_project_make = ["make", "-C", test_project]
@@ -104,6 +105,7 @@ def test_version(capsys):
 
     captured = capsys.readouterr()
     assert "Clade" in captured.out
+    assert get_clade_version() in captured.out
 
 
 def test_intercept_existing_cmds(tmpdir, cmds_file):
